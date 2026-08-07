@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Semantic token layer.
+  Primitive palette lives in tailwind.config.js. Here we bind semantic roles
+  to primitives so components reference roles (primary, surface-1, ink) and a
+  single theme swap re-skins everything — exactly the architecture described in
+  Figma/Color System.md (primitive -> semantic -> component -> theme).
+*/
+@layer base {
+  :root {
+    /* Brand: purple-first (per docs/04_UI/Design System.md) */
+    --color-primary: #7c3aed; /* violet-600 */
+    --color-primary-hover: #6d28d9; /* violet-700 */
+    --color-primary-pressed: #5b21b6; /* violet-800 */
+    --color-primary-subtle: #ede9fe; /* violet-100 */
+    --color-primary-fg: #ffffff;
+
+    /* Wellness green/teal — health, adherence, progress */
+    --color-wellness: #059669; /* emerald-600 */
+    --color-wellness-subtle: #d1fae5; /* emerald-100 */
+
+    /* Coral — used sparingly for recommendations / education, never errors */
+    --color-accent: #ea580c; /* coral-600 */
+    --color-accent-subtle: #ffedd5; /* coral-100 */
+
+    /* Status */
+    --color-success: #059669;
+    --color-success-subtle: #d1fae5;
+    --color-warning: #b45309; /* amber-700 for AA on subtle bg */
+    --color-warning-subtle: #fef3c7;
+    --color-danger: #dc2626;
+    --color-danger-subtle: #fee2e2;
+    --color-info: #0f766e; /* teal-700 */
+    --color-info-subtle: #ccfbf1;
+
+    /* Layered surfaces on warm neutral (~70% of the UI is neutral) */
+    --surface-0: #f7f6f4;
+    --surface-1: #fafaf9;
+    --surface-2: #ffffff;
+    --surface-3: #ffffff;
+    --surface-4: #ffffff;
+
+    /* Text */
+    --text-primary: #1c1917;
+    --text-secondary: #44403c;
+    --text-tertiary: #78716c;
+    --text-disabled: #a8a29e;
+    --text-inverse: #fafaf9;
+
+    /* Borders */
+    --border-default: #e7e5e4;
+    --border-divider: #f0efed;
+    --border-strong: #d6d3d1;
+  }
+
+  .dark {
+    --color-primary: #a78bfa; /* violet-400 reads better on dark */
+    --color-primary-hover: #c4b5fd;
+    --color-primary-pressed: #ddd6fe;
+    --color-primary-subtle: #2e1065;
+    --color-primary-fg: #1c1917;
+
+    --color-wellness: #34d399;
+    --color-wellness-subtle: #064e3b;
+    --color-accent: #fb923c;
+    --color-accent-subtle: #431407;
+
+    --color-success: #34d399;
+    --color-success-subtle: #064e3b;
+    --color-warning: #fbbf24;
+    --color-warning-subtle: #451a03;
+    --color-danger: #f87171;
+    --color-danger-subtle: #450a0a;
+    --color-info: #2dd4bf;
+    --color-info-subtle: #134e4a;
+
+    --surface-0: #17140f;
+    --surface-1: #1c1917;
+    --surface-2: #262220;
+    --surface-3: #2e2926;
+    --surface-4: #37312d;
+
+    --text-primary: #fafaf9;
+    --text-secondary: #d6d3d1;
+    --text-tertiary: #a8a29e;
+    --text-disabled: #57534e;
+    --text-inverse: #1c1917;
+
+    --border-default: #37312d;
+    --border-divider: #292524;
+    --border-strong: #44403c;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--surface-0);
+    color: var(--text-primary);
+    font-family: "Inter", system-ui, sans-serif;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  h1, h2, h3, h4 {
+    font-family: "Hanken Grotesque", system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  /* Accessible focus — visible ring on every interactive element (WCAG AA) */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--surface-1), 0 0 0 4px var(--color-primary);
+    border-radius: 0.5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .tnum { font-variant-numeric: tabular-nums; }
+}
+
+/* Print: hide app chrome, keep documents clean */
+@media print {
+  .no-print { display: none !important; }
+  header, footer, nav { display: none !important; }
+}
