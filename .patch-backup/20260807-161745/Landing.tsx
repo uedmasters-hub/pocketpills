@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { entryPoints, treatments, type EntryIconKey } from "@/lib/data";
 import { useUser } from "@/lib/user";
 import { SiteHeader } from "@/components/layout/SiteHeader";
-import { SiteFooter } from "@/components/layout/SiteFooter";
 
 const VIDEO_ID = "xbTcp1sTsME";
 
@@ -79,6 +78,17 @@ function Tiles({ onPick, last }: { onPick: (to: string) => void; last?: { title:
           <span className="text-[13px] font-medium leading-snug text-[color:var(--pp-headline)] sm:text-[15px]">{e.title}</span>
         </button>
       ))}
+    </div>
+  );
+}
+
+function Avatar({ seed, className = "" }: { seed: string; className?: string }) {
+  const hues = ["#A5A0D3", "#7C74BC", "#2DD4BF", "#FDBA74", "#C7C3E5", "#5A51A6"];
+  const h = hues[seed.charCodeAt(0) % hues.length];
+  return (
+    <div className={"relative overflow-hidden " + className} style={{ background: `linear-gradient(150deg, ${h}, #322e6b)` }} aria-hidden>
+      <div className="absolute inset-0 grid place-items-end justify-center"><div className="h-1/2 w-1/2 rounded-t-full bg-white/25" /></div>
+      <div className="absolute left-1/2 top-[22%] h-[22%] w-[22%] -translate-x-1/2 rounded-full bg-white/35" />
     </div>
   );
 }
@@ -395,227 +405,91 @@ function Partners() {
   );
 }
 
-/* ═══ 8. Testimonials ═══════════════════════ */
-const STAR = "var(--pp-star)";
-
-function FullStar({ w = 24 }: { w?: number }) {
-  return (
-    <svg width={w} height={w * (23 / 24)} viewBox="0 0 24 23" fill="none" aria-hidden>
-      <path d="M12 0.863281L14.6942 9.15508H23.4127L16.3593 14.2797L19.0534 22.5715L12 17.4469L4.94658 22.5715L7.64074 14.2797L0.587322 9.15508H9.30583L12 0.863281Z" fill={STAR} />
-    </svg>
-  );
-}
-
-/* Decorative mark in each card's bottom-right (production cycles four of these). */
-function ReviewMark({ id }: { id: "capsule" | "multi" | "plus" | "transfer" }) {
-  const f = { fill: STAR, fillRule: "evenodd" as const, clipRule: "evenodd" as const };
-  if (id === "capsule")
-    return (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden>
-        <path {...f} d="M14.687 5.00517C12.0134 2.33161 7.67874 2.33161 5.00518 5.00517C2.33161 7.67874 2.33161 12.0134 5.00517 14.687L10.452 20.1338L20.1338 10.452L14.687 5.00517ZM21.548 11.8662L11.8662 21.548L17.313 26.9948C19.9866 29.6684 24.3213 29.6684 26.9948 26.9948C29.6684 24.3213 29.6684 19.9866 26.9948 17.313L21.548 11.8662ZM3.59096 3.59096C7.04558 0.136348 12.6466 0.136346 16.1012 3.59096L28.409 15.8988C31.8637 19.3534 31.8636 24.9544 28.409 28.409C24.9544 31.8637 19.3534 31.8637 15.8988 28.409L3.59096 16.1012C0.136343 12.6466 0.136351 7.04557 3.59096 3.59096Z" />
-      </svg>
-    );
-  if (id === "multi")
-    return (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden>
-        <path {...f} d="M2.40089 9.40089C0.533037 11.2687 0.533036 14.2971 2.40089 16.165L8.33502 22.0991C10.2029 23.967 13.2313 23.967 15.0991 22.0991C16.967 20.2313 16.967 17.2029 15.0991 15.335L9.16498 9.40089C7.29713 7.53303 4.26874 7.53304 2.40089 9.40089ZM3.8151 14.7508C2.7283 13.664 2.7283 11.9019 3.8151 10.8151C4.90191 9.7283 6.66397 9.7283 7.75077 10.8151L10.0107 13.0751L6.07506 17.0107L3.8151 14.7508ZM7.48927 18.4249L11.4249 14.4893L13.6849 16.7492C14.7717 17.836 14.7717 19.5981 13.6849 20.6849C12.5981 21.7717 10.836 21.7717 9.74923 20.6849L7.48927 18.4249Z" />
-        <path {...f} d="M24.615 14.2804C28.2574 14.2804 31.2102 17.2332 31.2102 20.8756C31.2102 24.5181 28.2574 27.4708 24.615 27.4708C23.1545 27.4708 21.805 26.9962 20.7122 26.1926L16.4875 30.4173C16.097 30.8079 15.4638 30.8079 15.0733 30.4173C14.6827 30.0268 14.6827 29.3936 15.0733 29.0031L19.2979 24.7784C18.4944 23.6856 18.0198 22.3361 18.0198 20.8756C18.0198 17.2332 20.9725 14.2804 24.615 14.2804ZM29.2102 20.8756C29.2102 18.3377 27.1529 16.2804 24.615 16.2804C22.0771 16.2804 20.0198 18.3377 20.0198 20.8756C20.0198 23.4135 22.0771 25.4708 24.615 25.4708C27.1529 25.4708 29.2102 23.4135 29.2102 20.8756Z" />
-        <path {...f} d="M10.5 3.5C10.5 2.94772 10.9477 2.5 11.5 2.5H28.5C29.0523 2.5 29.5 2.94772 29.5 3.5C29.5 8.74671 25.2467 13 20 13C14.7533 13 10.5 8.74671 10.5 3.5ZM12.5661 4.5C13.055 8.16936 16.1969 11 20 11C23.8031 11 26.945 8.16936 27.4339 4.5H12.5661Z" />
-      </svg>
-    );
-  if (id === "plus")
-    return (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden>
-        <path {...f} d="M13.7812 3.5C13.229 3.5 12.7812 3.94772 12.7812 4.5V11.7812C12.7812 12.3335 12.3335 12.7812 11.7812 12.7812H4.5C3.94772 12.7812 3.5 13.229 3.5 13.7812V18.2188C3.5 18.771 3.94772 19.2188 4.5 19.2188H11.7812C12.3335 19.2188 12.7812 19.6665 12.7812 20.2188V27.5C12.7812 28.0523 13.229 28.5 13.7812 28.5H18.2188C18.771 28.5 19.2188 28.0523 19.2188 27.5V20.2188C19.2188 19.6665 19.6665 19.2188 20.2188 19.2188H27.5C28.0523 19.2188 28.5 18.771 28.5 18.2188V13.7812C28.5 13.229 28.0523 12.7812 27.5 12.7812H20.2188C19.6665 12.7812 19.2188 12.3335 19.2188 11.7812V4.5C19.2188 3.94772 18.771 3.5 18.2188 3.5H13.7812ZM10.7812 4.5C10.7812 2.84315 12.1244 1.5 13.7812 1.5H18.2188C19.8756 1.5 21.2188 2.84315 21.2188 4.5V10.7812H27.5C29.1569 10.7812 30.5 12.1244 30.5 13.7812V18.2188C30.5 19.8756 29.1569 21.2188 27.5 21.2188H21.2188V27.5C21.2188 29.1569 19.8756 30.5 18.2188 30.5H13.7812C12.1244 30.5 10.7812 29.1569 10.7812 27.5V21.2188H4.5C2.84315 21.2188 1.5 19.8756 1.5 18.2188V13.7812C1.5 12.1244 2.84315 10.7812 4.5 10.7812H10.7812V4.5Z" />
-      </svg>
-    );
-  return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden>
-      <path {...f} d="M4.5 1C2.84315 1 1.5 2.34315 1.5 4V7C1.5 8.38347 2.43647 9.54821 3.71009 9.89492C3.57451 10.2369 3.5 10.6098 3.5 11V28C3.5 29.6569 4.84315 31 6.5 31H16.5C18.1569 31 19.5 29.6569 19.5 28V24C19.5 23.4477 19.0523 23 18.5 23C17.9477 23 17.5 23.4477 17.5 24V28C17.5 28.5523 17.0523 29 16.5 29H6.5C5.94772 29 5.5 28.5523 5.5 28V11C5.5 10.4477 5.94772 10 6.5 10H16.5C17.0523 10 17.5 10.4477 17.5 11V14.4545C17.5 15.0068 17.9477 15.4545 18.5 15.4545C19.0523 15.4545 19.5 15.0068 19.5 14.4545V11C19.5 10.6098 19.4255 10.2369 19.2899 9.89492C20.5635 9.54821 21.5 8.38347 21.5 7V4C21.5 2.34315 20.1569 1 18.5 1H4.5ZM18.5 8C19.0523 8 19.5 7.55228 19.5 7V4C19.5 3.44772 19.0523 3 18.5 3H4.5C3.94772 3 3.5 3.44772 3.5 4V7C3.5 7.55228 3.94772 8 4.5 8H18.5Z" />
-      <path {...f} d="M23.7559 12.8094C24.1373 12.4099 24.7703 12.3954 25.1697 12.7768L31.1907 18.5268C31.3882 18.7155 31.5 18.9768 31.5 19.25C31.5 19.5232 31.3882 19.7845 31.1907 19.9732L25.1697 25.7232C24.7703 26.1046 24.1373 26.0901 23.7559 25.6907C23.3745 25.2912 23.389 24.6582 23.7884 24.2768L28.005 20.25H12.5C11.9477 20.25 11.5 19.8023 11.5 19.25C11.5 18.6977 11.9477 18.25 12.5 18.25H28.005L23.7884 14.2232C23.389 13.8418 23.3745 13.2088 23.7559 12.8094Z" />
-    </svg>
-  );
-}
-
-function CarouselArrow({ dir, active, onClick }: { dir: "l" | "r"; active: boolean; onClick: () => void }) {
-  const c = active ? "#4E2A84" : "#AAACCA";
-  return (
-    <button onClick={onClick} aria-label={dir === "l" ? "Previous reviews" : "Next reviews"} className="hidden shrink-0 cursor-pointer md:block">
-      <svg width="48" height="49" viewBox="0 0 48 49" fill="none" className="transition-all duration-300">
-        <path d="M1 24.1499C1 11.4474 11.2975 1.1499 24 1.1499C36.7025 1.1499 47 11.4474 47 24.1499C47 36.8525 36.7025 47.1499 24 47.1499C11.2975 47.1499 1 36.8525 1 24.1499Z" stroke={c} strokeWidth="2" />
-        {dir === "l"
-          ? <path d="M27.4145 16.4503C27.8009 16.8449 27.7942 17.478 27.3996 17.8644L20.9293 24.1999L27.3996 30.5354C27.7942 30.9218 27.8009 31.5549 27.4145 31.9495C27.0281 32.3441 26.395 32.3508 26.0004 31.9644L18.8004 24.9144C18.6083 24.7263 18.5 24.4688 18.5 24.1999C18.5 23.931 18.6083 23.6735 18.8004 23.4854L26.0004 16.4354C26.395 16.049 27.0281 16.0557 27.4145 16.4503Z" fill={c} />
-          : <path d="M20.7847 16.4503C20.3983 16.8449 20.405 17.478 20.7996 17.8644L27.2699 24.1999L20.7996 30.5354C20.405 30.9218 20.3983 31.5549 20.7847 31.9495C21.1711 32.3441 21.8042 32.3508 22.1988 31.9644L29.3988 24.9144C29.591 24.7263 29.6992 24.4688 29.6992 24.1999C29.6992 23.931 29.591 23.6735 29.3988 23.4854L22.1988 16.4354C21.8042 16.049 21.1711 16.0557 20.7847 16.4503Z" fill={c} />}
-      </svg>
-    </button>
-  );
-}
-
-const REVIEWS: { name: string; text: string; mark: "capsule" | "multi" | "plus" | "transfer" }[] = [
-  { name: "Angie A.", mark: "capsule", text: "I haven't had a family doctor in 3 years—Pocketpills makes it possible to still get my meds." },
-  { name: "Kim O.", mark: "multi", text: "Moved provinces with no doctor—Pocketpills set me up with telehealth and renewed my meds without delay. Love them!" },
-  { name: "Christine P.", mark: "plus", text: "Getting a doctor is hard. Pocketpills ships fast, connects me with telehealth, and goes above and beyond. So grateful!" },
-  { name: "Ellie B.", mark: "transfer", text: "Managing prescriptions is so easy with Pocketpills. Simple refills, med reminders, and fast delivery. Highly recommend!" },
-  { name: "Briar L.", mark: "capsule", text: "Their pharmacists are knowledgeable and friendly, and their Telehealth team is great too. 10/10 would recommend." },
-  { name: "Peter S.", mark: "multi", text: "I love the convenience, affordability and communication. Pocketpills makes it all go away." },
-  { name: "S & R Khaled", mark: "plus", text: "No queue, no wait, no 'pickup isn't ready.' I can text the pharmacist anytime. Auto refills + doctor requests? Worth the switch." },
-];
-
+/* ═══ 8. Testimonials carousel ══════════════════════════ */
 function Testimonials() {
   const box = useRef<HTMLDivElement>(null);
-  const [atStart, setAtStart] = useState(true);
-  const [atEnd, setAtEnd] = useState(false);
-
-  const sync = () => {
-    const el = box.current;
-    if (!el) return;
-    setAtStart(el.scrollLeft <= 4);
-    setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
-  };
-  useEffect(() => { sync(); }, []);
-  const scroll = (d: number) => box.current?.scrollBy({ left: d * 332, behavior: "smooth" });
-
+  const reviews = [
+    { n: "Angie A.", t: "I haven't had a family doctor in 3 years—Pocketpills makes it possible to still get my meds." },
+    { n: "Kim O.", t: "Moved provinces with no doctor—Pocketpills set me up with telehealth and renewed my meds without delay. Love them!" },
+    { n: "Christine P.", t: "Getting a doctor is hard. Pocketpills ships fast, connects me with telehealth, and goes above and beyond. So grateful!" },
+    { n: "Ellie B.", t: "Managing prescriptions is so easy with Pocketpills. Simple refills, med reminders, and fast delivery. Highly recommend!" },
+    { n: "Briar L.", t: "The pharmacists are knowledgeable and friendly. Telehealth team too. 10/10 recommend." },
+    { n: "Kevin E.", t: "They handle all my refills and deal with my insurance directly. Makes life so easy." },
+  ];
+  const scroll = (d: number) => box.current?.scrollBy({ left: d * 280, behavior: "smooth" });
   return (
-    <section id="reviews" className="mx-auto flex w-full max-w-[105rem] flex-col gap-6 px-5 py-14 md:gap-12 md:px-8 xl:px-20">
-      <div className="flex flex-col gap-6 text-center text-[color:var(--pp-primary-950)]">
-        <h3 className="font-display text-[clamp(26px,3vw,38px)] font-extrabold">Our members love us</h3>
-        <p className="text-[15px]">
-          See why thousands across Canada choose <span className="font-medium">Pocketpills</span>.
-        </p>
-      </div>
+    <section id="reviews" className="mx-auto w-full max-w-[105rem] px-5 py-10 md:px-8 xl:px-20">
+      <h2 className="text-center font-display text-3xl font-extrabold text-[color:var(--pp-headline)]">Our members love us</h2>
+      <p className="mt-2 text-center text-sm text-ink-secondary">See why thousands across Canada choose Pocketpills.</p>
 
-      <div className="flex items-center justify-between gap-8">
-        <CarouselArrow dir="l" active={!atStart} onClick={() => scroll(-1)} />
-
-        <div ref={box} onScroll={sync} className="pp-scroll flex w-full max-w-[62rem] gap-8 overflow-x-scroll">
-          {REVIEWS.map((r) => (
-            <div key={r.name} className="pp-snap flex min-h-[22.5rem] min-w-[18.75rem] flex-col rounded-[20px] bg-[color:var(--pp-primary-200)] p-[2.25rem]">
-              <div className="mb-4 flex">
-                {Array.from({ length: 5 }).map((_, i) => <FullStar key={i} />)}
-              </div>
-              <p className="text-[15px] leading-relaxed text-[color:var(--pp-primary-800)]">{r.text}</p>
-              <div className="mt-auto flex w-full items-center justify-between pt-6">
-                <p className="text-[15px] font-bold text-[color:var(--pp-primary-950)]">{r.name}</p>
-                <ReviewMark id={r.mark} />
-              </div>
+      <div className="relative mt-8">
+        <button onClick={() => scroll(-1)} aria-label="Previous" className="absolute -left-3 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-line bg-surface-2 text-ink-secondary shadow-card hover:text-ink">‹</button>
+        <button onClick={() => scroll(1)} aria-label="Next" className="absolute -right-3 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-line bg-surface-2 text-ink-secondary shadow-card hover:text-ink">›</button>
+        <div ref={box} className="pp-scroll flex gap-4 overflow-x-auto px-1 pb-2">
+          {reviews.map((r) => (
+            <div key={r.n} className="pp-snap w-[250px] shrink-0 rounded-2xl border border-line bg-surface-2 p-5">
+              <span className="text-xs tracking-widest text-[color:var(--pp-violet-mid)]" aria-label="5 out of 5">★★★★★</span>
+              <p className="mt-3 text-[13px] leading-relaxed text-ink-secondary">{r.t}</p>
+              <p className="mt-4 text-sm font-bold text-ink">{r.n}</p>
             </div>
           ))}
         </div>
-
-        <CarouselArrow dir="r" active={!atEnd} onClick={() => scroll(1)} />
       </div>
 
-      <div className="mx-auto flex items-center justify-center gap-1 rounded-xl border border-line px-6 py-4">
-        <span className="text-[15px] font-medium text-[color:var(--pp-primary-950)]">4.9</span>
-        <span className="px-1"><FullStar w={16} /></span>
-        <img src="https://static.pocketpills.com/acq-web/redesign/home/google-logo.png" alt="Google" width={73} height={25} loading="lazy" onError={hideOnError} className="mt-1" />
+      <div className="mt-6 flex justify-center">
+        <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 px-4 py-2 text-sm font-semibold text-ink">
+          4.9 ★ <span className="text-ink-tertiary">Google</span>
+        </span>
       </div>
     </section>
   );
 }
 
-/* ═══ 9. Join band + testimonial marquee ══════════ */
-const REVIEW_CDN = "https://static.pocketpills.com/acq-web/redesign/home/review_card";
-
-interface Member { n: string; t: string; img: number; bg: string; dark: boolean; }
-const MEMBERS: Member[] = [
-  { n: "Peggy F.", img: 1, bg: "var(--pp-primary-950)", dark: true, t: "I am so happy that my meds are delivered right to my door. I never have to worry about running out." },
-  { n: "Stacy P.", img: 2, bg: "var(--pp-primary-900)", dark: true, t: "I love how they help me stay on top of my refills. I never have to worry about it again!" },
-  { n: "Jacqueline K.", img: 3, bg: "var(--pp-primary-300)", dark: false, t: "I love how I can track my delivery. Plus, they send me reminders when it's time to refill." },
-  { n: "Kevin E.", img: 4, bg: "var(--pp-primary-200)", dark: false, t: "They handle all my refills and deal with my insurance directly. Makes life so easy." },
-  { n: "Karen L.", img: 5, bg: "var(--pp-primary-950)", dark: true, t: "The best team of professionals, very knowledgeable and always ready to help." },
-  { n: "Bob A.", img: 6, bg: "var(--pp-primary-900)", dark: true, t: "They take care of everything for me. I never have to worry about my medications." },
-];
-
-function SmallStar() {
-  return (
-    <svg width="15" height="14" viewBox="0 0 15 14" fill="currentColor" aria-hidden>
-      <path d="M7.60039 0L9.21689 4.97508H14.448L10.2159 8.04984L11.8324 13.0249L7.60039 9.95016L3.36834 13.0249L4.98484 8.04984L0.752784 4.97508H5.98389L7.60039 0Z" />
-    </svg>
-  );
-}
-
-function TestimonialCard({ m }: { m: Member }) {
-  return (
-    <div
-      className="flex min-h-[20rem] min-w-[15rem] shrink-0 snap-center flex-col-reverse overflow-hidden rounded-[20px] md:min-w-[40rem] md:flex-row"
-      style={{ backgroundColor: m.bg }}
-    >
-      <div className="md:flex-1 md:grow">
-        <picture>
-          <source srcSet={`${REVIEW_CDN}/Testimonial_card_D${m.img}.webp`} media="(min-width: 768px)" width={794} height={578} />
-          <img
-            loading="lazy"
-            onError={hideOnError}
-            src={`${REVIEW_CDN}/Testimonial_card_M${m.img}.webp`}
-            width={794}
-            height={578}
-            alt={`Pocketpills pharmacy customer review from ${m.n}`}
-            className="h-full w-full scale-[1.01] rounded-[20px] object-cover"
-          />
-        </picture>
-      </div>
-      <div className="flex flex-1 flex-col justify-around gap-6 p-6 md:p-10">
-        <h2 className={"font-display text-xl font-bold " + (m.dark ? "text-white" : "text-[color:var(--pp-primary-950)]")}>{m.n}</h2>
-        <div className="flex flex-col items-start justify-start gap-4">
-          <div className="flex gap-1 text-[color:var(--pp-primary-400)]">
-            {Array.from({ length: 5 }).map((_, i) => <SmallStar key={i} />)}
-          </div>
-          <p className={"text-[13px] leading-relaxed " + (m.dark ? "text-[color:var(--pp-primary-200)]" : "text-[color:var(--pp-primary-800)]")}>{m.t}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TrustpilotBadge() {
-  return (
-    <div className="mx-auto mt-10 hidden max-w-sm items-center justify-center gap-4 rounded-lg bg-[color:var(--pp-primary-200)] px-4 py-1.5 md:flex">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-secondary">Excellent</p>
-      <span className="rounded-full bg-white px-4 py-1.5 text-[13px] font-medium text-[color:var(--pp-primary-800)]">4.8 out of 5</span>
-      <svg width="88" height="32" viewBox="0 0 88 32" fill="none" aria-label="Trustpilot">
-        <path d="M8.61539 20.2816L12.359 19.3329L13.9231 24.1534L8.61539 20.2816ZM17.2308 14.0508H10.641L8.61539 7.8457L6.58975 14.0508H0L5.33334 17.897L3.30769 24.1021L8.64103 20.256L11.9231 17.897L17.2308 14.0508Z" fill="#219653" />
-        <path d="M27.7865 10.5V21H25.6303V10.5H27.7865ZM31.0173 10.5V12.1947H22.45V10.5H31.0173ZM33.6928 14.899V21H31.6158V13.1971H33.5702L33.6928 14.899ZM36.0437 13.1466L36.0077 15.0721C35.9067 15.0577 35.7841 15.0457 35.6399 15.0361C35.5005 15.0216 35.373 15.0144 35.2577 15.0144C34.9644 15.0144 34.7096 15.0529 34.4932 15.1298C34.2817 15.2019 34.1038 15.3101 33.9596 15.4543C33.8202 15.5986 33.7144 15.774 33.6423 15.9808C33.575 16.1875 33.5365 16.4231 33.5269 16.6875L33.1086 16.5577C33.1086 16.0529 33.1591 15.5889 33.2601 15.1659C33.361 14.738 33.5077 14.3654 33.7 14.0481C33.8971 13.7308 34.1375 13.4856 34.4211 13.3125C34.7048 13.1394 35.0293 13.0529 35.3947 13.0529C35.5101 13.0529 35.6279 13.0625 35.748 13.0817C35.8682 13.0962 35.9668 13.1178 36.0437 13.1466ZM41.6399 19.1322V13.1971H43.7168V21H41.7625L41.6399 19.1322ZM41.8706 17.5312L42.4836 17.5168C42.4836 18.0361 42.4235 18.5192 42.3033 18.9663C42.1831 19.4087 42.0029 19.7933 41.7625 20.1202C41.5221 20.4423 41.2192 20.6947 40.8538 20.8774C40.4884 21.0553 40.0581 21.1442 39.563 21.1442C39.1831 21.1442 38.8322 21.0913 38.5101 20.9856C38.1928 20.875 37.9187 20.7043 37.688 20.4736C37.462 20.238 37.2841 19.9375 37.1543 19.5721C37.0293 19.2019 36.9668 18.7572 36.9668 18.238V13.1971H39.0437V18.2524C39.0437 18.4832 39.0702 18.6779 39.123 18.8365C39.1807 18.9952 39.2601 19.125 39.361 19.226C39.462 19.3269 39.5798 19.399 39.7144 19.4423C39.8538 19.4856 40.0077 19.5072 40.1759 19.5072C40.6038 19.5072 40.9404 19.4207 41.1855 19.2476C41.4355 19.0745 41.611 18.8389 41.712 18.5409C41.8178 18.238 41.8706 17.9014 41.8706 17.5312ZM49.5221 18.8437C49.5221 18.6947 49.4788 18.5601 49.3923 18.4399C49.3057 18.3197 49.1447 18.2091 48.9091 18.1082C48.6783 18.0024 48.3442 17.9062 47.9067 17.8197C47.5125 17.7332 47.1447 17.625 46.8033 17.4952C46.4668 17.3606 46.1735 17.1995 45.9235 17.012C45.6783 16.8245 45.486 16.6034 45.3466 16.3486C45.2072 16.0889 45.1375 15.7933 45.1375 15.4615C45.1375 15.1346 45.2072 14.8269 45.3466 14.5385C45.4908 14.25 45.6952 13.9952 45.9596 13.774C46.2288 13.5481 46.5557 13.3726 46.9404 13.2476C47.3298 13.1178 47.7673 13.0529 48.2529 13.0529C48.9307 13.0529 49.5125 13.1611 49.998 13.3774C50.4884 13.5937 50.8634 13.8918 51.123 14.2716C51.3875 14.6466 51.5197 15.0745 51.5197 15.5553H49.4428C49.4428 15.3534 49.3995 15.1731 49.313 15.0144C49.2312 14.851 49.1014 14.7236 48.9235 14.6322C48.7505 14.5361 48.5245 14.488 48.2456 14.488C48.0149 14.488 47.8154 14.5288 47.6471 14.6106C47.4788 14.6875 47.349 14.7933 47.2577 14.9279C47.1711 15.0577 47.1279 15.2019 47.1279 15.3606C47.1279 15.4808 47.1519 15.5889 47.2 15.6851C47.2529 15.7764 47.337 15.8606 47.4524 15.9375C47.5678 16.0144 47.7168 16.0865 47.8995 16.1538C48.087 16.2163 48.3178 16.274 48.5918 16.3269C49.1543 16.4423 49.6567 16.5937 50.099 16.7812C50.5413 16.9639 50.8923 17.2139 51.1519 17.5312C51.4115 17.8437 51.5413 18.2548 51.5413 18.7644C51.5413 19.1106 51.4644 19.4279 51.3105 19.7163C51.1567 20.0048 50.9355 20.2572 50.6471 20.4736C50.3586 20.6851 50.0125 20.851 49.6086 20.9712C49.2096 21.0865 48.7601 21.1442 48.2601 21.1442C47.5341 21.1442 46.9187 21.0144 46.4139 20.7548C45.9139 20.4952 45.5341 20.1659 45.2745 19.7668C45.0197 19.363 44.8923 18.9495 44.8923 18.5264H46.861C46.8706 18.8101 46.9428 19.0385 47.0774 19.2115C47.2168 19.3846 47.3923 19.5096 47.6038 19.5865C47.8202 19.6635 48.0533 19.7019 48.3033 19.7019C48.5726 19.7019 48.7961 19.6659 48.974 19.5937C49.1519 19.5168 49.2865 19.4159 49.3779 19.2909C49.474 19.1611 49.5221 19.012 49.5221 18.8437ZM56.712 13.1971V14.6683H52.1687V13.1971H56.712ZM53.2937 11.2716H55.3706V18.649C55.3706 18.875 55.3995 19.0481 55.4572 19.1683C55.5197 19.2885 55.611 19.3726 55.7312 19.4207C55.8514 19.4639 56.0029 19.4856 56.1855 19.4856C56.3154 19.4856 56.4307 19.4808 56.5317 19.4712C56.6375 19.4567 56.7264 19.4423 56.7985 19.4279L56.8057 20.9567C56.6279 21.0144 56.4355 21.0601 56.2288 21.0938C56.0221 21.1274 55.7937 21.1442 55.5437 21.1442C55.087 21.1442 54.688 21.0697 54.3466 20.9207C54.0101 20.7668 53.7505 20.5216 53.5678 20.1851C53.3851 19.8486 53.2937 19.4062 53.2937 18.8582V11.2716ZM59.9716 14.6971V24H57.8947V13.1971H59.8202L59.9716 14.6971ZM64.9115 17.012V17.1635C64.9115 17.7308 64.8442 18.2572 64.7096 18.7428C64.5798 19.2284 64.3875 19.6514 64.1327 20.012C63.8779 20.3678 63.5605 20.6466 63.1807 20.8486C62.8057 21.0457 62.373 21.1442 61.8827 21.1442C61.4067 21.1442 60.9932 21.0481 60.6423 20.8558C60.2913 20.6635 59.9956 20.3942 59.7553 20.0481C59.5197 19.6971 59.3298 19.2909 59.1855 18.8293C59.0413 18.3678 58.9307 17.8726 58.8538 17.3437V16.9471C58.9307 16.3798 59.0413 15.8606 59.1855 15.3894C59.3298 14.9135 59.5197 14.5024 59.7553 14.1562C59.9956 13.8053 60.2889 13.5337 60.6351 13.3413C60.986 13.149 61.3971 13.0529 61.8682 13.0529C62.3634 13.0529 62.7985 13.1466 63.1735 13.3341C63.5533 13.5216 63.8706 13.7909 64.1255 14.1418C64.3851 14.4928 64.5798 14.9111 64.7096 15.3966C64.8442 15.8822 64.9115 16.4207 64.9115 17.012ZM62.8274 17.1635V17.012C62.8274 16.6803 62.7985 16.375 62.7408 16.0962C62.688 15.8125 62.6014 15.5649 62.4812 15.3534C62.3658 15.1418 62.212 14.9784 62.0197 14.863C61.8322 14.7428 61.6038 14.6827 61.3346 14.6827C61.0509 14.6827 60.8081 14.7284 60.6062 14.8197C60.4091 14.9111 60.248 15.0433 60.123 15.2163C59.998 15.3894 59.9043 15.5962 59.8418 15.8365C59.7793 16.0769 59.7408 16.3486 59.7264 16.6514V17.6538C59.7505 18.0096 59.8178 18.3293 59.9283 18.613C60.0389 18.8918 60.2096 19.113 60.4404 19.2764C60.6711 19.4399 60.974 19.5216 61.349 19.5216C61.623 19.5216 61.8538 19.4615 62.0413 19.3413C62.2288 19.2163 62.3803 19.0457 62.4956 18.8293C62.6158 18.613 62.7 18.363 62.748 18.0793C62.8009 17.7957 62.8274 17.4904 62.8274 17.1635ZM68.3947 13.1971V21H66.3105V13.1971H68.3947ZM66.1807 11.1635C66.1807 10.8606 66.2865 10.6106 66.498 10.4135C66.7096 10.2163 66.9932 10.1178 67.349 10.1178C67.7 10.1178 67.9812 10.2163 68.1928 10.4135C68.4091 10.6106 68.5173 10.8606 68.5173 11.1635C68.5173 11.4663 68.4091 11.7163 68.1928 11.9135C67.9812 12.1106 67.7 12.2091 67.349 12.2091C66.9932 12.2091 66.7096 12.1106 66.498 11.9135C66.2865 11.7163 66.1807 11.4663 66.1807 11.1635ZM72.3033 9.92308V21H70.2192V9.92308H72.3033ZM73.688 17.1779V17.0264C73.688 16.4543 73.7697 15.9279 73.9331 15.4471C74.0966 14.9615 74.3346 14.5409 74.6471 14.1851C74.9596 13.8293 75.3442 13.5529 75.8009 13.3558C76.2577 13.1538 76.7817 13.0529 77.373 13.0529C77.9644 13.0529 78.4908 13.1538 78.9524 13.3558C79.4139 13.5529 79.8009 13.8293 80.1134 14.1851C80.4307 14.5409 80.6711 14.9615 80.8346 15.4471C80.998 15.9279 81.0798 16.4543 81.0798 17.0264V17.1779C81.0798 17.7452 80.998 18.2716 80.8346 18.7572C80.6711 19.238 80.4307 19.6587 80.1134 20.0192C79.8009 20.375 79.4163 20.6514 78.9596 20.8486C78.5029 21.0457 77.9788 21.1442 77.3875 21.1442C76.7961 21.1442 76.2697 21.0457 75.8081 20.8486C75.3514 20.6514 74.9644 20.375 74.6471 20.0192C74.3346 19.6587 74.0966 19.238 73.9331 18.7572C73.7697 18.2716 73.688 17.7452 73.688 17.1779ZM75.7649 17.0264V17.1779C75.7649 17.5048 75.7937 17.8101 75.8514 18.0937C75.9091 18.3774 76.0005 18.6274 76.1255 18.8437C76.2553 19.0553 76.4235 19.2212 76.6303 19.3413C76.837 19.4615 77.0894 19.5216 77.3875 19.5216C77.6759 19.5216 77.9235 19.4615 78.1303 19.3413C78.337 19.2212 78.5029 19.0553 78.6279 18.8437C78.7529 18.6274 78.8442 18.3774 78.9019 18.0937C78.9644 17.8101 78.9956 17.5048 78.9956 17.1779V17.0264C78.9956 16.7091 78.9644 16.4111 78.9019 16.1322C78.8442 15.8486 78.7505 15.5986 78.6206 15.3822C78.4956 15.1611 78.3298 14.988 78.123 14.863C77.9163 14.738 77.6663 14.6755 77.373 14.6755C77.0798 14.6755 76.8298 14.738 76.623 14.863C76.4211 14.988 76.2553 15.1611 76.1255 15.3822C76.0005 15.5986 75.9091 15.8486 75.8514 16.1322C75.7937 16.4111 75.7649 16.7091 75.7649 17.0264ZM86.1783 13.1971V14.6683H81.6351V13.1971H86.1783ZM82.7601 11.2716H84.837V18.649C84.837 18.875 84.8658 19.0481 84.9235 19.1683C84.986 19.2885 85.0774 19.3726 85.1976 19.4207C85.3178 19.4639 85.4692 19.4856 85.6519 19.4856C85.7817 19.4856 85.8971 19.4808 85.9981 19.4712C86.1038 19.4567 86.1928 19.4423 86.2649 19.4279L86.2721 20.9567C86.0942 21.0144 85.9019 21.0601 85.6952 21.0938C85.4884 21.1274 85.2601 21.1442 85.0101 21.1442C84.5533 21.1442 84.1543 21.0697 83.813 20.9207C83.4764 20.7668 83.2168 20.5216 83.0341 20.1851C82.8514 19.8486 82.7601 19.4062 82.7601 18.8582V11.2716Z" fill="#37325D" />
-      </svg>
-    </div>
-  );
-}
-
+/* ═══ 9. Join band + member strip ═══════════════════════ */
 function JoinBand({ go }: { go: (to?: string) => void }) {
-  const group = (key: string) => (
-    <div key={key} className="flex w-fit shrink-0 gap-6 pr-6">
-      {MEMBERS.map((m) => <TestimonialCard key={key + m.n} m={m} />)}
-    </div>
-  );
+  const members = [
+    { n: "Adeline K.", t: "Right on track with my delivery. Love the reminders.", card: true },
+    { n: "Kevin E.", t: "They handle my refills and deal with my insurance. So easy.", card: false },
+    { n: "Karen L.", t: "The best team of professionals—knowledgeable and always ready to help.", card: true },
+    { n: "Bob T.", t: "They make sure I never miss my medication.", card: false },
+    { n: "Priya S.", t: "Refills arrive before I run out. I never think about it.", card: true },
+  ];
   return (
-    <section className="mx-4 rounded-[28px] bg-white py-14 md:mx-8 md:py-16 xl:mx-11">
-      <div className="mb-10 flex flex-col gap-6">
-        <h2 className="mx-auto max-w-xl text-center font-display text-[clamp(26px,3vw,38px)] font-extrabold leading-snug text-[color:var(--pp-primary-950)]">
-          Join <span className="text-[color:var(--pp-violet)]">800,000+</span> Canadians who never miss a dose.
+    <section className="py-10">
+      <div className="mx-auto w-full max-w-[105rem] px-5 text-center md:px-8 xl:px-20">
+        <h2 className="mx-auto max-w-2xl font-display text-3xl font-extrabold leading-snug text-[color:var(--pp-headline)] sm:text-4xl">
+          Join <span className="text-[color:var(--pp-violet)]">800,000+</span> Canadians<br />who never miss a dose.
         </h2>
-        <button onClick={() => go()} className="mx-auto w-full max-w-sm rounded-full bg-[color:var(--pp-primary-950)] px-6 py-3 text-[15px] font-medium text-white transition-opacity hover:opacity-90">
-          Join Pocketpills
-        </button>
+        <button onClick={() => go()} className="mt-6 rounded-full bg-[color:var(--pp-navy)] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90">Join Pocketpills</button>
       </div>
 
-      {/* desktop: auto-scrolling marquee */}
-      <div className="hidden md:block">
-        <div className="w-full overflow-hidden">
-          <div className="pp-marquee flex w-fit" style={{ animationDuration: "49.65s" }}>
-            {group("a")}
-            {group("b")}
+      <div className="pp-scroll mt-10 flex gap-3 overflow-x-auto px-5 pb-2 sm:px-8">
+        {members.map((m, i) => (
+          <div key={m.n} className={"pp-snap h-52 w-64 shrink-0 overflow-hidden rounded-2xl " + (m.card ? "bg-[color:var(--pp-violet-mid)] p-5 text-white" : "relative")}>
+            {m.card ? (
+              <>
+                <p className="font-display text-lg font-bold">{m.n}</p>
+                <span className="mt-1 block text-[10px] tracking-widest text-white/70">★★★★★</span>
+                <p className="mt-3 text-[12px] leading-relaxed text-white/85">{m.t}</p>
+              </>
+            ) : (
+              <>
+                <Avatar seed={m.n + i} className="absolute inset-0" />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                  <p className="font-display text-base font-bold text-white">{m.n}</p>
+                  <p className="text-[11px] text-white/80">{m.t}</p>
+                </div>
+              </>
+            )}
           </div>
-        </div>
+        ))}
       </div>
 
-      {/* mobile: swipeable */}
-      <div className="md:hidden">
-        <div className="pp-scroll flex w-full gap-4 overflow-x-auto px-5 pb-2">
-          {MEMBERS.map((m) => <TestimonialCard key={m.n} m={m} />)}
-        </div>
+      <div className="mt-6 flex justify-center">
+        <span className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-[11px] font-semibold text-ink">
+          <span className="uppercase tracking-wide text-ink-tertiary">Excellent</span> 4.8 out of 5 <span className="text-wellness">★ Trustpilot</span>
+        </span>
       </div>
-
-      <TrustpilotBadge />
     </section>
   );
 }
@@ -686,6 +560,130 @@ function Faq({ go }: { go: (to?: string) => void }) {
   );
 }
 
+/* ═══ 12. App card + Care team + tiles ══════════════════ */
+function AppAndCare({ go }: { go: (to?: string) => void }) {
+  return (
+    <section id="care" className="mx-auto w-full max-w-[105rem] px-5 py-10 md:px-8 xl:px-20">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="relative overflow-hidden rounded-2xl p-7 text-white"
+          style={{ backgroundImage: "radial-gradient(360px 240px at 88% 12%, rgba(167,160,211,.5), transparent 62%), linear-gradient(140deg,#5b52ad,#2b2560)" }}>
+          <div className="flex items-start justify-between gap-4">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/20 text-sm font-bold">p</span>
+            <div className="flex flex-col gap-1.5">
+              {[["", "App Store"], ["▶", "Google Play"]].map(([g, n]) => (
+                <span key={n} className="inline-flex items-center gap-2 rounded-lg bg-black/45 px-3 py-1.5 text-[10px] font-semibold">
+                  <span aria-hidden>{g || "🍎"}</span>
+                  <span><span className="block text-[7px] font-normal text-white/60">Download on the</span>{n}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+          <h3 className="mt-8 font-display text-2xl font-bold leading-snug">Stay in control<br />of your health.</h3>
+
+          <div className="mt-6 rounded-xl bg-white p-5 text-stone-900">
+            <div className="flex items-start justify-between gap-4">
+              <p className="font-display text-base font-bold">Our Care Team</p>
+              <div className="space-y-0.5 text-right text-[10px] text-stone-500">
+                <p><span className="mr-2 text-stone-400">EMAIL</span>care@pocketpills.com</p>
+                <p><span className="mr-2 text-stone-400">TEXT</span>1-855-950-7226</p>
+                <p><span className="mr-2 text-stone-400">FAX</span>1-855-950-7226</p>
+              </div>
+            </div>
+            <p className="mt-3 text-[10px] text-stone-500">Monday – Saturday<br />9:00 AM – 7:00 PM EST</p>
+            <div className="mt-3 flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-danger"><span className="h-1.5 w-1.5 rounded-full bg-danger" />Closed Now</span>
+              <button onClick={() => go("/messages")} className="rounded-full border border-stone-300 px-4 py-1.5 text-[11px] font-semibold">Get In Touch ›</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#EAE6FB] p-6">
+          <Tiles onPick={(to) => go(to)} last={{ title: "How it works", to: "/find-care" }} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══ 13. Delivers to ═══════════════════════════════════ */
+function DeliversTo() {
+  const left = ["Alberta (AB)", "Manitoba (MB)", "New Brunswick (NB)", "Northwest Territories (NT)", "Ontario (ON)", "Quebec (QC)", "Yukon (YT)"];
+  const right = ["British Columbia (BC)", "Newfoundland & Labrador (NL)", "Nova Scotia (NS)", "Nunavut (NU)", "Prince Edward Island (PE)", "Saskatchewan (SK)"];
+  return (
+    <section id="delivers" className="mx-auto w-full max-w-[105rem] px-5 py-10 md:px-8 xl:px-20">
+      <div className="grid gap-8 rounded-2xl bg-surface-1 p-8 lg:grid-cols-2">
+        <div>
+          <p className="font-display text-lg font-bold text-ink">Pocketpills delivers to:</p>
+          <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-[12px] text-ink-secondary">
+            <div className="space-y-2">{left.map((p) => <p key={p}>{p}</p>)}</div>
+            <div className="space-y-2">{right.map((p) => <p key={p}>{p}</p>)}</div>
+          </div>
+        </div>
+        <div className="rounded-xl bg-surface-2 p-6">
+          <p className="text-[10px] uppercase tracking-widest text-ink-tertiary">Your region</p>
+          <p className="mt-1 font-display text-lg font-bold text-ink">Pocketpills East</p>
+          <p className="mt-2 text-[11px] text-ink-secondary">UNIT 6 · 4375 DIXIE RD, MISSISSAUGA, ON, L4T 2E7</p>
+          <p className="mt-3 text-[11px] text-ink-secondary">Pocketpills is licensed by <span className="text-primary underline">Ontario College of Pharmacists</span></p>
+          <div className="mt-3 flex justify-between text-[11px] text-ink-tertiary">
+            <span>Pharmacy License No.<br />#3072З4</span>
+            <span className="text-right">Pharmacy Manager<br />Aisha Abo Saeda</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══ 14–15. Footer ═════════════════════════════════════ */
+function Footer() {
+  const cols: [string, string[]][] = [
+    ["TREATMENT", ["Treatment", "Weight loss", "Hair loss treatment", "ED treatment", "Birth control pills", "See all treatments →"]],
+    ["PHARMACY", ["Online pharmacy", "Transfer a prescription", "Online drugstore", "Drug prices", "Get online prescription →"]],
+    ["MEDICATIONS", ["Ozempic", "Wegovy", "Modafinil", "Mounjaro", "Finasteride", "Buy drugs online →"]],
+    ["COMPANY", ["About Us", "Contact Pocketpills", "Help Center", "FAQs", "Accessibility", "Join Pocketpills →"]],
+  ];
+  return (
+    <footer className="bg-surface-1">
+      <div className="mx-auto w-full max-w-[105rem] px-5 py-12 md:px-8 xl:px-20">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {cols.map(([title, links]) => (
+            <div key={title}>
+              <p className="text-[10px] font-bold tracking-widest text-ink-tertiary">{title}</p>
+              <ul className="mt-3 space-y-2 text-[12px] text-ink-secondary">
+                {links.map((l) => <li key={l}><Link to="/get-started" className="hover:text-ink">{l}</Link></li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6">
+          <div className="flex items-center gap-3">
+            {["◎", "in", "𝕏", "f"].map((i) => (
+              <span key={i} className="grid h-7 w-7 place-items-center rounded-md text-ink-tertiary hover:text-ink" aria-hidden>{i}</span>
+            ))}
+            <span className="ml-1 rounded-md border border-line px-2 py-1 text-[11px] font-medium text-ink-secondary">EN ▾</span>
+            <span className="ml-2 text-[11px] text-ink-tertiary">Pocketpills is not a pharmacy or a drug manufacturer</span>
+          </div>
+          <div className="text-right">
+            <p className="text-[9px] uppercase tracking-widest text-ink-tertiary">Certifications</p>
+            <div className="mt-1.5 flex gap-2">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--pp-green)] text-[7px] font-bold text-white">NABP</span>
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[#2b5aa8] text-[7px] font-bold text-white">SOC2</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-line">
+        <div className="mx-auto flex w-full max-w-[105rem] flex-col justify-between gap-2 px-5 py-4 text-[11px] text-ink-tertiary sm:flex-row sm:px-8">
+          <span>©2026 Pocketpills · Conceptual redesign, not affiliated with Pocketpills Inc.</span>
+          <span className="flex gap-4"><a href="#faq">Security</a><a href="#faq">Terms of Use</a><a href="#faq">Privacy Policy</a><a href="#faq">Return Policy</a></span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 /* ═══ Page ══════════════════════════════════════════════ */
 export function Landing() {
   const nav = useNavigate();
@@ -705,6 +703,8 @@ export function Landing() {
       <JoinBand go={go} />
       <NabpBand />
       <Faq go={go} />
+      <AppAndCare go={go} />
+      <DeliversTo />
       <section className="mx-auto w-full max-w-[105rem] px-5 pb-6 md:px-8 xl:px-20">
         <div className="grid gap-3 sm:grid-cols-3">
           {treatments.slice(0, 3).map((t) => (
@@ -715,7 +715,7 @@ export function Landing() {
           ))}
         </div>
       </section>
-      <SiteFooter go={go} />
+      <Footer />
     </div>
   );
 }

@@ -1,15 +1,13 @@
 import { Link } from "react-router-dom";
 import { Card, Badge, Progress, SectionHead } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
-import { useUser, greeting } from "@/lib/user";
 
 export function Dashboard() {
-  const { displayName } = useUser();
   return (
     <div className="space-y-8">
       <div>
-        <p className="text-ink-tertiary">{greeting()},</p>
-        <h1 className="font-display text-3xl font-extrabold text-ink">{displayName}</h1>
+        <p className="text-ink-tertiary">Good afternoon,</p>
+        <h1 className="font-display text-3xl font-extrabold text-ink">Alex</h1>
       </div>
 
       {/* Today / upcoming tasks */}

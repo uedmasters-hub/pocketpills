@@ -54,24 +54,6 @@
     --border-default: #e7e5e4;
     --border-divider: #f0efed;
     --border-strong: #d6d3d1;
-
-  /* Landing surface tokens (sampled from the reference design) */
-  --pp-navy: #2b1e5e;
-  --pp-violet: #6b4fd6;
-  --pp-headline: #4E2A84;
-  --pp-lavender: #e9e4f7;
-  --pp-nav-glass: rgba(255,255,255,0.72);
-  --pp-primary-950: #4E2A84;
-  --pp-primary-100: #F5F4FA;
-  --pp-primary-200: #EAE6F8;
-  --pp-primary-800: #5B3A9E;
-  --pp-star: #8C60FF;
-  --pp-primary-300: #D3CCEF;
-  --pp-primary-400: #AAA4FF;
-  --pp-primary-900: #5C3496;
-  --pp-violet-mid: #5b52ad;
-  --pp-green: #0f4c3f;
-  --pp-nav-ink: #4b4560;
   }
 
   .dark {
@@ -110,23 +92,6 @@
     --border-default: #37312d;
     --border-divider: #292524;
     --border-strong: #44403c;
-
-    --pp-navy: #1a1338;
-    --pp-violet: #a5a0d3;
-    --pp-headline: #ede9fe;
-    --pp-lavender: #221d3f;
-    --pp-nav-glass: rgba(38,34,32,0.72);
-    --pp-primary-950: #C4B5FD;
-    --pp-primary-100: #1a1338;
-    --pp-primary-200: #241c4a;
-    --pp-primary-800: #C4B5FD;
-    --pp-star: #A78BFA;
-    --pp-primary-300: #2f2560;
-    --pp-primary-400: #AAA4FF;
-    --pp-primary-900: #3a2470;
-    --pp-violet-mid: #7c74bc;
-    --pp-green: #0f4c3f;
-    --pp-nav-ink: #d6d3d1;
   }
 
   html {

@@ -2,7 +2,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Card, Badge, Field, SectionHead } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { orders, orderTotals, typeMeta, statusMeta, money, fmtDate } from "@/lib/orders";
-import { useUser } from "@/lib/user";
 
 /* ── Pharmacy (orders / refills / delivery) ─────────────── */
 export function Pharmacy() {
@@ -100,7 +99,6 @@ export function Messages() {
 
 /* ── Account (profile / insurance / notifications) ──────── */
 export function Account() {
-  const { user, displayName, logOut } = useUser();
   return (
     <div className="mx-auto max-w-2xl">
       <SectionHead eyebrow="Account" title="Profile & settings" />
@@ -108,8 +106,8 @@ export function Account() {
         <Card className="p-5">
           <p className="mb-3 font-semibold text-ink">Personal information</p>
           <div className="space-y-3">
-            <Field label="Full name" key={displayName} defaultValue={[user?.firstName, user?.lastName].filter(Boolean).join(" ") || displayName} />
-            <Field label="Email" type="email" key={user?.email} defaultValue={user?.email ?? ""} />
+            <Field label="Full name" defaultValue="Alex Chen" />
+            <Field label="Email" type="email" defaultValue="alex@example.com" />
           </div>
         </Card>
         <Card className="p-5">
@@ -122,8 +120,8 @@ export function Account() {
         <Card className="p-5">
           <p className="mb-3 font-semibold text-ink">Insurance</p>
           <div className="flex items-center justify-between rounded-xl bg-surface-1 p-4">
-            <div><p className="font-semibold text-ink">{user?.insurance?.carrier || "No plan on file"}</p><p className="text-sm text-ink-tertiary">{user?.insurance ? `Group ${user.insurance.group || "—"} · verified` : "Add a plan to lower your costs"}</p></div>
-            <Badge tone={user?.insurance ? "success" : "neutral"}>{user?.insurance ? "Active" : "None"}</Badge>
+            <div><p className="font-semibold text-ink">Sun Life</p><p className="text-sm text-ink-tertiary">Group 4402 · verified</p></div>
+            <Badge tone="success">Active</Badge>
           </div>
         </Card>
         <Card className="p-5">
@@ -134,10 +132,6 @@ export function Account() {
               <input type="checkbox" defaultChecked className="h-5 w-5 accent-[color:var(--color-primary)]" />
             </label>
           ))}
-        </Card>
-        <Card className="flex items-center justify-between p-5">
-          <div><p className="font-semibold text-ink">Sign out</p><p className="text-sm text-ink-tertiary">You'll need to sign in again to view your orders.</p></div>
-          <Button variant="secondary" size="sm" onClick={logOut}>Sign out</Button>
         </Card>
       </div>
     </div>

@@ -2,18 +2,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { Card, SectionHead } from "@/components/ui";
 import { EntryPoints } from "@/pages/entry/EntryPoints";
 import { treatments } from "@/lib/data";
-import { useUser, greeting } from "@/lib/user";
 
 export function Home() {
   const nav = useNavigate();
-  const { displayName } = useUser();
   return (
     <div className="space-y-14">
       {/* Entry points — "What would you like to do?" */}
       <section>
         <div className="mb-1">
-          <p className="text-ink-tertiary">{greeting()},</p>
-          <h1 className="font-display text-3xl font-extrabold text-ink">{displayName}</h1>
+          <p className="text-ink-tertiary">Good afternoon,</p>
+          <h1 className="font-display text-3xl font-extrabold text-ink">Alex</h1>
         </div>
         <p className="mb-5 mt-3 font-display text-sm font-bold uppercase tracking-[0.14em] text-ink-tertiary">
           What would you like to do?

@@ -2,8 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "rea
 import { useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { JourneyProvider } from "@/lib/journey";
-import { UserProvider } from "@/lib/user";
-import { SignUp, Login, RequireAuth } from "@/pages/auth/Auth";
 
 import { Landing } from "@/pages/Landing";
 import { Home } from "@/pages/Home";
@@ -31,7 +29,6 @@ function ScrollToTop() {
   return null;
 }
 
-/* Wraps every in-app route in the AppShell (nav + footer). */
 function ShellLayout() {
   return (
     <AppShell>
@@ -43,33 +40,22 @@ function ShellLayout() {
 export default function App() {
   return (
     <BrowserRouter>
-      <UserProvider>
-        <JourneyProvider>
+      <JourneyProvider>
         <ScrollToTop />
         <Routes>
-          {/* Public */}
           <Route path="/" element={<Landing />} />
 
-          {/* Auth */}
-          <Route path="/get-started" element={<SignUp />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/get-started" element={<Navigate to="/app" replace />} />
+          <Route path="/login" element={<Navigate to="/app" replace />} />
 
           {/* Print-friendly documents (outside app shell) */}
-          <Route path="/orders/:id/receipt" element={<RequireAuth><Receipt /></RequireAuth>} />
-          <Route path="/orders/:id/invoice" element={<RequireAuth><Invoice /></RequireAuth>} />
+          <Route path="/orders/:id/receipt" element={<Receipt />} />
+          <Route path="/orders/:id/invoice" element={<Invoice />} />
 
-          {/* Public browsing (in shell, no sign-in required) */}
           <Route element={<ShellLayout />}>
-            <Route path="/drug" element={<MedicationsIndex />} />
-            <Route path="/drug/:slug" element={<DrugDetail />} />
+            <Route path="/app" element={<Home />} />
             <Route path="/find-care" element={<FindCare />} />
             <Route path="/treatment/:slug" element={<TreatmentDetail />} />
-            <Route path="/medications" element={<Navigate to="/drug" replace />} />
-          </Route>
-
-          {/* Personal — requires an account */}
-          <Route element={<RequireAuth><ShellLayout /></RequireAuth>}>
-            <Route path="/app" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/pharmacy" element={<Pharmacy />} />
             <Route path="/messages" element={<Messages />} />
@@ -80,8 +66,10 @@ export default function App() {
             {/* Entry-point flows */}
             <Route path="/fill" element={<FillPrescription />} />
             <Route path="/transfer" element={<TransferPrescription />} />
+            <Route path="/drug" element={<MedicationsIndex />} />
+            <Route path="/drug/:slug" element={<DrugDetail />} />
+            <Route path="/medications" element={<Navigate to="/drug" replace />} />
 
-            {/* Flagship Care Journey flow */}
             <Route path="/care/eligibility" element={<Eligibility />} />
             <Route path="/care/questionnaire" element={<Questionnaire />} />
             <Route path="/care/review" element={<Review />} />
@@ -94,7 +82,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </JourneyProvider>
-      </UserProvider>
     </BrowserRouter>
   );
 }
