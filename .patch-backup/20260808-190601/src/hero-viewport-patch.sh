@@ -1,6 +1,36 @@
+#!/usr/bin/env bash
+# PocketPills — Patch 36: hero fills exactly one viewport
+# Hero = 100svh minus the announcement bar; corner labels raised above the
+# Welcome card; iframe cover-scaled for the taller frame.
+set -euo pipefail
+if [ -f package.json ]; then APP="."; elif [ -f app/package.json ]; then APP="app"; else
+  echo "cant find package.json (root or app/)"; exit 1; fi
+echo "app dir: $APP"
+[ -f "$APP/src/pages/Landing.tsx" ] || { echo "Landing.tsx missing"; exit 1; }
+ts="$(date +%Y%m%d-%H%M%S)"; bak="$APP/.patch-backup/$ts"; mkdir -p "$bak"
+cp "$APP/src/pages/Landing.tsx" "$bak/Landing.tsx"; cp "$APP/src/index.css" "$bak/index.css"
+echo "backed up -> $bak/"
+
+python3 - "$APP/src/index.css" <<'PY'
+import sys
+p=sys.argv[1]; s=open(p,encoding="utf-8").read()
+if ".hero-viewport" not in s:
+    s += """
+
+/* Hero fills one viewport below the announcement bar (2.25rem). */
+.hero-viewport { height: calc(100vh - 2.25rem); }
+@supports (height: 100svh) { .hero-viewport { height: calc(100svh - 2.25rem); } }
+"""
+    open(p,"w",encoding="utf-8").write(s)
+    print("  hero-viewport utility added")
+else:
+    print("  utility already present")
+PY
+
+cat > "$APP/src/pages/Landing.tsx" <<'EOF'
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { entryPoints, type EntryIconKey } from "@/lib/data";
+import { entryPoints, treatments, type EntryIconKey } from "@/lib/data";
 import { useUser } from "@/lib/user";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
@@ -71,9 +101,9 @@ function Tiles({ onPick, last }: { onPick: (to: string) => void; last?: { title:
           key={e.title}
           onClick={() => onPick(e.to)}
           style={{ backgroundColor: e.bg }}
-          className="flex h-full min-h-[140px] flex-col items-center justify-center gap-4 rounded-2xl px-3 py-6 text-center transition-transform sm:gap-6"
+          className="flex h-full min-h-[140px] flex-col items-center justify-center gap-4 rounded-[20px] px-3 py-6 text-center transition-transform hover:-translate-y-0.5 sm:gap-6"
         >
-          <span className="grid h-12 w-12 place-items-center rounded-xl shadow-sm sm:h-14 sm:w-14" style={{ backgroundColor: e.tile }}>
+          <span className="grid h-12 w-12 place-items-center rounded-[14px] shadow-sm sm:h-14 sm:w-14" style={{ backgroundColor: e.tile }}>
             <TileIcon id={e.id} />
           </span>
           <span className="text-[13px] font-medium leading-snug text-[color:var(--pp-headline)] sm:text-[15px]">{e.title}</span>
@@ -119,7 +149,7 @@ function AnnouncementBar({ onGo }: { onGo: () => void }) {
  *   3. Gradient     — always painted underneath, so the hero is never blank.
  */
 const HERO = {
-  file: "/hero.mp4",              // self-hosted; falls back to YouTube if missing
+  file: "",                       // e.g. "/hero.mp4"
   poster: "",                     // e.g. "/hero-poster.jpg"
   youtube: VIDEO_ID,
   start: 54,
@@ -128,6 +158,7 @@ const HERO = {
 function Hero() {
   const [playing, setPlaying] = useState(true);
   const [reduced, setReduced] = useState(false);
+  const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -181,7 +212,7 @@ function Hero() {
         aria-hidden
       />
 
-      {HERO.file && !failed ? (
+      {HERO.file ? (
         <video
           ref={videoRef}
           autoPlay
@@ -190,8 +221,12 @@ function Hero() {
           playsInline
           preload="auto"
           poster={HERO.poster || undefined}
+          onCanPlay={() => setReady(true)}
           onError={() => setFailed(true)}
-          className="absolute inset-0 h-full w-full object-cover"
+          className={
+            "absolute inset-0 h-full w-full object-cover transition-opacity duration-700 " +
+            (ready && !failed ? "opacity-100" : "opacity-0")
+          }
         >
           <source src={HERO.file} />
         </video>
@@ -203,7 +238,11 @@ function Hero() {
           allow="autoplay; encrypted-media; picture-in-picture"
           allowFullScreen
           loading="eager"
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[max(100%,56.25vw)] w-[max(100%,177.78vh)] -translate-x-1/2 -translate-y-1/2"
+          onLoad={() => setReady(true)}
+          className={
+            "pointer-events-none absolute left-1/2 top-1/2 h-[max(100%,56.25vw)] w-[max(100%,177.78vh)] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 " +
+            (ready ? "opacity-100" : "opacity-0")
+          }
         />
       )}
 
@@ -216,13 +255,9 @@ function Hero() {
       </button>
 
       {/* corner labels */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-16 z-30 mx-auto flex w-full max-w-[105rem] flex-wrap items-center justify-between gap-3 px-5 md:px-8 xl:px-20">
-        <span className="flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 text-[12px] font-medium text-[color:var(--pp-navy)] backdrop-blur-sm">
-          <span aria-hidden>🇨🇦</span>Complete care, without leaving home
-        </span>
-        <span className="rounded-full bg-white/70 px-3 py-1.5 text-[12px] font-medium text-[color:var(--pp-navy)] backdrop-blur-sm">
-          Trusted by 800,000+ Canadians · 4.8★ rated
-        </span>
+      <div className="absolute inset-x-0 bottom-[4.5rem] z-10 mx-auto flex w-full max-w-[105rem] flex-wrap items-center justify-between gap-2 px-5 text-[12px] font-medium text-[color:var(--pp-navy)] md:px-8 xl:px-20">
+        <span className="flex items-center gap-1.5"><span aria-hidden>🍁</span>Complete care, without leaving home</span>
+        <span>Trusted by 800,000+ Canadians · 4.8★ rated</span>
       </div>
     </section>
   );
@@ -238,10 +273,10 @@ function Welcome({ onStart }: { onStart: () => void }) {
     ["4.7 score", "9K+ Trustpilot reviews"],
   ];
   return (
-    <section className="relative z-20 -mt-10 px-5 md:px-8 xl:px-20">
-      <div className="mx-auto w-full max-w-[105rem] rounded-t-[28px] bg-surface-2 px-6 pb-12 pt-7 text-center sm:px-14">
+    <section className="relative z-20 -mt-16 px-5 md:px-8 xl:px-20">
+      <div className="mx-auto w-full max-w-[105rem] rounded-t-[28px] bg-surface-2 px-6 pb-12 pt-9 text-center sm:px-14">
         <p className="text-[15px] font-semibold text-[color:var(--pp-violet)]">Welcome to Pocketpills</p>
-        <h1 className="mt-3 font-display text-[38px] font-extrabold leading-[1.05] tracking-tight text-[color:var(--pp-headline)] sm:text-[52px]">
+        <h1 className="mt-4 font-display text-[38px] font-extrabold leading-[1.05] tracking-tight text-[color:var(--pp-headline)] sm:text-[52px]">
           Your health, handled.
         </h1>
         <button
@@ -293,7 +328,7 @@ function BuyAgain({ go }: { go: (to?: string) => void }) {
         <div className="flex flex-col">
           <SectionHeads title="Buy again!" onLink={() => go("/messages")} />
           <div
-            className="relative flex-1 overflow-hidden rounded-3xl transition-shadow duration-300"
+            className="relative flex-1 overflow-hidden rounded-[24px] transition-shadow duration-300 hover:shadow-float"
             style={{ backgroundImage: "linear-gradient(135deg,#A78BEE 0%,#8A6FE3 45%,#6B4FC7 100%)" }}
           >
             <div className="grid h-full grid-cols-2 overflow-hidden">
@@ -303,7 +338,7 @@ function BuyAgain({ go }: { go: (to?: string) => void }) {
                 </h2>
                 <button
                   onClick={() => go("/drug/ozempic")}
-                  className="inline-flex w-max items-center gap-2.5 rounded-full bg-white px-6 py-3 text-[15px] font-medium text-[color:var(--pp-primary-950)] transition-transform"
+                  className="inline-flex w-max items-center gap-2.5 rounded-full bg-white px-6 py-3 text-[15px] font-medium text-[color:var(--pp-primary-950)] transition-transform hover:scale-[1.02]"
                 >
                   Get started <RingArrow />
                 </button>
@@ -351,7 +386,7 @@ function FeatureCard({
   return (
     <button
       onClick={onClick}
-      className={"relative flex aspect-[13/9] min-h-[260px] flex-1 flex-col justify-between overflow-hidden rounded-2xl p-8 text-left transition-transform " + bgClass}
+      className={"relative flex aspect-[13/9] min-h-[260px] flex-1 flex-col justify-between overflow-hidden rounded-[20px] p-8 text-left transition-transform hover:-translate-y-0.5 " + bgClass}
     >
       <img src={img} alt={alt} loading="lazy" onError={hideOnError}
         className="absolute inset-0 h-full w-full object-cover object-right" />
@@ -560,7 +595,7 @@ function Testimonials() {
 
         <div ref={box} onScroll={sync} className="pp-scroll flex w-full max-w-[62rem] gap-8 overflow-x-scroll">
           {REVIEWS.map((r) => (
-            <div key={r.name} className="pp-snap flex min-h-[22.5rem] min-w-[18.75rem] flex-col rounded-2xl bg-[color:var(--pp-primary-200)] p-[2.25rem]">
+            <div key={r.name} className="pp-snap flex min-h-[22.5rem] min-w-[18.75rem] flex-col rounded-[20px] bg-[color:var(--pp-primary-200)] p-[2.25rem]">
               <div className="mb-4 flex">
                 {Array.from({ length: 5 }).map((_, i) => <FullStar key={i} />)}
               </div>
@@ -609,10 +644,10 @@ function SmallStar() {
 function TestimonialCard({ m }: { m: Member }) {
   return (
     <div
-      className="flex min-h-[19rem] min-w-[17rem] shrink-0 snap-center flex-col-reverse overflow-hidden rounded-2xl md:min-h-[21rem] md:min-w-[38rem] md:flex-row"
+      className="flex min-h-[20rem] min-w-[15rem] shrink-0 snap-center flex-col-reverse overflow-hidden rounded-[20px] md:min-w-[40rem] md:flex-row"
       style={{ backgroundColor: m.bg }}
     >
-      <div className="w-full md:h-auto md:w-1/2 md:shrink-0">
+      <div className="md:flex-1 md:grow">
         <picture>
           <source srcSet={`${REVIEW_CDN}/Testimonial_card_D${m.img}.webp`} media="(min-width: 768px)" width={794} height={578} />
           <img
@@ -622,16 +657,18 @@ function TestimonialCard({ m }: { m: Member }) {
             width={794}
             height={578}
             alt={`Pocketpills pharmacy customer review from ${m.n}`}
-            className="h-full w-full scale-[1.01] object-cover"
+            className="h-full w-full scale-[1.01] rounded-[20px] object-cover"
           />
         </picture>
       </div>
-      <div className="flex flex-1 flex-col justify-center gap-5 p-7 md:p-10">
-        <h2 className={"font-display text-[22px] font-medium leading-tight " + (m.dark ? "text-white" : "text-[color:var(--pp-primary-950)]")}>{m.n}</h2>
-        <div className="flex gap-1 text-[color:var(--pp-primary-400)]">
-          {Array.from({ length: 5 }).map((_, i) => <SmallStar key={i} />)}
+      <div className="flex flex-1 flex-col justify-around gap-6 p-6 md:p-10">
+        <h2 className={"font-display text-xl font-bold " + (m.dark ? "text-white" : "text-[color:var(--pp-primary-950)]")}>{m.n}</h2>
+        <div className="flex flex-col items-start justify-start gap-4">
+          <div className="flex gap-1 text-[color:var(--pp-primary-400)]">
+            {Array.from({ length: 5 }).map((_, i) => <SmallStar key={i} />)}
+          </div>
+          <p className={"text-[13px] leading-relaxed " + (m.dark ? "text-[color:var(--pp-primary-200)]" : "text-[color:var(--pp-primary-800)]")}>{m.t}</p>
         </div>
-        <p className={"text-[14px] leading-relaxed " + (m.dark ? "text-[color:var(--pp-primary-200)]" : "text-[color:var(--pp-primary-800)]")}>{m.t}</p>
       </div>
     </div>
   );
@@ -657,12 +694,12 @@ function JoinBand({ go }: { go: (to?: string) => void }) {
     </div>
   );
   return (
-    <section className="mx-4 rounded-3xl bg-white py-12 md:mx-8 md:py-16 xl:mx-11">
+    <section className="mx-4 rounded-[28px] bg-white py-12 md:mx-8 md:py-16 xl:mx-11">
       <div className="mb-10 flex flex-col gap-6">
         <h2 className="mx-auto max-w-xl text-center font-display text-[clamp(26px,3vw,38px)] font-extrabold leading-snug text-[color:var(--pp-primary-950)]">
           Join <span className="text-[color:var(--pp-violet)]">800,000+</span> Canadians who never miss a dose.
         </h2>
-        <button onClick={() => go()} className="mx-auto w-max rounded-full bg-[color:var(--pp-primary-950)] px-7 py-3 text-[15px] font-medium text-white transition-opacity hover:opacity-90">
+        <button onClick={() => go()} className="mx-auto w-full max-w-sm rounded-full bg-[color:var(--pp-primary-950)] px-6 py-3 text-[15px] font-medium text-white transition-opacity hover:opacity-90">
           Join Pocketpills
         </button>
       </div>
@@ -774,7 +811,23 @@ export function Landing() {
       <JoinBand go={go} />
       <NabpBand />
       <Faq go={go} />
-      <SiteFooter go={go} variant="full" />
+      <section className="mx-auto w-full max-w-[105rem] px-5 pb-6 md:px-8 xl:px-20">
+        <div className="grid gap-3 sm:grid-cols-3">
+          {treatments.slice(0, 3).map((t) => (
+            <button key={t.slug} onClick={() => go(`/treatment/${t.slug}`)} className="flex items-center gap-3 rounded-xl bg-surface-1 p-4 text-left hover:bg-surface-2">
+              <span className="grid h-10 w-10 place-items-center rounded-lg bg-primary-subtle text-lg">{t.emoji}</span>
+              <span><span className="block text-sm font-semibold text-ink">{t.name}</span><span className="block text-[11px] text-ink-tertiary">{t.category}</span></span>
+            </button>
+          ))}
+        </div>
+      </section>
+      <SiteFooter go={go} />
     </div>
   );
 }
+EOF
+echo "  wrote src/pages/Landing.tsx"
+echo ""
+echo "Patch 36 applied. Backup: $bak"
+echo "Tune the fold in src/index.css -> .hero-viewport"
+echo "Next: cd $APP && npm run dev"

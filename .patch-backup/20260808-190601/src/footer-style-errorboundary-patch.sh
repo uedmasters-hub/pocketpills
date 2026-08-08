@@ -1,3 +1,74 @@
+#!/usr/bin/env bash
+# PocketPills — Patch 35: footer "Stay in control" styling + error boundary
+# Real store badges, decorative shapes, labelled Care Team card, 2x2 tile grid.
+# Also adds an ErrorBoundary so a crash shows the error instead of a blank page.
+set -euo pipefail
+if [ -f package.json ]; then APP="."; elif [ -f app/package.json ]; then APP="app"; else
+  echo "cant find package.json (root or app/)"; exit 1; fi
+echo "app dir: $APP"
+[ -f "$APP/src/components/layout/SiteFooter.tsx" ] || { echo "SiteFooter.tsx missing"; exit 1; }
+ts="$(date +%Y%m%d-%H%M%S)"; bak="$APP/.patch-backup/$ts"; mkdir -p "$bak"
+for f in src/components/layout/SiteFooter.tsx src/App.tsx; do cp "$APP/$f" "$bak/$(basename $f)"; done
+echo "backed up -> $bak/"
+mkdir -p "$APP/src/components"
+
+cat > "$APP/src/components/ErrorBoundary.tsx" <<'EOF'
+import { Component, type ErrorInfo, type ReactNode } from "react";
+
+/**
+ * A crashed React tree unmounts to an empty root — the classic "white screen".
+ * This catches the error and prints it, so a failure is diagnosable in the page
+ * itself rather than only in the devtools console.
+ */
+export class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { error: Error | null; info: string }
+> {
+  state = { error: null as Error | null, info: "" };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error, info: "" };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    this.setState({ error, info: info.componentStack ?? "" });
+    console.error("[PocketPills] render error:", error, info);
+  }
+
+  render() {
+    const { error, info } = this.state;
+    if (!error) return this.props.children;
+
+    return (
+      <div style={{ minHeight: "100vh", background: "#fff", padding: "40px 24px", fontFamily: "ui-monospace, monospace" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <p style={{ fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase", color: "#b4541f", margin: 0 }}>
+            Render error
+          </p>
+          <h1 style={{ fontSize: 22, margin: "8px 0 20px", color: "#2A2148" }}>{error.message}</h1>
+          <pre style={{ whiteSpace: "pre-wrap", fontSize: 12, lineHeight: 1.6, color: "#55507A", background: "#F5F4FA", padding: 16, borderRadius: 12, overflowX: "auto" }}>
+            {error.stack}
+          </pre>
+          {info && (
+            <pre style={{ whiteSpace: "pre-wrap", fontSize: 12, lineHeight: 1.6, color: "#8B87A8", marginTop: 16 }}>
+              {info}
+            </pre>
+          )}
+          <button
+            onClick={() => location.reload()}
+            style={{ marginTop: 20, padding: "10px 20px", borderRadius: 999, border: 0, background: "#4E2A84", color: "#fff", fontSize: 14, cursor: "pointer" }}
+          >
+            Reload
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
+EOF
+echo '  wrote src/components/ErrorBoundary.tsx'
+
+cat > "$APP/src/components/layout/SiteFooter.tsx" <<'EOF'
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/lib/user";
 
@@ -52,7 +123,7 @@ function ArrowRight({ w = 16 }: { w?: number }) {
 
 function StoreBadge({ kind }: { kind: "ios" | "android" }) {
   return (
-    <a href="#" className="inline-flex w-[172px] items-center gap-3 rounded-lg bg-black px-4 py-2 text-white transition-transform">
+    <a href="#" className="inline-flex w-[172px] items-center gap-3 rounded-[10px] bg-black px-4 py-2 text-white transition-transform hover:scale-[1.02]">
       {kind === "ios" ? (
         <svg width="24" height="28" viewBox="0 0 24 28" fill="white" aria-hidden><path d="M17.05 14.9c.03-2.6 2.13-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.9-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.65 3.24 2.6 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.38.81 1.4-.02 2.28-1.27 3.13-2.53.99-1.45 1.4-2.85 1.42-2.92-.03-.01-2.72-1.04-2.72-4.12zM14.5 6.5c.71-.87 1.19-2.07 1.06-3.27-1.02.04-2.26.68-3 1.54-.66.76-1.24 1.98-1.08 3.15 1.14.09 2.3-.58 3.02-1.42z" /></svg>
       ) : (
@@ -106,8 +177,6 @@ function useFooterVariant(): FooterVariant {
   const { signedIn } = useUser();
   if (pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer") return "none";
   if (pathname === "/login" || pathname === "/get-started") return "none";
-  // The landing page is marketing: it always shows the full footer, signed in or not.
-  if (pathname === "/") return "full";
   return signedIn ? "compact" : "full";
 }
 
@@ -124,7 +193,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
       {/* Stay in control + Get Started — conversion block, public pages only */}
       {variant === "full" && (<>
       <div className="grid justify-center gap-6 md:gap-12 lg:grid-cols-[minmax(0,50rem)_1fr]">
-        <div className="relative flex w-full flex-col gap-16 overflow-hidden rounded-2xl bg-[color:var(--pp-primary-950)] p-6 md:rounded-3xl sm:p-12">
+        <div className="relative flex w-full flex-col gap-16 overflow-hidden rounded-[20px] bg-[color:var(--pp-primary-950)] p-6 md:rounded-[28px] sm:p-12">
           {/* decorative shapes */}
           <span className="pointer-events-none absolute -right-24 -top-32 h-[26rem] w-[26rem] rounded-full bg-[#7C4DFF]/45" aria-hidden />
           <span className="pointer-events-none absolute right-0 top-0 h-full w-[14%] bg-[#6B3FD4]/35" aria-hidden />
@@ -148,7 +217,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
           </div>
 
           {/* Care Team */}
-          <div className="relative flex flex-col justify-between gap-10 rounded-2xl bg-white p-8 sm:flex-row sm:gap-6 md:p-10">
+          <div className="relative flex flex-col justify-between gap-10 rounded-[20px] bg-white p-8 sm:flex-row sm:gap-6 md:p-10">
             <div className="flex flex-col gap-4">
               <h2 className="font-display text-[26px] font-medium text-[color:var(--pp-primary-950)]">Our Care Team</h2>
               <p className="text-[15px] leading-relaxed text-ink-secondary">Monday - Saturday<br />9:00 AM - 7:00 PM EST</p>
@@ -176,10 +245,10 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
 
         {/* Get Started tiles */}
         <div className="flex h-full">
-          <div className="grid grow grid-cols-2 gap-6 rounded-2xl bg-[color:var(--pp-primary-100)] p-8 md:rounded-3xl sm:p-12">
+          <div className="grid grow grid-cols-2 gap-6 rounded-[20px] bg-[color:var(--pp-primary-100)] p-8 md:rounded-[28px] sm:p-12">
             {(Object.keys(TILE) as TileId[]).map((id) => (
               <button key={id} onClick={() => go(TILE[id].to)}
-                className="flex flex-col items-center justify-center gap-5 rounded-2xl p-4 text-center transition-transform">
+                className="flex flex-col items-center justify-center gap-5 rounded-2xl p-4 text-center transition-transform hover:-translate-y-0.5">
                 <TileIcon64 id={id} />
                 <p className="text-[15px] text-[color:var(--pp-primary-950)]">{TILE[id].label}</p>
               </button>
@@ -191,7 +260,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
       </>)}
 
       {/* Delivers to + links + legal */}
-      <div className="flex flex-col gap-10 rounded-2xl bg-[color:var(--pp-primary-200)] px-3 py-8 md:rounded-3xl md:p-12">
+      <div className="flex flex-col gap-10 rounded-[20px] bg-[color:var(--pp-primary-200)] px-3 py-8 md:rounded-[28px] md:p-12">
         <div className="grid gap-10 px-3 py-8 sm:grid-cols-2 sm:gap-0 sm:p-0">
           <div className="flex flex-col gap-6 p-0 sm:py-8">
             <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">Pocketpills delivers to:</h2>
@@ -199,7 +268,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
               {PROVINCES.map((p) => <span key={p} className="text-[13px] text-[color:var(--pp-primary-950)]">{p}</span>)}
             </div>
           </div>
-          <div className="flex flex-col gap-6 rounded-2xl bg-[#E5E3FF80] px-4 py-8 sm:p-8">
+          <div className="flex flex-col gap-6 rounded-[20px] bg-[#E5E3FF80] px-4 py-8 sm:p-8">
             <div className="flex flex-col gap-6 text-[13px] text-ink-secondary">
               <p className="text-[11px] font-bold uppercase tracking-[0.12em]">Your Region</p>
               <div className="flex flex-col gap-3">
@@ -280,3 +349,117 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
     </section>
   );
 }
+EOF
+echo '  wrote src/components/layout/SiteFooter.tsx'
+
+cat > "$APP/src/App.tsx" <<'EOF'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import { AppShell } from "@/components/layout/AppShell";
+import { JourneyProvider } from "@/lib/journey";
+import { UserProvider } from "@/lib/user";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { SignUp, Login, RequireAuth } from "@/pages/auth/Auth";
+
+import { Landing } from "@/pages/Landing";
+import { FindCare } from "@/pages/FindCare";
+import { TreatmentDetail } from "@/pages/TreatmentDetail";
+import { Dashboard } from "@/pages/Dashboard";
+import { Pharmacy, Messages, Account } from "@/pages/Simple";
+
+import { Eligibility, Questionnaire } from "@/pages/care/Steps1";
+import { Review, DoctorReview } from "@/pages/care/Steps2";
+import { MedicationReview, Checkout } from "@/pages/care/Steps3";
+import { Confirmation } from "@/pages/care/Steps4";
+
+import { FillPrescription } from "@/pages/entry/FillPrescription";
+import { TransferPrescription } from "@/pages/entry/TransferPrescription";
+import { MedicationsIndex } from "@/pages/drug/MedicationsIndex";
+import { DrugDetail } from "@/pages/drug/DrugDetail";
+
+import { OrderHistory, OrderDetail } from "@/pages/orders/OrderHistory";
+import { Receipt, Invoice } from "@/pages/orders/Documents";
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => window.scrollTo(0, 0), [pathname]);
+  return null;
+}
+
+/* Wraps every in-app route in the AppShell (nav + footer). */
+function ShellLayout() {
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <BrowserRouter>
+      <UserProvider>
+        <JourneyProvider>
+        <ScrollToTop />
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<Landing />} />
+
+          {/* Auth */}
+          <Route path="/get-started" element={<SignUp />} />
+          <Route path="/login" element={<Login />} />
+
+          {/* Print-friendly documents (outside app shell) */}
+          <Route path="/orders/:id/receipt" element={<RequireAuth><Receipt /></RequireAuth>} />
+          <Route path="/orders/:id/invoice" element={<RequireAuth><Invoice /></RequireAuth>} />
+
+          {/* Public browsing (in shell, no sign-in required) */}
+          <Route element={<ShellLayout />}>
+            <Route path="/drug" element={<MedicationsIndex />} />
+            <Route path="/drug/:slug" element={<DrugDetail />} />
+            <Route path="/find-care" element={<FindCare />} />
+            <Route path="/treatment/:slug" element={<TreatmentDetail />} />
+            <Route path="/medications" element={<Navigate to="/drug" replace />} />
+          </Route>
+
+          {/* Personal — requires an account */}
+          <Route element={<RequireAuth><ShellLayout /></RequireAuth>}>
+            {/* Dashboard is the signed-in home; /app kept as a stable alias. */}
+            <Route path="/app" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/pharmacy" element={<Pharmacy />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/orders" element={<OrderHistory />} />
+            <Route path="/orders/:id" element={<OrderDetail />} />
+
+            {/* Entry-point flows */}
+            <Route path="/fill" element={<FillPrescription />} />
+            <Route path="/transfer" element={<TransferPrescription />} />
+
+            {/* Flagship Care Journey flow */}
+            <Route path="/care/eligibility" element={<Eligibility />} />
+            <Route path="/care/questionnaire" element={<Questionnaire />} />
+            <Route path="/care/review" element={<Review />} />
+            <Route path="/care/doctor" element={<DoctorReview />} />
+            <Route path="/care/medication" element={<MedicationReview />} />
+            <Route path="/care/checkout" element={<Checkout />} />
+            <Route path="/care/confirmation" element={<Confirmation />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </JourneyProvider>
+      </UserProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
+  );
+}
+EOF
+echo '  wrote src/App.tsx'
+
+echo ""
+echo "Patch 35 applied. Backup: $bak"
+echo "If the page is still blank, it will now print the actual error on screen."
+echo "Next: rm -rf node_modules/.vite && npm run dev"

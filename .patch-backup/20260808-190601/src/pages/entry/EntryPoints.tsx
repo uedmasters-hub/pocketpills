@@ -43,9 +43,9 @@ export function EntryPoints() {
           key={e.id}
           onClick={() => nav(e.to)}
           style={{ backgroundColor: e.bg, animationDelay: `${i * 55}ms` }}
-          className="flex min-h-[150px] animate-fade-up flex-col items-center justify-center gap-5 rounded-2xl px-3 py-8 text-center transition-transform sm:min-h-[190px] sm:gap-6"
+          className="flex min-h-[150px] animate-fade-up flex-col items-center justify-center gap-5 rounded-[20px] px-3 py-8 text-center transition-transform sm:min-h-[190px] sm:gap-6"
         >
-          <span className="grid h-14 w-14 place-items-center rounded-xl" style={{ backgroundColor: e.tile }}>
+          <span className="grid h-14 w-14 place-items-center rounded-[14px]" style={{ backgroundColor: e.tile }}>
             <EntryIcon id={e.id} />
           </span>
           <span className="text-[13px] font-medium leading-snug text-[color:var(--pp-primary-950)] sm:text-[15px]">{e.title}</span>

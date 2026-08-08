@@ -7,9 +7,4 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") },
   },
-  build: {
-    // Ship source maps: a minified "r is not a function" is undiagnosable.
-    // Browsers only fetch maps when devtools is open, so runtime cost is nil.
-    sourcemap: true,
-  },
 });

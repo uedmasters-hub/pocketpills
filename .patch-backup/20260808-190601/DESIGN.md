@@ -103,38 +103,3 @@ Real assets come from `static.pocketpills.com`. Every `<img>` carries
 `loading="lazy"` and an `onError` handler that hides the element, so a dead URL
 degrades rather than leaving a broken frame. To self-host, replace the `IMG` /
 `CDN` maps at the top of `Landing.tsx` and `SiteFooter.tsx`.
-
-
----
-
-## 8. Consistency rules
-
-These are enforced across every page — a new screen that breaks one will look
-out of place immediately.
-
-**Width.** Pages never set their own container. `AppShell` supplies the measure:
-content fills the space beside the sidebar, identical on every route. Only
-focused flows (`EntryFlow`, `FlowLayout`) and auth use a narrow centred column,
-because they have no sidebar. Cap long prose *inside* the page
-(`max-w-2xl` / `max-w-3xl` / `62ch`), never by shrinking the column.
-
-**Hover.** One treatment everywhere: `hover:bg-[color:var(--pp-primary-100)]`
-over 150ms — no lift, no shadow, no scale, no border swap. Elements already on
-`primary-100` step up to `primary-200`. Buttons keep their own
-`opacity` / `primary-hover` states.
-
-**Motion.**
-
-| Purpose | Duration |
-|---|---|
-| Hover / interaction | 150ms |
-| Reveal, chrome slide | 300–380ms |
-| Progress, marquee | 500ms+ |
-
-Every routed page enters with `animate-fade-up`, keyed on the pathname.
-
-**Radius.** Use the scale, never literals: `lg` 10 · `xl` 14 · `2xl` 20 ·
-`3xl` 28 · `full` for all buttons.
-
-**Page header.** Eyebrow (11px, uppercase, `--pp-violet`) → title
-(`font-display`, extrabold, `clamp`) → optional sub (15px, `max-w-xl`).

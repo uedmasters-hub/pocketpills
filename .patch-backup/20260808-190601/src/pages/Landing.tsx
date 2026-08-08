@@ -71,9 +71,9 @@ function Tiles({ onPick, last }: { onPick: (to: string) => void; last?: { title:
           key={e.title}
           onClick={() => onPick(e.to)}
           style={{ backgroundColor: e.bg }}
-          className="flex h-full min-h-[140px] flex-col items-center justify-center gap-4 rounded-2xl px-3 py-6 text-center transition-transform sm:gap-6"
+          className="flex h-full min-h-[140px] flex-col items-center justify-center gap-4 rounded-[20px] px-3 py-6 text-center transition-transform sm:gap-6"
         >
-          <span className="grid h-12 w-12 place-items-center rounded-xl shadow-sm sm:h-14 sm:w-14" style={{ backgroundColor: e.tile }}>
+          <span className="grid h-12 w-12 place-items-center rounded-[14px] shadow-sm sm:h-14 sm:w-14" style={{ backgroundColor: e.tile }}>
             <TileIcon id={e.id} />
           </span>
           <span className="text-[13px] font-medium leading-snug text-[color:var(--pp-headline)] sm:text-[15px]">{e.title}</span>
@@ -293,7 +293,7 @@ function BuyAgain({ go }: { go: (to?: string) => void }) {
         <div className="flex flex-col">
           <SectionHeads title="Buy again!" onLink={() => go("/messages")} />
           <div
-            className="relative flex-1 overflow-hidden rounded-3xl transition-shadow duration-300"
+            className="relative flex-1 overflow-hidden rounded-[24px] transition-shadow duration-300"
             style={{ backgroundImage: "linear-gradient(135deg,#A78BEE 0%,#8A6FE3 45%,#6B4FC7 100%)" }}
           >
             <div className="grid h-full grid-cols-2 overflow-hidden">
@@ -351,7 +351,7 @@ function FeatureCard({
   return (
     <button
       onClick={onClick}
-      className={"relative flex aspect-[13/9] min-h-[260px] flex-1 flex-col justify-between overflow-hidden rounded-2xl p-8 text-left transition-transform " + bgClass}
+      className={"relative flex aspect-[13/9] min-h-[260px] flex-1 flex-col justify-between overflow-hidden rounded-[20px] p-8 text-left transition-transform " + bgClass}
     >
       <img src={img} alt={alt} loading="lazy" onError={hideOnError}
         className="absolute inset-0 h-full w-full object-cover object-right" />
@@ -560,7 +560,7 @@ function Testimonials() {
 
         <div ref={box} onScroll={sync} className="pp-scroll flex w-full max-w-[62rem] gap-8 overflow-x-scroll">
           {REVIEWS.map((r) => (
-            <div key={r.name} className="pp-snap flex min-h-[22.5rem] min-w-[18.75rem] flex-col rounded-2xl bg-[color:var(--pp-primary-200)] p-[2.25rem]">
+            <div key={r.name} className="pp-snap flex min-h-[22.5rem] min-w-[18.75rem] flex-col rounded-[20px] bg-[color:var(--pp-primary-200)] p-[2.25rem]">
               <div className="mb-4 flex">
                 {Array.from({ length: 5 }).map((_, i) => <FullStar key={i} />)}
               </div>
@@ -609,7 +609,7 @@ function SmallStar() {
 function TestimonialCard({ m }: { m: Member }) {
   return (
     <div
-      className="flex min-h-[19rem] min-w-[17rem] shrink-0 snap-center flex-col-reverse overflow-hidden rounded-2xl md:min-h-[21rem] md:min-w-[38rem] md:flex-row"
+      className="flex min-h-[19rem] min-w-[17rem] shrink-0 snap-center flex-col-reverse overflow-hidden rounded-[20px] md:min-h-[21rem] md:min-w-[38rem] md:flex-row"
       style={{ backgroundColor: m.bg }}
     >
       <div className="w-full md:h-auto md:w-1/2 md:shrink-0">
@@ -657,7 +657,7 @@ function JoinBand({ go }: { go: (to?: string) => void }) {
     </div>
   );
   return (
-    <section className="mx-4 rounded-3xl bg-white py-12 md:mx-8 md:py-16 xl:mx-11">
+    <section className="mx-4 rounded-[28px] bg-white py-12 md:mx-8 md:py-16 xl:mx-11">
       <div className="mb-10 flex flex-col gap-6">
         <h2 className="mx-auto max-w-xl text-center font-display text-[clamp(26px,3vw,38px)] font-extrabold leading-snug text-[color:var(--pp-primary-950)]">
           Join <span className="text-[color:var(--pp-violet)]">800,000+</span> Canadians who never miss a dose.

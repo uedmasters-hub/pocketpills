@@ -52,7 +52,7 @@ function ArrowRight({ w = 16 }: { w?: number }) {
 
 function StoreBadge({ kind }: { kind: "ios" | "android" }) {
   return (
-    <a href="#" className="inline-flex w-[172px] items-center gap-3 rounded-lg bg-black px-4 py-2 text-white transition-transform">
+    <a href="#" className="inline-flex w-[172px] items-center gap-3 rounded-[10px] bg-black px-4 py-2 text-white transition-transform">
       {kind === "ios" ? (
         <svg width="24" height="28" viewBox="0 0 24 28" fill="white" aria-hidden><path d="M17.05 14.9c.03-2.6 2.13-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.9-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.65 3.24 2.6 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.38.81 1.4-.02 2.28-1.27 3.13-2.53.99-1.45 1.4-2.85 1.42-2.92-.03-.01-2.72-1.04-2.72-4.12zM14.5 6.5c.71-.87 1.19-2.07 1.06-3.27-1.02.04-2.26.68-3 1.54-.66.76-1.24 1.98-1.08 3.15 1.14.09 2.3-.58 3.02-1.42z" /></svg>
       ) : (
@@ -124,7 +124,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
       {/* Stay in control + Get Started — conversion block, public pages only */}
       {variant === "full" && (<>
       <div className="grid justify-center gap-6 md:gap-12 lg:grid-cols-[minmax(0,50rem)_1fr]">
-        <div className="relative flex w-full flex-col gap-16 overflow-hidden rounded-2xl bg-[color:var(--pp-primary-950)] p-6 md:rounded-3xl sm:p-12">
+        <div className="relative flex w-full flex-col gap-16 overflow-hidden rounded-[20px] bg-[color:var(--pp-primary-950)] p-6 md:rounded-[28px] sm:p-12">
           {/* decorative shapes */}
           <span className="pointer-events-none absolute -right-24 -top-32 h-[26rem] w-[26rem] rounded-full bg-[#7C4DFF]/45" aria-hidden />
           <span className="pointer-events-none absolute right-0 top-0 h-full w-[14%] bg-[#6B3FD4]/35" aria-hidden />
@@ -148,7 +148,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
           </div>
 
           {/* Care Team */}
-          <div className="relative flex flex-col justify-between gap-10 rounded-2xl bg-white p-8 sm:flex-row sm:gap-6 md:p-10">
+          <div className="relative flex flex-col justify-between gap-10 rounded-[20px] bg-white p-8 sm:flex-row sm:gap-6 md:p-10">
             <div className="flex flex-col gap-4">
               <h2 className="font-display text-[26px] font-medium text-[color:var(--pp-primary-950)]">Our Care Team</h2>
               <p className="text-[15px] leading-relaxed text-ink-secondary">Monday - Saturday<br />9:00 AM - 7:00 PM EST</p>
@@ -176,7 +176,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
 
         {/* Get Started tiles */}
         <div className="flex h-full">
-          <div className="grid grow grid-cols-2 gap-6 rounded-2xl bg-[color:var(--pp-primary-100)] p-8 md:rounded-3xl sm:p-12">
+          <div className="grid grow grid-cols-2 gap-6 rounded-[20px] bg-[color:var(--pp-primary-100)] p-8 md:rounded-[28px] sm:p-12">
             {(Object.keys(TILE) as TileId[]).map((id) => (
               <button key={id} onClick={() => go(TILE[id].to)}
                 className="flex flex-col items-center justify-center gap-5 rounded-2xl p-4 text-center transition-transform">
@@ -191,7 +191,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
       </>)}
 
       {/* Delivers to + links + legal */}
-      <div className="flex flex-col gap-10 rounded-2xl bg-[color:var(--pp-primary-200)] px-3 py-8 md:rounded-3xl md:p-12">
+      <div className="flex flex-col gap-10 rounded-[20px] bg-[color:var(--pp-primary-200)] px-3 py-8 md:rounded-[28px] md:p-12">
         <div className="grid gap-10 px-3 py-8 sm:grid-cols-2 sm:gap-0 sm:p-0">
           <div className="flex flex-col gap-6 p-0 sm:py-8">
             <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">Pocketpills delivers to:</h2>
@@ -199,7 +199,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
               {PROVINCES.map((p) => <span key={p} className="text-[13px] text-[color:var(--pp-primary-950)]">{p}</span>)}
             </div>
           </div>
-          <div className="flex flex-col gap-6 rounded-2xl bg-[#E5E3FF80] px-4 py-8 sm:p-8">
+          <div className="flex flex-col gap-6 rounded-[20px] bg-[#E5E3FF80] px-4 py-8 sm:p-8">
             <div className="flex flex-col gap-6 text-[13px] text-ink-secondary">
               <p className="text-[11px] font-bold uppercase tracking-[0.12em]">Your Region</p>
               <div className="flex flex-col gap-3">

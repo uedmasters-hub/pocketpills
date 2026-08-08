@@ -121,7 +121,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen bg-surface-0">
         <SiteHeader />
-        <main key={pathname} className="mx-auto w-full max-w-[105rem] animate-fade-up px-5 pb-24 pt-10 md:px-8 md:pb-16 xl:px-20">{children}</main>
+        <main className="mx-auto w-full max-w-[105rem] px-5 pb-24 pt-10 md:px-8 md:pb-16 xl:px-20">{children}</main>
       </div>
     );
   }
@@ -134,8 +134,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* One measure for every page: fill the space beside the sidebar so all
             screens share the same left and right edges. Pages cap their own
             reading width internally where prose needs it. */}
-        {/* key on the path so every route enters with the same motion */}
-        <main key={pathname} className="w-full min-w-0 flex-1 animate-fade-up">{children}</main>
+        <main className="w-full min-w-0 flex-1">{children}</main>
       </div>
       <MobileNav hidden={chromeHidden} />
     </div>

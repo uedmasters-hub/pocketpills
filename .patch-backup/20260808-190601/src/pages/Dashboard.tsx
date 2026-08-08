@@ -252,7 +252,7 @@ export function Dashboard() {
               onClick={() => nav(`/treatment/${t.slug}`)}
               /* flex-col: a bare <button> centres its content, which pushed the
                  label into the middle of the card over the portrait. */
-              className="pp-snap relative flex aspect-[4/5] w-[13.5rem] shrink-0 flex-col overflow-hidden rounded-2xl text-left transition-transform"
+              className="pp-snap relative flex aspect-[4/5] w-[13.5rem] shrink-0 flex-col overflow-hidden rounded-[20px] text-left transition-transform"
               style={{ backgroundImage: "linear-gradient(180deg,#FFFFFF 0%,#FAF9FE 42%,#E7E2F7 100%)" }}
             >
               <p className="relative z-10 px-5 pt-5 font-display text-[21px] font-normal leading-tight text-[color:var(--pp-primary-950)]">

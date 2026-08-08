@@ -88,17 +88,13 @@ export function SignUp() {
   const set = (k: keyof typeof f, v: string | boolean) => setF((p) => ({ ...p, [k]: v }));
 
   const canNext =
-    step === 0 ? !!f.firstName && !!f.lastName && !!f.email && !!f.password :
-    step === 1 ? !!f.dob && !!f.phone :
+    step === 0 ? !!f.email && !!f.password :
+    step === 1 ? !!f.firstName && !!f.lastName :
     step === 2 ? true :
     !!f.address;
 
   const next = () => {
-    if (step === 0 && !user) {
-      signUp(f.email);
-      /* carry the name straight away so the app can greet them from step 2 on */
-      update({ firstName: f.firstName, lastName: f.lastName });
-    }
+    if (step === 0 && !user) signUp(f.email);
     if (step < STEPS.length - 1) return setStep(step + 1);
     update({
       email: f.email, firstName: f.firstName, lastName: f.lastName, dob: f.dob, phone: f.phone,
@@ -121,7 +117,7 @@ export function SignUp() {
       </div>
 
       <h1 className="text-3xl font-extrabold text-ink">
-        {step === 0 ? "Create your account" : step === 1 ? (f.firstName ? `Nice to meet you, ${f.firstName}` : "Tell us about you") : step === 2 ? "Your coverage" : "Where should we deliver?"}
+        {step === 0 ? "Create your account" : step === 1 ? "Tell us about you" : step === 2 ? "Your coverage" : "Where should we deliver?"}
       </h1>
       <p className="mt-2 text-ink-secondary">
         {step === 0 ? "Free to join. No membership fees, ever." :
@@ -133,10 +129,6 @@ export function SignUp() {
       <Card className="mt-6 space-y-4 p-6">
         {step === 0 && (
           <>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="First name" placeholder="Alex" value={f.firstName} onChange={(e) => set("firstName", e.target.value)} />
-              <Field label="Last name" placeholder="Chen" value={f.lastName} onChange={(e) => set("lastName", e.target.value)} />
-            </div>
             <Field label="Email" type="email" placeholder="you@example.com" value={f.email} onChange={(e) => set("email", e.target.value)} />
             <Field label="Password" type="password" placeholder="At least 8 characters" value={f.password} onChange={(e) => set("password", e.target.value)} />
             <p className="text-xs text-ink-tertiary">By continuing you agree to our Terms and Privacy Policy.</p>
@@ -144,6 +136,10 @@ export function SignUp() {
         )}
         {step === 1 && (
           <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="First name" value={f.firstName} onChange={(e) => set("firstName", e.target.value)} />
+              <Field label="Last name" value={f.lastName} onChange={(e) => set("lastName", e.target.value)} />
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Date of birth" placeholder="YYYY-MM-DD" value={f.dob} onChange={(e) => set("dob", e.target.value)} />
               <Field label="Phone" placeholder="(416) 555-0100" value={f.phone} onChange={(e) => set("phone", e.target.value)} />
