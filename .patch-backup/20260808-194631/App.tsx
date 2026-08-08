@@ -29,11 +29,7 @@ import { Receipt, Invoice } from "@/pages/orders/Documents";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
-  useEffect(() => {
-    // Block body on purpose: a concise arrow would return scrollTo's value,
-    // which React then calls as the cleanup on the next navigation.
-    window.scrollTo(0, 0);
-  }, [pathname]);
+  useEffect(() => window.scrollTo(0, 0), [pathname]);
   return null;
 }
 
