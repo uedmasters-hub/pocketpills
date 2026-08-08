@@ -46,7 +46,7 @@ export function TreatmentDetail() {
 
       <p className="mt-5 max-w-2xl text-[15px] leading-relaxed text-ink-secondary">{t.blurb}</p>
 
-      <Card className="mt-8 p-6">
+      <Card className="mt-8 max-w-3xl p-6">
         <h2 className="font-display text-lg font-bold text-ink">What to expect</h2>
         <ol className="mt-4 space-y-3">
           {[
@@ -65,7 +65,7 @@ export function TreatmentDetail() {
         </ol>
       </Card>
 
-      <div className="sticky bottom-4 mt-4 flex items-center justify-between gap-4 rounded-2xl border border-line bg-surface-2 p-4 md:static">
+      <div className="sticky bottom-4 mt-4 flex max-w-3xl items-center justify-between gap-4 rounded-2xl border border-line bg-surface-2 p-4 md:static">
         <div>
           <p className="text-sm text-ink-tertiary">Assessment</p>
           <p className="font-display text-xl font-extrabold text-ink">

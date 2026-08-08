@@ -36,7 +36,7 @@ export function EntryFlow({
   const pct = (step / total) * 100;
 
   return (
-    <div className="w-full max-w-3xl">
+    <div className="mx-auto w-full max-w-3xl">
       <div className="mb-8">
         <div className="mb-3 flex items-baseline justify-between">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{eyebrow}</p>

@@ -112,21 +112,11 @@ degrades rather than leaving a broken frame. To self-host, replace the `IMG` /
 These are enforced across every page — a new screen that breaks one will look
 out of place immediately.
 
-**Width.** There is exactly **one** signed-in layout, in `AppShell`:
-
-```
-[ 15rem left column ][ gap-8 ][ content: flex-1 ]
-```
-
-The left column is always reserved. In a focused flow the nav is withheld but
-the space is kept, so the content column sits at the same x-position on every
-route — no shifting between Find Care, a treatment page and a checkout step.
-
-Pages never set their own container. `AppShell` supplies the measure:
-content fills the space beside the sidebar, identical on every route. Cap long prose *inside* the page (`max-w-2xl` / `max-w-3xl` / `62ch`) and keep
-those caps **left-aligned** — never `mx-auto`, which would re-centre the content
-and break the shared left edge. Auth is the one exception: it renders outside
-`AppShell` entirely.
+**Width.** Pages never set their own container. `AppShell` supplies the measure:
+content fills the space beside the sidebar, identical on every route. Only
+focused flows (`EntryFlow`, `FlowLayout`) and auth use a narrow centred column,
+because they have no sidebar. Cap long prose *inside* the page
+(`max-w-2xl` / `max-w-3xl` / `62ch`), never by shrinking the column.
 
 **Hover.** One treatment everywhere: `hover:bg-[color:var(--pp-primary-100)]`
 over 150ms — no lift, no shadow, no scale, no border swap. Elements already on

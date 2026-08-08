@@ -29,7 +29,7 @@ export function FlowLayout({
 }: FlowLayoutProps) {
   const nav = useNavigate();
   return (
-    <div className="w-full max-w-3xl">
+    <div className="mx-auto w-full max-w-3xl">
       <JourneyStepper current={step} />
       <div className="animate-fade-up">
         <h1 className="text-2xl font-extrabold text-ink sm:text-3xl">{title}</h1>

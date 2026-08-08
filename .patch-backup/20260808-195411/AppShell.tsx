@@ -113,23 +113,31 @@ function MobileNav({ hidden }: { hidden: boolean }) {
 /* ── shell ─────────────────────────────────────────────── */
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const chromeHidden = useChromeVisibility();
   const focusedFlow =
     pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer";
+  const chromeHidden = useChromeVisibility();
 
-  /**
-   * One layout for every screen. The left column is always reserved — in a
-   * focused flow the nav is withheld but the space is kept, so the content
-   * column never shifts between pages. Pages must not set their own width.
-   */
+  if (focusedFlow) {
+    return (
+      <div className="min-h-screen bg-surface-0">
+        <SiteHeader />
+        <main key={pathname} className="mx-auto w-full max-w-[105rem] animate-fade-up px-5 pb-24 pt-10 md:px-8 md:pb-16 xl:px-20">{children}</main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-surface-0">
       <SiteHeader />
       <div className="mx-auto flex w-full max-w-[105rem] gap-8 px-5 pb-28 pt-8 md:px-8 lg:pb-16 xl:px-20">
-        {focusedFlow ? <div className="hidden w-60 shrink-0 lg:block" aria-hidden /> : <Sidebar />}
+        <Sidebar />
+        {/* One measure for every page: fill the space beside the sidebar so all
+            screens share the same left and right edges. Pages cap their own
+            reading width internally where prose needs it. */}
+        {/* key on the path so every route enters with the same motion */}
         <main key={pathname} className="w-full min-w-0 flex-1 animate-fade-up">{children}</main>
       </div>
-      {!focusedFlow && <MobileNav hidden={chromeHidden} />}
+      <MobileNav hidden={chromeHidden} />
     </div>
   );
 }
