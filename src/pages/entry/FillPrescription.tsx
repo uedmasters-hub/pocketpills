@@ -112,7 +112,7 @@ function MedPicker({ onAdd }: { onAdd: (m: Med) => void }) {
       {q.trim() && (
         <div className="mt-2 overflow-hidden rounded-xl border border-line">
           {matches.map((d) => (
-            <button key={d.slug} onClick={() => addFromDrug(d.slug)} className="flex w-full items-center gap-3 border-b border-line bg-surface-2 p-3 text-left last:border-0 hover:bg-surface-1">
+            <button key={d.slug} onClick={() => addFromDrug(d.slug)} className="flex w-full items-center gap-3 border-b border-line bg-surface-2 p-3 text-left last:border-0 hover:bg-[color:var(--pp-primary-100)]">
               <span>💊</span><span className="flex-1"><span className="block font-semibold text-ink">{d.name}</span>{d.generic && <span className="block text-xs text-ink-tertiary">{d.generic}</span>}</span><span className="text-primary">+ Add</span>
             </button>
           ))}
@@ -274,7 +274,7 @@ export function FillPrescription() {
           <div className="grid grid-cols-2 gap-3">
             {(["self", "other"] as const).map((w) => (
               <button key={w} onClick={() => set({ who: w })}
-                className={"h-12 rounded-xl border text-sm font-semibold transition-colors " + (s.who === w ? "border-primary bg-primary-subtle text-primary" : "border-line bg-surface-2 text-ink-secondary hover:border-strong")}>
+                className={"h-12 rounded-xl border text-sm font-semibold transition-colors " + (s.who === w ? "border-primary bg-primary-subtle text-primary" : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--pp-primary-100)]")}>
                 {w === "self" ? "Myself" : "A family member"}
               </button>
             ))}
@@ -304,7 +304,7 @@ export function FillPrescription() {
             <p className="mb-2.5 text-sm font-medium text-ink-secondary">Pregnant or breastfeeding?</p>
             <div className="grid grid-cols-3 gap-2">
               {["No", "Yes", "N/A"].map((o) => (
-                <button key={o} onClick={() => set({ pregnant: o })} className={"h-10 rounded-xl border text-sm font-semibold " + (s.pregnant === o ? "border-primary bg-primary-subtle text-primary" : "border-line bg-surface-2 text-ink-secondary hover:border-strong")}>{o}</button>
+                <button key={o} onClick={() => set({ pregnant: o })} className={"h-10 rounded-xl border text-sm font-semibold " + (s.pregnant === o ? "border-primary bg-primary-subtle text-primary" : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--pp-primary-100)]")}>{o}</button>
               ))}
             </div>
           </Card>
@@ -375,7 +375,7 @@ export function FillPrescription() {
               { id: "standard", t: "Standard", d: "Free · 1–3 business days" },
               { id: "sameday", t: "Same-day", d: "Select locations · free" },
             ] as const).map((o) => (
-              <button key={o.id} onClick={() => set({ speed: o.id })} className={"rounded-2xl border p-4 text-left " + (s.speed === o.id ? "border-primary bg-primary-subtle" : "border-line bg-surface-2 hover:border-strong")}>
+              <button key={o.id} onClick={() => set({ speed: o.id })} className={"rounded-2xl border p-4 text-left " + (s.speed === o.id ? "border-primary bg-primary-subtle" : "border-line bg-surface-2 hover:bg-[color:var(--pp-primary-100)]")}>
                 <p className="font-semibold text-ink">{o.t}</p><p className="text-sm text-ink-tertiary">{o.d}</p>
               </button>
             ))}

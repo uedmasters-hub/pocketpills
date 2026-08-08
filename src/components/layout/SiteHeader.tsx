@@ -174,7 +174,7 @@ function UserMenu() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 text-[13px] font-medium text-[color:var(--pp-primary-950)] hover:border-strong"
+        className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 text-[13px] font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-100)]"
         aria-expanded={open}
         aria-haspopup="menu"
       >
@@ -191,16 +191,16 @@ function UserMenu() {
             </div>
             {[["My Health", "/dashboard"], ["Orders & receipts", "/orders"], ["Pharmacy", "/pharmacy"], ["Messages", "/messages"], ["Profile & settings", "/account"]].map(([label, to]) => (
               <button key={to} role="menuitem" onClick={() => { setOpen(false); nav(to); }}
-                className="block w-full px-4 py-2.5 text-left text-[13px] font-medium text-ink-secondary hover:bg-white">
+                className="block w-full px-4 py-2.5 text-left text-[13px] font-medium text-ink-secondary hover:bg-[color:var(--pp-primary-100)]">
                 {label}
               </button>
             ))}
             <button role="menuitem" onClick={() => setDark((d) => !d)}
-              className="flex w-full items-center justify-between border-t border-line px-4 py-2.5 text-left text-[13px] font-medium text-ink-secondary hover:bg-white">
+              className="flex w-full items-center justify-between border-t border-line px-4 py-2.5 text-left text-[13px] font-medium text-ink-secondary hover:bg-[color:var(--pp-primary-100)]">
               {dark ? "Light mode" : "Dark mode"} <span aria-hidden>{dark ? "☀️" : "🌙"}</span>
             </button>
             <button role="menuitem" onClick={() => { setOpen(false); logOut(); nav("/"); }}
-              className="block w-full border-t border-line px-4 py-2.5 text-left text-[13px] font-semibold text-danger hover:bg-white">
+              className="block w-full border-t border-line px-4 py-2.5 text-left text-[13px] font-semibold text-danger hover:bg-[color:var(--pp-primary-100)]">
               Sign out
             </button>
           </div>
@@ -263,10 +263,10 @@ function TreatmentMenu() {
       bg={`${NAVCDN}/nav_bg_green.png`}
       eyebrow="Get Prescribed Online"
       tiles={<>
-        <DropTile to="/find-care" icon="weight" label="Lose weight" chip={SEC} hover="hover:bg-[#d6f5f1]" />
-        <DropTile to="/find-care" icon="hair" label="Reverse hair loss" chip={SEC} hover="hover:bg-[#d6f5f1]" />
-        <DropTile to="/find-care" icon="ed" label="Male sexual health" chip={SEC} hover="hover:bg-[#d6f5f1]" />
-        <DropTile to="/treatment/birth-control" icon="birth" label="Prevent pregnancy" chip={SEC} hover="hover:bg-[#d6f5f1]" />
+        <DropTile to="/find-care" icon="weight" label="Lose weight" chip={SEC} hover="hover:bg-[color:var(--pp-primary-100)]" />
+        <DropTile to="/find-care" icon="hair" label="Reverse hair loss" chip={SEC} hover="hover:bg-[color:var(--pp-primary-100)]" />
+        <DropTile to="/find-care" icon="ed" label="Male sexual health" chip={SEC} hover="hover:bg-[color:var(--pp-primary-100)]" />
+        <DropTile to="/treatment/birth-control" icon="birth" label="Prevent pregnancy" chip={SEC} hover="hover:bg-[color:var(--pp-primary-100)]" />
       </>}
       cta="/find-care" ctaLabel="Get a prescription"
       asideTitle="Virtual Care"

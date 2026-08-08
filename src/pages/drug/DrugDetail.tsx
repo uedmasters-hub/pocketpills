@@ -160,7 +160,7 @@ export function DrugDetail() {
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {similar.map((d) => (
               <Link key={d.slug} to={`/drug/${d.slug}`}
-                className="rounded-2xl border border-line bg-surface-2 p-4 font-semibold text-[color:var(--pp-primary-950)] transition-colors hover:border-strong">
+                className="rounded-2xl border border-line bg-surface-2 p-4 font-semibold text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]">
                 {d.name}
               </Link>
             ))}

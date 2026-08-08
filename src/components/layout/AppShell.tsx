@@ -73,7 +73,7 @@ function Sidebar() {
               <div className="absolute left-2 right-0 z-20 mt-1 overflow-hidden rounded-2xl border border-line bg-surface-2 shadow-float">
                 {MORE.map(([label, to]) => (
                   <button key={to} onClick={() => { setOpenMore(false); nav(to); }}
-                    className="block w-full px-4 py-2.5 text-left text-[13px] font-medium text-ink-secondary hover:bg-surface-1">
+                    className="block w-full px-4 py-2.5 text-left text-[13px] font-medium text-ink-secondary hover:bg-[color:var(--pp-primary-100)]">
                     {label}
                   </button>
                 ))}

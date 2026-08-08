@@ -137,7 +137,7 @@ export function MedicationsIndex() {
                     <Link
                       key={d.slug}
                       to={`/drug/${d.slug}`}
-                      className="group flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4 transition-colors hover:border-strong"
+                      className="group flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4 transition-colors hover:bg-[color:var(--pp-primary-100)]"
                     >
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
@@ -152,7 +152,7 @@ export function MedicationsIndex() {
                           <span className="mt-0.5 block truncate text-[13px] text-ink-tertiary">{d.generic}</span>
                         )}
                       </span>
-                      <span className="shrink-0 text-ink-tertiary transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
+                      <span className="shrink-0 text-ink-tertiary" aria-hidden>→</span>
                     </Link>
                   ))}
                 </div>

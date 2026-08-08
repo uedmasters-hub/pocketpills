@@ -71,7 +71,7 @@ function Tiles({ onPick, last }: { onPick: (to: string) => void; last?: { title:
           key={e.title}
           onClick={() => onPick(e.to)}
           style={{ backgroundColor: e.bg }}
-          className="flex h-full min-h-[140px] flex-col items-center justify-center gap-4 rounded-[20px] px-3 py-6 text-center transition-transform hover:-translate-y-0.5 sm:gap-6"
+          className="flex h-full min-h-[140px] flex-col items-center justify-center gap-4 rounded-[20px] px-3 py-6 text-center transition-transform sm:gap-6"
         >
           <span className="grid h-12 w-12 place-items-center rounded-[14px] shadow-sm sm:h-14 sm:w-14" style={{ backgroundColor: e.tile }}>
             <TileIcon id={e.id} />
@@ -293,7 +293,7 @@ function BuyAgain({ go }: { go: (to?: string) => void }) {
         <div className="flex flex-col">
           <SectionHeads title="Buy again!" onLink={() => go("/messages")} />
           <div
-            className="relative flex-1 overflow-hidden rounded-[24px] transition-shadow duration-300 hover:shadow-float"
+            className="relative flex-1 overflow-hidden rounded-[24px] transition-shadow duration-300"
             style={{ backgroundImage: "linear-gradient(135deg,#A78BEE 0%,#8A6FE3 45%,#6B4FC7 100%)" }}
           >
             <div className="grid h-full grid-cols-2 overflow-hidden">
@@ -303,7 +303,7 @@ function BuyAgain({ go }: { go: (to?: string) => void }) {
                 </h2>
                 <button
                   onClick={() => go("/drug/ozempic")}
-                  className="inline-flex w-max items-center gap-2.5 rounded-full bg-white px-6 py-3 text-[15px] font-medium text-[color:var(--pp-primary-950)] transition-transform hover:scale-[1.02]"
+                  className="inline-flex w-max items-center gap-2.5 rounded-full bg-white px-6 py-3 text-[15px] font-medium text-[color:var(--pp-primary-950)] transition-transform"
                 >
                   Get started <RingArrow />
                 </button>
@@ -351,7 +351,7 @@ function FeatureCard({
   return (
     <button
       onClick={onClick}
-      className={"relative flex aspect-[13/9] min-h-[260px] flex-1 flex-col justify-between overflow-hidden rounded-[20px] p-8 text-left transition-transform hover:-translate-y-0.5 " + bgClass}
+      className={"relative flex aspect-[13/9] min-h-[260px] flex-1 flex-col justify-between overflow-hidden rounded-[20px] p-8 text-left transition-transform " + bgClass}
     >
       <img src={img} alt={alt} loading="lazy" onError={hideOnError}
         className="absolute inset-0 h-full w-full object-cover object-right" />

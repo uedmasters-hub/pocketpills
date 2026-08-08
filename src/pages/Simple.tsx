@@ -46,7 +46,7 @@ export function Pharmacy() {
               const t = orderTotals(o);
               const pct = o.status === "verifying" ? 33 : o.status === "processing" ? 55 : 80;
               return (
-                <button key={o.id} onClick={() => nav(`/orders/${o.id}`)} className={`${CARD} w-full p-5 text-left transition-colors hover:border-strong`}>
+                <button key={o.id} onClick={() => nav(`/orders/${o.id}`)} className={`${CARD} w-full p-5 text-left transition-colors hover:bg-[color:var(--pp-primary-100)]`}>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold text-[color:var(--pp-primary-950)]">{o.id}</p>
@@ -71,7 +71,7 @@ export function Pharmacy() {
         </div>
         <div className="space-y-2">
           {recent.map((o) => (
-            <Link key={o.id} to={`/orders/${o.id}`} className={`${CARD} flex items-center gap-4 p-4 transition-colors hover:border-strong`}>
+            <Link key={o.id} to={`/orders/${o.id}`} className={`${CARD} flex items-center gap-4 p-4 transition-colors hover:bg-[color:var(--pp-primary-100)]`}>
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold text-[color:var(--pp-primary-950)]">{o.id}</span>
                 <span className="block truncate text-[13px] text-ink-tertiary">{fmtDate(o.date)} · {o.items.map((i) => i.name).join(", ")}</span>
@@ -106,7 +106,7 @@ export function Messages() {
       <PageHead eyebrow="Messages" title="Your care team" sub="Message a pharmacist or clinician any day of the week." />
       <div className="space-y-2">
         {threads.map((m) => (
-          <button key={m.who} className={`${CARD} flex w-full items-center gap-4 p-4 text-left transition-colors hover:border-strong`}>
+          <button key={m.who} className={`${CARD} flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-[color:var(--pp-primary-100)]`}>
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-100)] text-[13px] font-semibold text-[color:var(--pp-primary-950)]">
               {m.who.split(" ").map((w) => w[0]).slice(0, 2).join("")}
             </span>

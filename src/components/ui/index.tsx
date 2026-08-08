@@ -11,7 +11,7 @@ export function Card({
       className={
         "bg-surface-2 border border-line rounded-2xl " +
         (interactive
-          ? "transition-all duration-200 hover:shadow-float hover:-translate-y-0.5 cursor-pointer "
+          ? "cursor-pointer transition-colors duration-150 hover:bg-[color:var(--pp-primary-100)] "
           : "") +
         className
       }

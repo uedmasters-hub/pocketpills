@@ -57,7 +57,7 @@ export function OrderHistory() {
       ) : (
         <div className="space-y-2">
           {list.map((o) => (
-            <Link key={o.id} to={`/orders/${o.id}`} className={`${CARD} flex items-center gap-4 p-4 transition-colors hover:border-strong`}>
+            <Link key={o.id} to={`/orders/${o.id}`} className={`${CARD} flex items-center gap-4 p-4 transition-colors hover:bg-[color:var(--pp-primary-100)]`}>
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[color:var(--pp-primary-100)]" aria-hidden>
                 {typeMeta[o.type].icon}
               </span>
