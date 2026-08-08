@@ -3,13 +3,14 @@ import { useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { JourneyProvider } from "@/lib/journey";
 import { UserProvider } from "@/lib/user";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SignUp, Login, RequireAuth } from "@/pages/auth/Auth";
 
 import { Landing } from "@/pages/Landing";
-import { Home } from "@/pages/Home";
 import { FindCare } from "@/pages/FindCare";
 import { TreatmentDetail } from "@/pages/TreatmentDetail";
 import { Dashboard } from "@/pages/Dashboard";
+import { Profile } from "@/pages/Profile";
 import { Pharmacy, Messages, Account } from "@/pages/Simple";
 
 import { Eligibility, Questionnaire } from "@/pages/care/Steps1";
@@ -42,7 +43,8 @@ function ShellLayout() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
       <UserProvider>
         <JourneyProvider>
         <ScrollToTop />
@@ -69,10 +71,12 @@ export default function App() {
 
           {/* Personal — requires an account */}
           <Route element={<RequireAuth><ShellLayout /></RequireAuth>}>
-            <Route path="/app" element={<Home />} />
+            {/* Dashboard is the signed-in home; /app kept as a stable alias. */}
+            <Route path="/app" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/pharmacy" element={<Pharmacy />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/account" element={<Account />} />
             <Route path="/orders" element={<OrderHistory />} />
             <Route path="/orders/:id" element={<OrderDetail />} />
@@ -95,6 +99,7 @@ export default function App() {
         </Routes>
       </JourneyProvider>
       </UserProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

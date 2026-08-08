@@ -3,21 +3,14 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Card, Field, Progress, Badge } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { useUser } from "@/lib/user";
+import { SiteHeader } from "@/components/layout/SiteHeader";
 
 /* ── Shared auth chrome ─────────────────────────────────── */
 function AuthShell({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
   return (
     <div className="min-h-screen bg-surface-0">
-      <header className="border-b border-line bg-surface-1">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-primary text-[color:var(--color-primary-fg)] text-lg">⊕</span>
-            <span className="font-display text-lg font-extrabold text-ink">Pocket<span className="text-primary">Pills</span></span>
-          </Link>
-          <a href="tel:18559507226" className="text-sm font-semibold text-ink-tertiary hover:text-ink">Need help? 1-855-950-7226</a>
-        </div>
-      </header>
-      <main className="mx-auto grid max-w-5xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_340px]">
+      <SiteHeader variant="minimal" />
+      <main className="mx-auto grid w-full max-w-5xl gap-10 px-5 py-12 md:px-8 lg:grid-cols-[1fr_340px]">
         <div className="mx-auto w-full max-w-md lg:mx-0">{children}</div>
         {aside && <aside className="hidden lg:block">{aside}</aside>}
       </main>

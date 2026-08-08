@@ -12,6 +12,9 @@ export interface Profile {
   address: string;
   insurance: Insurance | null;
   allergies: string[];
+  paymentOnFile?: boolean;
+  cardLast4?: string;
+  conditions?: string[];
   onboarded: boolean;
 }
 

@@ -9,7 +9,7 @@ export function Card({
   return (
     <div
       className={
-        "bg-surface-2 border border-line rounded-2xl shadow-card " +
+        "bg-surface-2 border border-line rounded-2xl " +
         (interactive
           ? "transition-all duration-200 hover:shadow-float hover:-translate-y-0.5 cursor-pointer "
           : "") +
@@ -90,9 +90,9 @@ export function SectionHead({ eyebrow, title, sub }: { eyebrow?: string; title: 
   return (
     <div className="mb-5">
       {eyebrow && (
-        <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-primary">{eyebrow}</p>
+        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">{eyebrow}</p>
       )}
-      <h2 className="text-2xl font-bold text-ink">{title}</h2>
+      <h2 className="font-display text-[clamp(20px,2.2vw,28px)] font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">{title}</h2>
       {sub && <p className="mt-1.5 max-w-2xl text-ink-secondary">{sub}</p>}
     </div>
   );

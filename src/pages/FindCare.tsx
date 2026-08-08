@@ -24,7 +24,7 @@ export function FindCare() {
         sub="Search a symptom or condition, or browse treatments. We'll recommend a care pathway."
       />
 
-      <div className="sticky top-16 z-10 -mx-4 mb-6 bg-surface-0/90 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-2xl sm:px-0 sm:py-0 sm:backdrop-blur-none">
+      <div className="mb-8">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}

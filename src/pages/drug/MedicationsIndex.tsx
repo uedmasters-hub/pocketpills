@@ -1,26 +1,42 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Card, Badge } from "@/components/ui";
 import { drugs, therapeuticClasses } from "@/lib/data";
+
+/** Compact class label — the full ATC names are too long for chips. */
+const SHORT: Record<string, string> = {
+  "Alimentary tract & metabolism": "Metabolism",
+  "Blood & blood-forming organs": "Blood",
+  "Cardiovascular system": "Cardiovascular",
+  "Dermatologicals": "Skin",
+  "Genito-urinary & sex hormones": "Sexual health",
+  "Systemic hormonal preparations": "Hormones",
+  "Antiinfectives for systemic use": "Infections",
+  "Antineoplastic & immunomodulating": "Immunology",
+  "Musculo-skeletal system": "Musculoskeletal",
+  "Nervous system": "Nervous system",
+  "Antiparasitic products": "Antiparasitic",
+  "Respiratory system": "Respiratory",
+  "Sensory organs": "Sensory",
+  "Various": "Other",
+};
 
 export function MedicationsIndex() {
   const [q, setQ] = useState("");
-  const [cls, setCls] = useState<string>("All");
+  const [cls, setCls] = useState("All");
+  const listRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(
     () =>
       drugs
         .filter((d) => cls === "All" || d.cls === cls)
-        .filter(
-          (d) =>
-            d.name.toLowerCase().includes(q.toLowerCase()) ||
-            (d.generic ?? "").toLowerCase().includes(q.toLowerCase()),
-        )
+        .filter((d) => {
+          const t = q.trim().toLowerCase();
+          return !t || d.name.toLowerCase().includes(t) || (d.generic ?? "").toLowerCase().includes(t);
+        })
         .sort((a, b) => a.name.localeCompare(b.name)),
     [q, cls],
   );
 
-  // group by first letter
   const groups = useMemo(() => {
     const m = new Map<string, typeof drugs>();
     for (const d of filtered) {
@@ -31,97 +47,119 @@ export function MedicationsIndex() {
     return [...m.entries()];
   }, [filtered]);
 
-  const activeLetters = new Set(groups.map(([l]) => l));
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  /* Only classes that actually have results — dead filters are noise. */
+  const activeClasses = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const d of drugs) counts.set(d.cls, (counts.get(d.cls) ?? 0) + 1);
+    return therapeuticClasses.filter((c) => counts.has(c));
+  }, []);
+
+  const jump = (letter: string) => {
+    document.getElementById(`letter-${letter}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div>
-      {/* Hero */}
-      <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Medications Index</p>
-        <h1 className="mt-1.5 text-3xl font-extrabold text-ink sm:text-4xl">
-          Search 5,000+ medications & ailments
-        </h1>
-        <p className="mt-2 max-w-2xl text-ink-secondary">
-          Look up prices, coverage, forms, and information. All prescription medications are reviewed
-          by a licensed pharmacist before dispensing.
+      <header className="mb-8">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">
+          Medications Index
         </p>
+        <h1 className="mt-2 font-display text-[clamp(26px,3vw,36px)] font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
+          Search 5,000+ medications
+        </h1>
+        <p className="mt-2 max-w-xl text-[15px] text-ink-secondary">
+          Look up prices, coverage, and forms. Prescription medications are reviewed by a licensed
+          pharmacist before dispensing.
+        </p>
+      </header>
+
+      {/* search */}
+      <div className="relative">
+        <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-tertiary" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+          <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+        </svg>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search a medication (e.g. Ozempic, Metformin)…"
-          className="mt-5 h-12 w-full rounded-2xl border border-line bg-surface-2 px-4 text-ink placeholder:text-ink-tertiary focus:border-primary"
+          placeholder="Search a medication…"
           aria-label="Search medications"
+          className="h-13 w-full rounded-2xl border border-line bg-surface-2 py-3.5 pl-11 pr-4 text-[15px] text-ink placeholder:text-ink-tertiary focus:border-primary"
         />
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
-        {/* Filter by therapeutic class */}
-        <aside>
-          <p className="mb-3 text-sm font-semibold text-ink">Filter by class</p>
-          <div className="flex flex-wrap gap-2 lg:flex-col lg:gap-1">
-            {["All", ...therapeuticClasses].map((c) => (
-              <button
-                key={c}
-                onClick={() => setCls(c)}
-                className={
-                  "rounded-lg px-3 py-1.5 text-left text-sm font-medium transition-colors " +
-                  (cls === c ? "bg-primary-subtle text-primary" : "text-ink-secondary hover:bg-surface-2")
-                }
-              >
-                {c}
-              </button>
+      {/* class filter — horizontal, since the sidebar already owns the left edge */}
+      <div className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1">
+        {["All", ...activeClasses].map((c) => (
+          <button
+            key={c}
+            onClick={() => setCls(c)}
+            className={
+              "shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-colors " +
+              (cls === c
+                ? "bg-[color:var(--pp-primary-950)] text-white"
+                : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-200)]")
+            }
+          >
+            {c === "All" ? "All" : SHORT[c] ?? c}
+          </button>
+        ))}
+      </div>
+
+      {/* count + A–Z jump (only letters that exist) */}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
+        <p className="text-[13px] text-ink-tertiary tnum">
+          {filtered.length} medication{filtered.length === 1 ? "" : "s"}
+        </p>
+        <div className="flex flex-wrap gap-0.5">
+          {groups.map(([L]) => (
+            <button key={L} onClick={() => jump(L)}
+              className="h-7 w-7 rounded-lg text-[13px] font-semibold text-[color:var(--pp-violet)] hover:bg-[color:var(--pp-primary-100)]">
+              {L}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* results */}
+      <div ref={listRef} className="mt-8">
+        {groups.length === 0 ? (
+          <div className="rounded-2xl border border-line bg-surface-2 p-12 text-center">
+            <p className="font-semibold text-[color:var(--pp-primary-950)]">No matches for “{q}”</p>
+            <p className="mt-1 text-[14px] text-ink-tertiary">Try a brand or generic name.</p>
+          </div>
+        ) : (
+          <div className="space-y-10">
+            {groups.map(([letter, items]) => (
+              <section key={letter} id={`letter-${letter}`} className="scroll-mt-28">
+                <h2 className="mb-3 font-display text-[15px] font-bold text-[color:var(--pp-violet)]">{letter}</h2>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {items.map((d) => (
+                    <Link
+                      key={d.slug}
+                      to={`/drug/${d.slug}`}
+                      className="group flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4 transition-colors hover:border-strong"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="truncate font-semibold text-[color:var(--pp-primary-950)]">{d.name}</span>
+                          {!d.rx && (
+                            <span className="shrink-0 rounded-full bg-[color:var(--pp-primary-100)] px-2 py-0.5 text-[10px] font-semibold text-[color:var(--pp-primary-950)]">
+                              OTC
+                            </span>
+                          )}
+                        </span>
+                        {d.generic && d.generic !== d.name && (
+                          <span className="mt-0.5 block truncate text-[13px] text-ink-tertiary">{d.generic}</span>
+                        )}
+                      </span>
+                      <span className="shrink-0 text-ink-tertiary transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
-        </aside>
-
-        <div>
-          {/* A–Z quick nav */}
-          <div className="mb-5 flex flex-wrap gap-1">
-            {alphabet.map((L) => {
-              const on = activeLetters.has(L);
-              return on ? (
-                <a key={L} href={`#letter-${L}`} className="grid h-8 w-8 place-items-center rounded-lg bg-surface-2 text-sm font-semibold text-primary hover:bg-primary-subtle">{L}</a>
-              ) : (
-                <span key={L} className="grid h-8 w-8 place-items-center rounded-lg text-sm font-semibold text-ink-disabled">{L}</span>
-              );
-            })}
-          </div>
-
-          <p className="mb-4 text-sm text-ink-tertiary tnum">{filtered.length} medications</p>
-
-          {groups.length === 0 ? (
-            <Card className="p-10 text-center">
-              <p className="text-lg font-semibold text-ink">No matches for “{q}”</p>
-              <p className="mt-1 text-ink-tertiary">Try a brand or generic name.</p>
-            </Card>
-          ) : (
-            <div className="space-y-8">
-              {groups.map(([letter, items]) => (
-                <section key={letter} id={`letter-${letter}`}>
-                  <h2 className="mb-3 font-display text-xl font-extrabold text-primary">{letter}</h2>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {items.map((d) => (
-                      <Link
-                        key={d.slug}
-                        to={`/drug/${d.slug}`}
-                        className="flex items-center gap-3 rounded-xl border border-line bg-surface-2 p-3 transition-colors hover:border-strong"
-                      >
-                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-subtle text-base">💊</span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate font-semibold text-ink">{d.name}</span>
-                          {d.generic && <span className="block truncate text-xs text-ink-tertiary">{d.generic}</span>}
-                        </span>
-                        {!d.rx && <Badge tone="neutral">OTC</Badge>}
-                        <span className="text-ink-tertiary" aria-hidden>→</span>
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

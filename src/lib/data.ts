@@ -1,14 +1,20 @@
 export interface Treatment {
   slug: string; name: string; category: string; blurb: string; from: number; eligible: boolean; emoji: string;
+  /** Cut-out portrait for the card; falls back to the emoji when absent. */
+  img?: string;
 }
 export const treatments: Treatment[] = [
-  { slug: "birth-control", name: "Birth Control", category: "Sexual health", blurb: "Ongoing prescription and free delivery, renewed automatically.", from: 0, eligible: true, emoji: "💊" },
-  { slug: "acne", name: "Acne", category: "Dermatology", blurb: "Prescription treatments for clearer skin, assessed online.", from: 20, eligible: true, emoji: "✨" },
+  { slug: "weight-loss", name: "Weight loss", category: "Chronic care", blurb: "Doctor-led programs with brand-name medication and ongoing support.", from: 139, eligible: true, emoji: "⚖️", img: "/img/treatments/weight-loss.png" },
+  { slug: "hair-loss", name: "Hair loss", category: "Dermatology", blurb: "Evidence-based treatments to slow and reverse thinning.", from: 29, eligible: true, emoji: "💇", img: "/img/treatments/hair-loss.png" },
+  { slug: "erectile-dysfunction", name: "Erectile dysfunction", category: "Sexual health", blurb: "Easy consults, expert care, discreet delivery.", from: 24, eligible: true, emoji: "💙", img: "/img/treatments/ed.png" },
+  { slug: "acne", name: "Acne", category: "Dermatology", blurb: "Prescription treatments for clearer skin, assessed online.", from: 20, eligible: true, emoji: "✨", img: "/img/treatments/acne.png" },
+  { slug: "birth-control", name: "Birth control", category: "Sexual health", blurb: "Ongoing prescription and free delivery, renewed automatically.", from: 0, eligible: true, emoji: "💊", img: "/img/treatments/birth-control.png" },
   { slug: "uti", name: "UTI", category: "Everyday care", blurb: "Fast assessment and treatment for urinary tract infections.", from: 25, eligible: true, emoji: "💧" },
-  { slug: "high-blood-pressure", name: "Blood Pressure", category: "Chronic care", blurb: "Continuous monitoring, medication, and pharmacist support.", from: 25, eligible: true, emoji: "❤️" },
+  { slug: "high-blood-pressure", name: "Blood pressure", category: "Chronic care", blurb: "Continuous monitoring, medication, and pharmacist support.", from: 25, eligible: true, emoji: "❤️" },
   { slug: "diabetes", name: "Diabetes", category: "Chronic care", blurb: "Long-term management with refills, reminders, and check-ins.", from: 30, eligible: true, emoji: "🩸" },
-  { slug: "acid-reflux", name: "Acid Reflux", category: "Digestive", blurb: "Manage heartburn and GERD with a tailored plan.", from: 22, eligible: true, emoji: "🔥" },
+  { slug: "acid-reflux", name: "Acid reflux", category: "Digestive", blurb: "Manage heartburn and GERD with a tailored plan.", from: 22, eligible: true, emoji: "🔥" },
 ];
+
 
 export type EntryIconKey = "treatment" | "fill" | "transfer" | "explore";
 export interface EntryPoint { id: EntryIconKey; title: string; desc: string; to: string; tile: string; fg: string; bg: string; }

@@ -1,6 +1,8 @@
-import { useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/lib/user";
+import { useDismiss } from "@/lib/useDismiss";
+import { useChromeVisibility } from "@/lib/useChromeVisibility";
 
 const NAVCDN = "https://static.pocketpills.com/acq-web/redesign/navbar";
 const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = "none"; };
@@ -160,129 +162,259 @@ function MegaPanel({ bg, eyebrow, tiles, cta, ctaLabel, asideTitle, tags, faqs, 
   );
 }
 
-/* ── header ───────────────────────────────────────────── */
-export function SiteHeader() {
-  const { signedIn, displayName } = useUser();
-  const [open, setOpen] = useState<string | null>(null);
-  const SEC = "#3FBFB5";   // ds-bg-secondary-700
-  const PRI = "#7040D9";   // ds-bg-primary-500
-
-  const item = "flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]";
-
+/* ── user menu (signed-in) ─────────────────────────────── */
+function UserMenu() {
+  const { user, initials, displayName, logOut } = useUser();
+  const [open, setOpen] = useState(false);
+  const [dark, setDark] = useState(false);
+  const nav = useNavigate();
+  const ref = useDismiss<HTMLDivElement>(open, () => setOpen(false));
+  useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
   return (
-    <div className="sticky top-3 z-50 mt-3 px-5 md:px-8 xl:px-20">
-      <div className="mx-auto flex w-full max-w-[105rem] items-center justify-between gap-4 rounded-2xl bg-white px-5 py-3 shadow-[0_1px_3px_rgba(28,25,23,0.06)] md:px-12 md:py-4">
-        <Link to="/" aria-label="PocketPills home">
-          <img src={`${NAVCDN}/pp_logo.webp`} alt="PocketPills Logo" width={176} height={32} onError={hideOnError} className="h-auto w-40 cursor-pointer md:w-52" />
-        </Link>
-
-        <nav className="hidden items-center gap-1 md:flex" onMouseLeave={() => setOpen(null)}>
-          {/* Treatment */}
-          <div className="relative" onMouseEnter={() => setOpen("t")}>
-            <span className={item}><Link to="/find-care">Treatment</Link><Chevron /></span>
-            {open === "t" && (
-              <MegaPanel
-                bg={`${NAVCDN}/nav_bg_green.png`}
-                eyebrow="Get Prescribed Online"
-                tiles={<>
-                  <DropTile to="/find-care" icon="weight" label="Lose weight" chip={SEC} hover="hover:bg-[#d6f5f1]" />
-                  <DropTile to="/find-care" icon="hair" label="Reverse hair loss" chip={SEC} hover="hover:bg-[#d6f5f1]" />
-                  <DropTile to="/find-care" icon="ed" label="Male sexual health" chip={SEC} hover="hover:bg-[#d6f5f1]" />
-                  <DropTile to="/treatment/birth-control" icon="birth" label="Prevent pregnancy" chip={SEC} hover="hover:bg-[#d6f5f1]" />
-                </>}
-                cta="/find-care" ctaLabel="Get a prescription"
-                asideTitle="Virtual Care"
-                tags={[["Acne (Mild)", "/treatment/acne"], ["Birth Control", "/treatment/birth-control"], ["Erectile Dysfunction", "/find-care"], ["Hair Loss", "/find-care"], ["Urinary Tract Infection", "/treatment/uti"], ["Weight Loss", "/find-care"]]}
-                browseTo="/find-care" browseLabel="See all treatments"
-                faqs={["Can I get a prescription online?", "How do I qualify for a prescription?", "How fast is the application process?", "Is delivery free across Canada?"]}
-                faqTo="/find-care"
-              />
-            )}
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 text-[13px] font-medium text-[color:var(--pp-primary-950)] hover:border-strong"
+        aria-expanded={open}
+        aria-haspopup="menu"
+      >
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-[11px] text-white">{initials}</span>
+        <span className="hidden sm:inline">{displayName}</span>
+        <span className="text-[9px] opacity-60" aria-hidden>▼</span>
+      </button>
+      {open && (
+        <>
+          <div role="menu" className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl bg-[color:var(--pp-primary-100)] shadow-float">
+            <div className="border-b border-line p-4">
+              <p className="font-semibold text-[color:var(--pp-primary-950)]">{displayName}</p>
+              <p className="truncate text-xs text-ink-tertiary">{user?.email}</p>
+            </div>
+            {[["My Health", "/dashboard"], ["Orders & receipts", "/orders"], ["Pharmacy", "/pharmacy"], ["Messages", "/messages"], ["Profile & settings", "/account"]].map(([label, to]) => (
+              <button key={to} role="menuitem" onClick={() => { setOpen(false); nav(to); }}
+                className="block w-full px-4 py-2.5 text-left text-[13px] font-medium text-ink-secondary hover:bg-white">
+                {label}
+              </button>
+            ))}
+            <button role="menuitem" onClick={() => setDark((d) => !d)}
+              className="flex w-full items-center justify-between border-t border-line px-4 py-2.5 text-left text-[13px] font-medium text-ink-secondary hover:bg-white">
+              {dark ? "Light mode" : "Dark mode"} <span aria-hidden>{dark ? "☀️" : "🌙"}</span>
+            </button>
+            <button role="menuitem" onClick={() => { setOpen(false); logOut(); nav("/"); }}
+              className="block w-full border-t border-line px-4 py-2.5 text-left text-[13px] font-semibold text-danger hover:bg-white">
+              Sign out
+            </button>
           </div>
+        </>
+      )}
+    </div>
+  );
+}
 
-          {/* Online Pharmacy */}
-          <div className="relative" onMouseEnter={() => setOpen("p")}>
-            <span className={item}><Link to="/pharmacy">Online Pharmacy</Link><Chevron /></span>
-            {open === "p" && (
-              <MegaPanel
-                bg={`${NAVCDN}/nav_bg_lilac.png`}
-                eyebrow="Get Started"
-                tiles={<>
-                  <DropTile to="/find-care" icon="plus" label="Get a new prescription" chip={PRI} hover="hover:bg-[color:var(--pp-primary-100)]" />
-                  <DropTile to="/fill" icon="searchprices" label="Fill a prescription" chip={PRI} hover="hover:bg-[color:var(--pp-primary-100)]" />
-                  <DropTile to="/transfer" icon="transfer" label="Transfer a prescription" chip={PRI} hover="hover:bg-[color:var(--pp-primary-100)]" />
-                  <DropTile to="/drug" icon="circle" label="Search prices" chip={PRI} hover="hover:bg-[color:var(--pp-primary-100)]" />
-                </>}
-                cta="/pharmacy" ctaLabel="Online Pharmacy"
-                asideTitle="Explore Medications"
-                tags={[["Ozempic", "/drug/ozempic"], ["Finasteride", "/drug/finasteride"], ["Minoxidil", "/drug/loniten"], ["Lantus", "/drug/lantus"], ["Wegovy", "/drug/wegovy"], ["Escitalopram", "/drug/escitalopram"], ["Jardiance", "/drug/jardiance"], ["Alysena", "/drug/alysena"]]}
-                browseTo="/drug" browseLabel="Browse all medications"
-                faqs={["I already have a prescription. How do I fill it with Pocketpills?", "Can I get a prescription without consulting a doctor?", "How much does it cost?", "How do I transfer my prescriptions from a different pharmacy?"]}
-                faqTo="/drug"
-              />
-            )}
-          </div>
-
-          {/* How it works — no dropdown */}
-          <a href="#how" className={item}>How it works</a>
-
-          {/* Support */}
-          <div className="relative" onMouseEnter={() => setOpen("s")}>
-            <span className={item}><a href="#care">Support</a><Chevron /></span>
-            {open === "s" && (
-              <div className="absolute left-1/2 top-full z-50 w-[min(60rem,92vw)] -translate-x-1/2 pt-4">
-                <div className="flex justify-between rounded-2xl border border-line bg-surface-2 px-6 pb-12 pt-6 shadow-float">
-                  <div className="flex flex-[0_0_40%] flex-col gap-6 p-5">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--pp-violet)]">Learn</p>
-                    {[["About us", "/find-care"], ["FAQs", "#faq"], ["Browse Ailments", "/find-care"]].map(([l, t]) =>
-                      t.startsWith("#")
-                        ? <a key={l} href={t} className="text-[15px] text-[color:var(--pp-primary-950)] hover:text-[color:var(--pp-violet)]">{l}</a>
-                        : <Link key={l} to={t} className="text-[15px] text-[color:var(--pp-primary-950)] hover:text-[color:var(--pp-violet)]">{l}</Link>)}
-                  </div>
-                  <div className="flex w-full flex-[0_0_60%] justify-around rounded-2xl bg-[color:var(--pp-primary-100)] p-5">
-                    <div className="flex flex-col justify-between">
-                      <h2 className="font-display text-lg font-bold text-[color:var(--pp-primary-950)]">Our Care Team</h2>
-                      <UnderlineLink to="/messages">Get in touch</UnderlineLink>
-                    </div>
-                    <div className="flex flex-col gap-6 text-[13px]">
-                      <Row label="Hours">
-                        <p>Monday – Saturday<br />9:00 AM – 7:00 PM EST</p>
-                        <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-danger-subtle px-2.5 py-1 text-[11px] font-semibold text-danger">
-                          <span className="h-1.5 w-1.5 rounded-full bg-danger" />Closed Now
-                        </span>
-                      </Row>
-                      <Row label="Email"><a href="mailto:care@pocketpills.com">care@pocketpills.com</a></Row>
-                      <Row label="Text"><a href="sms:18559507225">1-855-950-7225</a></Row>
-                      <Row label="Fax"><span>1-855-950-7226</span></Row>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </nav>
-
-        <div className="hidden items-center gap-4 md:flex">
-          {signedIn ? (
-            <Link to="/app" className="rounded-full bg-[color:var(--pp-primary-950)] px-5 py-2.5 text-[13px] font-semibold text-white">Continue as {displayName}</Link>
-          ) : (
-            <>
-              <div className="flex items-center gap-2 text-[color:var(--pp-primary-950)]">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                </svg>
-                <Link to="/login" className="text-[14px]">Log in</Link>
-              </div>
-              <Link to="/get-started" className="rounded-full bg-[color:var(--pp-primary-950)] px-5 py-2.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90">
-                Join Pocketpills
-              </Link>
-            </>
-          )}
-        </div>
-
-        <Link to="/get-started" className="rounded-full bg-[color:var(--pp-primary-950)] px-4 py-2 text-[13px] font-semibold text-white md:hidden">Join</Link>
+/* Hoisted to module scope: declaring these inside SiteHeader would create a new
+   component type each render, forcing React to remount the node and killing the
+   CSS transition (the header appeared to blink rather than slide). */
+function Shell({ hidden, children }: { hidden: boolean; children: ReactNode }) {
+  return (
+    <div
+      className="sticky top-3 z-50 mt-3 px-5 will-change-transform md:px-8 xl:px-20"
+      style={{
+        transform: hidden ? "translateY(calc(-100% - 1.5rem))" : "translateY(0)",
+        opacity: hidden ? 0 : 1,
+        transition: "transform 380ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease",
+      }}
+    >
+      <div className="mx-auto flex h-14 w-full max-w-[105rem] items-center justify-between gap-4 rounded-2xl bg-white px-5 py-3 shadow-[0_1px_3px_rgba(28,25,23,0.06)] md:px-7 md:py-4">
+        {children}
       </div>
     </div>
+  );
+}
+
+function Brand({ to }: { to: string }) {
+  return (
+    <Link to={to} aria-label="PocketPills home">
+      <img src={`${NAVCDN}/pp_logo.webp`} alt="PocketPills Logo" width={176} height={32} onError={hideOnError}
+        className="h-auto w-36 cursor-pointer md:w-48" />
+    </Link>
+  );
+}
+
+/* ── header ────────────────────────────────────────────── */
+export type HeaderVariant = "marketing" | "app" | "focused" | "minimal";
+
+/** Derive the right header for the current route + auth state. */
+function useVariant(): HeaderVariant {
+  const { pathname } = useLocation();
+  const { signedIn } = useUser();
+  if (pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer") return "focused";
+  if (pathname === "/login" || pathname === "/get-started") return "minimal";
+  return signedIn ? "app" : "marketing";
+}
+
+const ITEM =
+  "flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]";
+
+const SEC = "#3FBFB5";
+const PRI = "#7040D9";
+
+function TreatmentMenu() {
+  return (
+    <MegaPanel
+      bg={`${NAVCDN}/nav_bg_green.png`}
+      eyebrow="Get Prescribed Online"
+      tiles={<>
+        <DropTile to="/find-care" icon="weight" label="Lose weight" chip={SEC} hover="hover:bg-[#d6f5f1]" />
+        <DropTile to="/find-care" icon="hair" label="Reverse hair loss" chip={SEC} hover="hover:bg-[#d6f5f1]" />
+        <DropTile to="/find-care" icon="ed" label="Male sexual health" chip={SEC} hover="hover:bg-[#d6f5f1]" />
+        <DropTile to="/treatment/birth-control" icon="birth" label="Prevent pregnancy" chip={SEC} hover="hover:bg-[#d6f5f1]" />
+      </>}
+      cta="/find-care" ctaLabel="Get a prescription"
+      asideTitle="Virtual Care"
+      tags={[["Acne (Mild)", "/treatment/acne"], ["Birth Control", "/treatment/birth-control"], ["Erectile Dysfunction", "/find-care"], ["Hair Loss", "/find-care"], ["Urinary Tract Infection", "/treatment/uti"], ["Weight Loss", "/find-care"]]}
+      browseTo="/find-care" browseLabel="See all treatments"
+      faqs={["Can I get a prescription online?", "How do I qualify for a prescription?", "How fast is the application process?", "Is delivery free across Canada?"]}
+      faqTo="/find-care"
+    />
+  );
+}
+
+function PharmacyMenu() {
+  return (
+    <MegaPanel
+      bg={`${NAVCDN}/nav_bg_lilac.png`}
+      eyebrow="Get Started"
+      tiles={<>
+        <DropTile to="/find-care" icon="plus" label="Get a new prescription" chip={PRI} hover="hover:bg-[color:var(--pp-primary-100)]" />
+        <DropTile to="/fill" icon="searchprices" label="Fill a prescription" chip={PRI} hover="hover:bg-[color:var(--pp-primary-100)]" />
+        <DropTile to="/transfer" icon="transfer" label="Transfer a prescription" chip={PRI} hover="hover:bg-[color:var(--pp-primary-100)]" />
+        <DropTile to="/drug" icon="circle" label="Search prices" chip={PRI} hover="hover:bg-[color:var(--pp-primary-100)]" />
+      </>}
+      cta="/pharmacy" ctaLabel="Online Pharmacy"
+      asideTitle="Explore Medications"
+      tags={[["Ozempic", "/drug/ozempic"], ["Finasteride", "/drug/finasteride"], ["Minoxidil", "/drug/loniten"], ["Lantus", "/drug/lantus"], ["Wegovy", "/drug/wegovy"], ["Escitalopram", "/drug/escitalopram"], ["Jardiance", "/drug/jardiance"], ["Alysena", "/drug/alysena"]]}
+      browseTo="/drug" browseLabel="Browse all medications"
+      faqs={["I already have a prescription. How do I fill it with Pocketpills?", "Can I get a prescription without consulting a doctor?", "How much does it cost?", "How do I transfer my prescriptions from a different pharmacy?"]}
+      faqTo="/drug"
+    />
+  );
+}
+
+function SupportMenu() {
+  return (
+    <div className="absolute left-1/2 top-full z-50 w-[min(60rem,92vw)] -translate-x-1/2 pt-4">
+      <div className="flex justify-between rounded-2xl border border-line bg-surface-2 px-6 pb-12 pt-6 shadow-float">
+        <div className="flex flex-[0_0_40%] flex-col gap-6 p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--pp-violet)]">Learn</p>
+          {[["About us", "/find-care"], ["FAQs", "#faq"], ["Browse Ailments", "/find-care"]].map(([l, t]) =>
+            t.startsWith("#")
+              ? <a key={l} href={t} className="text-[15px] text-[color:var(--pp-primary-950)] hover:text-[color:var(--pp-violet)]">{l}</a>
+              : <Link key={l} to={t} className="text-[15px] text-[color:var(--pp-primary-950)] hover:text-[color:var(--pp-violet)]">{l}</Link>)}
+        </div>
+        <div className="flex w-full flex-[0_0_60%] justify-around rounded-2xl bg-[color:var(--pp-primary-100)] p-5">
+          <div className="flex flex-col justify-between">
+            <h2 className="font-display text-lg font-bold text-[color:var(--pp-primary-950)]">Our Care Team</h2>
+            <UnderlineLink to="/messages">Get in touch</UnderlineLink>
+          </div>
+          <div className="flex flex-col gap-6 text-[13px]">
+            <Row label="Hours">
+              <p>Monday – Saturday<br />9:00 AM – 7:00 PM EST</p>
+              <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-danger-subtle px-2.5 py-1 text-[11px] font-semibold text-danger">
+                <span className="h-1.5 w-1.5 rounded-full bg-danger" />Closed Now
+              </span>
+            </Row>
+            <Row label="Email"><a href="mailto:care@pocketpills.com">care@pocketpills.com</a></Row>
+            <Row label="Text"><a href="sms:18559507225">1-855-950-7225</a></Row>
+            <Row label="Fax"><span>1-855-950-7226</span></Row>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}) {
+  const derived = useVariant();
+  const variant = forced ?? derived;
+  const [open, setOpen] = useState<string | null>(null);
+  // Focused flows keep chrome pinned — losing "Save & exit" mid-checkout is hostile.
+  const scrolledAway = useChromeVisibility();
+  const hidden = variant === "focused" ? false : scrolledAway;
+
+  /* Checkout / assessment flows — no nav, protect the funnel. */
+  if (variant === "focused")
+    return (
+      <Shell hidden={hidden}>
+        <Brand to="/app" />
+        <Link to="/app" className="text-[13px] font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]">
+          Save &amp; exit
+        </Link>
+      </Shell>
+    );
+
+  /* Auth — logo + help only. */
+  if (variant === "minimal")
+    return (
+      <Shell hidden={hidden}>
+        <Brand to="/" />
+        <a href="tel:18559507226" className="text-[13px] font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]">
+          Need help? 1-855-950-7226
+        </a>
+      </Shell>
+    );
+
+  const isApp = variant === "app";
+
+  return (
+    <Shell hidden={hidden}>
+      <Brand to={isApp ? "/app" : "/"} />
+
+      {/* Signed in: primary nav lives in the sidebar, so the bar stays quiet. */}
+      <nav className="hidden items-center gap-1 md:flex" onMouseLeave={() => setOpen(null)}>
+        {isApp ? null : (
+          <>
+            <div className="relative" onMouseEnter={() => setOpen("t")}>
+              <span className={ITEM}><Link to="/find-care">Treatment</Link><Chevron /></span>
+              {open === "t" && <TreatmentMenu />}
+            </div>
+            <div className="relative" onMouseEnter={() => setOpen("p")}>
+              <span className={ITEM}><Link to="/drug">Online Pharmacy</Link><Chevron /></span>
+              {open === "p" && <PharmacyMenu />}
+            </div>
+            <a href="#how" className={ITEM}>How it works</a>
+            <div className="relative" onMouseEnter={() => setOpen("s")}>
+              <span className={ITEM}><a href="#care">Support</a><Chevron /></span>
+              {open === "s" && <SupportMenu />}
+            </div>
+          </>
+        )}
+      </nav>
+
+      <div className="flex items-center gap-7">
+        {isApp ? (
+          <>
+            <a href="#" className="hidden items-center gap-2 text-[13px] font-medium text-[color:var(--pp-nav-ink)] hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><rect x="7" y="2" width="10" height="20" rx="2.5" /><path d="M11 18h2" /></svg>
+              Get app
+            </a>
+            <Link to="/" className="hidden items-center gap-2 text-[13px] font-medium text-[color:var(--pp-nav-ink)] hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" /></svg>
+              Pocketpills.com
+            </Link>
+            <UserMenu />
+          </>
+        ) : (
+          <>
+            <Link to="/login" className="hidden items-center gap-1.5 text-[13px] font-medium text-[color:var(--pp-nav-ink)] hover:text-[color:var(--pp-primary-950)] sm:inline-flex">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><circle cx="12" cy="8" r="3.6" /><path d="M4.5 20c0-3.8 3.4-5.8 7.5-5.8s7.5 2 7.5 5.8" /></svg>
+              Log in
+            </Link>
+            <Link to="/get-started" className="inline-flex h-9 items-center rounded-full bg-[color:var(--pp-primary-950)] px-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90">
+              Join Pocketpills
+            </Link>
+          </>
+        )}
+      </div>
+    </Shell>
   );
 }
 

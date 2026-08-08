@@ -27,7 +27,7 @@ export function TreatmentDetail() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto w-full max-w-3xl">
       <Link to="/find-care" className="text-sm font-semibold text-ink-tertiary hover:text-ink">
         ← Find Care
       </Link>

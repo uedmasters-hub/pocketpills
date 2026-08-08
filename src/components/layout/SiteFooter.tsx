@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useUser } from "@/lib/user";
 
 const CDN = "https://static.pocketpills.com/acq-web";
 const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = "none"; };
@@ -51,15 +52,20 @@ function ArrowRight({ w = 16 }: { w?: number }) {
 
 function StoreBadge({ kind }: { kind: "ios" | "android" }) {
   return (
-    <a href="#" className="flex w-[150px] items-center gap-3 rounded-xl bg-[#220F3E] px-4 py-2.5 text-white">
+    <a href="#" className="inline-flex w-[172px] items-center gap-3 rounded-[10px] bg-black px-4 py-2 text-white transition-transform hover:scale-[1.02]">
       {kind === "ios" ? (
-        <svg width="20" height="24" viewBox="0 0 24 28" fill="white" aria-hidden><path d="M17.05 14.9c.03-2.6 2.13-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.9-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.65 3.24 2.6 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.38.81 1.4-.02 2.28-1.27 3.13-2.53.99-1.45 1.4-2.85 1.42-2.92-.03-.01-2.72-1.04-2.72-4.12zM14.5 6.5c.71-.87 1.19-2.07 1.06-3.27-1.02.04-2.26.68-3 1.54-.66.76-1.24 1.98-1.08 3.15 1.14.09 2.3-.58 3.02-1.42z" /></svg>
+        <svg width="24" height="28" viewBox="0 0 24 28" fill="white" aria-hidden><path d="M17.05 14.9c.03-2.6 2.13-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.9-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.65 3.24 2.6 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.38.81 1.4-.02 2.28-1.27 3.13-2.53.99-1.45 1.4-2.85 1.42-2.92-.03-.01-2.72-1.04-2.72-4.12zM14.5 6.5c.71-.87 1.19-2.07 1.06-3.27-1.02.04-2.26.68-3 1.54-.66.76-1.24 1.98-1.08 3.15 1.14.09 2.3-.58 3.02-1.42z" /></svg>
       ) : (
-        <svg width="20" height="22" viewBox="0 0 26 28" aria-hidden><path d="M3 2.2c-.3.32-.48.8-.48 1.44v20.72c0 .64.18 1.12.5 1.42l.07.07 11.6-11.6v-.27L3.07 2.14 3 2.2z" fill="#00A0FF" /><path d="M18.6 18.13l-3.9-3.9v-.28l3.9-3.9.09.05 4.6 2.62c1.32.75 1.32 1.97 0 2.72l-4.6 2.62-.09.07z" fill="#FFBD00" /><path d="M18.7 18.06l-4-4L3 25.78c.43.46 1.15.52 1.96.06l13.74-7.78z" fill="#FF3A44" /><path d="M18.7 10.1L4.96 2.32C4.15 1.86 3.43 1.92 3 2.38l11.7 11.68 4-3.96z" fill="#00F076" /></svg>
+        <svg width="24" height="26" viewBox="0 0 26 28" aria-hidden>
+          <path d="M3 2.2c-.3.32-.48.8-.48 1.44v20.72c0 .64.18 1.12.5 1.42l.07.07 11.6-11.6v-.27L3.07 2.14 3 2.2z" fill="#00A0FF" />
+          <path d="M18.6 18.13l-3.9-3.9v-.28l3.9-3.9.09.05 4.6 2.62c1.32.75 1.32 1.97 0 2.72l-4.6 2.62-.09.07z" fill="#FFBD00" />
+          <path d="M18.7 18.06l-4-4L3 25.78c.43.46 1.15.52 1.96.06l13.74-7.78z" fill="#FF3A44" />
+          <path d="M18.7 10.1L4.96 2.32C4.15 1.86 3.43 1.92 3 2.38l11.7 11.68 4-3.96z" fill="#00F076" />
+        </svg>
       )}
       <span className="text-left leading-tight">
-        <span className="block text-[9px] text-white/70">{kind === "ios" ? "Download on the" : "GET IT ON"}</span>
-        <span className="block text-[13px] font-semibold">{kind === "ios" ? "App Store" : "Google Play"}</span>
+        <span className="block text-[10px] font-medium tracking-wide">{kind === "ios" ? "Download on the" : "GET IT ON"}</span>
+        <span className="block text-[17px] font-semibold leading-tight">{kind === "ios" ? "App Store" : "Google Play"}</span>
       </span>
     </a>
   );
@@ -92,21 +98,46 @@ const COLUMNS: { head: string; links: [string, string][]; cta: [string, string] 
   { head: "Company", links: [["About Us", "/find-care"], ["Contact Pocketpills", "/messages"], ["Help Center", "/drug"], ["FAQs", "#faq"], ["Accessibility", "/drug"]], cta: ["Join Pocketpills", "/get-started"] },
 ];
 
-export function SiteFooter({ go }: { go: (to?: string) => void }) {
+export type FooterVariant = "full" | "compact" | "none";
+
+/** Full marketing footer on public pages; trimmed in-app; hidden inside flows. */
+function useFooterVariant(): FooterVariant {
+  const { pathname } = useLocation();
+  const { signedIn } = useUser();
+  if (pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer") return "none";
+  if (pathname === "/login" || pathname === "/get-started") return "none";
+  // The landing page is marketing: it always shows the full footer, signed in or not.
+  if (pathname === "/") return "full";
+  return signedIn ? "compact" : "full";
+}
+
+export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string) => void; variant?: FooterVariant } = {}) {
+  const nav = useNavigate();
+  const derived = useFooterVariant();
+  const variant = forced ?? derived;
+  const go = goProp ?? ((to?: string) => nav(to ?? "/app"));
+
+  if (variant === "none") return null;
+
   return (
     <section className="mx-auto flex w-full max-w-[105rem] flex-col gap-6 px-5 pb-12 md:px-8 xl:px-20">
-      {/* Stay in control + Get Started */}
+      {/* Stay in control + Get Started — conversion block, public pages only */}
+      {variant === "full" && (<>
       <div className="grid justify-center gap-6 md:gap-12 lg:grid-cols-[minmax(0,50rem)_1fr]">
-        <div
-          className="flex w-full flex-col gap-16 rounded-[20px] bg-[color:var(--pp-primary-950)] bg-repeat p-6 md:rounded-[28px] sm:p-12"
-          style={{ backgroundImage: `url(${CDN}/redesign/home/footer-background.svg)` }}
-        >
-          <div className="flex justify-between gap-6">
+        <div className="relative flex w-full flex-col gap-16 overflow-hidden rounded-[20px] bg-[color:var(--pp-primary-950)] p-6 md:rounded-[28px] sm:p-12">
+          {/* decorative shapes */}
+          <span className="pointer-events-none absolute -right-24 -top-32 h-[26rem] w-[26rem] rounded-full bg-[#7C4DFF]/45" aria-hidden />
+          <span className="pointer-events-none absolute right-0 top-0 h-full w-[14%] bg-[#6B3FD4]/35" aria-hidden />
+          <span className="pointer-events-none absolute -bottom-40 -left-24 h-[24rem] w-[24rem] rounded-full bg-[#5B2E9D]/40" aria-hidden />
+          <img src={`${CDN}/redesign/home/footer-background.svg`} alt="" aria-hidden loading="lazy" onError={hideOnError}
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40" />
+
+          <div className="relative flex justify-between gap-6">
             <div className="flex w-full flex-col gap-6">
               <svg width="44" height="45" viewBox="0 0 48 49" fill="none" aria-hidden>
                 <path d="M20.6198 29.3934C20.9822 29.5319 21.3624 29.6042 21.7485 29.6163C22.2475 29.6404 22.7347 29.6464 24 29.6464C25.2653 29.6464 25.7525 29.6464 26.2515 29.6163C26.6376 29.6103 27.0178 29.5319 27.3802 29.3934C28.0099 29.1524 28.5089 28.6463 28.7465 28.0077C28.8832 27.6401 28.9545 27.2546 28.9604 26.8629C28.9842 26.3568 28.9901 26.2002 28.9901 24.9229C28.9901 23.6457 28.9901 23.483 28.9604 22.9769C28.9545 22.5853 28.8772 22.1997 28.7465 21.8322C28.5089 21.1936 28.0099 20.6875 27.3802 20.4465C27.0178 20.3079 26.6376 20.2356 26.2515 20.2236C25.7584 20.1995 25.2594 20.1994 24 20.1994C22.7406 20.1994 22.2475 20.1995 21.7485 20.2236C21.3624 20.2296 20.9822 20.3079 20.6198 20.4465C19.9901 20.6875 19.4911 21.1936 19.2535 21.8322C19.1168 22.1997 19.0455 22.5853 19.0396 22.9769C19.0158 23.483 19.0099 23.6396 19.0099 24.9229C19.0099 26.2062 19.0099 26.3629 19.0396 26.8629C19.0455 27.2546 19.1228 27.6401 19.2535 28.0077C19.4911 28.6463 19.9901 29.1524 20.6198 29.3934ZM47.8574 15.0422C47.8158 13.054 47.4416 11.0838 46.7525 9.22217C45.5347 5.97477 43.004 3.41421 39.8079 2.17912C37.9723 1.48023 36.0297 1.10067 34.0693 1.05849C31.5505 0.950046 30.4099 0.919922 24 0.919922C17.5901 0.919922 16.4495 0.919922 13.9307 1.05849C11.9703 1.10067 10.0277 1.48023 8.19208 2.17912C4.9901 3.41421 2.45941 5.9808 1.24158 9.22217C0.552475 11.0899 0.178218 13.054 0.136634 15.0422C0.029703 17.5967 0 18.4161 0 24.9169C0 31.4177 0 32.2311 0.136634 34.7916C0.178218 36.7798 0.552475 38.75 1.24158 40.6116C2.45941 43.859 4.9901 46.4196 8.19208 47.6607C8.54257 47.7933 8.89307 47.9138 9.24951 48.0222C9.58812 48.1246 9.93267 47.8656 9.93267 47.5041C9.93267 47.5041 9.93267 20.6694 10.004 19.1813C10.0277 18.0245 10.2416 16.8858 10.6455 15.8013C11.3525 13.9155 12.8198 12.4274 14.6792 11.7104C15.7485 11.3068 16.8713 11.0838 18.0119 11.0597C19.4733 10.9754 28.5267 10.9935 29.9941 11.0597C31.1347 11.0838 32.2574 11.3007 33.3267 11.7104C35.1861 12.4274 36.6535 13.9155 37.3604 15.8013C37.7584 16.8858 37.9782 18.0245 38.002 19.1813C38.0792 20.6694 38.0614 29.1705 38.002 30.6526C37.9782 31.8093 37.7584 32.948 37.3604 34.0325C36.6535 35.9183 35.1861 37.4064 33.3267 38.1234C32.2634 38.5271 31.1347 38.75 29.9941 38.7741C28.5267 38.8584 27.7248 38.8584 24.0059 38.8584H19.8119C19.3545 38.8584 18.9802 39.2018 18.9802 39.6657V48.0825C18.9802 48.5404 19.3426 48.9139 19.7941 48.9139C20.8099 48.9139 22.396 48.9199 24.0059 48.9199C30.4158 48.9199 31.5564 48.9199 34.0752 48.7814C36.0356 48.7392 37.9782 48.3596 39.8139 47.6607C43.0158 46.4256 45.5406 43.859 46.7584 40.6116C47.4475 38.75 47.8218 36.7798 47.8634 34.7916C47.9703 32.2311 48 31.4177 48 24.9169C48 18.4161 48 17.5967 47.8634 15.0422" fill="white" />
               </svg>
-              <h2 className="font-display text-[clamp(26px,3vw,38px)] font-extrabold leading-tight text-white">
+              <h2 className="font-display text-[clamp(30px,3.6vw,46px)] font-medium leading-[1.12] tracking-tight text-white">
                 Stay in control<br />of your health.
               </h2>
             </div>
@@ -117,27 +148,27 @@ export function SiteFooter({ go }: { go: (to?: string) => void }) {
           </div>
 
           {/* Care Team */}
-          <div className="flex flex-col justify-center gap-12 rounded-[20px] bg-white p-8 sm:flex-row sm:justify-between sm:gap-6 md:p-12">
-            <div className="flex flex-col gap-4 md:gap-5">
-              <h2 className="font-display text-xl font-bold text-[color:var(--pp-primary-950)]">Our Care Team</h2>
-              <div className="flex flex-col gap-6">
-                <p className="text-[13px] text-ink-secondary">Monday - Saturday<br />9:00 AM - 7:00 PM EST</p>
-                <span className="inline-flex w-max items-center gap-2 rounded-full bg-danger-subtle px-3 py-1.5 text-[12px] font-semibold text-danger">
-                  <span className="h-2 w-2 rounded-full bg-danger" />Closed Now
-                </span>
-              </div>
+          <div className="relative flex flex-col justify-between gap-10 rounded-[20px] bg-white p-8 sm:flex-row sm:gap-6 md:p-10">
+            <div className="flex flex-col gap-4">
+              <h2 className="font-display text-[26px] font-medium text-[color:var(--pp-primary-950)]">Our Care Team</h2>
+              <p className="text-[15px] leading-relaxed text-ink-secondary">Monday - Saturday<br />9:00 AM - 7:00 PM EST</p>
+              <span className="inline-flex w-max items-center gap-2 rounded-full bg-[#FDE8E8] px-3 py-1.5 text-[13px] font-medium text-[#D9534F]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#D9534F]" />Closed Now
+              </span>
             </div>
-            <div className="flex flex-col justify-between gap-6">
+
+            <div className="flex flex-col justify-between gap-8">
               <div className="flex flex-col gap-3">
-                {[["Email", "care@pocketpills.com"], ["Text", "1-855-950-7225"], ["Fax", "1-855-950-7226"]].map(([k, v]) => (
+                {[["EMAIL", "care@pocketpills.com"], ["TEXT", "1-855-950-7225"], ["FAX", "1-855-950-7226"]].map(([k, v]) => (
                   <div key={k} className="flex items-center gap-8">
-                    <p className="mb-0 w-12 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-tertiary">{k}</p>
-                    <span className="text-[13px] text-ink-secondary hover:underline">{v}</span>
+                    <p className="mb-0 w-12 text-[11px] font-semibold tracking-[0.1em] text-ink-tertiary">{k}</p>
+                    <span className="text-[15px] text-[color:var(--pp-primary-950)] hover:underline">{v}</span>
                   </div>
                 ))}
               </div>
-              <button onClick={() => go("/messages")} className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[color:var(--pp-primary-950)] px-5 py-2.5 text-[13px] font-semibold text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-100)]">
-                Get In Touch <ArrowRight />
+              <button onClick={() => go("/messages")}
+                className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-[color:var(--pp-primary-950)] px-6 py-3 text-[15px] font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]">
+                Get In Touch <ArrowRight w={18} />
               </button>
             </div>
           </div>
@@ -145,20 +176,19 @@ export function SiteFooter({ go }: { go: (to?: string) => void }) {
 
         {/* Get Started tiles */}
         <div className="flex h-full">
-          <div className="flex grow flex-col gap-6 rounded-[20px] bg-[#E5E3FF80] px-10 py-8 md:rounded-[28px] sm:p-12">
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-tertiary">Get Started</h3>
-            <div>
-              {(Object.keys(TILE) as TileId[]).map((id) => (
-                <button key={id} onClick={() => go(TILE[id].to)}
-                  className="flex w-full cursor-pointer items-center gap-5 rounded-2xl p-3 text-left transition-all duration-300 hover:bg-black/5 lg:gap-6 lg:px-3">
-                  <TileIcon64 id={id} />
-                  <p className="text-[15px] font-medium text-[color:var(--pp-primary-950)]">{TILE[id].label}</p>
-                </button>
-              ))}
-            </div>
+          <div className="grid grow grid-cols-2 gap-6 rounded-[20px] bg-[color:var(--pp-primary-100)] p-8 md:rounded-[28px] sm:p-12">
+            {(Object.keys(TILE) as TileId[]).map((id) => (
+              <button key={id} onClick={() => go(TILE[id].to)}
+                className="flex flex-col items-center justify-center gap-5 rounded-2xl p-4 text-center transition-transform hover:-translate-y-0.5">
+                <TileIcon64 id={id} />
+                <p className="text-[15px] text-[color:var(--pp-primary-950)]">{TILE[id].label}</p>
+              </button>
+            ))}
           </div>
         </div>
       </div>
+
+      </>)}
 
       {/* Delivers to + links + legal */}
       <div className="flex flex-col gap-10 rounded-[20px] bg-[color:var(--pp-primary-200)] px-3 py-8 md:rounded-[28px] md:p-12">

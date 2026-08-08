@@ -6,10 +6,11 @@ export default {
     extend: {
       colors: {
         // ── Primitive palette (raw values; components should prefer semantic below) ──
-        violet: {
-          50: "#F5F3FF", 100: "#EDE9FE", 200: "#DDD6FE", 300: "#C4B5FD",
-          400: "#A78BFA", 500: "#8B5CF6", 600: "#7C3AED", 700: "#6D28D9",
-          800: "#5B21B6", 900: "#4C1D95",
+        // Brand indigo built around PocketPills' real brand hex #4A44A0 (site theme-color).
+        brand: {
+          50: "#F1F0F9", 100: "#E3E1F2", 200: "#C7C3E5", 300: "#A5A0D3",
+          400: "#7C74BC", 500: "#5A51A6", 600: "#4A44A0", 700: "#3E3985",
+          800: "#322E6B", 900: "#272451",
         },
         emerald: {
           50: "#ECFDF5", 100: "#D1FAE5", 200: "#A7F3D0", 300: "#6EE7B7",
@@ -63,10 +64,10 @@ export default {
         },
       },
       fontFamily: {
-        display: ['"Hanken Grotesque"', "system-ui", "sans-serif"],
-        sans: ['"Inter"', "system-ui", "sans-serif"],
+        display: ['"Satoshi"', "system-ui", "sans-serif"],
+        sans: ['"Satoshi"', "system-ui", "sans-serif"],
       },
-      borderRadius: { xl: "0.875rem", "2xl": "1.25rem", "3xl": "1.75rem" },
+      borderRadius: { lg: "0.625rem", xl: "0.875rem", "2xl": "1.25rem", "3xl": "1.75rem" }, // 10 / 14 / 20 / 28 — reference scale
       boxShadow: {
         card: "0 1px 2px rgba(28,25,23,0.04), 0 4px 16px rgba(28,25,23,0.06)",
         float: "0 8px 30px rgba(28,25,23,0.10)",

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { entryPoints, treatments, type EntryIconKey } from "@/lib/data";
+import { entryPoints, type EntryIconKey } from "@/lib/data";
 import { useUser } from "@/lib/user";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
@@ -110,48 +110,119 @@ function AnnouncementBar({ onGo }: { onGo: () => void }) {
 }
 
 /* ═══ 3. Hero (full-bleed autoplay video) ════════ */
+/**
+ * Hero media, in order of preference:
+ *   1. HERO.file    — self-hosted mp4/webm. Most reliable: muted autoplay is
+ *                     allowed everywhere and there's no third-party embed to fail.
+ *                     Drop a file in /public and set the path below.
+ *   2. HERO.youtube — iframe fallback (needs the video to allow embedding).
+ *   3. Gradient     — always painted underneath, so the hero is never blank.
+ */
+const HERO = {
+  file: "/hero.mp4",              // self-hosted; falls back to YouTube if missing
+  poster: "",                     // e.g. "/hero-poster.jpg"
+  youtube: VIDEO_ID,
+  start: 54,
+};
+
 function Hero() {
   const [playing, setPlaying] = useState(true);
   const [reduced, setReduced] = useState(false);
-  const ref = useRef<HTMLIFrameElement>(null);
+  const [failed, setFailed] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const frameRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    if (mq.matches) setPlaying(false);
+    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
 
-  const cmd = (fn: "playVideo" | "pauseVideo") =>
-    ref.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func: fn, args: [] }), "*");
+  /* Native video: attempt autoplay, and surface the control if the browser blocks it. */
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !HERO.file) return;
+    if (reduced) { v.pause(); setPlaying(false); return; }
+    v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+  }, [reduced]);
 
-  const src =
-    `https://www.youtube-nocookie.com/embed/${VIDEO_ID}?autoplay=${reduced ? 0 : 1}&mute=1&loop=1` +
-    `&playlist=${VIDEO_ID}&controls=0&modestbranding=1&rel=0&playsinline=1&showinfo=0&iv_load_policy=3&enablejsapi=1&start=54`;
+  const toggle = () => {
+    const v = videoRef.current;
+    if (v) {
+      if (playing) v.pause(); else void v.play().catch(() => {});
+      setPlaying(!playing);
+      return;
+    }
+    // YouTube JS API needs an exact origin to accept commands.
+    frameRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "command", func: playing ? "pauseVideo" : "playVideo", args: [] }),
+      "https://www.youtube-nocookie.com",
+    );
+    setPlaying(!playing);
+  };
+
+  const ytSrc =
+    `https://www.youtube-nocookie.com/embed/${HERO.youtube}` +
+    `?autoplay=1&mute=1&loop=1&playlist=${HERO.youtube}&controls=0&modestbranding=1` +
+    `&rel=0&playsinline=1&showinfo=0&iv_load_policy=3&enablejsapi=1&start=${HERO.start}` +
+    `&origin=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "")}`;
 
   return (
-    <section className="relative -mt-[65px] md:-mt-[82px] h-[560px] overflow-hidden bg-[color:var(--pp-lavender)] sm:h-[660px]">
-      {/* video fills the entire hero, edge to edge */}
-      <iframe
-        ref={ref}
-        title="How PocketPills works"
-        src={src}
-        allow="autoplay; encrypted-media; picture-in-picture"
-        allowFullScreen
-        className="pointer-events-none absolute left-1/2 top-1/2 h-full w-[250%] -translate-x-1/2 -translate-y-1/2 sm:h-[132%] sm:w-full"
+    <section
+      className="hero-viewport relative -mt-[65px] min-h-[520px] overflow-hidden bg-[color:var(--pp-lavender)] md:-mt-[82px]"
+    >
+      {/* Always-present backdrop so the hero reads as designed even with no media. */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "radial-gradient(900px 520px at 70% 25%, rgba(167,160,211,.55), transparent 62%)," +
+            "radial-gradient(700px 460px at 20% 80%, rgba(124,116,188,.35), transparent 60%)," +
+            "linear-gradient(140deg,#EFEAFB 0%,#E1D9F5 55%,#CFC4EE 100%)",
+        }}
+        aria-hidden
       />
 
+      {HERO.file && !failed ? (
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          poster={HERO.poster || undefined}
+          onError={() => setFailed(true)}
+          className="absolute inset-0 h-full w-full object-cover"
+        >
+          <source src={HERO.file} />
+        </video>
+      ) : (
+        <iframe
+          ref={frameRef}
+          title="How PocketPills works"
+          src={ytSrc}
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          loading="eager"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[max(100%,56.25vw)] w-[max(100%,177.78vh)] -translate-x-1/2 -translate-y-1/2"
+        />
+      )}
+
       <button
-        onClick={() => { cmd(playing ? "pauseVideo" : "playVideo"); setPlaying(!playing); }}
-        className="absolute bottom-4 left-1/2 z-20 grid h-8 w-8 -translate-x-1/2 place-items-center rounded-full bg-black/25 text-[10px] text-white backdrop-blur hover:bg-black/45 sm:bottom-auto sm:left-auto sm:right-5 sm:top-24"
+        onClick={toggle}
+        className="absolute bottom-4 left-1/2 z-20 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full bg-black/30 text-[11px] text-white backdrop-blur transition-colors hover:bg-black/50 sm:bottom-auto sm:left-auto sm:right-5 sm:top-28 sm:translate-x-0"
         aria-label={playing ? "Pause video" : "Play video"}
       >
         {playing ? "❚❚" : "▶"}
       </button>
 
       {/* corner labels */}
-      <div className="absolute inset-x-0 bottom-5 z-10 mx-auto flex w-full max-w-[105rem] flex-wrap items-center justify-between gap-2 px-5 text-[11px] font-medium text-[color:var(--pp-navy)] md:px-8 xl:px-20">
-        <span className="flex items-center gap-1.5"><span aria-hidden>🍁</span>Complete care, without leaving home</span>
-        <span>Trusted by 800,000+ Canadians · 4.8★ rated</span>
+      <div className="pointer-events-none absolute inset-x-0 bottom-16 z-30 mx-auto flex w-full max-w-[105rem] flex-wrap items-center justify-between gap-3 px-5 md:px-8 xl:px-20">
+        <span className="flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 text-[12px] font-medium text-[color:var(--pp-navy)] backdrop-blur-sm">
+          <span aria-hidden>🇨🇦</span>Complete care, without leaving home
+        </span>
+        <span className="rounded-full bg-white/70 px-3 py-1.5 text-[12px] font-medium text-[color:var(--pp-navy)] backdrop-blur-sm">
+          Trusted by 800,000+ Canadians · 4.8★ rated
+        </span>
       </div>
     </section>
   );
@@ -167,10 +238,10 @@ function Welcome({ onStart }: { onStart: () => void }) {
     ["4.7 score", "9K+ Trustpilot reviews"],
   ];
   return (
-    <section className="relative z-20 -mt-16 px-5 md:px-8 xl:px-20">
-      <div className="mx-auto w-full max-w-[105rem] rounded-t-[28px] bg-surface-2 px-6 pb-12 pt-9 text-center sm:px-14">
+    <section className="relative z-20 -mt-10 px-5 md:px-8 xl:px-20">
+      <div className="mx-auto w-full max-w-[105rem] rounded-t-[28px] bg-surface-2 px-6 pb-12 pt-7 text-center sm:px-14">
         <p className="text-[15px] font-semibold text-[color:var(--pp-violet)]">Welcome to Pocketpills</p>
-        <h1 className="mt-4 font-display text-[38px] font-extrabold leading-[1.05] tracking-tight text-[color:var(--pp-headline)] sm:text-[52px]">
+        <h1 className="mt-3 font-display text-[38px] font-extrabold leading-[1.05] tracking-tight text-[color:var(--pp-headline)] sm:text-[52px]">
           Your health, handled.
         </h1>
         <button
@@ -216,7 +287,7 @@ function RingArrow({ size = 20, color = "#4E2A84" }: { size?: number; color?: st
 
 function BuyAgain({ go }: { go: (to?: string) => void }) {
   return (
-    <section className="mx-auto w-full max-w-[105rem] px-5 pt-14 md:px-8 xl:px-20">
+    <section className="mx-auto w-full max-w-[105rem] px-5 pt-12 md:px-8 md:pt-16 xl:px-20">
       <div className="grid gap-6 lg:min-h-[430px] lg:grid-cols-[1.06fr_1fr] lg:gap-8">
         {/* promo — grid-cols-2: copy left, pen right */}
         <div className="flex flex-col">
@@ -297,7 +368,7 @@ function FeatureCard({
 
 function FeatureCards({ go }: { go: (to?: string) => void }) {
   return (
-    <section className="mx-auto w-full max-w-[105rem] px-5 pt-12 md:px-8 xl:px-20">
+    <section className="mx-auto w-full max-w-[105rem] px-5 pt-12 md:px-8 md:pt-14 xl:px-20">
       <div className="flex flex-col gap-5 md:flex-row md:justify-between">
         <FeatureCard
           onClick={() => go("/drug/ozempic")}
@@ -379,7 +450,7 @@ function Partners() {
     </div>
   );
   return (
-    <section className="overflow-hidden pb-16 pt-14">
+    <section className="overflow-hidden py-12 md:py-16">
       <div className="flex flex-col items-center">
         <h2 className="text-[15px] text-[color:var(--pp-primary-950)]">Proud pharmacy of:</h2>
         <div className="mt-7 w-full">
@@ -476,7 +547,7 @@ function Testimonials() {
   const scroll = (d: number) => box.current?.scrollBy({ left: d * 332, behavior: "smooth" });
 
   return (
-    <section id="reviews" className="mx-auto flex w-full max-w-[105rem] flex-col gap-6 px-5 py-14 md:gap-12 md:px-8 xl:px-20">
+    <section id="reviews" className="mx-auto flex w-full max-w-[105rem] flex-col gap-6 px-5 py-12 md:gap-12 md:px-8 md:py-16 xl:px-20">
       <div className="flex flex-col gap-6 text-center text-[color:var(--pp-primary-950)]">
         <h3 className="font-display text-[clamp(26px,3vw,38px)] font-extrabold">Our members love us</h3>
         <p className="text-[15px]">
@@ -538,10 +609,10 @@ function SmallStar() {
 function TestimonialCard({ m }: { m: Member }) {
   return (
     <div
-      className="flex min-h-[20rem] min-w-[15rem] shrink-0 snap-center flex-col-reverse overflow-hidden rounded-[20px] md:min-w-[40rem] md:flex-row"
+      className="flex min-h-[19rem] min-w-[17rem] shrink-0 snap-center flex-col-reverse overflow-hidden rounded-[20px] md:min-h-[21rem] md:min-w-[38rem] md:flex-row"
       style={{ backgroundColor: m.bg }}
     >
-      <div className="md:flex-1 md:grow">
+      <div className="w-full md:h-auto md:w-1/2 md:shrink-0">
         <picture>
           <source srcSet={`${REVIEW_CDN}/Testimonial_card_D${m.img}.webp`} media="(min-width: 768px)" width={794} height={578} />
           <img
@@ -551,18 +622,16 @@ function TestimonialCard({ m }: { m: Member }) {
             width={794}
             height={578}
             alt={`Pocketpills pharmacy customer review from ${m.n}`}
-            className="h-full w-full scale-[1.01] rounded-[20px] object-cover"
+            className="h-full w-full scale-[1.01] object-cover"
           />
         </picture>
       </div>
-      <div className="flex flex-1 flex-col justify-around gap-6 p-6 md:p-10">
-        <h2 className={"font-display text-xl font-bold " + (m.dark ? "text-white" : "text-[color:var(--pp-primary-950)]")}>{m.n}</h2>
-        <div className="flex flex-col items-start justify-start gap-4">
-          <div className="flex gap-1 text-[color:var(--pp-primary-400)]">
-            {Array.from({ length: 5 }).map((_, i) => <SmallStar key={i} />)}
-          </div>
-          <p className={"text-[13px] leading-relaxed " + (m.dark ? "text-[color:var(--pp-primary-200)]" : "text-[color:var(--pp-primary-800)]")}>{m.t}</p>
+      <div className="flex flex-1 flex-col justify-center gap-5 p-7 md:p-10">
+        <h2 className={"font-display text-[22px] font-medium leading-tight " + (m.dark ? "text-white" : "text-[color:var(--pp-primary-950)]")}>{m.n}</h2>
+        <div className="flex gap-1 text-[color:var(--pp-primary-400)]">
+          {Array.from({ length: 5 }).map((_, i) => <SmallStar key={i} />)}
         </div>
+        <p className={"text-[14px] leading-relaxed " + (m.dark ? "text-[color:var(--pp-primary-200)]" : "text-[color:var(--pp-primary-800)]")}>{m.t}</p>
       </div>
     </div>
   );
@@ -588,12 +657,12 @@ function JoinBand({ go }: { go: (to?: string) => void }) {
     </div>
   );
   return (
-    <section className="mx-4 rounded-[28px] bg-white py-14 md:mx-8 md:py-16 xl:mx-11">
+    <section className="mx-4 rounded-[28px] bg-white py-12 md:mx-8 md:py-16 xl:mx-11">
       <div className="mb-10 flex flex-col gap-6">
         <h2 className="mx-auto max-w-xl text-center font-display text-[clamp(26px,3vw,38px)] font-extrabold leading-snug text-[color:var(--pp-primary-950)]">
           Join <span className="text-[color:var(--pp-violet)]">800,000+</span> Canadians who never miss a dose.
         </h2>
-        <button onClick={() => go()} className="mx-auto w-full max-w-sm rounded-full bg-[color:var(--pp-primary-950)] px-6 py-3 text-[15px] font-medium text-white transition-opacity hover:opacity-90">
+        <button onClick={() => go()} className="mx-auto w-max rounded-full bg-[color:var(--pp-primary-950)] px-7 py-3 text-[15px] font-medium text-white transition-opacity hover:opacity-90">
           Join Pocketpills
         </button>
       </div>
@@ -623,7 +692,7 @@ function JoinBand({ go }: { go: (to?: string) => void }) {
 /* ═══ 10. NABP band ═════════════════════════════════════ */
 function NabpBand() {
   return (
-    <section className="mx-auto w-full max-w-[105rem] px-5 py-10 md:px-8 xl:px-20">
+    <section className="mx-auto w-full max-w-[105rem] px-5 py-12 md:px-8 md:py-16 xl:px-20">
       <div className="flex flex-col gap-6 rounded-2xl bg-[color:var(--pp-green)] p-8 text-white sm:flex-row sm:items-center sm:p-10">
         <div className="shrink-0 text-center">
           <p className="text-[8px] uppercase tracking-[0.2em] text-white/60">Accredited by</p>
@@ -660,7 +729,7 @@ function Faq({ go }: { go: (to?: string) => void }) {
   ];
   const [open, setOpen] = useState<number | null>(null);
   return (
-    <section id="faq" className="mx-auto w-full max-w-[105rem] px-5 py-10 md:px-8 xl:px-20">
+    <section id="faq" className="mx-auto w-full max-w-[105rem] px-5 py-12 md:px-8 md:py-16 xl:px-20">
       <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
         <div>
           <p className="text-sm font-semibold text-primary">Frequently Asked</p>
@@ -705,17 +774,7 @@ export function Landing() {
       <JoinBand go={go} />
       <NabpBand />
       <Faq go={go} />
-      <section className="mx-auto w-full max-w-[105rem] px-5 pb-6 md:px-8 xl:px-20">
-        <div className="grid gap-3 sm:grid-cols-3">
-          {treatments.slice(0, 3).map((t) => (
-            <button key={t.slug} onClick={() => go(`/treatment/${t.slug}`)} className="flex items-center gap-3 rounded-xl bg-surface-1 p-4 text-left hover:bg-surface-2">
-              <span className="grid h-10 w-10 place-items-center rounded-lg bg-primary-subtle text-lg">{t.emoji}</span>
-              <span><span className="block text-sm font-semibold text-ink">{t.name}</span><span className="block text-[11px] text-ink-tertiary">{t.category}</span></span>
-            </button>
-          ))}
-        </div>
-      </section>
-      <SiteFooter go={go} />
+      <SiteFooter go={go} variant="full" />
     </div>
   );
 }

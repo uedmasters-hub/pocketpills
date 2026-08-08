@@ -10,7 +10,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const base =
-  "inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-150 " +
+  "inline-flex items-center justify-center gap-2 font-medium rounded-full transition-all duration-150 " +
   "disabled:opacity-45 disabled:cursor-not-allowed active:scale-[0.985] select-none";
 
 const variants: Record<Variant, string> = {

@@ -1,3 +1,40 @@
+/* ── Satoshi ─────────────────────────────────────────── */
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,11 +48,11 @@
 */
 @layer base {
   :root {
-    /* Brand: purple-first (per docs/04_UI/Design System.md) */
-    --color-primary: #7c3aed; /* violet-600 */
-    --color-primary-hover: #6d28d9; /* violet-700 */
-    --color-primary-pressed: #5b21b6; /* violet-800 */
-    --color-primary-subtle: #ede9fe; /* violet-100 */
+    /* Brand: PocketPills indigo-purple #4A44A0 (real site brand color) */
+    --color-primary: #4E2A84; /* brand-600 */
+    --color-primary-hover: #3E2170; /* brand-700 */
+    --color-primary-pressed: #2E1857; /* brand-800 */
+    --color-primary-subtle: #F5F4FA; /* brand-100 */
     --color-primary-fg: #ffffff;
 
     /* Wellness green/teal — health, adherence, progress */
@@ -33,52 +70,52 @@
     --color-warning-subtle: #fef3c7;
     --color-danger: #dc2626;
     --color-danger-subtle: #fee2e2;
-    --color-info: #0f766e; /* teal-700 */
-    --color-info-subtle: #ccfbf1;
+    --color-info: #6b4fd6; /* teal-700 */
+    --color-info-subtle: #EAE6F8;
 
     /* Layered surfaces on warm neutral (~70% of the UI is neutral) */
-    --surface-0: #f7f6f4;
-    --surface-1: #fafaf9;
+    --surface-0: #F7F6FB;
+    --surface-1: #F5F4FA;
     --surface-2: #ffffff;
     --surface-3: #ffffff;
     --surface-4: #ffffff;
 
     /* Text */
-    --text-primary: #1c1917;
-    --text-secondary: #44403c;
-    --text-tertiary: #78716c;
-    --text-disabled: #a8a29e;
+    --text-primary: #2A2148;
+    --text-secondary: #55507A;
+    --text-tertiary: #8B87A8;
+    --text-disabled: #B4B0C8;
     --text-inverse: #fafaf9;
 
     /* Borders */
-    --border-default: #e7e5e4;
-    --border-divider: #f0efed;
-    --border-strong: #d6d3d1;
+    --border-default: #E6E3F0;
+    --border-divider: #EFEDF7;
+    --border-strong: #CFCADF;
 
-  /* Landing surface tokens (sampled from the reference design) */
-  --pp-navy: #2b1e5e;
-  --pp-violet: #6b4fd6;
-  --pp-headline: #4E2A84;
-  --pp-lavender: #e9e4f7;
+  /* ── Landing surface tokens (sampled from the reference design) ── */
+  --pp-navy: #2b1e5e;        /* announcement bar, primary dark buttons */
+  --pp-violet: #6b4fd6;      /* logo mark, accent eyebrow text */
+  --pp-headline: #4E2A84;    /* hero headline ink */
+  --pp-lavender: #e9e4f7;    /* hero backdrop */
   --pp-nav-glass: rgba(255,255,255,0.72);
-  --pp-primary-950: #4E2A84;
+  --pp-primary-950: #4E2A84;  /* ds-bg-primary-950 / ds-text-primary-950 */
   --pp-primary-100: #F5F4FA;
-  --pp-primary-200: #EAE6F8;
-  --pp-primary-800: #5B3A9E;
+  --pp-primary-200: #EAE6F8;  /* review card surface */
+  --pp-primary-800: #5B3A9E;  /* review body text */
   --pp-star: #8C60FF;
-  --pp-primary-300: #D3CCEF;
-  --pp-primary-400: #AAA4FF;
-  --pp-primary-900: #5C3496;
-  --pp-violet-mid: #5b52ad;
-  --pp-green: #0f4c3f;
-  --pp-nav-ink: #4b4560;
+  --pp-primary-300: #D3CCEF;  /* light review card */
+  --pp-primary-400: #AAA4FF;  /* review card stars */
+  --pp-primary-900: #5C3496;  /* mid-dark review card */         /* rating stars, decorative marks */  /* ds-bg-primary-100 / ds-text-primary-100 */
+  --pp-violet-mid: #5b52ad;  /* purple cards, star ratings */
+  --pp-green: #0f4c3f;       /* NABP accreditation band */
+  --pp-nav-ink: #4b4560;     /* nav link text */
   }
 
   .dark {
-    --color-primary: #a78bfa; /* violet-400 reads better on dark */
-    --color-primary-hover: #c4b5fd;
-    --color-primary-pressed: #ddd6fe;
-    --color-primary-subtle: #2e1065;
+    --color-primary: #a5a0d3; /* brand-300 reads better on dark */
+    --color-primary-hover: #c7c3e5;
+    --color-primary-pressed: #e3e1f2;
+    --color-primary-subtle: #272451;
     --color-primary-fg: #1c1917;
 
     --color-wellness: #34d399;
@@ -138,12 +175,12 @@
     margin: 0;
     background-color: var(--surface-0);
     color: var(--text-primary);
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: "Satoshi", system-ui, sans-serif;
     font-feature-settings: "cv11", "ss01";
   }
 
   h1, h2, h3, h4 {
-    font-family: "Hanken Grotesque", system-ui, sans-serif;
+    font-family: "Satoshi", system-ui, sans-serif;
     letter-spacing: -0.02em;
   }
 
@@ -179,3 +216,15 @@
 .pp-scroll::-webkit-scrollbar { display: none; }
 .pp-snap { scroll-snap-align: start; }
 @media (prefers-reduced-motion: reduce) { .pp-marquee { animation: none; } }
+
+
+/* Hero fills one viewport below the announcement bar (2.25rem). */
+/* Reserve just enough of the Welcome card for the eyebrow + headline.
+   Budget: pt-7 (28) + eyebrow (20) + mt-3 (12) + headline (~55) = ~115px.
+   The Start CTA sits below this and is intentionally past the fold. */
+.hero-viewport { height: calc(100vh - 7.5rem); }
+@supports (height: 100svh) { .hero-viewport { height: calc(100svh - 7.5rem); } }
+@media (max-width: 640px) {
+  .hero-viewport { height: calc(100vh - 9.5rem); }
+  @supports (height: 100svh) { .hero-viewport { height: calc(100svh - 9.5rem); } }
+}
