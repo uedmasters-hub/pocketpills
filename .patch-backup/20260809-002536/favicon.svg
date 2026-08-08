@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#FFFFFF"/>
+  <g transform="translate(24,24) scale(0.9336870026525199)">
+    <path fill="#4E2A84" d="M273 0C330.438 5.86282e-06 377 46.5624 377 104V266C377 323.438 330.438 370 273 370H149V296H243C275.033 296 301 270.033 301 238V139C301 106.967 275.033 81 243 81H134C101.967 81 76 106.967 76 139V366.185C32.1628 353.959 0 313.736 0 266V104C0 46.5624 46.5624 0 104 0H273Z"/>
+    <path fill="#4E2A84" d="M213 150C221.837 150 229 157.163 229 166V211C229 219.837 221.837 227 213 227H164C155.163 227 148 219.837 148 211V166C148 157.163 155.163 150 164 150H213Z"/>
+  </g>
+</svg>EOF
+echo "  wrote public/favicon.svg"
+echo ""
+echo "Patch 70 applied. Backup: $bak"
+echo "Favicons cache hard — check in a private window or hard-refresh."
