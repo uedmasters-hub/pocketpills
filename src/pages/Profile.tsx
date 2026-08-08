@@ -51,11 +51,11 @@ export function Profile() {
   return (
     <div>
       <header className="mb-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">Profile</p>
-        <h1 className="mt-2 font-display text-[clamp(24px,2.8vw,32px)] font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
+        <p className="text-2xs font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">Profile</p>
+        <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
           Your profile
         </h1>
-        <p className="mt-2 max-w-xl text-[15px] text-ink-secondary">
+        <p className="mt-2 max-w-xl text-base text-ink-secondary">
           {outstanding > 0
             ? `${outstanding} section${outstanding === 1 ? "" : "s"} still need attention. Completing them lets us bill your plans and deliver without delay.`
             : "Everything's up to date. We'll let you know if anything needs a refresh."}
@@ -73,10 +73,10 @@ export function Profile() {
             }
           >
             <span className="shrink-0 text-[color:var(--pp-primary-950)]"><RowIcon id={r.id} /></span>
-            <span className="min-w-0 flex-1 text-[15px] text-[color:var(--pp-primary-950)]">{r.label}</span>
+            <span className="min-w-0 flex-1 text-base text-[color:var(--pp-primary-950)]">{r.label}</span>
             {r.done
               ? <span className="flex items-center gap-2">
-                  <span className="text-[15px] text-ink-tertiary">{r.value ?? "Added"}</span>
+                  <span className="text-base text-ink-tertiary">{r.value ?? "Added"}</span>
                   {r.required && <Done />}
                 </span>
               : <NeedsAttention />}
@@ -85,9 +85,10 @@ export function Profile() {
         ))}
       </div>
 
-      <p className="mt-4 text-[12px] text-ink-tertiary">
+      <p className="mt-4 text-xs text-ink-tertiary">
         Your information is encrypted and never shared without your permission.
       </p>
     </div>
   );
 }
+

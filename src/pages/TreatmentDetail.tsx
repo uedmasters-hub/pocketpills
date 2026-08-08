@@ -44,7 +44,7 @@ export function TreatmentDetail() {
         </div>
       </div>
 
-      <p className="mt-5 max-w-2xl text-[15px] leading-relaxed text-ink-secondary">{t.blurb}</p>
+      <p className="mt-5 max-w-2xl text-base leading-relaxed text-ink-secondary">{t.blurb}</p>
 
       <Card className="mt-8 p-6">
         <h2 className="font-display text-lg font-bold text-ink">What to expect</h2>
@@ -77,3 +77,4 @@ export function TreatmentDetail() {
     </div>
   );
 }
+

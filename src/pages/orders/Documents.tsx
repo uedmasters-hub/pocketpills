@@ -25,7 +25,7 @@ function DocShell({ children, backTo, docName }: { children: React.ReactNode; ba
 
 function Brand() {
   return (
-    <Logo className="text-[#4E2A84]" markClassName="h-9 w-9" wordClassName="text-[19px]" />
+    <Logo className="text-[#4E2A84]" markClassName="h-9 w-9" wordClassName="text-lg" />
   );
 }
 
@@ -162,3 +162,4 @@ export function Invoice() {
 function DocRow({ k, v }: { k: string; v: string }) {
   return <div className="flex justify-between text-stone-600"><span>{k}</span><span className="tabular-nums text-stone-900">{v}</span></div>;
 }
+

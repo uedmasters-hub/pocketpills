@@ -7,15 +7,15 @@ import { useUser } from "@/lib/user";
 function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
     <header className="mb-8">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">{eyebrow}</p>
-      <h1 className="mt-2 font-display text-[clamp(24px,2.8vw,32px)] font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">{title}</h1>
-      {sub && <p className="mt-2 max-w-xl text-[15px] text-ink-secondary">{sub}</p>}
+      <p className="text-2xs font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">{eyebrow}</p>
+      <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">{title}</h1>
+      {sub && <p className="mt-2 max-w-xl text-base text-ink-secondary">{sub}</p>}
     </header>
   );
 }
 
 const CARD = "rounded-2xl border border-line bg-surface-2";
-const PILL = "rounded-full px-3 py-1 text-[12px] font-semibold";
+const PILL = "rounded-full px-3 py-1 text-xs font-semibold";
 
 function StatusPill({ status }: { status: keyof typeof statusMeta }) {
   const tone: Record<string, string> = {
@@ -40,7 +40,7 @@ export function Pharmacy() {
 
       {active.length > 0 && (
         <section className="mb-10">
-          <h2 className="mb-3 font-display text-[17px] font-bold text-[color:var(--pp-primary-950)]">In progress</h2>
+          <h2 className="mb-3 font-display text-md font-bold text-[color:var(--pp-primary-950)]">In progress</h2>
           <div className="space-y-3">
             {active.map((o) => {
               const t = orderTotals(o);
@@ -50,7 +50,7 @@ export function Pharmacy() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold text-[color:var(--pp-primary-950)]">{o.id}</p>
-                      <p className="text-[13px] text-ink-tertiary">{fmtDate(o.date)} · {o.items.length} item{o.items.length === 1 ? "" : "s"} · {money(t.total)}</p>
+                      <p className="text-sm text-ink-tertiary">{fmtDate(o.date)} · {o.items.length} item{o.items.length === 1 ? "" : "s"} · {money(t.total)}</p>
                     </div>
                     <StatusPill status={o.status} />
                   </div>
@@ -66,17 +66,17 @@ export function Pharmacy() {
 
       <section className="mb-10">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-[17px] font-bold text-[color:var(--pp-primary-950)]">Recent orders</h2>
-          <Link to="/orders" className="text-[13px] font-semibold text-[color:var(--pp-violet)] hover:underline">View all</Link>
+          <h2 className="font-display text-md font-bold text-[color:var(--pp-primary-950)]">Recent orders</h2>
+          <Link to="/orders" className="text-sm font-semibold text-[color:var(--pp-violet)] hover:underline">View all</Link>
         </div>
         <div className="space-y-2">
           {recent.map((o) => (
             <Link key={o.id} to={`/orders/${o.id}`} className={`${CARD} flex items-center gap-4 p-4 transition-colors hover:bg-[color:var(--pp-primary-100)]`}>
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold text-[color:var(--pp-primary-950)]">{o.id}</span>
-                <span className="block truncate text-[13px] text-ink-tertiary">{fmtDate(o.date)} · {o.items.map((i) => i.name).join(", ")}</span>
+                <span className="block truncate text-sm text-ink-tertiary">{fmtDate(o.date)} · {o.items.map((i) => i.name).join(", ")}</span>
               </span>
-              <span className="shrink-0 text-[14px] font-semibold text-[color:var(--pp-primary-950)] tnum">{money(orderTotals(o).total)}</span>
+              <span className="shrink-0 text-sm font-semibold text-[color:var(--pp-primary-950)] tnum">{money(orderTotals(o).total)}</span>
               <span className="shrink-0 text-ink-tertiary" aria-hidden>→</span>
             </Link>
           ))}
@@ -86,7 +86,7 @@ export function Pharmacy() {
       <div className={`${CARD} flex flex-wrap items-center gap-4 p-5`}>
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-[color:var(--pp-primary-950)]">Transfer a prescription</p>
-          <p className="text-[13px] text-ink-tertiary">Move from another pharmacy — we handle the paperwork.</p>
+          <p className="text-sm text-ink-tertiary">Move from another pharmacy — we handle the paperwork.</p>
         </div>
         <Button variant="secondary" size="sm" onClick={() => nav("/transfer")}>Start</Button>
       </div>
@@ -107,17 +107,17 @@ export function Messages() {
       <div className="space-y-2">
         {threads.map((m) => (
           <button key={m.who} className={`${CARD} flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-[color:var(--pp-primary-100)]`}>
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-100)] text-[13px] font-semibold text-[color:var(--pp-primary-950)]">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-100)] text-sm font-semibold text-[color:var(--pp-primary-950)]">
               {m.who.split(" ").map((w) => w[0]).slice(0, 2).join("")}
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
                 <span className="truncate font-semibold text-[color:var(--pp-primary-950)]">{m.who}</span>
-                <span className="shrink-0 text-[11px] text-ink-tertiary">{m.role}</span>
+                <span className="shrink-0 text-2xs text-ink-tertiary">{m.role}</span>
               </span>
-              <span className="block truncate text-[13px] text-ink-tertiary">{m.last}</span>
+              <span className="block truncate text-sm text-ink-tertiary">{m.last}</span>
             </span>
-            <span className="shrink-0 text-[12px] text-ink-tertiary">{m.when}</span>
+            <span className="shrink-0 text-xs text-ink-tertiary">{m.when}</span>
             {m.unread && <span className="h-2 w-2 shrink-0 rounded-full bg-[color:var(--pp-violet)]" aria-label="unread" />}
           </button>
         ))}
@@ -131,8 +131,8 @@ export function Account() {
   const { user, displayName, logOut } = useUser();
   const nav = useNavigate();
 
-  const field = "h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-[15px] text-ink focus:border-primary";
-  const label = "mb-1.5 block text-[13px] font-medium text-ink-secondary";
+  const field = "h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-base text-ink focus:border-primary";
+  const label = "mb-1.5 block text-sm font-medium text-ink-secondary";
 
   return (
     <div>
@@ -140,7 +140,7 @@ export function Account() {
 
       <div className="space-y-4">
         <section className={`${CARD} p-6`}>
-          <h2 className="mb-4 font-display text-[17px] font-bold text-[color:var(--pp-primary-950)]">Personal information</h2>
+          <h2 className="mb-4 font-display text-md font-bold text-[color:var(--pp-primary-950)]">Personal information</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className={label}>Full name</span>
@@ -163,25 +163,25 @@ export function Account() {
 
         <section className={`${CARD} p-6`}>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-[17px] font-bold text-[color:var(--pp-primary-950)]">Insurance</h2>
+            <h2 className="font-display text-md font-bold text-[color:var(--pp-primary-950)]">Insurance</h2>
             <span className={`${PILL} ${user?.insurance ? "bg-wellness-subtle text-wellness" : "bg-surface-1 text-ink-secondary"}`}>
               {user?.insurance ? "Active" : "None"}
             </span>
           </div>
           <div className="rounded-xl bg-surface-1 p-4">
             <p className="font-semibold text-[color:var(--pp-primary-950)]">{user?.insurance?.carrier || "No plan on file"}</p>
-            <p className="text-[13px] text-ink-tertiary">
+            <p className="text-sm text-ink-tertiary">
               {user?.insurance ? `Group ${user.insurance.group || "—"} · verified` : "Add a plan to lower your costs"}
             </p>
           </div>
         </section>
 
         <section className={`${CARD} p-6`}>
-          <h2 className="mb-1 font-display text-[17px] font-bold text-[color:var(--pp-primary-950)]">Notifications</h2>
-          <p className="mb-2 text-[13px] text-ink-tertiary">Choose what we send you.</p>
+          <h2 className="mb-1 font-display text-md font-bold text-[color:var(--pp-primary-950)]">Notifications</h2>
+          <p className="mb-2 text-sm text-ink-tertiary">Choose what we send you.</p>
           {["Medication reminders", "Delivery updates", "Refill reminders"].map((n) => (
             <label key={n} className="flex items-center justify-between border-b border-line py-3 last:border-0">
-              <span className="text-[15px] text-ink-secondary">{n}</span>
+              <span className="text-base text-ink-secondary">{n}</span>
               <input type="checkbox" defaultChecked className="h-5 w-5 accent-[color:var(--pp-primary-950)]" />
             </label>
           ))}
@@ -190,7 +190,7 @@ export function Account() {
         <section className={`${CARD} flex flex-wrap items-center gap-4 p-5`}>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-[color:var(--pp-primary-950)]">Orders & receipts</p>
-            <p className="text-[13px] text-ink-tertiary">View past orders, receipts, and invoices.</p>
+            <p className="text-sm text-ink-tertiary">View past orders, receipts, and invoices.</p>
           </div>
           <Button variant="secondary" size="sm" onClick={() => nav("/orders")}>View</Button>
         </section>
@@ -198,7 +198,7 @@ export function Account() {
         <section className={`${CARD} flex flex-wrap items-center gap-4 p-5`}>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-[color:var(--pp-primary-950)]">Sign out</p>
-            <p className="text-[13px] text-ink-tertiary">You'll need to sign in again to view your orders.</p>
+            <p className="text-sm text-ink-tertiary">You'll need to sign in again to view your orders.</p>
           </div>
           <Button variant="secondary" size="sm" onClick={() => { logOut(); nav("/"); }}>Sign out</Button>
         </section>
@@ -206,3 +206,4 @@ export function Account() {
     </div>
   );
 }
+

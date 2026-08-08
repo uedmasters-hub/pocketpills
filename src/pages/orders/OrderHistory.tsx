@@ -5,7 +5,7 @@ import { orders, getOrder, orderTotals, typeMeta, statusMeta, money, fmtDate, ty
 
 const IN_PROGRESS: OrderStatus[] = ["verifying", "processing", "out_for_delivery"];
 const CARD = "rounded-2xl border border-line bg-surface-2";
-const PILL = "rounded-full px-3 py-1 text-[12px] font-semibold";
+const PILL = "rounded-full px-3 py-1 text-xs font-semibold";
 
 function StatusPill({ status }: { status: OrderStatus }) {
   const tone: Record<string, string> = {
@@ -28,18 +28,18 @@ export function OrderHistory() {
   return (
     <div>
       <header className="mb-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">Orders</p>
-        <h1 className="mt-2 font-display text-[clamp(24px,2.8vw,32px)] font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
+        <p className="text-2xs font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">Orders</p>
+        <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
           Order history
         </h1>
-        <p className="mt-2 max-w-xl text-[15px] text-ink-secondary">Past orders, receipts, and invoices.</p>
+        <p className="mt-2 max-w-xl text-base text-ink-secondary">Past orders, receipts, and invoices.</p>
       </header>
 
       <div className="mb-6 flex gap-2">
         {([["all", "All"], ["progress", "In progress"], ["delivered", "Delivered"]] as const).map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             className={
-              "rounded-full px-4 py-2 text-[13px] font-medium transition-colors " +
+              "rounded-full px-4 py-2 text-sm font-medium transition-colors " +
               (tab === id
                 ? "bg-[color:var(--pp-primary-950)] text-white"
                 : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-200)]")
@@ -52,7 +52,7 @@ export function OrderHistory() {
       {list.length === 0 ? (
         <div className={`${CARD} p-12 text-center`}>
           <p className="font-semibold text-[color:var(--pp-primary-950)]">Nothing here yet</p>
-          <p className="mt-1 text-[14px] text-ink-tertiary">Orders will appear once you place one.</p>
+          <p className="mt-1 text-sm text-ink-tertiary">Orders will appear once you place one.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -66,13 +66,13 @@ export function OrderHistory() {
                   <span className="font-semibold text-[color:var(--pp-primary-950)]">{o.id}</span>
                   <StatusPill status={o.status} />
                 </span>
-                <span className="mt-0.5 block truncate text-[13px] text-ink-tertiary">
+                <span className="mt-0.5 block truncate text-sm text-ink-tertiary">
                   {fmtDate(o.date)} · {o.items.map((i) => i.name).join(", ")}
                 </span>
               </span>
               <span className="shrink-0 text-right">
                 <span className="block font-semibold text-[color:var(--pp-primary-950)] tnum">{money(orderTotals(o).total)}</span>
-                <span className="block text-[11px] text-ink-tertiary">{o.items.length} item{o.items.length === 1 ? "" : "s"}</span>
+                <span className="block text-2xs text-ink-tertiary">{o.items.length} item{o.items.length === 1 ? "" : "s"}</span>
               </span>
             </Link>
           ))}
@@ -92,7 +92,7 @@ export function OrderDetail() {
     return (
       <div className={`${CARD} p-12 text-center`}>
         <p className="font-semibold text-[color:var(--pp-primary-950)]">Order not found</p>
-        <Link to="/orders" className="mt-2 inline-block text-[14px] font-semibold text-[color:var(--pp-violet)] hover:underline">
+        <Link to="/orders" className="mt-2 inline-block text-sm font-semibold text-[color:var(--pp-violet)] hover:underline">
           Back to order history
         </Link>
       </div>
@@ -106,17 +106,17 @@ export function OrderDetail() {
 
   return (
     <div>
-      <Link to="/orders" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]">
+      <Link to="/orders" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]">
         ← Order history
       </Link>
 
       <header className="mt-5 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-display text-[clamp(24px,2.8vw,30px)] font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">{o.id}</h1>
+            <h1 className="font-display text-3xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">{o.id}</h1>
             <StatusPill status={o.status} />
           </div>
-          <p className="mt-1 text-[14px] text-ink-tertiary">{typeMeta[o.type].label} · {fmtDate(o.date)}</p>
+          <p className="mt-1 text-sm text-ink-tertiary">{typeMeta[o.type].label} · {fmtDate(o.date)}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="secondary" onClick={() => nav(`/orders/${o.id}/receipt`)}>Receipt</Button>
@@ -136,12 +136,12 @@ export function OrderDetail() {
                     <span className={"absolute left-1/2 top-[11px] h-0.5 w-full " + (done ? "bg-[color:var(--pp-primary-950)]" : "bg-line")} aria-hidden />
                   )}
                   <span className={
-                    "relative z-10 grid h-6 w-6 place-items-center rounded-full text-[11px] font-bold " +
+                    "relative z-10 grid h-6 w-6 place-items-center rounded-full text-2xs font-bold " +
                     (done ? "bg-[color:var(--pp-primary-950)] text-white"
                       : active ? "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)] ring-2 ring-[color:var(--pp-primary-950)]"
                       : "border-2 border-line bg-surface-2 text-ink-tertiary")
                   }>{done ? "✓" : i + 1}</span>
-                  <span className={"mt-2 text-[11px] font-medium " + (i > cur ? "text-ink-tertiary" : "text-[color:var(--pp-primary-950)]")}>{label}</span>
+                  <span className={"mt-2 text-2xs font-medium " + (i > cur ? "text-ink-tertiary" : "text-[color:var(--pp-primary-950)]")}>{label}</span>
                 </li>
               );
             })}
@@ -156,16 +156,16 @@ export function OrderDetail() {
             <div key={it.name} className="flex items-center justify-between border-b border-line px-5 py-3.5 last:border-0">
               <div>
                 <p className="font-medium text-[color:var(--pp-primary-950)]">{it.name} {it.strength}</p>
-                <p className="text-[13px] text-ink-tertiary">Qty {it.qty}</p>
+                <p className="text-sm text-ink-tertiary">Qty {it.qty}</p>
               </div>
-              <span className="text-[14px] text-ink tnum">{money(it.qty * it.unitPrice)}</span>
+              <span className="text-sm text-ink tnum">{money(it.qty * it.unitPrice)}</span>
             </div>
           ))}
         </section>
 
         <aside className={`${CARD} h-max p-5`}>
           <p className="mb-3 font-semibold text-[color:var(--pp-primary-950)]">Summary</p>
-          <div className="space-y-1.5 text-[13px]">
+          <div className="space-y-1.5 text-sm">
             <Row k="Subtotal" v={money(t.subtotal)} />
             <Row k="Dispensing fee" v={money(t.dispensing)} />
             <Row k="Delivery" v="FREE" tone />
@@ -175,7 +175,7 @@ export function OrderDetail() {
               <span className="font-display text-lg font-extrabold text-[color:var(--pp-primary-950)] tnum">{money(t.total)}</span>
             </div>
           </div>
-          <p className="mt-3 text-[11px] text-ink-tertiary">
+          <p className="mt-3 text-2xs text-ink-tertiary">
             {o.payment.method === "insurance" ? "Billed to insurance"
               : o.payment.method === "mixed" ? `Insurance + Visa ····${o.payment.cardLast4}`
               : `Visa ····${o.payment.cardLast4}`}
@@ -185,14 +185,14 @@ export function OrderDetail() {
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div className={`${CARD} p-5`}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-tertiary">Delivered to</p>
+          <p className="text-2xs font-semibold uppercase tracking-[0.1em] text-ink-tertiary">Delivered to</p>
           <p className="mt-1.5 font-medium text-[color:var(--pp-primary-950)]">{o.patient}</p>
-          <p className="text-[13px] text-ink-secondary">{o.address}</p>
+          <p className="text-sm text-ink-secondary">{o.address}</p>
         </div>
         <div className={`${CARD} p-5`}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-tertiary">Care team</p>
-          {o.prescriber && <p className="mt-1.5 text-[13px] text-ink-secondary">Prescriber: {o.prescriber}</p>}
-          {o.pharmacist && <p className="text-[13px] text-ink-secondary">Pharmacist: {o.pharmacist}</p>}
+          <p className="text-2xs font-semibold uppercase tracking-[0.1em] text-ink-tertiary">Care team</p>
+          {o.prescriber && <p className="mt-1.5 text-sm text-ink-secondary">Prescriber: {o.prescriber}</p>}
+          {o.pharmacist && <p className="text-sm text-ink-secondary">Pharmacist: {o.pharmacist}</p>}
         </div>
       </div>
     </div>
@@ -207,3 +207,4 @@ function Row({ k, v, tone }: { k: string; v: string; tone?: boolean }) {
     </div>
   );
 }
+

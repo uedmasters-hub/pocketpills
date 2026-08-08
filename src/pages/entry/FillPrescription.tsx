@@ -472,7 +472,7 @@ function Confirmation({ state, total, onHome, onTrack }: { state: State; total: 
               {[["Order placed", "Just now", "done"], ["Pharmacist verifying", "Within 1 hour", "active"], ["Filled & packed", "Tomorrow", "todo"], ["Delivered", state.speed === "sameday" ? "Today (select areas)" : "1–3 days", "todo"]].map(([label, meta, st], i, arr) => (
                 <li key={label} className="flex gap-3.5">
                   <div className="flex flex-col items-center">
-                    <span className={"grid h-6 w-6 place-items-center rounded-full text-[11px] font-bold " + (st === "done" ? "bg-wellness text-white" : st === "active" ? "bg-primary text-[color:var(--color-primary-fg)]" : "border-2 border-line bg-surface-2 text-ink-tertiary")}>{st === "done" ? "✓" : i + 1}</span>
+                    <span className={"grid h-6 w-6 place-items-center rounded-full text-2xs font-bold " + (st === "done" ? "bg-wellness text-white" : st === "active" ? "bg-primary text-[color:var(--color-primary-fg)]" : "border-2 border-line bg-surface-2 text-ink-tertiary")}>{st === "done" ? "✓" : i + 1}</span>
                     {i < arr.length - 1 && <span className="my-1 w-0.5 flex-1 bg-line" style={{ minHeight: 22 }} />}
                   </div>
                   <div className="pb-4"><p className={"font-semibold " + (st === "todo" ? "text-ink-tertiary" : "text-ink")}>{label}</p><p className="text-sm text-ink-tertiary">{meta}</p></div>
@@ -499,3 +499,4 @@ function Confirmation({ state, total, onHome, onTrack }: { state: State; total: 
 function Row({ k, v, tone }: { k: string; v: string; tone?: "wellness" }) {
   return <div className="flex items-center justify-between text-sm"><span className="text-ink-secondary">{k}</span><span className={tone === "wellness" ? "font-medium text-wellness tnum" : "text-ink tnum"}>{v}</span></div>;
 }
+

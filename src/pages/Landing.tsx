@@ -76,7 +76,7 @@ function Tiles({ onPick, last }: { onPick: (to: string) => void; last?: { title:
           <span className="grid h-12 w-12 place-items-center rounded-xl shadow-sm sm:h-14 sm:w-14" style={{ backgroundColor: e.tile }}>
             <TileIcon id={e.id} />
           </span>
-          <span className="text-[13px] font-medium leading-snug text-[color:var(--pp-headline)] sm:text-[15px]">{e.title}</span>
+          <span className="text-sm font-medium leading-snug text-[color:var(--pp-headline)] sm:text-base">{e.title}</span>
         </button>
       ))}
     </div>
@@ -98,7 +98,7 @@ function AnnouncementBar({ onGo }: { onGo: () => void }) {
   if (!show) return null;
   return (
     <div className="relative z-50 bg-[color:var(--pp-navy)] text-white">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-center gap-4 px-12 py-2.5 text-[11px] sm:text-xs">
+      <div className="mx-auto flex max-w-[1600px] items-center justify-center gap-4 px-12 py-2.5 text-2xs sm:text-xs">
         <span className="text-white/80">Ozempic® now at just $139</span>
         <button onClick={onGo} className="inline-flex items-center gap-1.5 font-semibold text-white hover:opacity-80">
           Get started <CircleArrow />
@@ -209,7 +209,7 @@ function Hero() {
 
       <button
         onClick={toggle}
-        className="absolute bottom-4 left-1/2 z-20 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full bg-black/30 text-[11px] text-white backdrop-blur transition-colors hover:bg-black/50 sm:bottom-auto sm:left-auto sm:right-5 sm:top-28 sm:translate-x-0"
+        className="absolute bottom-4 left-1/2 z-20 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full bg-black/30 text-2xs text-white backdrop-blur transition-colors hover:bg-black/50 sm:bottom-auto sm:left-auto sm:right-5 sm:top-28 sm:translate-x-0"
         aria-label={playing ? "Pause video" : "Play video"}
       >
         {playing ? "❚❚" : "▶"}
@@ -217,10 +217,10 @@ function Hero() {
 
       {/* corner labels */}
       <div className="pointer-events-none absolute inset-x-0 bottom-16 z-30 mx-auto flex w-full max-w-[105rem] flex-wrap items-center justify-between gap-3 px-5 md:px-8 xl:px-20">
-        <span className="flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 text-[12px] font-medium text-[color:var(--pp-navy)] backdrop-blur-sm">
+        <span className="flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 text-xs font-medium text-[color:var(--pp-navy)] backdrop-blur-sm">
           <span aria-hidden>🇨🇦</span>Complete care, without leaving home
         </span>
-        <span className="rounded-full bg-white/70 px-3 py-1.5 text-[12px] font-medium text-[color:var(--pp-navy)] backdrop-blur-sm">
+        <span className="rounded-full bg-white/70 px-3 py-1.5 text-xs font-medium text-[color:var(--pp-navy)] backdrop-blur-sm">
           Trusted by 800,000+ Canadians · 4.8★ rated
         </span>
       </div>
@@ -240,21 +240,21 @@ function Welcome({ onStart }: { onStart: () => void }) {
   return (
     <section className="relative z-20 -mt-10 px-5 md:px-8 xl:px-20">
       <div className="mx-auto w-full max-w-[105rem] rounded-t-[28px] bg-surface-2 px-6 pb-12 pt-7 text-center sm:px-14">
-        <p className="text-[15px] font-semibold text-[color:var(--pp-violet)]">Welcome to Pocketpills</p>
-        <h1 className="mt-3 font-display text-[38px] font-extrabold leading-[1.05] tracking-tight text-[color:var(--pp-headline)] sm:text-[52px]">
+        <p className="text-base font-semibold text-[color:var(--pp-violet)]">Welcome to Pocketpills</p>
+        <h1 className="mt-3 font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-[color:var(--pp-headline)] sm:text-5xl">
           Your health, handled.
         </h1>
         <button
           onClick={onStart}
-          className="mt-8 inline-flex items-center gap-2 rounded-full bg-[color:var(--pp-navy)] px-8 py-3.5 text-[15px] font-semibold text-white transition-opacity hover:opacity-90"
+          className="mt-8 inline-flex items-center gap-2 rounded-full bg-[color:var(--pp-navy)] px-8 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90"
         >
           Start <CircleArrow size={16} />
         </button>
         <div className="mt-11 grid grid-cols-2 gap-y-6 border-t border-line pt-7 text-left sm:grid-cols-3 lg:grid-cols-5 lg:divide-x lg:divide-line">
           {stats.map(([big, small], i) => (
             <div key={small} className={i > 0 ? "lg:pl-6" : ""}>
-              <p className="text-[13px] font-bold text-ink">{big}</p>
-              <p className="mt-1 text-[11px] leading-snug text-ink-tertiary">{small}</p>
+              <p className="text-sm font-bold text-ink">{big}</p>
+              <p className="mt-1 text-2xs leading-snug text-ink-tertiary">{small}</p>
             </div>
           ))}
         </div>
@@ -267,8 +267,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
 function SectionHeads({ title, onLink }: { title: string; onLink: () => void }) {
   return (
     <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1">
-      <p className="text-[17px] font-bold text-[color:var(--pp-primary-950)]">{title}</p>
-      <button onClick={onLink} className="inline-flex items-center gap-2 text-[15px] text-[color:var(--pp-primary-950)] hover:opacity-70">
+      <p className="text-md font-bold text-[color:var(--pp-primary-950)]">{title}</p>
+      <button onClick={onLink} className="inline-flex items-center gap-2 text-base text-[color:var(--pp-primary-950)] hover:opacity-70">
         Talk to a licensed clinician <span className="text-lg leading-none" aria-hidden>›</span>
       </button>
     </div>
@@ -298,12 +298,12 @@ function BuyAgain({ go }: { go: (to?: string) => void }) {
           >
             <div className="grid h-full grid-cols-2 overflow-hidden">
               <div className="relative z-10 flex flex-col justify-center gap-8 p-8 sm:p-12">
-                <h2 className="font-display text-[clamp(26px,3vw,44px)] font-light leading-[1.14] text-[color:var(--pp-primary-100)]">
+                <h2 className="font-display text-3xl font-light leading-[1.14] text-[color:var(--pp-primary-100)]">
                   Ozempic<sup className="align-super text-[0.42em] font-normal">®</sup> now<br />at just $139
                 </h2>
                 <button
                   onClick={() => go("/drug/ozempic")}
-                  className="inline-flex w-max items-center gap-2.5 rounded-full bg-white px-6 py-3 text-[15px] font-medium text-[color:var(--pp-primary-950)] transition-transform"
+                  className="inline-flex w-max items-center gap-2.5 rounded-full bg-white px-6 py-3 text-base font-medium text-[color:var(--pp-primary-950)] transition-transform"
                 >
                   Get started <RingArrow />
                 </button>
@@ -356,10 +356,10 @@ function FeatureCard({
       <img src={img} alt={alt} loading="lazy" onError={hideOnError}
         className="absolute inset-0 h-full w-full object-cover object-right" />
       <div className="relative z-10 max-w-xs">
-        <p className={"font-display text-[clamp(17px,1.45vw,22px)] font-medium leading-snug " + textClass}>{children}</p>
+        <p className={"font-display text-xl font-medium leading-snug " + textClass}>{children}</p>
       </div>
       <div className="relative z-10 flex items-center gap-3">
-        <p className={"text-[15px] font-medium " + textClass}>{cta}</p>
+        <p className={"text-base font-medium " + textClass}>{cta}</p>
         <ArrowCircle circleFill={circleFill} arrowFill={arrowFill} />
       </div>
     </button>
@@ -452,7 +452,7 @@ function Partners() {
   return (
     <section className="overflow-hidden py-12 md:py-16">
       <div className="flex flex-col items-center">
-        <h2 className="text-[15px] text-[color:var(--pp-primary-950)]">Proud pharmacy of:</h2>
+        <h2 className="text-base text-[color:var(--pp-primary-950)]">Proud pharmacy of:</h2>
         <div className="mt-7 w-full">
           <div className="w-full overflow-hidden">
             <div className="pp-marquee flex w-fit" style={{ animationDuration: "47.2667s" }}>
@@ -549,8 +549,8 @@ function Testimonials() {
   return (
     <section id="reviews" className="mx-auto flex w-full max-w-[105rem] flex-col gap-6 px-5 py-12 md:gap-12 md:px-8 md:py-16 xl:px-20">
       <div className="flex flex-col gap-6 text-center text-[color:var(--pp-primary-950)]">
-        <h3 className="font-display text-[clamp(26px,3vw,38px)] font-extrabold">Our members love us</h3>
-        <p className="text-[15px]">
+        <h3 className="font-display text-3xl font-extrabold">Our members love us</h3>
+        <p className="text-base">
           See why thousands across Canada choose <span className="font-medium">Pocketpills</span>.
         </p>
       </div>
@@ -564,9 +564,9 @@ function Testimonials() {
               <div className="mb-4 flex">
                 {Array.from({ length: 5 }).map((_, i) => <FullStar key={i} />)}
               </div>
-              <p className="text-[15px] leading-relaxed text-[color:var(--pp-primary-800)]">{r.text}</p>
+              <p className="text-base leading-relaxed text-[color:var(--pp-primary-800)]">{r.text}</p>
               <div className="mt-auto flex w-full items-center justify-between pt-6">
-                <p className="text-[15px] font-bold text-[color:var(--pp-primary-950)]">{r.name}</p>
+                <p className="text-base font-bold text-[color:var(--pp-primary-950)]">{r.name}</p>
                 <ReviewMark id={r.mark} />
               </div>
             </div>
@@ -577,7 +577,7 @@ function Testimonials() {
       </div>
 
       <div className="mx-auto flex items-center justify-center gap-1 rounded-xl border border-line px-6 py-4">
-        <span className="text-[15px] font-medium text-[color:var(--pp-primary-950)]">4.9</span>
+        <span className="text-base font-medium text-[color:var(--pp-primary-950)]">4.9</span>
         <span className="px-1"><FullStar w={16} /></span>
         <img src="https://static.pocketpills.com/acq-web/redesign/home/google-logo.png" alt="Google" width={73} height={25} loading="lazy" onError={hideOnError} className="mt-1" />
       </div>
@@ -609,10 +609,10 @@ function SmallStar() {
 function TestimonialCard({ m }: { m: Member }) {
   return (
     <div
-      className="flex min-h-[19rem] min-w-[17rem] shrink-0 snap-center flex-col-reverse overflow-hidden rounded-2xl md:min-h-[21rem] md:min-w-[38rem] md:flex-row"
+      className="flex h-[330px] min-w-[17rem] shrink-0 snap-center flex-col-reverse overflow-hidden rounded-2xl md:min-w-[38rem] md:flex-row"
       style={{ backgroundColor: m.bg }}
     >
-      <div className="w-full md:h-auto md:w-1/2 md:shrink-0">
+      <div className="h-1/2 w-full shrink-0 md:h-full md:w-1/2">
         <picture>
           <source srcSet={`${REVIEW_CDN}/Testimonial_card_D${m.img}.webp`} media="(min-width: 768px)" width={794} height={578} />
           <img
@@ -627,11 +627,11 @@ function TestimonialCard({ m }: { m: Member }) {
         </picture>
       </div>
       <div className="flex flex-1 flex-col justify-center gap-5 p-7 md:p-10">
-        <h2 className={"font-display text-[22px] font-medium leading-tight " + (m.dark ? "text-white" : "text-[color:var(--pp-primary-950)]")}>{m.n}</h2>
+        <h2 className={"font-display text-xl font-medium leading-tight " + (m.dark ? "text-white" : "text-[color:var(--pp-primary-950)]")}>{m.n}</h2>
         <div className="flex gap-1 text-[color:var(--pp-primary-400)]">
           {Array.from({ length: 5 }).map((_, i) => <SmallStar key={i} />)}
         </div>
-        <p className={"text-[14px] leading-relaxed " + (m.dark ? "text-[color:var(--pp-primary-200)]" : "text-[color:var(--pp-primary-800)]")}>{m.t}</p>
+        <p className={"text-sm leading-relaxed " + (m.dark ? "text-[color:var(--pp-primary-200)]" : "text-[color:var(--pp-primary-800)]")}>{m.t}</p>
       </div>
     </div>
   );
@@ -640,8 +640,8 @@ function TestimonialCard({ m }: { m: Member }) {
 function TrustpilotBadge() {
   return (
     <div className="mx-auto mt-10 hidden max-w-sm items-center justify-center gap-4 rounded-lg bg-[color:var(--pp-primary-200)] px-4 py-1.5 md:flex">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-secondary">Excellent</p>
-      <span className="rounded-full bg-white px-4 py-1.5 text-[13px] font-medium text-[color:var(--pp-primary-800)]">4.8 out of 5</span>
+      <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-ink-secondary">Excellent</p>
+      <span className="rounded-full bg-white px-4 py-1.5 text-sm font-medium text-[color:var(--pp-primary-800)]">4.8 out of 5</span>
       <svg width="88" height="32" viewBox="0 0 88 32" fill="none" aria-label="Trustpilot">
         <path d="M8.61539 20.2816L12.359 19.3329L13.9231 24.1534L8.61539 20.2816ZM17.2308 14.0508H10.641L8.61539 7.8457L6.58975 14.0508H0L5.33334 17.897L3.30769 24.1021L8.64103 20.256L11.9231 17.897L17.2308 14.0508Z" fill="#219653" />
         <path d="M27.7865 10.5V21H25.6303V10.5H27.7865ZM31.0173 10.5V12.1947H22.45V10.5H31.0173ZM33.6928 14.899V21H31.6158V13.1971H33.5702L33.6928 14.899ZM36.0437 13.1466L36.0077 15.0721C35.9067 15.0577 35.7841 15.0457 35.6399 15.0361C35.5005 15.0216 35.373 15.0144 35.2577 15.0144C34.9644 15.0144 34.7096 15.0529 34.4932 15.1298C34.2817 15.2019 34.1038 15.3101 33.9596 15.4543C33.8202 15.5986 33.7144 15.774 33.6423 15.9808C33.575 16.1875 33.5365 16.4231 33.5269 16.6875L33.1086 16.5577C33.1086 16.0529 33.1591 15.5889 33.2601 15.1659C33.361 14.738 33.5077 14.3654 33.7 14.0481C33.8971 13.7308 34.1375 13.4856 34.4211 13.3125C34.7048 13.1394 35.0293 13.0529 35.3947 13.0529C35.5101 13.0529 35.6279 13.0625 35.748 13.0817C35.8682 13.0962 35.9668 13.1178 36.0437 13.1466ZM41.6399 19.1322V13.1971H43.7168V21H41.7625L41.6399 19.1322ZM41.8706 17.5312L42.4836 17.5168C42.4836 18.0361 42.4235 18.5192 42.3033 18.9663C42.1831 19.4087 42.0029 19.7933 41.7625 20.1202C41.5221 20.4423 41.2192 20.6947 40.8538 20.8774C40.4884 21.0553 40.0581 21.1442 39.563 21.1442C39.1831 21.1442 38.8322 21.0913 38.5101 20.9856C38.1928 20.875 37.9187 20.7043 37.688 20.4736C37.462 20.238 37.2841 19.9375 37.1543 19.5721C37.0293 19.2019 36.9668 18.7572 36.9668 18.238V13.1971H39.0437V18.2524C39.0437 18.4832 39.0702 18.6779 39.123 18.8365C39.1807 18.9952 39.2601 19.125 39.361 19.226C39.462 19.3269 39.5798 19.399 39.7144 19.4423C39.8538 19.4856 40.0077 19.5072 40.1759 19.5072C40.6038 19.5072 40.9404 19.4207 41.1855 19.2476C41.4355 19.0745 41.611 18.8389 41.712 18.5409C41.8178 18.238 41.8706 17.9014 41.8706 17.5312ZM49.5221 18.8437C49.5221 18.6947 49.4788 18.5601 49.3923 18.4399C49.3057 18.3197 49.1447 18.2091 48.9091 18.1082C48.6783 18.0024 48.3442 17.9062 47.9067 17.8197C47.5125 17.7332 47.1447 17.625 46.8033 17.4952C46.4668 17.3606 46.1735 17.1995 45.9235 17.012C45.6783 16.8245 45.486 16.6034 45.3466 16.3486C45.2072 16.0889 45.1375 15.7933 45.1375 15.4615C45.1375 15.1346 45.2072 14.8269 45.3466 14.5385C45.4908 14.25 45.6952 13.9952 45.9596 13.774C46.2288 13.5481 46.5557 13.3726 46.9404 13.2476C47.3298 13.1178 47.7673 13.0529 48.2529 13.0529C48.9307 13.0529 49.5125 13.1611 49.998 13.3774C50.4884 13.5937 50.8634 13.8918 51.123 14.2716C51.3875 14.6466 51.5197 15.0745 51.5197 15.5553H49.4428C49.4428 15.3534 49.3995 15.1731 49.313 15.0144C49.2312 14.851 49.1014 14.7236 48.9235 14.6322C48.7505 14.5361 48.5245 14.488 48.2456 14.488C48.0149 14.488 47.8154 14.5288 47.6471 14.6106C47.4788 14.6875 47.349 14.7933 47.2577 14.9279C47.1711 15.0577 47.1279 15.2019 47.1279 15.3606C47.1279 15.4808 47.1519 15.5889 47.2 15.6851C47.2529 15.7764 47.337 15.8606 47.4524 15.9375C47.5678 16.0144 47.7168 16.0865 47.8995 16.1538C48.087 16.2163 48.3178 16.274 48.5918 16.3269C49.1543 16.4423 49.6567 16.5937 50.099 16.7812C50.5413 16.9639 50.8923 17.2139 51.1519 17.5312C51.4115 17.8437 51.5413 18.2548 51.5413 18.7644C51.5413 19.1106 51.4644 19.4279 51.3105 19.7163C51.1567 20.0048 50.9355 20.2572 50.6471 20.4736C50.3586 20.6851 50.0125 20.851 49.6086 20.9712C49.2096 21.0865 48.7601 21.1442 48.2601 21.1442C47.5341 21.1442 46.9187 21.0144 46.4139 20.7548C45.9139 20.4952 45.5341 20.1659 45.2745 19.7668C45.0197 19.363 44.8923 18.9495 44.8923 18.5264H46.861C46.8706 18.8101 46.9428 19.0385 47.0774 19.2115C47.2168 19.3846 47.3923 19.5096 47.6038 19.5865C47.8202 19.6635 48.0533 19.7019 48.3033 19.7019C48.5726 19.7019 48.7961 19.6659 48.974 19.5937C49.1519 19.5168 49.2865 19.4159 49.3779 19.2909C49.474 19.1611 49.5221 19.012 49.5221 18.8437ZM56.712 13.1971V14.6683H52.1687V13.1971H56.712ZM53.2937 11.2716H55.3706V18.649C55.3706 18.875 55.3995 19.0481 55.4572 19.1683C55.5197 19.2885 55.611 19.3726 55.7312 19.4207C55.8514 19.4639 56.0029 19.4856 56.1855 19.4856C56.3154 19.4856 56.4307 19.4808 56.5317 19.4712C56.6375 19.4567 56.7264 19.4423 56.7985 19.4279L56.8057 20.9567C56.6279 21.0144 56.4355 21.0601 56.2288 21.0938C56.0221 21.1274 55.7937 21.1442 55.5437 21.1442C55.087 21.1442 54.688 21.0697 54.3466 20.9207C54.0101 20.7668 53.7505 20.5216 53.5678 20.1851C53.3851 19.8486 53.2937 19.4062 53.2937 18.8582V11.2716ZM59.9716 14.6971V24H57.8947V13.1971H59.8202L59.9716 14.6971ZM64.9115 17.012V17.1635C64.9115 17.7308 64.8442 18.2572 64.7096 18.7428C64.5798 19.2284 64.3875 19.6514 64.1327 20.012C63.8779 20.3678 63.5605 20.6466 63.1807 20.8486C62.8057 21.0457 62.373 21.1442 61.8827 21.1442C61.4067 21.1442 60.9932 21.0481 60.6423 20.8558C60.2913 20.6635 59.9956 20.3942 59.7553 20.0481C59.5197 19.6971 59.3298 19.2909 59.1855 18.8293C59.0413 18.3678 58.9307 17.8726 58.8538 17.3437V16.9471C58.9307 16.3798 59.0413 15.8606 59.1855 15.3894C59.3298 14.9135 59.5197 14.5024 59.7553 14.1562C59.9956 13.8053 60.2889 13.5337 60.6351 13.3413C60.986 13.149 61.3971 13.0529 61.8682 13.0529C62.3634 13.0529 62.7985 13.1466 63.1735 13.3341C63.5533 13.5216 63.8706 13.7909 64.1255 14.1418C64.3851 14.4928 64.5798 14.9111 64.7096 15.3966C64.8442 15.8822 64.9115 16.4207 64.9115 17.012ZM62.8274 17.1635V17.012C62.8274 16.6803 62.7985 16.375 62.7408 16.0962C62.688 15.8125 62.6014 15.5649 62.4812 15.3534C62.3658 15.1418 62.212 14.9784 62.0197 14.863C61.8322 14.7428 61.6038 14.6827 61.3346 14.6827C61.0509 14.6827 60.8081 14.7284 60.6062 14.8197C60.4091 14.9111 60.248 15.0433 60.123 15.2163C59.998 15.3894 59.9043 15.5962 59.8418 15.8365C59.7793 16.0769 59.7408 16.3486 59.7264 16.6514V17.6538C59.7505 18.0096 59.8178 18.3293 59.9283 18.613C60.0389 18.8918 60.2096 19.113 60.4404 19.2764C60.6711 19.4399 60.974 19.5216 61.349 19.5216C61.623 19.5216 61.8538 19.4615 62.0413 19.3413C62.2288 19.2163 62.3803 19.0457 62.4956 18.8293C62.6158 18.613 62.7 18.363 62.748 18.0793C62.8009 17.7957 62.8274 17.4904 62.8274 17.1635ZM68.3947 13.1971V21H66.3105V13.1971H68.3947ZM66.1807 11.1635C66.1807 10.8606 66.2865 10.6106 66.498 10.4135C66.7096 10.2163 66.9932 10.1178 67.349 10.1178C67.7 10.1178 67.9812 10.2163 68.1928 10.4135C68.4091 10.6106 68.5173 10.8606 68.5173 11.1635C68.5173 11.4663 68.4091 11.7163 68.1928 11.9135C67.9812 12.1106 67.7 12.2091 67.349 12.2091C66.9932 12.2091 66.7096 12.1106 66.498 11.9135C66.2865 11.7163 66.1807 11.4663 66.1807 11.1635ZM72.3033 9.92308V21H70.2192V9.92308H72.3033ZM73.688 17.1779V17.0264C73.688 16.4543 73.7697 15.9279 73.9331 15.4471C74.0966 14.9615 74.3346 14.5409 74.6471 14.1851C74.9596 13.8293 75.3442 13.5529 75.8009 13.3558C76.2577 13.1538 76.7817 13.0529 77.373 13.0529C77.9644 13.0529 78.4908 13.1538 78.9524 13.3558C79.4139 13.5529 79.8009 13.8293 80.1134 14.1851C80.4307 14.5409 80.6711 14.9615 80.8346 15.4471C80.998 15.9279 81.0798 16.4543 81.0798 17.0264V17.1779C81.0798 17.7452 80.998 18.2716 80.8346 18.7572C80.6711 19.238 80.4307 19.6587 80.1134 20.0192C79.8009 20.375 79.4163 20.6514 78.9596 20.8486C78.5029 21.0457 77.9788 21.1442 77.3875 21.1442C76.7961 21.1442 76.2697 21.0457 75.8081 20.8486C75.3514 20.6514 74.9644 20.375 74.6471 20.0192C74.3346 19.6587 74.0966 19.238 73.9331 18.7572C73.7697 18.2716 73.688 17.7452 73.688 17.1779ZM75.7649 17.0264V17.1779C75.7649 17.5048 75.7937 17.8101 75.8514 18.0937C75.9091 18.3774 76.0005 18.6274 76.1255 18.8437C76.2553 19.0553 76.4235 19.2212 76.6303 19.3413C76.837 19.4615 77.0894 19.5216 77.3875 19.5216C77.6759 19.5216 77.9235 19.4615 78.1303 19.3413C78.337 19.2212 78.5029 19.0553 78.6279 18.8437C78.7529 18.6274 78.8442 18.3774 78.9019 18.0937C78.9644 17.8101 78.9956 17.5048 78.9956 17.1779V17.0264C78.9956 16.7091 78.9644 16.4111 78.9019 16.1322C78.8442 15.8486 78.7505 15.5986 78.6206 15.3822C78.4956 15.1611 78.3298 14.988 78.123 14.863C77.9163 14.738 77.6663 14.6755 77.373 14.6755C77.0798 14.6755 76.8298 14.738 76.623 14.863C76.4211 14.988 76.2553 15.1611 76.1255 15.3822C76.0005 15.5986 75.9091 15.8486 75.8514 16.1322C75.7937 16.4111 75.7649 16.7091 75.7649 17.0264ZM86.1783 13.1971V14.6683H81.6351V13.1971H86.1783ZM82.7601 11.2716H84.837V18.649C84.837 18.875 84.8658 19.0481 84.9235 19.1683C84.986 19.2885 85.0774 19.3726 85.1976 19.4207C85.3178 19.4639 85.4692 19.4856 85.6519 19.4856C85.7817 19.4856 85.8971 19.4808 85.9981 19.4712C86.1038 19.4567 86.1928 19.4423 86.2649 19.4279L86.2721 20.9567C86.0942 21.0144 85.9019 21.0601 85.6952 21.0938C85.4884 21.1274 85.2601 21.1442 85.0101 21.1442C84.5533 21.1442 84.1543 21.0697 83.813 20.9207C83.4764 20.7668 83.2168 20.5216 83.0341 20.1851C82.8514 19.8486 82.7601 19.4062 82.7601 18.8582V11.2716Z" fill="#37325D" />
@@ -659,10 +659,10 @@ function JoinBand({ go }: { go: (to?: string) => void }) {
   return (
     <section className="mx-4 rounded-3xl bg-white py-12 md:mx-8 md:py-16 xl:mx-11">
       <div className="mb-10 flex flex-col gap-6">
-        <h2 className="mx-auto max-w-xl text-center font-display text-[clamp(26px,3vw,38px)] font-extrabold leading-snug text-[color:var(--pp-primary-950)]">
+        <h2 className="mx-auto max-w-xl text-center font-display text-3xl font-extrabold leading-snug text-[color:var(--pp-primary-950)]">
           Join <span className="text-[color:var(--pp-violet)]">800,000+</span> Canadians who never miss a dose.
         </h2>
-        <button onClick={() => go()} className="mx-auto w-max rounded-full bg-[color:var(--pp-primary-950)] px-7 py-3 text-[15px] font-medium text-white transition-opacity hover:opacity-90">
+        <button onClick={() => go()} className="mx-auto w-max rounded-full bg-[color:var(--pp-primary-950)] px-7 py-3 text-base font-medium text-white transition-opacity hover:opacity-90">
           Join Pocketpills
         </button>
       </div>
@@ -695,15 +695,15 @@ function NabpBand() {
     <section className="mx-auto w-full max-w-[105rem] px-5 py-12 md:px-8 md:py-16 xl:px-20">
       <div className="flex flex-col gap-6 rounded-2xl bg-[color:var(--pp-green)] p-8 text-white sm:flex-row sm:items-center sm:p-10">
         <div className="shrink-0 text-center">
-          <p className="text-[8px] uppercase tracking-[0.2em] text-white/60">Accredited by</p>
+          <p className="text-2xs uppercase tracking-[0.2em] text-white/60">Accredited by</p>
           <div className="mx-auto mt-1 grid h-12 w-12 place-items-center rounded-full border-2 border-white/40"><span className="font-display text-sm font-extrabold">◈</span></div>
           <p className="mt-1 font-display text-lg font-extrabold leading-none">NABP</p>
-          <p className="text-[7px] text-white/50">Healthcare Merchant</p>
+          <p className="text-2xs text-white/50">Healthcare Merchant</p>
         </div>
         <div className="hidden w-px self-stretch bg-white/20 sm:block" />
         <div>
           <h3 className="font-display text-2xl font-bold">Putting you first, every time.</h3>
-          <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-white/75">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
             Our licensed healthcare providers carefully assess each concern and provide expert medical guidance.
             Whether it's a diagnosis, treatment plan, or prescription, you can trust you're in good hands.
           </p>
@@ -742,10 +742,10 @@ function Faq({ go }: { go: (to?: string) => void }) {
             return (
               <div key={q} className="overflow-hidden rounded-xl bg-surface-1">
                 <button onClick={() => setOpen(isOpen ? null : i)} className="flex w-full items-center justify-between gap-4 px-5 py-3.5 text-left" aria-expanded={isOpen}>
-                  <span className="text-[13px] font-medium text-ink">{q}</span>
+                  <span className="text-sm font-medium text-ink">{q}</span>
                   <span className={"shrink-0 text-ink-tertiary transition-transform " + (isOpen ? "rotate-45" : "")}>＋</span>
                 </button>
-                {isOpen && <p className="px-5 pb-4 text-[13px] leading-relaxed text-ink-secondary">{a}</p>}
+                {isOpen && <p className="px-5 pb-4 text-sm leading-relaxed text-ink-secondary">{a}</p>}
               </div>
             );
           })}
@@ -778,3 +778,4 @@ export function Landing() {
     </div>
   );
 }
+

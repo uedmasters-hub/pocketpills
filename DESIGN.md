@@ -148,3 +148,56 @@ Every routed page enters with `animate-fade-up`, keyed on the pathname.
 
 **Page header.** Eyebrow (11px, uppercase, `--pp-violet`) → title
 (`font-display`, extrabold, `clamp`) → optional sub (15px, `max-w-xl`).
+
+
+---
+
+## 9. Type scale
+
+Every size is a named step with its line-height baked in — never an arbitrary
+`text-[13px]`. Nothing renders below **11px**.
+
+| Class | Size | Line-height | Use |
+|---|---|---|---|
+| `text-2xs` | 11px | 1.45 | eyebrows, meta, legal |
+| `text-xs` | 12px | 1.5 | captions |
+| `text-sm` | 13px | 1.55 | secondary copy |
+| `text-base` | 15px | 1.6 | body |
+| `text-md` | 17px | 1.5 | card titles |
+| `text-lg` | 19px | 1.4 | section titles |
+| `text-xl` | 22px | 1.35 | large titles |
+| `text-2xl` | 20→26px | 1.25 | fluid |
+| `text-3xl` | 24→32px | 1.15 | page titles |
+| `text-4xl` | 28→38px | 1.1 | fluid |
+| `text-5xl` | 30→46px | 1.05 | hero |
+
+Fluid steps use `clamp()` so headings scale with the viewport without breakpoints.
+
+---
+
+## 10. Accessibility
+
+**Contrast (WCAG AA).** All text tokens are verified against their surfaces:
+
+| Token | On white | Verdict |
+|---|---|---|
+| `--text-primary` #2A2148 | 13.9:1 | AAA |
+| `--text-secondary` #55507A | 6.9:1 | AA |
+| `--text-tertiary` #6E6992 | 5.1:1 | AA |
+| `--pp-violet` #6B4FD6 | 5.7:1 | AA |
+| `--pp-primary-950` #4E2A84 | 10.6:1 | AAA |
+
+`--text-tertiary` was #8B87A8 (3.2:1 — failing) and is now #6E6992. Avoid pairing
+it with `--pp-primary-200`, the one combination still under 4.5:1.
+
+**Focus.** Every interactive element gets a two-layer ring
+(surface + `--color-primary`) at ~9.7:1 — well past the 3:1 WCAG 2.2 requires for
+non-text indicators. Never remove it without an equivalent replacement.
+
+**Structure.** A skip link precedes the header; `<main id="main" tabIndex={-1}>`
+receives focus; every `<nav>` carries an `aria-label`; icon-only controls carry
+`aria-label`; decorative art is `aria-hidden` or `alt=""`.
+
+**Motion.** `prefers-reduced-motion` disables the marquee, chrome hide/show,
+skeleton sheen and hero autoplay.
+

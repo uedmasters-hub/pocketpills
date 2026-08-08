@@ -41,7 +41,7 @@ const MORE: [string, string][] = [
   ["Profile & settings", "/account"],
 ];
 
-const BASE = "flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-[15px] transition-colors";
+const BASE = "flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-base transition-colors";
 const IDLE = "text-ink-tertiary hover:bg-[color:var(--pp-primary-100)] hover:text-[color:var(--pp-primary-950)]";
 const ACTIVE = "bg-[color:var(--pp-primary-100)] font-medium text-[color:var(--pp-primary-950)]";
 
@@ -55,7 +55,7 @@ function Sidebar() {
 
   return (
     <aside className="hidden w-60 shrink-0 lg:block">
-      <nav className="sticky top-28 flex flex-col gap-1">
+      <nav aria-label="Main" className="sticky top-28 flex flex-col gap-1">
         {NAV.map((n) => (
           <NavLink key={n.to} to={n.to} className={({ isActive }) => `${BASE} ${isActive ? ACTIVE : IDLE}`}>
             <NavIcon id={n.id} />
@@ -73,7 +73,7 @@ function Sidebar() {
               <div className="absolute left-2 right-0 z-20 mt-1 overflow-hidden rounded-2xl border border-line bg-surface-2 shadow-float">
                 {MORE.map(([label, to]) => (
                   <button key={to} onClick={() => { setOpenMore(false); nav(to); }}
-                    className="block w-full px-4 py-2.5 text-left text-[13px] font-medium text-ink-secondary hover:bg-[color:var(--pp-primary-100)]">
+                    className="block w-full px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--pp-primary-100)]">
                     {label}
                   </button>
                 ))}
@@ -89,7 +89,7 @@ function Sidebar() {
 /* ── mobile bottom nav ─────────────────────────────────── */
 function MobileNav({ hidden }: { hidden: boolean }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface-1/95 backdrop-blur will-change-transform lg:hidden"
+    <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface-1/95 backdrop-blur will-change-transform lg:hidden"
       style={{
         transform: hidden ? "translateY(100%)" : "translateY(0)",
         transition: "transform 380ms cubic-bezier(0.22, 1, 0.36, 1)",
@@ -98,7 +98,7 @@ function MobileNav({ hidden }: { hidden: boolean }) {
         {NAV.map((n) => (
           <NavLink key={n.to} to={n.to}
             className={({ isActive }) =>
-              "flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium " +
+              "flex flex-col items-center gap-1 py-2.5 text-2xs font-medium " +
               (isActive ? "text-[color:var(--pp-primary-950)]" : "text-ink-tertiary")
             }>
             <NavIcon id={n.id} />
@@ -124,12 +124,16 @@ export function AppShell({ children }: { children: ReactNode }) {
    */
   return (
     <div className="min-h-screen bg-surface-0">
+      <a href="#main" className="pp-skip rounded-full bg-[color:var(--pp-primary-950)] px-5 py-2.5 text-sm font-medium text-white">
+        Skip to content
+      </a>
       <SiteHeader />
       <div className="mx-auto flex w-full max-w-[105rem] gap-8 px-5 pb-28 pt-8 md:px-8 lg:pb-16 xl:px-20">
         {focusedFlow ? <div className="hidden w-60 shrink-0 lg:block" aria-hidden /> : <Sidebar />}
-        <main key={pathname} className="w-full min-w-0 flex-1 animate-fade-up">{children}</main>
+        <main id="main" key={pathname} tabIndex={-1} className="w-full min-w-0 flex-1 animate-fade-up">{children}</main>
       </div>
       {!focusedFlow && <MobileNav hidden={chromeHidden} />}
     </div>
   );
 }
+

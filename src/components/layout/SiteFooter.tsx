@@ -65,8 +65,8 @@ function StoreBadge({ kind }: { kind: "ios" | "android" }) {
         </svg>
       )}
       <span className="text-left leading-tight">
-        <span className="block text-[10px] font-medium tracking-wide">{kind === "ios" ? "Download on the" : "GET IT ON"}</span>
-        <span className="block text-[17px] font-semibold leading-tight">{kind === "ios" ? "App Store" : "Google Play"}</span>
+        <span className="block text-2xs font-medium tracking-wide">{kind === "ios" ? "Download on the" : "GET IT ON"}</span>
+        <span className="block text-md font-semibold leading-tight">{kind === "ios" ? "App Store" : "Google Play"}</span>
       </span>
     </a>
   );
@@ -136,7 +136,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
           <div className="relative flex justify-between gap-6">
             <div className="flex w-full flex-col gap-6">
               <LogoMark className="h-11 w-11 text-white" />
-              <h2 className="font-display text-[clamp(30px,3.6vw,46px)] font-medium leading-[1.12] tracking-tight text-white">
+              <h2 className="font-display text-5xl font-medium leading-[1.12] tracking-tight text-white">
                 Stay in control<br />of your health.
               </h2>
             </div>
@@ -149,9 +149,9 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
           {/* Care Team */}
           <div className="relative flex flex-col justify-between gap-10 rounded-2xl bg-white p-8 sm:flex-row sm:gap-6 md:p-10">
             <div className="flex flex-col gap-4">
-              <h2 className="font-display text-[26px] font-medium text-[color:var(--pp-primary-950)]">Our Care Team</h2>
-              <p className="text-[15px] leading-relaxed text-ink-secondary">Monday - Saturday<br />9:00 AM - 7:00 PM EST</p>
-              <span className="inline-flex w-max items-center gap-2 rounded-full bg-[#FDE8E8] px-3 py-1.5 text-[13px] font-medium text-[#D9534F]">
+              <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">Our Care Team</h2>
+              <p className="text-base leading-relaxed text-ink-secondary">Monday - Saturday<br />9:00 AM - 7:00 PM EST</p>
+              <span className="inline-flex w-max items-center gap-2 rounded-full bg-[#FDE8E8] px-3 py-1.5 text-sm font-medium text-[#D9534F]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#D9534F]" />Closed Now
               </span>
             </div>
@@ -160,13 +160,13 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
               <div className="flex flex-col gap-3">
                 {[["EMAIL", "care@pocketpills.com"], ["TEXT", "1-855-950-7225"], ["FAX", "1-855-950-7226"]].map(([k, v]) => (
                   <div key={k} className="flex items-center gap-8">
-                    <p className="mb-0 w-12 text-[11px] font-semibold tracking-[0.1em] text-ink-tertiary">{k}</p>
-                    <span className="text-[15px] text-[color:var(--pp-primary-950)] hover:underline">{v}</span>
+                    <p className="mb-0 w-12 text-2xs font-semibold tracking-[0.1em] text-ink-tertiary">{k}</p>
+                    <span className="text-base text-[color:var(--pp-primary-950)] hover:underline">{v}</span>
                   </div>
                 ))}
               </div>
               <button onClick={() => go("/messages")}
-                className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-[color:var(--pp-primary-950)] px-6 py-3 text-[15px] font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]">
+                className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-[color:var(--pp-primary-950)] px-6 py-3 text-base font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]">
                 Get In Touch <ArrowRight w={18} />
               </button>
             </div>
@@ -180,7 +180,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
               <button key={id} onClick={() => go(TILE[id].to)}
                 className="flex flex-col items-center justify-center gap-5 rounded-2xl p-4 text-center transition-transform">
                 <TileIcon64 id={id} />
-                <p className="text-[15px] text-[color:var(--pp-primary-950)]">{TILE[id].label}</p>
+                <p className="text-base text-[color:var(--pp-primary-950)]">{TILE[id].label}</p>
               </button>
             ))}
           </div>
@@ -195,22 +195,22 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
           <div className="flex flex-col gap-6 p-0 sm:py-8">
             <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">Pocketpills delivers to:</h2>
             <div className="grid grid-cols-1 gap-y-2 md:grid-cols-2">
-              {PROVINCES.map((p) => <span key={p} className="text-[13px] text-[color:var(--pp-primary-950)]">{p}</span>)}
+              {PROVINCES.map((p) => <span key={p} className="text-sm text-[color:var(--pp-primary-950)]">{p}</span>)}
             </div>
           </div>
           <div className="flex flex-col gap-6 rounded-2xl bg-[#E5E3FF80] px-4 py-8 sm:p-8">
-            <div className="flex flex-col gap-6 text-[13px] text-ink-secondary">
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em]">Your Region</p>
+            <div className="flex flex-col gap-6 text-sm text-ink-secondary">
+              <p className="text-2xs font-bold uppercase tracking-[0.12em]">Your Region</p>
               <div className="flex flex-col gap-3">
                 <h2 className="font-display text-lg font-bold text-[color:var(--pp-primary-950)]">Pocketpills East</h2>
-                <p className="text-[11px] font-medium uppercase tracking-wide hover:underline">Unit 6 - 6375 Dixie Rd, Mississauga, ON, L5T 2E7</p>
+                <p className="text-2xs font-medium uppercase tracking-wide hover:underline">Unit 6 - 6375 Dixie Rd, Mississauga, ON, L5T 2E7</p>
               </div>
             </div>
             <div className="flex flex-col gap-4">
-              <p className="text-[13px] text-[color:var(--pp-primary-950)]">
+              <p className="text-sm text-[color:var(--pp-primary-950)]">
                 Pocketpills is licensed by <span className="text-[color:var(--pp-violet)] hover:underline">Ontario College of Pharmacists</span>
               </p>
-              <div className="flex justify-between text-[13px]">
+              <div className="flex justify-between text-sm">
                 <div className="flex flex-col"><p className="text-ink-secondary">Pharmacy License No.</p><p className="text-[color:var(--pp-primary-800)]">#307234</p></div>
                 <div className="flex flex-col"><p className="text-ink-secondary">Pharmacy Manager</p><p className="text-[color:var(--pp-primary-800)]">Aisha Abo Saada</p></div>
               </div>
@@ -223,16 +223,16 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
         <div className="grid w-full grid-cols-2 gap-8 md:grid-cols-4">
           {COLUMNS.map((c) => (
             <div key={c.head} className="flex flex-col gap-6">
-              <h4 className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-tertiary">{c.head}</h4>
+              <h4 className="text-2xs font-bold uppercase tracking-[0.12em] text-ink-tertiary">{c.head}</h4>
               <ul className="space-y-3">
                 {c.links.map(([l, to]) => (
-                  <li key={l} className="text-[13px] text-ink-secondary">
+                  <li key={l} className="text-sm text-ink-secondary">
                     {to.startsWith("#") ? <a href={to} className="hover:text-[color:var(--pp-violet)]">{l}</a>
                       : <Link to={to} className="hover:text-[color:var(--pp-violet)]">{l}</Link>}
                   </li>
                 ))}
                 <li>
-                  <button onClick={() => go(c.cta[1])} className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--pp-primary-950)] hover:underline">
+                  <button onClick={() => go(c.cta[1])} className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--pp-primary-950)] hover:underline">
                     {c.cta[0]} <ArrowRight />
                   </button>
                 </li>
@@ -247,15 +247,15 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div className="flex flex-wrap items-center gap-4">
             <Social />
-            <button className="flex items-center gap-2 rounded-md border border-line bg-white px-2.5 py-1.5 text-[13px] text-ink-secondary">
+            <button className="flex items-center gap-2 rounded-md border border-line bg-white px-2.5 py-1.5 text-sm text-ink-secondary">
               EN
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="m6 9 6 6 6-6" /></svg>
             </button>
-            <p className="text-[12px] text-ink-tertiary">Pocketpills is not a pharmacy&nbsp; or a drug manufacturer</p>
+            <p className="text-xs text-ink-tertiary">Pocketpills is not a pharmacy&nbsp; or a drug manufacturer</p>
           </div>
 
           <div className="flex flex-col items-center gap-2">
-            <h3 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-tertiary">Certifications</h3>
+            <h3 className="text-2xs font-semibold uppercase tracking-[0.14em] text-ink-tertiary">Certifications</h3>
             <div className="flex items-center gap-3">
               <img loading="lazy" onError={hideOnError} src={`${CDN}/images/landing/footer/legitScript_logo.png`} width={52} height={52} alt="LegitScript approved" />
               <img loading="lazy" onError={hideOnError} src="https://static.pocketpills.com/webapp/rebrand/landing/logo_soc2.webp" width={52} height={52} className="h-[52px]" alt="SOC 2 certification" />
@@ -265,7 +265,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
       </div>
 
       {/* legal bar — outside the card */}
-      <div className="flex flex-col justify-between gap-2 px-2 pt-2 text-[12px] text-ink-secondary sm:flex-row">
+      <div className="flex flex-col justify-between gap-2 px-2 pt-2 text-xs text-ink-secondary sm:flex-row">
         <span>©2026 Pocketpills · Conceptual redesign, not affiliated with Pocketpills Inc.</span>
         <span className="flex flex-wrap items-center">
           {["Security", "Terms of Use", "Privacy Policy", "Return Policy"].map((l, i, a) => (
@@ -279,3 +279,4 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
     </section>
   );
 }
+

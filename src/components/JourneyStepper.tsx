@@ -36,7 +36,7 @@ export function JourneyStepper({ current }: { current: CareStepKey }) {
               <li key={s.key} className="flex flex-col items-center gap-2" style={{ flex: "0 0 auto" }}>
                 <span
                   className={
-                    "grid h-6 w-6 place-items-center rounded-full border-2 text-[11px] font-bold transition-colors " +
+                    "grid h-6 w-6 place-items-center rounded-full border-2 text-2xs font-bold transition-colors " +
                     (done
                       ? "border-primary bg-primary text-[color:var(--color-primary-fg)]"
                       : active
@@ -49,7 +49,7 @@ export function JourneyStepper({ current }: { current: CareStepKey }) {
                 </span>
                 <span
                   className={
-                    "hidden text-[11px] font-medium sm:block " +
+                    "hidden text-2xs font-medium sm:block " +
                     (active ? "text-ink" : "text-ink-tertiary")
                   }
                 >
@@ -63,3 +63,4 @@ export function JourneyStepper({ current }: { current: CareStepKey }) {
     </div>
   );
 }
+

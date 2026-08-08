@@ -3,8 +3,8 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useUser } from "@/lib/user";
 import { profileChecklist, isChecklistId, type ChecklistId } from "@/lib/profile";
 
-const FIELD = "h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-[15px] text-ink outline-none focus:border-primary";
-const LABEL = "mb-1.5 block text-[13px] font-medium text-ink-secondary";
+const FIELD = "h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-base text-ink outline-none focus:border-primary";
+const LABEL = "mb-1.5 block text-sm font-medium text-ink-secondary";
 const CARD = "rounded-2xl bg-surface-2 p-6";
 
 function Text({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
@@ -26,12 +26,12 @@ function Tags({ label, items, onChange, placeholder }: { label: string; items: s
         <input className={FIELD} value={draft} placeholder={placeholder}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
-        <button onClick={add} className="shrink-0 rounded-xl border border-line px-4 text-[14px] font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-100)]">Add</button>
+        <button onClick={add} className="shrink-0 rounded-xl border border-line px-4 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-100)]">Add</button>
       </div>
       {items.length > 0 && (
         <div className="mt-2.5 flex flex-wrap gap-2">
           {items.map((it) => (
-            <span key={it} className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--pp-primary-100)] px-3 py-1 text-[13px] font-medium text-[color:var(--pp-primary-950)]">
+            <span key={it} className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--pp-primary-100)] px-3 py-1 text-sm font-medium text-[color:var(--pp-primary-950)]">
               {it}<button onClick={() => onChange(items.filter((x) => x !== it))} aria-label={`Remove ${it}`}>✕</button>
             </span>
           ))}
@@ -44,7 +44,7 @@ function Tags({ label, items, onChange, placeholder }: { label: string; items: s
 /** Summary of what's on file, in the reference's read-first style. */
 function SummaryLine({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
-    <p className="mt-3 flex items-center gap-3 text-[15px] text-ink-secondary">
+    <p className="mt-3 flex items-center gap-3 text-base text-ink-secondary">
       <span className="shrink-0 text-[color:var(--pp-violet)]">{icon}</span>
       {children}
     </p>
@@ -64,8 +64,8 @@ function QuestionCard({ q, sub, value, onAnswer }: { q: string; sub: string; val
   return (
     <div className="overflow-hidden rounded-2xl bg-surface-2">
       <div className="relative p-6">
-        <p className="relative z-10 max-w-[60%] font-display text-[19px] font-medium text-[color:var(--pp-primary-950)]">{q}</p>
-        <p className="relative z-10 mt-1 max-w-[60%] text-[14px] text-ink-tertiary">{sub}</p>
+        <p className="relative z-10 max-w-[60%] font-display text-lg font-medium text-[color:var(--pp-primary-950)]">{q}</p>
+        <p className="relative z-10 mt-1 max-w-[60%] text-sm text-ink-tertiary">{sub}</p>
         <span className="pointer-events-none absolute inset-y-0 right-0 w-[42%]"
           style={{ backgroundImage: "linear-gradient(120deg,#F3F1FB 0%,#DED8F5 60%,#CFC7EF 100%)" }} aria-hidden />
       </div>
@@ -75,7 +75,7 @@ function QuestionCard({ q, sub, value, onAnswer }: { q: string; sub: string; val
           return (
             <button key={String(label)} onClick={() => onAnswer(v as boolean)}
               className={
-                "py-4 text-[15px] font-medium transition-colors " +
+                "py-4 text-base font-medium transition-colors " +
                 (active ? "bg-[color:var(--pp-primary-950)] text-white" : "bg-surface-1 text-ink-secondary hover:bg-[color:var(--pp-primary-100)]") +
                 (label === "No" ? " border-r border-line" : "")
               }>
@@ -168,36 +168,36 @@ export function ProfileSection() {
 
   return (
     <div className="animate-fade-up">
-      <Link to="/profile" className="inline-flex items-center gap-1.5 text-[15px] font-medium text-[color:var(--pp-primary-950)] hover:opacity-70">
+      <Link to="/profile" className="inline-flex items-center gap-1.5 text-base font-medium text-[color:var(--pp-primary-950)] hover:opacity-70">
         <span aria-hidden>‹</span> Back
       </Link>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-[clamp(26px,3vw,34px)] font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
           {META[id].title}
         </h1>
         <span className={
-          "rounded-full px-3 py-1 text-[12px] font-semibold " +
+          "rounded-full px-3 py-1 text-xs font-semibold " +
           (row.required ? "bg-[#FBF1E9] text-[#B4541F]" : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]")
         }>
           {row.required ? "Required" : "Optional"}
         </span>
       </div>
-      <p className="mt-2 text-[15px] text-ink-secondary">{META[id].blurb}</p>
+      <p className="mt-2 text-base text-ink-secondary">{META[id].blurb}</p>
 
       {/* what's on file */}
       {row.done && (
         <div className={`${CARD} mt-6`}>
           {id === "personal" && (<>
-            <p className="text-[19px] font-semibold text-[color:var(--pp-primary-950)]">{fullName || "—"}</p>
-            <p className="mt-1 text-[15px] text-ink-secondary">
+            <p className="text-lg font-semibold text-[color:var(--pp-primary-950)]">{fullName || "—"}</p>
+            <p className="mt-1 text-base text-ink-secondary">
               {[user?.gender, user?.dob && `DOB ${user.dob}`].filter(Boolean).join(" / ") || "—"}
             </p>
             {user?.phone && <SummaryLine icon={Ico.phone}>{user.phone}</SummaryLine>}
             {user?.email && <SummaryLine icon={Ico.mail}>{user.email}</SummaryLine>}
           </>)}
           {id === "health" && (<>
-            <p className="text-[15px] font-semibold text-[color:var(--pp-primary-950)]">On file</p>
+            <p className="text-base font-semibold text-[color:var(--pp-primary-950)]">On file</p>
             <SummaryLine icon={Ico.heart}>Allergies: {user?.allergies?.join(", ") || "None"}</SummaryLine>
             {user?.conditions?.length ? <SummaryLine icon={Ico.heart}>Conditions: {user.conditions.join(", ")}</SummaryLine> : null}
           </>)}
@@ -210,7 +210,7 @@ export function ProfileSection() {
 
       {/* editor */}
       <div className={`${CARD} mt-4 space-y-4`}>
-        <p className="text-[15px] font-semibold text-[color:var(--pp-primary-950)]">
+        <p className="text-base font-semibold text-[color:var(--pp-primary-950)]">
           {row.done ? "Update your details" : "Add your details"}
         </p>
 
@@ -233,7 +233,7 @@ export function ProfileSection() {
         {id === "health" && (<>
           <Tags label="Allergies" items={f.allergies} onChange={(v) => set("allergies", v)} placeholder="e.g. penicillin" />
           <Tags label="Conditions (optional)" items={f.conditions} onChange={(v) => set("conditions", v)} placeholder="e.g. asthma" />
-          <p className="text-[12px] text-ink-tertiary">If you have none, add “None” so we know it's been checked.</p>
+          <p className="text-xs text-ink-tertiary">If you have none, add “None” so we know it's been checked.</p>
         </>)}
         {id === "card" && (
           <div className="grid gap-4 sm:grid-cols-2">
@@ -248,7 +248,7 @@ export function ProfileSection() {
         )}
         {id === "insurance" && (<>
           <label className="flex cursor-pointer items-center justify-between gap-4">
-            <span className="text-[15px] font-medium text-[color:var(--pp-primary-950)]">I have private insurance</span>
+            <span className="text-base font-medium text-[color:var(--pp-primary-950)]">I have private insurance</span>
             <span onClick={() => set("hasInsurance", !f.hasInsurance)} role="switch" aria-checked={f.hasInsurance} tabIndex={0}
               className={"relative h-7 w-12 shrink-0 rounded-full transition-colors " + (f.hasInsurance ? "bg-[color:var(--pp-primary-950)]" : "bg-stone-300")}>
               <span className={"absolute top-1 h-5 w-5 rounded-full bg-white transition-all " + (f.hasInsurance ? "left-6" : "left-1")} />
@@ -269,15 +269,15 @@ export function ProfileSection() {
             <Text label="Expiry" value={f.exp} onChange={(v) => set("exp", v)} placeholder="12 / 27" />
             <Text label="CVC" value={f.cvc} onChange={(v) => set("cvc", v)} />
           </div>
-          <p className="text-[12px] text-ink-tertiary">Demo only — no card is stored or charged.</p>
+          <p className="text-xs text-ink-tertiary">Demo only — no card is stored or charged.</p>
         </>)}
 
         <div className="flex items-center gap-3 pt-1">
           <button onClick={save}
-            className="rounded-full bg-[color:var(--pp-primary-950)] px-6 py-2.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90">
+            className="rounded-full bg-[color:var(--pp-primary-950)] px-6 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90">
             {saved ? "Saved" : "Save"}
           </button>
-          <Link to="/profile" className="rounded-full px-4 py-2.5 text-[14px] font-medium text-ink-secondary hover:text-[color:var(--pp-primary-950)]">Cancel</Link>
+          <Link to="/profile" className="rounded-full px-4 py-2.5 text-sm font-medium text-ink-secondary hover:text-[color:var(--pp-primary-950)]">Cancel</Link>
         </div>
       </div>
 
@@ -295,3 +295,4 @@ export function ProfileSection() {
     </div>
   );
 }
+

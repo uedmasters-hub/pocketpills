@@ -98,14 +98,14 @@ function ArrowRight() {
 }
 function UnderlineLink({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Link to={to} className="group/u inline-flex w-fit items-center gap-2 border-b border-current pb-0.5 text-[14px] font-medium text-[color:var(--pp-primary-950)]">
+    <Link to={to} className="group/u inline-flex w-fit items-center gap-2 border-b border-current pb-0.5 text-sm font-medium text-[color:var(--pp-primary-950)]">
       {children} <ArrowRight />
     </Link>
   );
 }
 function Tag({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Link to={to} className="w-max rounded-full border border-line px-4 py-1.5 text-[13px] font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]">
+    <Link to={to} className="w-max rounded-full border border-line px-4 py-1.5 text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]">
       {children}
     </Link>
   );
@@ -116,17 +116,17 @@ function DropTile({ to, icon, label, chip, hover }: { to: string; icon: string; 
       <span className="flex items-center justify-center rounded-xl p-2.5" style={{ backgroundColor: chip }}>
         <Icon id={icon} />
       </span>
-      <p className="text-[15px] font-medium text-[color:var(--pp-primary-950)]">{label}</p>
+      <p className="text-base font-medium text-[color:var(--pp-primary-950)]">{label}</p>
     </Link>
   );
 }
 function FaqList({ items, to }: { items: string[]; to: string }) {
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-tertiary">Frequently Asked</h2>
+      <h2 className="text-2xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">Frequently Asked</h2>
       <ul className="flex list-none flex-col gap-3">
         {items.map((q) => (
-          <li key={q}><Link to={to} className="text-[13px] text-ink-secondary transition-colors hover:text-[color:var(--pp-violet)]">{q}</Link></li>
+          <li key={q}><Link to={to} className="text-sm text-ink-secondary transition-colors hover:text-[color:var(--pp-violet)]">{q}</Link></li>
         ))}
       </ul>
       <UnderlineLink to={to}>See all FAQs</UnderlineLink>
@@ -143,15 +143,15 @@ function MegaPanel({ bg, eyebrow, tiles, cta, ctaLabel, asideTitle, tags, faqs, 
     <div className="absolute left-1/2 top-full z-50 w-[min(72rem,92vw)] -translate-x-1/2 pt-4">
       <div className="flex gap-3 rounded-2xl border border-line bg-surface-2 px-6 pb-12 pt-6 shadow-float">
         <div className="flex-[0_0_50%] rounded-xl bg-cover bg-center p-8" style={{ backgroundImage: `url(${bg})`, backgroundColor: "var(--pp-primary-100)" }}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--pp-violet)]">{eyebrow}</p>
-          <span className="mt-1 block font-display text-[22px] font-bold text-[color:var(--pp-primary-950)]">What would you like to do?</span>
+          <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-[color:var(--pp-violet)]">{eyebrow}</p>
+          <span className="mt-1 block font-display text-xl font-bold text-[color:var(--pp-primary-950)]">What would you like to do?</span>
           <div className="mt-4 grid grid-cols-2 gap-2">{tiles}</div>
           <div className="mt-6"><UnderlineLink to={cta}>{ctaLabel}</UnderlineLink></div>
         </div>
         <aside className="flex w-full flex-[0_0_50%] flex-col gap-8 p-4">
           <div className="flex flex-col gap-5">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-tertiary">{asideTitle}</h2>
-            <nav className="flex flex-wrap gap-2">{tags.map(([label, to]) => <Tag key={label} to={to}>{label}</Tag>)}</nav>
+            <h2 className="text-2xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">{asideTitle}</h2>
+            <nav aria-label="Popular treatments" className="flex flex-wrap gap-2">{tags.map(([label, to]) => <Tag key={label} to={to}>{label}</Tag>)}</nav>
             <UnderlineLink to={browseTo}>{browseLabel}</UnderlineLink>
           </div>
           <div role="separator" className="h-px w-full bg-line" />
@@ -174,13 +174,13 @@ function UserMenu() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 text-[13px] font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-100)]"
+        className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-100)]"
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-[11px] text-white">{initials}</span>
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-2xs text-white">{initials}</span>
         <span className="hidden sm:inline">{displayName}</span>
-        <span className="text-[9px] opacity-60" aria-hidden>▼</span>
+        <span className="text-2xs opacity-60" aria-hidden>▼</span>
       </button>
       {open && (
         <>
@@ -191,16 +191,16 @@ function UserMenu() {
             </div>
             {[["My Health", "/dashboard"], ["Orders & receipts", "/orders"], ["Pharmacy", "/pharmacy"], ["Messages", "/messages"], ["Profile & settings", "/account"]].map(([label, to]) => (
               <button key={to} role="menuitem" onClick={() => { setOpen(false); nav(to); }}
-                className="block w-full px-4 py-2.5 text-left text-[13px] font-medium text-ink-secondary hover:bg-[color:var(--pp-primary-100)]">
+                className="block w-full px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--pp-primary-100)]">
                 {label}
               </button>
             ))}
             <button role="menuitem" onClick={() => setDark((d) => !d)}
-              className="flex w-full items-center justify-between border-t border-line px-4 py-2.5 text-left text-[13px] font-medium text-ink-secondary hover:bg-[color:var(--pp-primary-100)]">
+              className="flex w-full items-center justify-between border-t border-line px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--pp-primary-100)]">
               {dark ? "Light mode" : "Dark mode"} <span aria-hidden>{dark ? "☀️" : "🌙"}</span>
             </button>
             <button role="menuitem" onClick={() => { setOpen(false); logOut(); nav("/"); }}
-              className="block w-full border-t border-line px-4 py-2.5 text-left text-[13px] font-semibold text-danger hover:bg-[color:var(--pp-primary-100)]">
+              className="block w-full border-t border-line px-4 py-2.5 text-left text-sm font-semibold text-danger hover:bg-[color:var(--pp-primary-100)]">
               Sign out
             </button>
           </div>
@@ -236,7 +236,7 @@ function Brand({ to }: { to: string }) {
       to={to}
       className="text-[color:var(--pp-primary-950)]"
       markClassName="h-7 w-7 md:h-8 md:w-8"
-      wordClassName="text-[17px] md:text-[19px]"
+      wordClassName="text-md md:text-lg"
     />
   );
 }
@@ -254,7 +254,7 @@ function useVariant(): HeaderVariant {
 }
 
 const ITEM =
-  "flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]";
+  "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]";
 
 const SEC = "#3FBFB5";
 const PRI = "#7040D9";
@@ -306,21 +306,21 @@ function SupportMenu() {
     <div className="absolute left-1/2 top-full z-50 w-[min(60rem,92vw)] -translate-x-1/2 pt-4">
       <div className="flex justify-between rounded-2xl border border-line bg-surface-2 px-6 pb-12 pt-6 shadow-float">
         <div className="flex flex-[0_0_40%] flex-col gap-6 p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--pp-violet)]">Learn</p>
+          <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-[color:var(--pp-violet)]">Learn</p>
           {[["About us", "/find-care"], ["FAQs", "#faq"], ["Browse Ailments", "/find-care"]].map(([l, t]) =>
             t.startsWith("#")
-              ? <a key={l} href={t} className="text-[15px] text-[color:var(--pp-primary-950)] hover:text-[color:var(--pp-violet)]">{l}</a>
-              : <Link key={l} to={t} className="text-[15px] text-[color:var(--pp-primary-950)] hover:text-[color:var(--pp-violet)]">{l}</Link>)}
+              ? <a key={l} href={t} className="text-base text-[color:var(--pp-primary-950)] hover:text-[color:var(--pp-violet)]">{l}</a>
+              : <Link key={l} to={t} className="text-base text-[color:var(--pp-primary-950)] hover:text-[color:var(--pp-violet)]">{l}</Link>)}
         </div>
         <div className="flex w-full flex-[0_0_60%] justify-around rounded-2xl bg-[color:var(--pp-primary-100)] p-5">
           <div className="flex flex-col justify-between">
             <h2 className="font-display text-lg font-bold text-[color:var(--pp-primary-950)]">Our Care Team</h2>
             <UnderlineLink to="/messages">Get in touch</UnderlineLink>
           </div>
-          <div className="flex flex-col gap-6 text-[13px]">
+          <div className="flex flex-col gap-6 text-sm">
             <Row label="Hours">
               <p>Monday – Saturday<br />9:00 AM – 7:00 PM EST</p>
-              <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-danger-subtle px-2.5 py-1 text-[11px] font-semibold text-danger">
+              <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-danger-subtle px-2.5 py-1 text-2xs font-semibold text-danger">
                 <span className="h-1.5 w-1.5 rounded-full bg-danger" />Closed Now
               </span>
             </Row>
@@ -347,7 +347,7 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
     return (
       <Shell hidden={hidden}>
         <Brand to="/app" />
-        <Link to="/app" className="text-[13px] font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]">
+        <Link to="/app" className="text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]">
           Save &amp; exit
         </Link>
       </Shell>
@@ -358,7 +358,7 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
     return (
       <Shell hidden={hidden}>
         <Brand to="/" />
-        <a href="tel:18559507226" className="text-[13px] font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]">
+        <a href="tel:18559507226" className="text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]">
           Need help? 1-855-950-7226
         </a>
       </Shell>
@@ -371,7 +371,7 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
       <Brand to={isApp ? "/app" : "/"} />
 
       {/* Signed in: primary nav lives in the sidebar, so the bar stays quiet. */}
-      <nav className="hidden items-center gap-1 md:flex" onMouseLeave={() => setOpen(null)}>
+      <nav aria-label="Primary" className="hidden items-center gap-1 md:flex" onMouseLeave={() => setOpen(null)}>
         {isApp ? null : (
           <>
             <div className="relative" onMouseEnter={() => setOpen("t")}>
@@ -394,11 +394,11 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
       <div className="flex items-center gap-7">
         {isApp ? (
           <>
-            <a href="#" className="hidden items-center gap-2 text-[13px] font-medium text-[color:var(--pp-nav-ink)] hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
+            <a href="#" className="hidden items-center gap-2 text-sm font-medium text-[color:var(--pp-nav-ink)] hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><rect x="7" y="2" width="10" height="20" rx="2.5" /><path d="M11 18h2" /></svg>
               Get app
             </a>
-            <Link to="/" className="hidden items-center gap-2 text-[13px] font-medium text-[color:var(--pp-nav-ink)] hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
+            <Link to="/" className="hidden items-center gap-2 text-sm font-medium text-[color:var(--pp-nav-ink)] hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" /></svg>
               Pocketpills.com
             </Link>
@@ -406,11 +406,11 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
           </>
         ) : (
           <>
-            <Link to="/login" className="hidden items-center gap-1.5 text-[13px] font-medium text-[color:var(--pp-nav-ink)] hover:text-[color:var(--pp-primary-950)] sm:inline-flex">
+            <Link to="/login" className="hidden items-center gap-1.5 text-sm font-medium text-[color:var(--pp-nav-ink)] hover:text-[color:var(--pp-primary-950)] sm:inline-flex">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><circle cx="12" cy="8" r="3.6" /><path d="M4.5 20c0-3.8 3.4-5.8 7.5-5.8s7.5 2 7.5 5.8" /></svg>
               Log in
             </Link>
-            <Link to="/get-started" className="inline-flex h-9 items-center rounded-full bg-[color:var(--pp-primary-950)] px-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90">
+            <Link to="/get-started" className="inline-flex h-9 items-center rounded-full bg-[color:var(--pp-primary-950)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90">
               Join Pocketpills
             </Link>
           </>
@@ -423,8 +423,9 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex">
-      <div className="flex w-20 shrink-0 items-start gap-2 pt-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-tertiary">{label}</div>
+      <div className="flex w-20 shrink-0 items-start gap-2 pt-0.5 text-2xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">{label}</div>
       <div className="text-ink-secondary">{children}</div>
     </div>
   );
 }
+

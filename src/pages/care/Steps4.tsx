@@ -45,7 +45,7 @@ export function Confirmation() {
                 <div className="flex flex-col items-center">
                   <span
                     className={
-                      "grid h-6 w-6 place-items-center rounded-full text-[11px] font-bold " +
+                      "grid h-6 w-6 place-items-center rounded-full text-2xs font-bold " +
                       (s.state === "done"
                         ? "bg-wellness text-white"
                         : s.state === "active"
@@ -85,3 +85,4 @@ export function Confirmation() {
     </FlowLayout>
   );
 }
+

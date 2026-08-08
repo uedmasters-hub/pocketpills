@@ -61,13 +61,13 @@ export function MedicationsIndex() {
   return (
     <div>
       <header className="mb-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">
+        <p className="text-2xs font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">
           Medications Index
         </p>
-        <h1 className="mt-2 font-display text-[clamp(26px,3vw,36px)] font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
+        <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
           Search 5,000+ medications
         </h1>
-        <p className="mt-2 max-w-xl text-[15px] text-ink-secondary">
+        <p className="mt-2 max-w-xl text-base text-ink-secondary">
           Look up prices, coverage, and forms. Prescription medications are reviewed by a licensed
           pharmacist before dispensing.
         </p>
@@ -83,7 +83,7 @@ export function MedicationsIndex() {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search a medication…"
           aria-label="Search medications"
-          className="h-13 w-full rounded-2xl border border-line bg-surface-2 py-3.5 pl-11 pr-4 text-[15px] text-ink placeholder:text-ink-tertiary focus:border-primary"
+          className="h-13 w-full rounded-2xl border border-line bg-surface-2 py-3.5 pl-11 pr-4 text-base text-ink placeholder:text-ink-tertiary focus:border-primary"
         />
       </div>
 
@@ -94,7 +94,7 @@ export function MedicationsIndex() {
             key={c}
             onClick={() => setCls(c)}
             className={
-              "shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-colors " +
+              "shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors " +
               (cls === c
                 ? "bg-[color:var(--pp-primary-950)] text-white"
                 : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-200)]")
@@ -107,13 +107,13 @@ export function MedicationsIndex() {
 
       {/* count + A–Z jump (only letters that exist) */}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
-        <p className="text-[13px] text-ink-tertiary tnum">
+        <p className="text-sm text-ink-tertiary tnum">
           {filtered.length} medication{filtered.length === 1 ? "" : "s"}
         </p>
         <div className="flex flex-wrap gap-0.5">
           {groups.map(([L]) => (
             <button key={L} onClick={() => jump(L)}
-              className="h-7 w-7 rounded-lg text-[13px] font-semibold text-[color:var(--pp-violet)] hover:bg-[color:var(--pp-primary-100)]">
+              className="h-7 w-7 rounded-lg text-sm font-semibold text-[color:var(--pp-violet)] hover:bg-[color:var(--pp-primary-100)]">
               {L}
             </button>
           ))}
@@ -125,13 +125,13 @@ export function MedicationsIndex() {
         {groups.length === 0 ? (
           <div className="rounded-2xl border border-line bg-surface-2 p-12 text-center">
             <p className="font-semibold text-[color:var(--pp-primary-950)]">No matches for “{q}”</p>
-            <p className="mt-1 text-[14px] text-ink-tertiary">Try a brand or generic name.</p>
+            <p className="mt-1 text-sm text-ink-tertiary">Try a brand or generic name.</p>
           </div>
         ) : (
           <div className="space-y-10">
             {groups.map(([letter, items]) => (
               <section key={letter} id={`letter-${letter}`} className="scroll-mt-28">
-                <h2 className="mb-3 font-display text-[15px] font-bold text-[color:var(--pp-violet)]">{letter}</h2>
+                <h2 className="mb-3 font-display text-base font-bold text-[color:var(--pp-violet)]">{letter}</h2>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {items.map((d) => (
                     <Link
@@ -143,13 +143,13 @@ export function MedicationsIndex() {
                         <span className="flex items-center gap-2">
                           <span className="truncate font-semibold text-[color:var(--pp-primary-950)]">{d.name}</span>
                           {!d.rx && (
-                            <span className="shrink-0 rounded-full bg-[color:var(--pp-primary-100)] px-2 py-0.5 text-[10px] font-semibold text-[color:var(--pp-primary-950)]">
+                            <span className="shrink-0 rounded-full bg-[color:var(--pp-primary-100)] px-2 py-0.5 text-2xs font-semibold text-[color:var(--pp-primary-950)]">
                               OTC
                             </span>
                           )}
                         </span>
                         {d.generic && d.generic !== d.name && (
-                          <span className="mt-0.5 block truncate text-[13px] text-ink-tertiary">{d.generic}</span>
+                          <span className="mt-0.5 block truncate text-sm text-ink-tertiary">{d.generic}</span>
                         )}
                       </span>
                       <span className="shrink-0 text-ink-tertiary" aria-hidden>→</span>
@@ -164,3 +164,4 @@ export function MedicationsIndex() {
     </div>
   );
 }
+

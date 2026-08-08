@@ -48,9 +48,10 @@ export function EntryPoints() {
           <span className="grid h-14 w-14 place-items-center rounded-xl" style={{ backgroundColor: e.tile }}>
             <EntryIcon id={e.id} />
           </span>
-          <span className="text-[13px] font-medium leading-snug text-[color:var(--pp-primary-950)] sm:text-[15px]">{e.title}</span>
+          <span className="text-sm font-medium leading-snug text-[color:var(--pp-primary-950)] sm:text-base">{e.title}</span>
         </button>
       ))}
     </div>
   );
 }
+

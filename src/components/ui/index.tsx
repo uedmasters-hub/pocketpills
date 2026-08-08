@@ -90,10 +90,11 @@ export function SectionHead({ eyebrow, title, sub }: { eyebrow?: string; title: 
   return (
     <div className="mb-5">
       {eyebrow && (
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">{eyebrow}</p>
+        <p className="mb-1.5 text-2xs font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">{eyebrow}</p>
       )}
-      <h2 className="font-display text-[clamp(20px,2.2vw,28px)] font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">{title}</h2>
+      <h2 className="font-display text-2xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">{title}</h2>
       {sub && <p className="mt-1.5 max-w-2xl text-ink-secondary">{sub}</p>}
     </div>
   );
 }
+

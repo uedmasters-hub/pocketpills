@@ -60,12 +60,12 @@ function PromoCard({ p, onClick }: { p: Promo; onClick: () => void }) {
       className="pp-snap flex h-[254px] w-[86%] flex-none items-stretch gap-4 overflow-hidden rounded-2xl bg-[color:var(--pp-primary-200)] p-4 text-left sm:w-[68%] sm:p-5"
     >
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 pl-3 sm:pl-6">
-        <p className={"font-display text-[clamp(19px,2vw,26px)] font-medium leading-snug " + (p.brand ? "text-[color:var(--pp-violet)]" : "text-[color:var(--pp-primary-950)]")}>
+        <p className={"font-display text-xl font-medium leading-snug " + (p.brand ? "text-[color:var(--pp-violet)]" : "text-[color:var(--pp-primary-950)]")}>
           {p.t}
         </p>
-        <p className={"text-[14px] " + (p.brand ? "text-[color:var(--pp-violet)]" : "text-ink-secondary")}>{p.d}</p>
+        <p className={"text-sm " + (p.brand ? "text-[color:var(--pp-violet)]" : "text-ink-secondary")}>{p.d}</p>
         <span className="mt-3 flex items-center gap-2">
-          {p.note && <span className="text-[15px] font-medium text-[color:var(--pp-primary-950)]">{p.note}</span>}
+          {p.note && <span className="text-base font-medium text-[color:var(--pp-primary-950)]">{p.note}</span>}
           <FilledArrow />
         </span>
       </div>
@@ -117,8 +117,8 @@ function ActionRow({ id, title, sub, onClick }: { id: ActionId; title: string; s
         <ActionIcon id={id} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[16px] font-semibold text-[color:var(--pp-primary-950)]">{title}</span>
-        <span className="block truncate text-[13px] text-ink-tertiary">{sub}</span>
+        <span className="block text-base font-semibold text-[color:var(--pp-primary-950)]">{title}</span>
+        <span className="block truncate text-sm text-ink-tertiary">{sub}</span>
       </span>
       <span className="shrink-0 text-ink-tertiary" aria-hidden>›</span>
     </button>
@@ -132,10 +132,10 @@ function AppCard() {
     <section className="relative overflow-hidden rounded-2xl bg-[#E5E3FF] p-6 sm:p-8">
       <span className="pointer-events-none absolute -right-10 -top-16 h-64 w-64 rounded-[40%] bg-[#C9C2FA]" aria-hidden />
       <div className="relative">
-        <h2 className="font-display text-[clamp(22px,2.4vw,28px)] font-medium text-[color:var(--pp-primary-950)]">
+        <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
           Stay updated, get the app
         </h2>
-        <p className="mt-1 text-[14px] text-ink-secondary">Scan the QR code or get the download link</p>
+        <p className="mt-1 text-sm text-ink-secondary">Scan the QR code or get the download link</p>
 
         <div className="mt-5 flex flex-col gap-4 rounded-2xl bg-white p-4 sm:flex-row sm:items-stretch">
           <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -143,7 +143,7 @@ function AppCard() {
               {(["phone", "email"] as const).map((m) => (
                 <button key={m} onClick={() => setMode(m)}
                   className={
-                    "flex flex-1 items-center justify-center gap-2 rounded-full py-2 text-[14px] font-medium capitalize transition-colors " +
+                    "flex flex-1 items-center justify-center gap-2 rounded-full py-2 text-sm font-medium capitalize transition-colors " +
                     (mode === m ? "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-violet)]" : "text-ink-tertiary")
                   }>
                   {m}
@@ -152,11 +152,11 @@ function AppCard() {
             </div>
             <div className="flex items-center gap-2 rounded-xl border border-line px-4 py-2.5">
               <input
-                className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-tertiary"
+                className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-tertiary"
                 placeholder={mode === "phone" ? "+1 953-800-0060" : "you@example.com"}
                 aria-label={mode === "phone" ? "Phone number" : "Email address"}
               />
-              <button className="shrink-0 text-[14px] font-medium text-[color:var(--pp-primary-950)] hover:underline">Send link</button>
+              <button className="shrink-0 text-sm font-medium text-[color:var(--pp-primary-950)] hover:underline">Send link</button>
             </div>
           </div>
 
@@ -191,18 +191,18 @@ function FaxCard() {
   return (
     <section className="relative overflow-hidden rounded-2xl bg-[color:var(--pp-primary-100)] p-6 sm:p-8">
       <div className="relative max-w-md">
-        <h2 className="font-display text-[19px] font-bold text-[color:var(--pp-primary-950)]">
+        <h2 className="font-display text-lg font-bold text-[color:var(--pp-primary-950)]">
           Fax us your prescription for faster service
         </h2>
-        <p className="mt-2 text-[14px] leading-relaxed text-ink-secondary">
+        <p className="mt-2 text-sm leading-relaxed text-ink-secondary">
           Ask your clinic to send it our way.<br />We'll get it to you sooner.
         </p>
-        <button onClick={copy} className="mt-4 inline-flex items-center gap-2 text-[17px] font-medium text-[color:var(--pp-violet)] hover:underline">
+        <button onClick={copy} className="mt-4 inline-flex items-center gap-2 text-md font-medium text-[color:var(--pp-violet)] hover:underline">
           1-855-950-7226
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden>
             <rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" />
           </svg>
-          {copied && <span className="text-[12px] text-wellness">Copied</span>}
+          {copied && <span className="text-xs text-wellness">Copied</span>}
         </button>
       </div>
       <span className="pointer-events-none absolute bottom-4 right-6 grid h-24 w-24 place-items-center rounded-2xl bg-[#DCD7FB]" aria-hidden>
@@ -225,7 +225,7 @@ export function Dashboard() {
     <div className="space-y-8">
       {pending.length > 0 && (
         <button onClick={() => nav("/profile")}
-          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#B4541F] px-5 py-4 text-[15px] font-medium text-white transition-opacity hover:opacity-95">
+          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#B4541F] px-5 py-4 text-base font-medium text-white transition-opacity hover:opacity-95">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
             <circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.4h.01" />
           </svg>
@@ -255,7 +255,7 @@ export function Dashboard() {
               className="pp-snap relative flex aspect-[4/5] w-[13.5rem] shrink-0 flex-col overflow-hidden rounded-2xl text-left transition-transform"
               style={{ backgroundImage: "linear-gradient(180deg,#FFFFFF 0%,#FAF9FE 42%,#E7E2F7 100%)" }}
             >
-              <p className="relative z-10 px-5 pt-5 font-display text-[21px] font-normal leading-tight text-[color:var(--pp-primary-950)]">
+              <p className="relative z-10 px-5 pt-5 font-display text-xl font-normal leading-tight text-[color:var(--pp-primary-950)]">
                 {t.name}
               </p>
 
@@ -293,3 +293,4 @@ export function Dashboard() {
     </div>
   );
 }
+

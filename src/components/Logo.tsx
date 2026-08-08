@@ -28,7 +28,7 @@ export function LogoMark({ className = "h-7 w-7" }: { className?: string }) {
 export function Logo({
   className = "text-[color:var(--pp-primary-950)]",
   markClassName = "h-7 w-7",
-  wordClassName = "text-[17px]",
+  wordClassName = "text-md",
   showWord = true,
 }: {
   className?: string;

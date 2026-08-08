@@ -67,11 +67,11 @@ export function PageHeader({
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
         {eyebrow && (
-          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">
+          <p className="mb-1.5 text-2xs font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">
             {eyebrow}
           </p>
         )}
-        <h1 className="font-display text-[clamp(24px,2.6vw,34px)] font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
           {title}
         </h1>
         {sub && <p className="mt-2 max-w-2xl text-ink-secondary">{sub}</p>}
@@ -80,3 +80,4 @@ export function PageHeader({
     </div>
   );
 }
+

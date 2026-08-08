@@ -63,9 +63,25 @@ export default {
           strong: "var(--border-strong)",
         },
       },
+      // ── Type scale ─────────────────────────────────────────
+      // Sizes carry their own line-height so vertical rhythm can't drift.
+      // Nothing smaller than 11px: below that, text fails legibility.
+      fontSize: {
+        "2xs": ["0.6875rem", { lineHeight: "1.45" }],  // 11  eyebrows, meta
+        xs:    ["0.75rem",   { lineHeight: "1.5"  }],  // 12  captions, legal
+        sm:    ["0.8125rem", { lineHeight: "1.55" }],  // 13  secondary
+        base:  ["0.9375rem", { lineHeight: "1.6"  }],  // 15  body
+        md:    ["1.0625rem", { lineHeight: "1.5"  }],  // 17  card titles
+        lg:    ["1.1875rem", { lineHeight: "1.4"  }],  // 19  section titles
+        xl:    ["1.375rem",  { lineHeight: "1.35" }],  // 22  large titles
+        "2xl": ["clamp(1.25rem, 2.2vw, 1.625rem)",  { lineHeight: "1.25" }],  // 20–26
+        "3xl": ["clamp(1.5rem, 2.8vw, 2rem)",       { lineHeight: "1.15" }],  // 24–32
+        "4xl": ["clamp(1.75rem, 3.2vw, 2.375rem)",  { lineHeight: "1.1"  }],  // 28–38
+        "5xl": ["clamp(1.875rem, 3.6vw, 2.875rem)", { lineHeight: "1.05" }],  // 30–46
+      },
       fontFamily: {
-        display: ['"Satoshi"', "system-ui", "sans-serif"],
-        sans: ['"Satoshi"', "system-ui", "sans-serif"],
+        display: ['"Hanken Grotesque"', "system-ui", "sans-serif"],
+        sans: ['"Inter"', "system-ui", "sans-serif"],
       },
       borderRadius: { lg: "0.625rem", xl: "0.875rem", "2xl": "1.25rem", "3xl": "1.75rem" }, // 10 / 14 / 20 / 28 — reference scale
       boxShadow: {
@@ -88,3 +104,4 @@ export default {
   },
   plugins: [],
 };
+
