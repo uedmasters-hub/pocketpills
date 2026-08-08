@@ -1,5 +1,4 @@
 import { Link, useParams } from "react-router-dom";
-import { Logo } from "@/components/Logo";
 import { getOrder, orderTotals, typeMeta, money, fmtDate } from "@/lib/orders";
 
 /* Shared paper chrome: a no-print toolbar + a light "paper" sheet that prints cleanly. */
@@ -25,7 +24,12 @@ function DocShell({ children, backTo, docName }: { children: React.ReactNode; ba
 
 function Brand() {
   return (
-    <Logo className="text-[#4E2A84]" markClassName="h-9 w-9" wordClassName="text-[19px]" />
+    <div className="flex items-center gap-2">
+      <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#4a44a0] text-lg text-white">⊕</span>
+      <span className="text-lg font-extrabold tracking-tight text-stone-900" style={{ fontFamily: '"Hanken Grotesque", sans-serif' }}>
+        Pocket<span className="text-[#4a44a0]">Pills</span>
+      </span>
+    </div>
   );
 }
 

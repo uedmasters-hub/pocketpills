@@ -1,11 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/lib/user";
-import { LogoLink } from "@/components/Logo";
 import { useDismiss } from "@/lib/useDismiss";
 import { useChromeVisibility } from "@/lib/useChromeVisibility";
 
 const NAVCDN = "https://static.pocketpills.com/acq-web/redesign/navbar";
+const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = "none"; };
 
 /* ── icons (paths lifted from production) ─────────────── */
 const W = { fill: "white" } as const;
@@ -232,12 +232,10 @@ function Shell({ hidden, children }: { hidden: boolean; children: ReactNode }) {
 
 function Brand({ to }: { to: string }) {
   return (
-    <LogoLink
-      to={to}
-      className="text-[color:var(--pp-primary-950)]"
-      markClassName="h-7 w-7 md:h-8 md:w-8"
-      wordClassName="text-[17px] md:text-[19px]"
-    />
+    <Link to={to} aria-label="PocketPills home">
+      <img src={`${NAVCDN}/pp_logo.webp`} alt="PocketPills Logo" width={176} height={32} onError={hideOnError}
+        className="h-auto w-36 cursor-pointer md:w-48" />
+    </Link>
   );
 }
 
