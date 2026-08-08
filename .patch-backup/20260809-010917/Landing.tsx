@@ -560,12 +560,12 @@ function Testimonials() {
 
         <div ref={box} onScroll={sync} className="pp-scroll flex w-full max-w-[62rem] gap-8 overflow-x-scroll">
           {REVIEWS.map((r) => (
-            <div key={r.name} className="pp-snap flex min-h-[15.5rem] w-[17.5rem] shrink-0 flex-col rounded-2xl bg-[color:var(--pp-primary-200)] p-6">
-              <div className="mb-3 flex">
+            <div key={r.name} className="pp-snap flex min-h-[22.5rem] min-w-[18.75rem] flex-col rounded-2xl bg-[color:var(--pp-primary-200)] p-[2.25rem]">
+              <div className="mb-4 flex">
                 {Array.from({ length: 5 }).map((_, i) => <FullStar key={i} />)}
               </div>
               <p className="text-base leading-relaxed text-[color:var(--pp-primary-800)]">{r.text}</p>
-              <div className="mt-auto flex w-full items-center justify-between pt-5">
+              <div className="mt-auto flex w-full items-center justify-between pt-6">
                 <p className="text-base font-bold text-[color:var(--pp-primary-950)]">{r.name}</p>
                 <ReviewMark id={r.mark} />
               </div>
