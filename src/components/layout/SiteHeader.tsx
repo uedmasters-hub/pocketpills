@@ -1,9 +1,9 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState, type ReactNode } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useUser } from "@/lib/user";
 import { LogoLink } from "@/components/Logo";
-import { useDismiss } from "@/lib/useDismiss";
 import { useChromeVisibility } from "@/lib/useChromeVisibility";
+import { ProfileMenu } from "@/components/layout/ProfileMenu";
 
 const NAVCDN = "https://static.pocketpills.com/acq-web/redesign/navbar";
 
@@ -175,105 +175,54 @@ function MegaPanel({ bg, eyebrow, tiles, cta, ctaLabel, asideTitle, tags, faqs, 
 
 /* ── user menu (signed-in) ─────────────────────────────── */
 function UserMenu() {
-  const { user, initials, displayName, logOut } = useUser();
-  const [open, setOpen] = useState(false);
-  const [dark, setDark] = useState(false);
-  const nav = useNavigate();
-  const ref = useDismiss<HTMLDivElement>(open, () => setOpen(false));
-  useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
+  const { initials, displayName } = useUser();
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        id="user-menu-trigger"
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]"
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-controls={open ? "user-menu" : undefined}
-        aria-label={`Account menu for ${displayName}`}
-      >
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-2xs text-white" aria-hidden>{initials}</span>
-        <span className="hidden sm:inline">{displayName}</span>
-        <span className="text-2xs opacity-60" aria-hidden>▼</span>
-      </button>
-      {open && (
-        <div id="user-menu" role="menu" aria-labelledby="user-menu-trigger" className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-100)] shadow-float">
-          <div className="border-b border-line p-4">
-            <p className="font-semibold text-[color:var(--pp-primary-950)]">{displayName}</p>
-            <p className="truncate text-xs text-ink-tertiary">{user?.email}</p>
-          </div>
-          {[["My Health", "/dashboard"], ["Orders & receipts", "/orders"], ["Pharmacy", "/pharmacy"], ["Messages", "/messages"], ["Profile & settings", "/account"]].map(([label, to]) => (
-            <button key={to} type="button" role="menuitem" onClick={() => { setOpen(false); nav(to); }}
-              className="block w-full px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--state-hover)]">
-              {label}
-            </button>
-          ))}
-          <button type="button" role="menuitem" onClick={() => setDark((d) => !d)}
-            className="flex w-full items-center justify-between border-t border-line px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--state-hover)]">
-            {dark ? "Light mode" : "Dark mode"} <span aria-hidden>{dark ? "☀️" : "🌙"}</span>
-          </button>
-          <button type="button" role="menuitem" onClick={() => { setOpen(false); logOut(); nav("/"); }}
-            className="block w-full border-t border-line px-4 py-2.5 text-left text-sm font-semibold text-danger hover:bg-[color:var(--state-hover)]">
-            Sign out
-          </button>
-        </div>
+    <ProfileMenu
+      trigger={({ open, toggle, menuId }) => (
+        <button
+          type="button"
+          id="user-menu-trigger"
+          onClick={toggle}
+          className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]"
+          aria-expanded={open}
+          aria-haspopup="menu"
+          aria-controls={open ? menuId : undefined}
+          aria-label={`Account menu for ${displayName}`}
+        >
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-2xs text-white" aria-hidden>
+            {initials}
+          </span>
+          <span className="hidden sm:inline">{displayName}</span>
+          <span className="text-2xs opacity-60" aria-hidden>▼</span>
+        </button>
       )}
-    </div>
+    />
   );
 }
 
 /** Compact profile control used on the marketing homepage when signed in. */
 function MarketingProfile() {
-  const { user, displayName, logOut } = useUser();
-  const [open, setOpen] = useState(false);
-  const nav = useNavigate();
-  const ref = useDismiss<HTMLDivElement>(open, () => setOpen(false));
-
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="inline-flex h-10 items-center gap-1.5 rounded-full px-2.5 text-[color:var(--pp-nav-ink)] transition-colors duration-200 hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-label="Account menu"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-          <circle cx="12" cy="8" r="3.6" />
-          <path d="M4.5 20c0-3.8 3.4-5.8 7.5-5.8s7.5 2 7.5 5.8" />
-        </svg>
-        <Chevron />
-      </button>
-      {open && (
-        <div role="menu" className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl border border-line bg-white/95 shadow-float backdrop-blur-md">
-          <div className="border-b border-line px-4 py-3.5">
-            <p className="font-medium text-[color:var(--pp-primary-950)]">{displayName}</p>
-            <p className="truncate text-xs text-ink-tertiary">{user?.email}</p>
-          </div>
-          {[["My Health", "/dashboard"], ["Orders & receipts", "/orders"], ["Pharmacy", "/pharmacy"], ["Messages", "/messages"], ["Profile & settings", "/account"]].map(([label, to]) => (
-            <button
-              key={to}
-              type="button"
-              role="menuitem"
-              onClick={() => { setOpen(false); nav(to); }}
-              className="block w-full px-4 py-2.5 text-left text-sm font-medium text-ink-secondary transition-colors hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
-            >
-              {label}
-            </button>
-          ))}
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => { setOpen(false); logOut(); nav("/"); }}
-            className="block w-full border-t border-line px-4 py-2.5 text-left text-sm font-medium text-danger transition-colors hover:bg-[color:var(--state-hover)]"
-          >
-            Sign out
-          </button>
-        </div>
+    <ProfileMenu
+      menuId="marketing-user-menu"
+      trigger={({ open, toggle, menuId }) => (
+        <button
+          type="button"
+          onClick={toggle}
+          className="inline-flex h-10 items-center gap-1.5 rounded-full px-2.5 text-[color:var(--pp-nav-ink)] transition-colors duration-200 hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
+          aria-expanded={open}
+          aria-haspopup="menu"
+          aria-controls={open ? menuId : undefined}
+          aria-label="Account menu"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+            <circle cx="12" cy="8" r="3.6" />
+            <path d="M4.5 20c0-3.8 3.4-5.8 7.5-5.8s7.5 2 7.5 5.8" />
+          </svg>
+          <Chevron />
+        </button>
       )}
-    </div>
+    />
   );
 }
 

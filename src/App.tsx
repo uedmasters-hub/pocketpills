@@ -18,6 +18,13 @@ import { TreatmentDetail } from "@/pages/TreatmentDetail";
 import { Dashboard } from "@/pages/Dashboard";
 import { Profile } from "@/pages/Profile";
 import { ProfileSection } from "@/pages/profile/ProfileSection";
+import {
+  NotificationSettings,
+  LanguagePreference,
+  ManageFamily,
+  PocketpillsBenefits,
+  SwitchAccount,
+} from "@/pages/account/AccountPages";
 import { Pharmacy, Account } from "@/pages/Simple";
 import { Messages } from "@/pages/Messages";
 
@@ -106,6 +113,11 @@ export default function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:section" element={<ProfileSection />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/account/notifications" element={<NotificationSettings />} />
+            <Route path="/account/language" element={<LanguagePreference />} />
+            <Route path="/account/family" element={<ManageFamily />} />
+            <Route path="/account/benefits" element={<PocketpillsBenefits />} />
+            <Route path="/account/switch" element={<SwitchAccount />} />
             <Route path="/orders" element={<OrderHistory />} />
             <Route path="/orders/:id" element={<OrderDetail />} />
 

@@ -47,7 +47,9 @@ const MORE: [string, string][] = [
   ["Profile", "/profile"],
   ["Pharmacy", "/pharmacy"],
   ["Messages", "/messages"],
-  ["Profile & settings", "/account"],
+  ["Edit profile", "/account"],
+  ["Family", "/account/family"],
+  ["Notifications", "/account/notifications"],
 ];
 
 /* Active: filled pill so current page is obvious. Hover: darker lavender tint. */

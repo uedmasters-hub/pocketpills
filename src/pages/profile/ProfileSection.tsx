@@ -357,7 +357,7 @@ export function ProfileSection() {
             </div>
           )}
           <p className="text-xs text-ink-tertiary">
-            Edits your primary plan. Manage multiple plans in Profile & settings.
+            Edits your primary plan. Manage multiple plans in Edit profile.
           </p>
         </>)}
         {id === "shipping" && <Text label="Delivery address" value={f.address} onChange={(v) => set("address", v)} placeholder="Street, city, province, postal code" />}

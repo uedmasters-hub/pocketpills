@@ -42,6 +42,8 @@ interface UserState {
   logIn: (email: string) => void;
   logOut: () => void;
   update: (p: Partial<Profile>) => void;
+  /** Replace the active profile entirely (account switch). */
+  replace: (p: Profile) => void;
   displayName: string;
   initials: string;
 }
@@ -127,8 +129,14 @@ function load(): Profile | null {
   }
 }
 
+import { loadLanguage, saveLanguage } from "@/lib/accountPrefs";
+
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Profile | null>(() => load());
+
+  useEffect(() => {
+    saveLanguage(loadLanguage());
+  }, []);
 
   useEffect(() => {
     try {
@@ -163,6 +171,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         if (p.insurances) next.insurances = normalizeInsurances(p.insurances);
         return next;
       }),
+      replace: (p) => setUser(normalizeProfile(p as unknown as Record<string, unknown>)),
       displayName,
       initials,
     };

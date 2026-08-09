@@ -449,7 +449,7 @@ export function Dashboard() {
 
       <AppCard />
 
-      <ActionRow id="family" title="Add family member" sub="Manage your loved ones' meds" onClick={() => nav("/account")} />
+      <ActionRow id="family" title="Add family member" sub="Manage your loved ones' meds" onClick={() => nav("/account/family")} />
 
       <FaxCard />
     </div>

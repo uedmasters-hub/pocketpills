@@ -213,11 +213,6 @@ export function Account() {
   const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [dob, setDob] = useState(user?.dob ?? "");
-  const [reminders, setReminders] = useState({
-    meds: true,
-    delivery: true,
-    refill: true,
-  });
 
   const baselinePlans = user?.insurances ?? [];
   const [plans, setPlans] = useState<InsDraft[]>(baselinePlans);
@@ -268,7 +263,7 @@ export function Account() {
 
   useReviewDraft({
     active: changes.length > 0,
-    title: "Profile & settings",
+    title: "Edit profile",
     changes,
     ctaLabel: "Save changes",
     onConfirm: () => {
@@ -338,7 +333,11 @@ export function Account() {
 
   return (
     <div>
-      <PageHead eyebrow="Account" title="Profile & settings" />
+      <PageHead
+        eyebrow="Account"
+        title="Edit profile"
+        sub="Update your personal details, insurance, and account shortcuts."
+      />
 
       <div className="space-y-4">
         <section className={`${CARD} p-6`}>
@@ -500,23 +499,33 @@ export function Account() {
           )}
         </section>
 
-        <section className={`${CARD} p-6`}>
-          <h2 className="mb-1 font-display text-md font-medium text-[color:var(--pp-primary-950)]">Notifications</h2>
-          <p className="mb-2 text-sm text-ink-tertiary">Choose what we send you.</p>
-          {([
-            ["Medication reminders", "meds"] as const,
-            ["Delivery updates", "delivery"] as const,
-            ["Refill reminders", "refill"] as const,
-          ]).map(([n, key]) => (
-            <label key={n} className="flex items-center justify-between border-b border-line py-3 last:border-0">
-              <span className="text-base text-ink-secondary">{n}</span>
-              <input
-                type="checkbox"
-                checked={reminders[key]}
-                onChange={(e) => setReminders((r) => ({ ...r, [key]: e.target.checked }))}
-                className="h-5 w-5 accent-[color:var(--pp-primary-950)]"
-              />
-            </label>
+        <section className={`${CARD} overflow-hidden`}>
+          <h2 className="border-b border-line px-6 py-4 font-display text-md font-medium text-[color:var(--pp-primary-950)]">
+            Account settings
+          </h2>
+          {(
+            [
+              ["Notification settings", "Reminders, delivery, and care messages", "/account/notifications"],
+              ["Language preference", "English or Français for emails and care", "/account/language"],
+              ["Manage family", "People you manage medications for", "/account/family"],
+              ["Pocketpills benefits", "What’s included with your account", "/account/benefits"],
+              ["Switch account", "Use another profile on this device", "/account/switch"],
+            ] as const
+          ).map(([title, sub, to], i, arr) => (
+            <Link
+              key={to}
+              to={to}
+              className={
+                "flex items-center gap-4 px-6 py-4 transition-colors hover:bg-[color:var(--state-hover)] " +
+                (i < arr.length - 1 ? "border-b border-line" : "")
+              }
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium text-[color:var(--pp-primary-950)]">{title}</span>
+                <span className="block text-sm text-ink-tertiary">{sub}</span>
+              </span>
+              <span className="text-ink-tertiary" aria-hidden>›</span>
+            </Link>
           ))}
         </section>
 
@@ -530,10 +539,10 @@ export function Account() {
 
         <section className={`${CARD} flex flex-wrap items-center gap-4 p-5`}>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-[color:var(--pp-primary-950)]">Sign out</p>
+            <p className="font-semibold text-[color:var(--pp-primary-950)]">Log out</p>
             <p className="text-sm text-ink-tertiary">You'll need to sign in again to view your orders.</p>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => { logOut(); nav("/"); }}>Sign out</Button>
+          <Button variant="secondary" size="sm" onClick={() => { logOut(); nav("/"); }}>Log out</Button>
         </section>
       </div>
     </div>
