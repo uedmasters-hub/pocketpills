@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { TrustStrip } from "@/components/pharmacy/TrustStrip";
 import { drugs, drugMonograph } from "@/lib/data";
 
 const DISPENSING_FEE = 11.99;
@@ -22,7 +23,7 @@ export function DrugDetail() {
 
   if (!drug) {
     return (
-      <div className="rounded-2xl border border-line bg-surface-2 p-12 text-center">
+      <div className="rounded-2xl border border-line bg-white p-12 text-center">
         <p className="font-semibold text-[color:var(--pp-primary-950)]">Medication not found</p>
         <Link to="/drug" className="mt-2 inline-block text-sm font-semibold text-[color:var(--pp-violet)] hover:underline">
           Back to Medications Index
@@ -38,52 +39,142 @@ export function DrugDetail() {
 
   return (
     <div>
-      <Link to="/drug" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]">
+      <Link
+        to="/drug"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
+      >
         ← Medications Index
       </Link>
 
-      {/* header */}
-      <header className="mt-5">
-        <h1 className="font-display text-4xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {drug.name}
-        </h1>
-        {drug.generic && drug.generic !== drug.name && (
-          <p className="mt-1 text-base text-ink-tertiary">{drug.generic}</p>
-        )}
-        <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-secondary">
-          Order your {drug.name} prescription online through PocketPills with free delivery anywhere
-          in Canada. {drug.rx ? "Prescription required." : "Available over the counter."}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <span className="rounded-full bg-wellness-subtle px-3 py-1 text-xs font-semibold text-wellness">Free delivery</span>
-          <span className="rounded-full bg-[color:var(--pp-primary-100)] px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">{drug.cls}</span>
-          {drug.rx && <span className="rounded-full bg-[color:var(--pp-primary-100)] px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">Rx</span>}
-        </div>
-      </header>
-
-      {/* quick facts — inline row, not a floating card */}
-      <dl className="mt-8 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3">
-        {[
-          ["Available form", drug.forms.join(", ")],
-          ["Dosage", drug.dosages.join(", ")],
-          ["Manufacturer", drug.manufacturer],
-        ].map(([k, v]) => (
-          <div key={k} className="bg-surface-2 p-4">
-            <dt className="text-2xs font-semibold uppercase tracking-[0.1em] text-ink-tertiary">{k}</dt>
-            <dd className="mt-1 text-sm font-medium text-[color:var(--pp-primary-950)]">{v}</dd>
+      {/*
+        Store PDP grid:
+        - Mobile: title → buy box → facts → info
+        - Desktop: left stack | sticky price as third page column (Activity hidden in AppShell)
+      */}
+      <div className="mt-5 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-10 lg:gap-y-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <header className="min-w-0 lg:col-start-1 lg:row-start-1">
+          <h1 className="font-display text-4xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
+            {drug.name}
+          </h1>
+          {drug.generic && drug.generic !== drug.name && (
+            <p className="mt-1 text-base text-ink-tertiary">{drug.generic}</p>
+          )}
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-secondary">
+            Order your {drug.name} prescription online through PocketPills with free delivery
+            anywhere in Canada. {drug.rx ? "Prescription required." : "Available over the counter."}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="rounded-full bg-wellness-subtle px-3 py-1 text-xs font-semibold text-wellness">
+              Free delivery
+            </span>
+            <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
+              {drug.cls}
+            </span>
+            {drug.rx && (
+              <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
+                Rx
+              </span>
+            )}
           </div>
-        ))}
-      </dl>
+        </header>
 
-      <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_20rem]">
-        {/* drug information — horizontal tabs so the prose gets full width */}
-        <section>
-          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">Drug information</h2>
+        <aside className="space-y-3 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
+          <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">Price lookup</p>
+                <p className="mt-0.5 text-2xs text-ink-tertiary">Estimate with typical insurance</p>
+              </div>
+              <span className="shrink-0 rounded-full bg-wellness-subtle px-2.5 py-1 text-2xs font-semibold text-wellness">
+                Free delivery
+              </span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="mb-1.5 block text-xs text-ink-secondary">Dosage</span>
+                <select
+                  value={dosage}
+                  onChange={(e) => setDosage(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-line bg-white px-2.5 text-sm text-ink focus:border-primary"
+                >
+                  {drug.dosages.map((d) => (
+                    <option key={d}>{d}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-xs text-ink-secondary">Quantity</span>
+                <select
+                  value={qty}
+                  onChange={(e) => setQty(Number(e.target.value))}
+                  className="h-10 w-full rounded-xl border border-line bg-white px-2.5 text-sm text-ink focus:border-primary"
+                >
+                  {[30, 60, 90].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-4 space-y-1.5 border-t border-line pt-4 text-sm">
+              <Row k="Drug cost" v={`$${drugCost.toFixed(2)}`} />
+              <Row k="Dispensing fee" v={`$${DISPENSING_FEE.toFixed(2)}`} />
+              <Row k="Delivery" v="FREE" tone />
+              <Row k={`Insurance (${drug.coverage}%)`} v={`−$${covered.toFixed(2)}`} tone />
+              <div className="flex items-end justify-between border-t border-line pt-3">
+                <span className="font-semibold text-[color:var(--pp-primary-950)]">You pay</span>
+                <span className="font-display text-3xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
+                  ${total.toFixed(2)}
+                </span>
+              </div>
+            </div>
+            <p className="mt-3 text-2xs leading-relaxed text-ink-tertiary">
+              Estimate. Final price depends on your prescription and plan.
+            </p>
+
+            <div className="mt-5 space-y-2">
+              <Button fullWidth onClick={() => nav("/find-care")}>
+                Request via consultation
+              </Button>
+              <Button fullWidth variant="secondary" onClick={() => nav("/fill")}>
+                I have a prescription
+              </Button>
+            </div>
+          </div>
+
+          <p className="px-1 text-center text-2xs leading-relaxed text-ink-tertiary">
+            Licensed Canadian pharmacists review every order before it ships.
+          </p>
+        </aside>
+
+        <dl className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3 lg:col-start-1 lg:row-start-2">
+          {[
+            ["Available form", drug.forms.join(", ")],
+            ["Dosage", drug.dosages.join(", ")],
+            ["Manufacturer", drug.manufacturer],
+          ].map(([k, v]) => (
+            <div key={k} className="bg-white p-4">
+              <dt className="text-2xs font-semibold uppercase tracking-[0.1em] text-ink-tertiary">{k}</dt>
+              <dd className="mt-1 text-sm font-medium text-[color:var(--pp-primary-950)]">{v}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <TrustStrip className="lg:col-start-1 lg:row-start-3" />
+
+        <section className="min-w-0 lg:col-start-1 lg:row-start-4">
+          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
+            Drug information
+          </h2>
 
           <div className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist">
             {monograph.map((m, i) => (
               <button
                 key={m.section}
+                type="button"
                 role="tab"
                 aria-selected={tab === i}
                 onClick={() => setTab(i)}
@@ -99,9 +190,13 @@ export function DrugDetail() {
             ))}
           </div>
 
-          <div className="mt-5 rounded-2xl border border-line bg-surface-2 p-6">
-            <h3 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">{monograph[tab].section}</h3>
-            <p className="mt-2 max-w-[62ch] text-base leading-relaxed text-ink-secondary">{monograph[tab].body}</p>
+          <div className="mt-5 rounded-2xl border border-line bg-white p-6">
+            <h3 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">
+              {monograph[tab].section}
+            </h3>
+            <p className="mt-2 max-w-[62ch] text-base leading-relaxed text-ink-secondary">
+              {monograph[tab].body}
+            </p>
           </div>
 
           <p className="mt-4 text-xs leading-relaxed text-ink-tertiary">
@@ -109,61 +204,43 @@ export function DrugDetail() {
             Full monographs are reviewed by our pharmacists and cross-referenced with Health Canada.
           </p>
         </section>
-
-        {/* price + actions */}
-        <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
-          <div className="rounded-2xl border border-line bg-surface-2 p-5">
-            <p className="font-semibold text-[color:var(--pp-primary-950)]">Price lookup</p>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="mb-1.5 block text-xs text-ink-secondary">Dosage</span>
-                <select value={dosage} onChange={(e) => setDosage(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-line bg-surface-2 px-2.5 text-sm text-ink focus:border-primary">
-                  {drug.dosages.map((d) => <option key={d}>{d}</option>)}
-                </select>
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-xs text-ink-secondary">Quantity</span>
-                <select value={qty} onChange={(e) => setQty(Number(e.target.value))}
-                  className="h-10 w-full rounded-xl border border-line bg-surface-2 px-2.5 text-sm text-ink focus:border-primary">
-                  {[30, 60, 90].map((n) => <option key={n} value={n}>{n}</option>)}
-                </select>
-              </label>
-            </div>
-
-            <div className="mt-4 space-y-1.5 border-t border-line pt-4 text-sm">
-              <Row k="Drug cost" v={`$${drugCost.toFixed(2)}`} />
-              <Row k="Dispensing fee" v={`$${DISPENSING_FEE.toFixed(2)}`} />
-              <Row k="Delivery" v="FREE" tone />
-              <Row k={`Insurance (${drug.coverage}%)`} v={`−$${covered.toFixed(2)}`} tone />
-              <div className="flex items-center justify-between border-t border-line pt-2.5">
-                <span className="font-semibold text-[color:var(--pp-primary-950)]">Total</span>
-                <span className="font-display text-xl font-medium text-[color:var(--pp-primary-950)] tnum">${total.toFixed(2)}</span>
-              </div>
-            </div>
-            <p className="mt-3 text-2xs leading-relaxed text-ink-tertiary">
-              Estimate. Final price depends on your prescription and plan.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Button fullWidth onClick={() => nav("/find-care")}>Request via consultation</Button>
-            <Button fullWidth variant="secondary" onClick={() => nav("/fill")}>I have a prescription</Button>
-          </div>
-        </aside>
       </div>
 
       {similar.length > 0 && (
         <section className="mt-12 border-t border-line pt-8">
-          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">Similar medications</h2>
-          <p className="text-sm text-ink-tertiary">Others in {drug.cls}.</p>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {similar.map((d) => (
-              <Link key={d.slug} to={`/drug/${d.slug}`}
-                className="rounded-2xl border border-line bg-surface-2 p-4 font-semibold text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]">
-                {d.name}
-              </Link>
-            ))}
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
+                Similar medications
+              </h2>
+              <p className="text-sm text-ink-tertiary">Others in {drug.cls}.</p>
+            </div>
+            <Link to="/drug" className="text-sm font-medium text-[color:var(--pp-violet)] hover:underline">
+              Browse all
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {similar.map((d) => {
+              const est = Math.round(d.price * (1 - d.coverage / 100) * 100) / 100;
+              return (
+                <Link
+                  key={d.slug}
+                  to={`/drug/${d.slug}`}
+                  className="group flex flex-col rounded-2xl border border-line bg-white p-4 transition-colors hover:bg-[color:var(--state-hover)]"
+                >
+                  <span className="font-semibold text-[color:var(--pp-primary-950)]">{d.name}</span>
+                  {d.generic && d.generic !== d.name && (
+                    <span className="mt-0.5 truncate text-sm text-ink-tertiary">{d.generic}</span>
+                  )}
+                  <span className="mt-3 flex items-baseline justify-between gap-2 border-t border-line pt-3">
+                    <span className="text-2xs text-ink-tertiary">From</span>
+                    <span className="font-display text-lg font-medium text-[color:var(--pp-primary-950)] tnum">
+                      ${est.toFixed(2)}
+                    </span>
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
@@ -179,4 +256,3 @@ function Row({ k, v, tone }: { k: string; v: string; tone?: boolean }) {
     </div>
   );
 }
-

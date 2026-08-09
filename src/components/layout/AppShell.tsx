@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import {
   ActivityRail,
   ActivityRailSpacer,
@@ -200,29 +201,43 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname === "/fill" ||
     pathname === "/transfer" ||
     pathname === "/delivery-check";
+  /* PDP pages own a sticky right column — Activity would collide. */
+  const isDrugDetail = /^\/drug\/[^/]+$/.test(pathname);
+  const isTreatmentDetail = /^\/treatment\/[^/]+$/.test(pathname);
+  const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname);
+  const hideActivityRail = isDrugDetail || isTreatmentDetail || isOrderDetail;
+  const showActivity = !focusedFlow && !hideActivityRail;
 
   /**
-   * One layout for every screen. Left nav + right rail are always reserved on
+   * One layout for every screen. Left nav + right rail are usually reserved on
    * large screens so the middle column never shifts. The right rail swaps
-   * Activity ↔ Review when a page has unsaved edits.
+   * Activity ↔ Review when a page has unsaved edits. Drug / treatment / order
+   * detail drop the rail so their sticky summary owns the third column.
    */
   return (
     <div className="min-h-screen bg-surface-0">
       <a href="#main" className="pp-skip rounded-full bg-[color:var(--pp-primary-950)] px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 active:opacity-80">
         Skip to content
       </a>
+      <AnnouncementBar />
       <SiteHeader />
       <div className="mx-auto flex w-full max-w-[105rem] flex-col gap-8 px-5 pb-28 pt-8 md:px-8 lg:flex-row lg:items-start lg:pb-16 xl:px-20">
         {focusedFlow ? <div className="hidden w-60 shrink-0 lg:block" aria-hidden /> : <Sidebar />}
 
         <div className="flex min-w-0 w-full flex-1 flex-col gap-8">
-          {!focusedFlow && (review ? <MobileReview /> : <MobileActivity />)}
+          {showActivity && (review ? <MobileReview /> : <MobileActivity />)}
           <main id="main" key={pathname} tabIndex={-1} className="w-full min-w-0 animate-fade-up">
             {children}
           </main>
         </div>
 
-        {focusedFlow ? <ActivityRailSpacer /> : review ? <ReviewRail /> : <ActivityRail />}
+        {focusedFlow ? (
+          <ActivityRailSpacer />
+        ) : hideActivityRail ? null : review ? (
+          <ReviewRail />
+        ) : (
+          <ActivityRail />
+        )}
       </div>
       {!focusedFlow && <MobileNav hidden={chromeHidden} />}
     </div>

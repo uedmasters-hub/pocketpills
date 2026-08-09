@@ -165,6 +165,23 @@ export function addOrder(order: Order): Order {
   return order;
 }
 
+/** Persist a patch (works for seed + user-created orders via localStorage overlay). */
+export function updateOrder(id: string, patch: Partial<Order>): Order | undefined {
+  const current = getOrder(id);
+  if (!current) return undefined;
+  return addOrder({ ...current, ...patch });
+}
+
+export function canCancelOrder(o: Order): boolean {
+  return o.status === "verifying" || o.status === "processing" || o.status === "out_for_delivery";
+}
+
+export function cancelOrder(id: string): Order | undefined {
+  const current = getOrder(id);
+  if (!current || !canCancelOrder(current)) return undefined;
+  return updateOrder(id, { status: "cancelled" });
+}
+
 export function createTransferOrder(input: {
   fromPharmacy: string;
   address: string;

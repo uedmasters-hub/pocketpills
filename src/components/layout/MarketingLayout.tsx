@@ -1,6 +1,7 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { AppShell } from "@/components/layout/AppShell";
 import { FRAME, SURFACE } from "@/components/layout/Grid";
 import { useUser } from "@/lib/user";
@@ -20,6 +21,7 @@ function GuestMarketingChrome() {
       >
         Skip to content
       </a>
+      <AnnouncementBar onGo={() => go()} />
       <SiteHeader />
       <main id="main" tabIndex={-1} className={`${FRAME} pb-4 pt-8 md:pt-10`}>
         <div key={pathname} className={`${SURFACE} animate-fade-up`}>

@@ -4,11 +4,13 @@ import { Card, Field, Progress, Badge } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { useUser, newInsuranceId } from "@/lib/user";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 
 /* ── Shared auth chrome ─────────────────────────────────── */
 function AuthShell({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
   return (
     <div className="min-h-screen bg-[color:var(--pp-page)]">
+      <AnnouncementBar />
       <SiteHeader variant="minimal" />
       <main className="mx-auto grid w-full max-w-[58rem] gap-10 px-5 py-10 md:px-8 md:py-12 lg:grid-cols-[minmax(0,26rem)_1fr] lg:items-start lg:gap-14 xl:gap-20">
         <div className="mx-auto w-full max-w-[26rem] lg:mx-0">{children}</div>
