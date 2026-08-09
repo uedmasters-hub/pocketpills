@@ -262,6 +262,72 @@ export function OrderHistory() {
 }
 
 /* ── Detail ────────────────────────────────────────────── */
+function SummaryPanel({
+  o,
+  totals,
+  isTransfer,
+}: {
+  o: Order;
+  totals: ReturnType<typeof orderTotals>;
+  isTransfer: boolean;
+}) {
+  const nav = useNavigate();
+  return (
+    <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-[0_16px_48px_rgba(24,7,48,0.07)]">
+      <div
+        className="px-5 py-4"
+        style={{ background: TYPE_RAIL[o.type] }}
+      >
+        <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-white/75">
+          {o.status === "cancelled" ? "Order total" : isTransfer ? "Due now" : "Total paid"}
+        </p>
+        <p className="mt-1 font-display text-3xl font-medium leading-none text-white tnum">
+          {isTransfer ? "$0.00" : money(totals.total)}
+        </p>
+      </div>
+
+      <div className="space-y-2 px-5 py-4 text-sm">
+        {isTransfer ? (
+          <>
+            <Row k="Transfer fee" v="FREE" tone />
+            <Row k="Delivery" v="FREE" tone />
+          </>
+        ) : (
+          <>
+            <Row k="Subtotal" v={money(totals.subtotal)} />
+            <Row k="Dispensing fee" v={money(totals.dispensing)} />
+            <Row k="Delivery" v="FREE" tone />
+            {totals.insurance > 0 && <Row k="Insurance" v={`−${money(totals.insurance)}`} tone />}
+          </>
+        )}
+      </div>
+
+      <div className="border-t border-line px-5 py-4">
+        <p className="text-2xs text-ink-tertiary">
+          {isTransfer
+            ? `Card on file ····${o.payment.cardLast4} — charged only after you approve a fill.`
+            : o.payment.method === "insurance"
+              ? "Billed to insurance"
+              : o.payment.method === "mixed"
+                ? `Insurance + Visa ····${o.payment.cardLast4}`
+                : `Visa ····${o.payment.cardLast4}`}
+        </p>
+
+        {!isTransfer && o.status !== "cancelled" && (
+          <div className="mt-4 flex flex-col gap-2">
+            <Button size="sm" variant="secondary" fullWidth onClick={() => nav(`/orders/${o.id}/receipt`)}>
+              View receipt
+            </Button>
+            <Button size="sm" variant="ghost" fullWidth onClick={() => nav(`/orders/${o.id}/invoice`)}>
+              Download invoice
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function OrderDetail() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -284,18 +350,18 @@ export function OrderDetail() {
     );
   }
 
-  const t = orderTotals(o);
+  const totals = orderTotals(o);
   const isTransfer = o.type === "transfer";
   const cancellable = canCancelOrder(o);
   const steps = isTransfer
     ? [...TRANSFER_TRACK_STEPS]
     : ["Order placed", "Processing", "Out for delivery", "Delivered"];
-  const order: OrderStatus[] = ["verifying", "processing", "out_for_delivery", "delivered"];
+  const statusOrder: OrderStatus[] = ["verifying", "processing", "out_for_delivery", "delivered"];
   const cur = isTransfer
     ? transferStepIndex(o.status)
     : o.status === "cancelled"
       ? 0
-      : order.indexOf(o.status);
+      : statusOrder.indexOf(o.status);
 
   const onCancel = () => {
     const next = cancelOrder(o.id);
@@ -304,6 +370,9 @@ export function OrderDetail() {
       setConfirmCancel(false);
     }
   };
+
+  const statusLabel =
+    isTransfer && o.status !== "cancelled" ? transferStatusLabel(o.status) : statusMeta[o.status].label;
 
   return (
     <div>
@@ -314,285 +383,296 @@ export function OrderDetail() {
         ← {isTransfer ? "Pharmacy" : "Order history"}
       </Link>
 
-      {/* Mobile: header → summary → content. Desktop: content | sticky summary */}
-      <div className="mt-5 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-10 lg:gap-y-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <header className="min-w-0 lg:col-start-1 lg:row-start-1">
-          <p className="pp-caps text-[color:var(--pp-violet)]">{typeMeta[o.type].label}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-4xl">
-              {orderTitle(o)}
-            </h1>
-            {isTransfer && o.status !== "cancelled" ? (
-              <span className={`${PILL} bg-[color:var(--pp-primary-200)] text-[color:var(--pp-primary-950)]`}>
-                {transferStatusLabel(o.status)}
-              </span>
-            ) : (
-              <StatusPill status={o.status} />
-            )}
-          </div>
-          <p className="mt-1 text-sm text-ink-tertiary">
-            {o.id} · {fmtDate(o.date)}
-            {o.fromPharmacy ? ` · From ${o.fromPharmacy}` : ""}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {!isTransfer && o.status !== "cancelled" && (
-              <>
-                <Button size="sm" variant="secondary" onClick={() => nav(`/orders/${o.id}/receipt`)}>
-                  Receipt
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => nav(`/orders/${o.id}/invoice`)}>
-                  Invoice
-                </Button>
-              </>
-            )}
-            {!isTransfer && (
-              <Button size="sm" onClick={() => nav("/fill")}>
-                Reorder
-              </Button>
-            )}
-            {isTransfer && o.status !== "cancelled" && (
-              <Button size="sm" variant="secondary" onClick={() => nav("/messages")}>
-                Message care team
-              </Button>
-            )}
-            {cancellable && !confirmCancel && (
-              <Button size="sm" variant="outline" onClick={() => setConfirmCancel(true)}>
-                Cancel order
-              </Button>
-            )}
-          </div>
-        </header>
-
-        <aside className="space-y-3 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
-          <div className={`${CARD} p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]`}>
-            <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">Summary</p>
-            <p className="mt-0.5 text-2xs text-ink-tertiary">
-              {isTransfer ? "No charge until you approve a fill" : "Final amount for this order"}
-            </p>
-
-            {isTransfer ? (
-              <div className="mt-4 space-y-1.5 border-t border-line pt-4 text-sm">
-                <Row k="Transfer fee" v="FREE" tone />
-                <Row k="Delivery" v="FREE" tone />
-                <div className="flex items-end justify-between border-t border-line pt-3">
-                  <span className="font-semibold text-[color:var(--pp-primary-950)]">Due now</span>
-                  <span className="font-display text-3xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
-                    $0.00
-                  </span>
-                </div>
-                <p className="pt-2 text-2xs text-ink-tertiary">
-                  Card on file ····{o.payment.cardLast4} — only charged after you approve a fill.
-                </p>
+      {/*
+        lg+: summary as sticky third column (nav + content + summary).
+        Below lg, summary sits under the hero so it’s never lost.
+      */}
+      <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+        <div className="min-w-0 flex-1 space-y-5">
+          {/* Hero */}
+          <div className="relative overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-200)]">
+            <span
+              className="absolute inset-y-0 left-0 w-1.5"
+              style={{ background: TYPE_RAIL[o.type] }}
+              aria-hidden
+            />
+            <div className="px-5 py-6 pl-6 sm:px-7 sm:py-7 sm:pl-8">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="pp-caps text-[color:var(--pp-violet)]">{typeMeta[o.type].label}</p>
+                <StatusPill status={o.status} />
               </div>
-            ) : (
-              <div className="mt-4 space-y-1.5 border-t border-line pt-4 text-sm">
-                <Row k="Subtotal" v={money(t.subtotal)} />
-                <Row k="Dispensing fee" v={money(t.dispensing)} />
-                <Row k="Delivery" v="FREE" tone />
-                {t.insurance > 0 && <Row k="Insurance" v={`−${money(t.insurance)}`} tone />}
-                <div className="flex items-end justify-between border-t border-line pt-3">
-                  <span className="font-semibold text-[color:var(--pp-primary-950)]">
-                    {o.status === "cancelled" ? "Total" : "Total paid"}
-                  </span>
-                  <span className="font-display text-3xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
-                    {money(t.total)}
-                  </span>
-                </div>
-                <p className="mt-3 text-2xs text-ink-tertiary">
-                  {o.payment.method === "insurance"
-                    ? "Billed to insurance"
-                    : o.payment.method === "mixed"
-                      ? `Insurance + Visa ····${o.payment.cardLast4}`
-                      : `Visa ····${o.payment.cardLast4}`}
-                </p>
-              </div>
-            )}
-          </div>
-        </aside>
+              <h1 className="mt-3 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] sm:text-4xl">
+                {orderTitle(o)}
+              </h1>
+              <p className="mt-2 text-sm text-ink-secondary">
+                {o.id}
+                <span className="mx-2 text-ink-tertiary/50">·</span>
+                {fmtDate(o.date)}
+                {o.fromPharmacy ? (
+                  <>
+                    <span className="mx-2 text-ink-tertiary/50">·</span>
+                    From {o.fromPharmacy}
+                  </>
+                ) : null}
+              </p>
 
-        {confirmCancel && cancellable && (
-          <div
-            className={`${CARD} p-5 lg:col-start-1`}
-            role="alertdialog"
-            aria-labelledby="cancel-order-title"
-            aria-describedby="cancel-order-desc"
-          >
-            <p id="cancel-order-title" className="font-semibold text-[color:var(--pp-primary-950)]">
-              Cancel this order?
-            </p>
-            <p id="cancel-order-desc" className="mt-1 text-sm text-ink-secondary">
-              {isTransfer
-                ? "We’ll stop contacting your pharmacy. You can start a new transfer anytime."
-                : "We’ll stop processing this fill. You won’t be charged if payment hasn’t settled."}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={onCancel}>
-                Yes, cancel order
-              </Button>
-              <Button size="sm" variant="secondary" onClick={() => setConfirmCancel(false)}>
-                Keep order
-              </Button>
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                {!isTransfer && (
+                  <Button size="sm" onClick={() => nav("/fill")}>
+                    Reorder
+                  </Button>
+                )}
+                {isTransfer && o.status !== "cancelled" && (
+                  <Button size="sm" variant="secondary" onClick={() => nav("/messages")}>
+                    Message care team
+                  </Button>
+                )}
+                {cancellable && !confirmCancel && (
+                  <Button size="sm" variant="outline" onClick={() => setConfirmCancel(true)}>
+                    Cancel order
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-        )}
 
-        {o.status === "cancelled" && (
-          <div className={`${CARD} bg-[color:var(--pp-primary-100)] p-5 lg:col-start-1`}>
-            <p className="font-semibold text-[color:var(--pp-primary-950)]">This order was cancelled</p>
-            <p className="mt-1 text-sm text-ink-secondary">
-              Nothing further will ship for this order. Start a new fill whenever you’re ready.
-            </p>
-            <Button size="sm" className="mt-4" onClick={() => nav(isTransfer ? "/transfer" : "/fill")}>
-              {isTransfer ? "Start a transfer" : "Fill a prescription"}
-            </Button>
+          <div className="lg:hidden">
+            <SummaryPanel o={o} totals={totals} isTransfer={isTransfer} />
           </div>
-        )}
 
-        {o.status !== "cancelled" && (
-          <div className={`${CARD} p-5 sm:p-6 lg:col-start-1`}>
-            <p className="mb-5 text-sm font-semibold text-[color:var(--pp-primary-950)]">Tracking</p>
-            <ol className="flex justify-between gap-2">
-              {steps.map((label, i) => {
-                const done = i < cur;
-                const active = i === cur;
-                return (
-                  <li key={label} className="relative flex flex-1 flex-col items-center text-center">
-                    {i < steps.length - 1 && (
+          {confirmCancel && cancellable && (
+            <div className={`${CARD} p-5`} role="alertdialog" aria-labelledby="cancel-order-title">
+              <p id="cancel-order-title" className="font-semibold text-[color:var(--pp-primary-950)]">
+                Cancel this order?
+              </p>
+              <p className="mt-1 text-sm text-ink-secondary">
+                {isTransfer
+                  ? "We’ll stop contacting your pharmacy. You can start a new transfer anytime."
+                  : "We’ll stop processing this fill. You won’t be charged if payment hasn’t settled."}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={onCancel}>
+                  Yes, cancel order
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => setConfirmCancel(false)}>
+                  Keep order
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {o.status === "cancelled" && (
+            <div className={`${CARD} bg-[color:var(--pp-primary-100)] p-5`}>
+              <p className="font-semibold text-[color:var(--pp-primary-950)]">This order was cancelled</p>
+              <p className="mt-1 text-sm text-ink-secondary">
+                Nothing further will ship. Start a new fill whenever you’re ready.
+              </p>
+              <Button size="sm" className="mt-4" onClick={() => nav(isTransfer ? "/transfer" : "/fill")}>
+                {isTransfer ? "Start a transfer" : "Fill a prescription"}
+              </Button>
+            </div>
+          )}
+
+          {/* Vertical timeline — denser, more modern than a sparse stepper */}
+          {o.status !== "cancelled" && (
+            <section className={`${CARD} p-5 sm:p-6`}>
+              <div className="flex items-baseline justify-between gap-3">
+                <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
+                  Tracking
+                </h2>
+                <p className="text-sm font-medium text-[color:var(--pp-violet)]">{statusLabel}</p>
+              </div>
+              <ol className="mt-5 space-y-0">
+                {steps.map((label, i) => {
+                  const done = i < cur;
+                  const active = i === cur;
+                  const last = i === steps.length - 1;
+                  return (
+                    <li key={label} className="relative flex gap-4 pb-6 last:pb-0">
+                      {!last && (
+                        <span
+                          className={
+                            "absolute left-[11px] top-6 h-[calc(100%-0.5rem)] w-0.5 " +
+                            (done ? "bg-[color:var(--pp-primary-950)]" : "bg-line")
+                          }
+                          aria-hidden
+                        />
+                      )}
                       <span
                         className={
-                          "absolute left-1/2 top-[11px] h-0.5 w-full " +
-                          (done ? "bg-[color:var(--pp-primary-950)]" : "bg-line")
+                          "relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full text-2xs font-bold " +
+                          (done
+                            ? "bg-[color:var(--pp-primary-950)] text-white"
+                            : active
+                              ? "bg-white text-[color:var(--pp-primary-950)] ring-2 ring-[color:var(--pp-primary-950)]"
+                              : "border-2 border-line bg-white text-ink-tertiary")
                         }
-                        aria-hidden
-                      />
-                    )}
-                    <span
-                      className={
-                        "relative z-10 grid h-6 w-6 place-items-center rounded-full text-2xs font-bold " +
-                        (done
-                          ? "bg-[color:var(--pp-primary-950)] text-white"
-                          : active
-                            ? "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)] ring-2 ring-[color:var(--pp-primary-950)]"
-                            : "border-2 border-line bg-white text-ink-tertiary")
-                      }
-                    >
-                      {done ? "✓" : i + 1}
-                    </span>
-                    <span
-                      className={
-                        "mt-2 text-2xs font-medium " +
-                        (i > cur ? "text-ink-tertiary" : "text-[color:var(--pp-primary-950)]")
-                      }
-                    >
-                      {label}
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        )}
-
-        {isTransfer && o.status !== "cancelled" && (
-          <div className={`${CARD} p-5 lg:col-start-1`}>
-            <p className="font-semibold text-[color:var(--pp-primary-950)]">Onboarding hints</p>
-            <p className="mt-1 text-sm text-ink-tertiary">What to expect while we complete your transfer.</p>
-            <div className="mt-4 space-y-0">
-              {TRANSFER_HINTS.map((h, i) => {
-                const done = i < cur;
-                const active = i === Math.min(cur, TRANSFER_HINTS.length - 1);
-                return (
-                  <div
-                    key={h.title}
-                    className={
-                      "flex gap-3 py-3 " +
-                      (i > 0 ? "border-t border-line " : "") +
-                      (active ? "" : done ? "opacity-70" : "opacity-50")
-                    }
-                  >
-                    <span
-                      className={
-                        "grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold tnum " +
-                        (done
-                          ? "bg-[color:var(--pp-primary-950)] text-white"
-                          : active
-                            ? "bg-[color:var(--pp-primary-200)] text-[color:var(--pp-primary-950)] ring-2 ring-[color:var(--pp-primary-950)]"
-                            : "bg-[color:var(--pp-primary-100)] text-ink-tertiary")
-                      }
-                    >
-                      {done ? "✓" : i + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{h.title}</p>
-                        <span className="text-2xs text-ink-tertiary">{h.when}</span>
+                      >
+                        {done ? "✓" : i + 1}
+                      </span>
+                      <div className="min-w-0 pt-0.5">
+                        <p
+                          className={
+                            "text-sm font-semibold " +
+                            (i > cur ? "text-ink-tertiary" : "text-[color:var(--pp-primary-950)]")
+                          }
+                        >
+                          {label}
+                        </p>
+                        {active && (
+                          <p className="mt-0.5 text-xs text-ink-secondary">
+                            {isTransfer
+                              ? "We’re working on this step now."
+                              : i === 2
+                                ? "Your package is on its way."
+                                : "In progress with our pharmacy team."}
+                          </p>
+                        )}
                       </div>
-                      <p className="mt-0.5 text-sm text-ink-secondary">{h.detail}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <section className={`${CARD} overflow-hidden lg:col-start-1`}>
-          <p className="border-b border-line px-5 py-3.5 font-semibold text-[color:var(--pp-primary-950)]">
-            {isTransfer ? "Transfer details" : "Items"}
-          </p>
-          {isTransfer ? (
-            <div className="space-y-4 px-5 py-4 text-sm">
-              <div>
-                <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">From pharmacy</p>
-                <p className="mt-1 font-medium text-[color:var(--pp-primary-950)]">{o.fromPharmacy ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">Status</p>
-                <p className="mt-1 text-ink-secondary">{transferStatusLabel(o.status)}</p>
-              </div>
-              <div>
-                <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">Note</p>
-                <p className="mt-1 text-ink-secondary">
-                  Transfers are free. Your card is not charged until you approve a fill after the transfer
-                  completes.
-                </p>
-              </div>
-            </div>
-          ) : (
-            o.items.map((it) => (
-              <div
-                key={it.name}
-                className="flex items-center justify-between border-b border-line px-5 py-4 last:border-0"
-              >
-                <div>
-                  <p className="font-medium text-[color:var(--pp-primary-950)]">
-                    {it.name} {it.strength}
-                  </p>
-                  <p className="text-sm text-ink-tertiary">Qty {it.qty}</p>
-                </div>
-                <span className="text-sm font-medium text-ink tnum">{money(it.qty * it.unitPrice)}</span>
-              </div>
-            ))
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
           )}
-        </section>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:col-start-1">
-          <div className={`${CARD} p-5`}>
-            <p className="text-2xs font-semibold uppercase tracking-[0.1em] text-ink-tertiary">
-              {isTransfer ? "Deliver to" : o.status === "delivered" ? "Delivered to" : "Ship to"}
-            </p>
-            <p className="mt-1.5 font-medium text-[color:var(--pp-primary-950)]">{o.patient}</p>
-            <p className="text-sm text-ink-secondary">{o.address}</p>
-          </div>
-          <div className={`${CARD} p-5`}>
-            <p className="text-2xs font-semibold uppercase tracking-[0.1em] text-ink-tertiary">Care team</p>
-            {o.prescriber && <p className="mt-1.5 text-sm text-ink-secondary">Prescriber: {o.prescriber}</p>}
-            {o.pharmacist && <p className="mt-1.5 text-sm text-ink-secondary">Pharmacist: {o.pharmacist}</p>}
-            {!o.prescriber && !o.pharmacist && (
-              <p className="mt-1.5 text-sm text-ink-secondary">Your PocketPills care team is on it.</p>
+          {isTransfer && o.status !== "cancelled" && (
+            <section className={`${CARD} p-5 sm:p-6`}>
+              <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
+                What happens next
+              </h2>
+              <p className="mt-1 text-sm text-ink-tertiary">While we complete your transfer.</p>
+              <div className="mt-4 space-y-0">
+                {TRANSFER_HINTS.map((h, i) => {
+                  const done = i < cur;
+                  const active = i === Math.min(cur, TRANSFER_HINTS.length - 1);
+                  return (
+                    <div
+                      key={h.title}
+                      className={
+                        "flex gap-3 py-3 " +
+                        (i > 0 ? "border-t border-line " : "") +
+                        (active ? "" : done ? "opacity-70" : "opacity-45")
+                      }
+                    >
+                      <span
+                        className={
+                          "grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold tnum " +
+                          (done
+                            ? "bg-[color:var(--pp-primary-950)] text-white"
+                            : active
+                              ? "bg-[color:var(--pp-primary-200)] text-[color:var(--pp-primary-950)] ring-2 ring-[color:var(--pp-primary-950)]"
+                              : "bg-[color:var(--pp-primary-100)] text-ink-tertiary")
+                        }
+                      >
+                        {done ? "✓" : i + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{h.title}</p>
+                          <span className="text-2xs text-ink-tertiary">{h.when}</span>
+                        </div>
+                        <p className="mt-0.5 text-sm text-ink-secondary">{h.detail}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          <section className={`${CARD} overflow-hidden`}>
+            <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
+              <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
+                {isTransfer ? "Transfer details" : "Items"}
+              </h2>
+              {!isTransfer && (
+                <span className="text-2xs text-ink-tertiary tnum">
+                  {o.items.length} item{o.items.length === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+            {isTransfer ? (
+              <div className="space-y-4 px-5 py-5 text-sm">
+                <div>
+                  <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
+                    From pharmacy
+                  </p>
+                  <p className="mt-1 font-medium text-[color:var(--pp-primary-950)]">
+                    {o.fromPharmacy ?? "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">Note</p>
+                  <p className="mt-1 text-ink-secondary">
+                    Transfers are free. Your card is not charged until you approve a fill after the
+                    transfer completes.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              o.items.map((it) => (
+                <div
+                  key={it.name}
+                  className="flex items-center gap-4 border-b border-line px-5 py-4 last:border-0"
+                >
+                  <span
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[color:var(--pp-primary-100)] text-sm font-semibold text-[color:var(--pp-primary-950)]"
+                    aria-hidden
+                  >
+                    Rx
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-[color:var(--pp-primary-950)]">
+                      {it.name}{" "}
+                      <span className="font-medium text-ink-secondary">{it.strength}</span>
+                    </p>
+                    <p className="mt-0.5 text-sm text-ink-tertiary">Qty {it.qty}</p>
+                  </div>
+                  <span className="shrink-0 font-display text-base font-medium text-[color:var(--pp-primary-950)] tnum">
+                    {money(it.qty * it.unitPrice)}
+                  </span>
+                </div>
+              ))
             )}
+          </section>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className={`${CARD} p-5`}>
+              <p className="pp-caps text-ink-tertiary">
+                {isTransfer ? "Deliver to" : o.status === "delivered" ? "Delivered to" : "Ship to"}
+              </p>
+              <p className="mt-2 font-semibold text-[color:var(--pp-primary-950)]">{o.patient}</p>
+              <p className="mt-0.5 text-sm leading-relaxed text-ink-secondary">{o.address}</p>
+            </div>
+            <div className={`${CARD} p-5`}>
+              <p className="pp-caps text-ink-tertiary">Care team</p>
+              {o.prescriber && (
+                <p className="mt-2 text-sm text-ink-secondary">
+                  <span className="text-ink-tertiary">Prescriber</span>
+                  <span className="mt-0.5 block font-medium text-[color:var(--pp-primary-950)]">
+                    {o.prescriber}
+                  </span>
+                </p>
+              )}
+              {o.pharmacist && (
+                <p className={`${o.prescriber ? "mt-3" : "mt-2"} text-sm text-ink-secondary`}>
+                  <span className="text-ink-tertiary">Pharmacist</span>
+                  <span className="mt-0.5 block font-medium text-[color:var(--pp-primary-950)]">
+                    {o.pharmacist}
+                  </span>
+                </p>
+              )}
+              {!o.prescriber && !o.pharmacist && (
+                <p className="mt-2 text-sm text-ink-secondary">Your PocketPills care team is on it.</p>
+              )}
+            </div>
           </div>
         </div>
+
+        <aside className="hidden w-[20rem] shrink-0 lg:sticky lg:top-28 lg:block lg:self-start xl:w-[22rem]">
+          <SummaryPanel o={o} totals={totals} isTransfer={isTransfer} />
+        </aside>
       </div>
     </div>
   );
