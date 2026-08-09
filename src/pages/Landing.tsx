@@ -1407,9 +1407,8 @@ export function Landing() {
       <Reveal soft delay={0}>
         <AnnouncementBar onGo={() => go()} />
       </Reveal>
-      <Reveal soft delay={60}>
-        <SiteHeader />
-      </Reveal>
+      {/* Outside Reveal so sticky hide/show isn’t clipped by a same-height wrapper */}
+      <SiteHeader />
       <main>
         <Reveal soft delay={100}>
           <Hero />
