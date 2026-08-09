@@ -98,7 +98,7 @@ function ArrowRight() {
 }
 function UnderlineLink({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Link to={to} className="group/u inline-flex w-fit items-center gap-2 border-b border-current transition-opacity hover:opacity-70 pb-0.5 text-sm font-medium text-[color:var(--pp-primary-950)]">
+    <Link to={to} className="group/u inline-flex w-fit items-center gap-2 border-b border-current pb-0.5 text-sm font-medium text-[color:var(--pp-primary-950)]">
       {children} <ArrowRight />
     </Link>
   );

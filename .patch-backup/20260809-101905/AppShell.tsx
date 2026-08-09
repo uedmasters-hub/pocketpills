@@ -41,12 +41,9 @@ const MORE: [string, string][] = [
   ["Profile & settings", "/account"],
 ];
 
-/* Active state is carried by weight + colour, not a filled pill — the icons use
-   currentColor, so they follow the label automatically. Hover keeps the site-wide
-   tint so the sidebar behaves like every other interactive surface. */
-const BASE = "flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-base transition-colors hover:bg-[color:var(--pp-primary-100)] active:bg-[color:var(--pp-primary-200)]";
-const IDLE = "font-normal text-ink-tertiary hover:text-[color:var(--pp-primary-950)]";
-const ACTIVE = "font-semibold text-[color:var(--pp-primary-950)]";
+const BASE = "flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-base transition-colors";
+const IDLE = "text-ink-tertiary hover:bg-[color:var(--pp-primary-100)] hover:text-[color:var(--pp-primary-950)]";
+const ACTIVE = "bg-[color:var(--pp-primary-100)] font-medium text-[color:var(--pp-primary-950)]";
 
 /* ── sidebar ───────────────────────────────────────────── */
 function Sidebar() {
@@ -101,8 +98,8 @@ function MobileNav({ hidden }: { hidden: boolean }) {
         {NAV.map((n) => (
           <NavLink key={n.to} to={n.to}
             className={({ isActive }) =>
-              "flex flex-col items-center gap-1 py-2.5 text-2xs transition-colors hover:bg-[color:var(--pp-primary-100)] " +
-              (isActive ? "font-semibold text-[color:var(--pp-primary-950)]" : "font-normal text-ink-tertiary")
+              "flex flex-col items-center gap-1 py-2.5 text-2xs font-medium " +
+              (isActive ? "text-[color:var(--pp-primary-950)]" : "text-ink-tertiary")
             }>
             <NavIcon id={n.id} />
             {n.label}
@@ -127,7 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
    */
   return (
     <div className="min-h-screen bg-surface-0">
-      <a href="#main" className="pp-skip rounded-full bg-[color:var(--pp-primary-950)] px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 active:opacity-80">
+      <a href="#main" className="pp-skip rounded-full bg-[color:var(--pp-primary-950)] px-5 py-2.5 text-sm font-medium text-white">
         Skip to content
       </a>
       <SiteHeader />

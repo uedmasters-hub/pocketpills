@@ -128,21 +128,10 @@ those caps **left-aligned** — never `mx-auto`, which would re-centre the conte
 and break the shared left edge. Auth is the one exception: it renders outside
 `AppShell` entirely.
 
-**Hover & pressed.** Every interactive element has both. Two families:
-
-| Surface | Hover | Pressed |
-|---|---|---|
-| Light (cards, rows, nav, chips) | `bg-primary-100` | `bg-primary-200` |
-| Solid / dark (buttons, badges, icon controls) | `opacity-90…85` | `opacity-80…75` |
-
-150ms, colour only — no lift, shadow, scale or border swap. Elements already on
-`primary-100` step to `primary-200`. Put the state on the shared constant
-(`BASE`, `ITEM`, `Card interactive`, `Button`) rather than per instance, so new
-elements inherit it.
-
-**Active (current page).** Carried by **weight + colour**, never a filled pill:
-`font-semibold` + `--pp-primary-950` against `font-normal` + `--text-tertiary`.
-Icons use `currentColor` and follow automatically.
+**Hover.** One treatment everywhere: `hover:bg-[color:var(--pp-primary-100)]`
+over 150ms — no lift, no shadow, no scale, no border swap. Elements already on
+`primary-100` step up to `primary-200`. Buttons keep their own
+`opacity` / `primary-hover` states.
 
 **Motion.**
 

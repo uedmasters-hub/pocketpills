@@ -57,7 +57,7 @@ function PromoCard({ p, onClick }: { p: Promo; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="pp-snap flex h-[254px] w-[86%] flex-none items-stretch gap-4 overflow-hidden transition-opacity hover:opacity-95 active:opacity-90 rounded-2xl bg-[color:var(--pp-primary-200)] p-4 text-left sm:w-[68%] sm:p-5"
+      className="pp-snap flex h-[254px] w-[86%] flex-none items-stretch gap-4 overflow-hidden rounded-2xl bg-[color:var(--pp-primary-200)] p-4 text-left sm:w-[68%] sm:p-5"
     >
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 pl-3 sm:pl-6">
         <p className={"font-display text-xl font-medium leading-snug " + (p.brand ? "text-[color:var(--pp-violet)]" : "text-[color:var(--pp-primary-950)]")}>

@@ -351,7 +351,7 @@ function FeatureCard({
   return (
     <button
       onClick={onClick}
-      className={"relative flex aspect-[13/9] min-h-[260px] flex-1 flex-col justify-between overflow-hidden rounded-2xl p-8 text-left transition-opacity hover:opacity-95 active:opacity-90 " + bgClass}
+      className={"relative flex aspect-[13/9] min-h-[260px] flex-1 flex-col justify-between overflow-hidden rounded-2xl p-8 text-left transition-transform " + bgClass}
     >
       <img src={img} alt={alt} loading="lazy" onError={hideOnError}
         className="absolute inset-0 h-full w-full object-cover object-right" />
@@ -511,7 +511,7 @@ function ReviewMark({ id }: { id: "capsule" | "multi" | "plus" | "transfer" }) {
 function CarouselArrow({ dir, active, onClick }: { dir: "l" | "r"; active: boolean; onClick: () => void }) {
   const c = active ? "#4E2A84" : "#AAACCA";
   return (
-    <button onClick={onClick} aria-label={dir === "l" ? "Previous reviews" : "Next reviews"} className="hidden shrink-0 cursor-pointer transition-opacity hover:opacity-70 active:opacity-50 md:block">
+    <button onClick={onClick} aria-label={dir === "l" ? "Previous reviews" : "Next reviews"} className="hidden shrink-0 cursor-pointer md:block">
       <svg width="48" height="49" viewBox="0 0 48 49" fill="none" className="transition-all duration-300">
         <path d="M1 24.1499C1 11.4474 11.2975 1.1499 24 1.1499C36.7025 1.1499 47 11.4474 47 24.1499C47 36.8525 36.7025 47.1499 24 47.1499C11.2975 47.1499 1 36.8525 1 24.1499Z" stroke={c} strokeWidth="2" />
         {dir === "l"

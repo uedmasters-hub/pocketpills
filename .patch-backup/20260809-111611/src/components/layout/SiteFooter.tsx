@@ -53,7 +53,7 @@ function ArrowRight({ w = 16 }: { w?: number }) {
 
 function StoreBadge({ kind }: { kind: "ios" | "android" }) {
   return (
-    <a href="#" className="inline-flex w-[172px] items-center gap-3 rounded-lg bg-black px-4 py-2 text-white transition-opacity hover:opacity-85 active:opacity-75">
+    <a href="#" className="inline-flex w-[172px] items-center gap-3 rounded-lg bg-black px-4 py-2 text-white transition-transform">
       {kind === "ios" ? (
         <svg width="24" height="28" viewBox="0 0 24 28" fill="white" aria-hidden><path d="M17.05 14.9c.03-2.6 2.13-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.9-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.65 3.24 2.6 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.38.81 1.4-.02 2.28-1.27 3.13-2.53.99-1.45 1.4-2.85 1.42-2.92-.03-.01-2.72-1.04-2.72-4.12zM14.5 6.5c.71-.87 1.19-2.07 1.06-3.27-1.02.04-2.26.68-3 1.54-.66.76-1.24 1.98-1.08 3.15 1.14.09 2.3-.58 3.02-1.42z" /></svg>
       ) : (
@@ -247,7 +247,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div className="flex flex-wrap items-center gap-4">
             <Social />
-            <button className="flex items-center gap-2 rounded-md border border-line bg-white transition-colors hover:bg-[color:var(--pp-primary-100)] px-2.5 py-1.5 text-sm text-ink-secondary">
+            <button className="flex items-center gap-2 rounded-md border border-line bg-white px-2.5 py-1.5 text-sm text-ink-secondary">
               EN
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="m6 9 6 6 6-6" /></svg>
             </button>

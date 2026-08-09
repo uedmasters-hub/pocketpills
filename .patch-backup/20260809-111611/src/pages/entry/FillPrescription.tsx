@@ -116,7 +116,7 @@ function MedPicker({ onAdd }: { onAdd: (m: Med) => void }) {
               <span>💊</span><span className="flex-1"><span className="block font-semibold text-ink">{d.name}</span>{d.generic && <span className="block text-xs text-ink-tertiary">{d.generic}</span>}</span><span className="text-primary">+ Add</span>
             </button>
           ))}
-          <button onClick={addManual} className="flex w-full items-center gap-2 bg-surface-1 transition-colors hover:bg-[color:var(--pp-primary-100)] p-3 text-left text-sm font-semibold text-primary">＋ Add “{q.trim()}” manually</button>
+          <button onClick={addManual} className="flex w-full items-center gap-2 bg-surface-1 p-3 text-left text-sm font-semibold text-primary">＋ Add “{q.trim()}” manually</button>
         </div>
       )}
     </div>
