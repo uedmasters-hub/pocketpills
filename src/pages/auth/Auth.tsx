@@ -587,7 +587,7 @@ export function SignUp() {
           <>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="First name" placeholder="Alex" value={f.firstName} onChange={(e) => set("firstName", e.target.value)} />
-              <Field label="Last name" placeholder="Chen" value={f.lastName} onChange={(e) => set("lastName", e.target.value)} />
+              <Field label="Last name" placeholder="Mandal" value={f.lastName} onChange={(e) => set("lastName", e.target.value)} />
             </div>
             <Field label="Email" type="email" placeholder="you@example.com" value={f.email} onChange={(e) => set("email", e.target.value)} />
             <Field label="Password" type="password" placeholder="At least 8 characters" value={f.password} onChange={(e) => set("password", e.target.value)} />

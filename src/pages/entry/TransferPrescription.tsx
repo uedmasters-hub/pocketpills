@@ -666,7 +666,7 @@ export function TransferPrescription() {
       const order = createTransferOrder({
         fromPharmacy: pharmacy?.name ?? "Your pharmacy",
         address: deliveryAddress,
-        patient: displayName === "there" ? "Ramesh Chen" : displayName,
+        patient: displayName === "there" ? "Ramesh Mandal" : displayName,
         cardLast4: card.number.replace(/\s/g, "").slice(-4) || "4242",
       });
       setSubmitted(order);

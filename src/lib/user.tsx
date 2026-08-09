@@ -160,7 +160,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         ...EMPTY,
         email,
         firstName: "Ramesh",
-        lastName: "Chen",
+        lastName: "Mandal",
         onboarded: true,
         address: "221 King St W, Toronto, ON",
       }),

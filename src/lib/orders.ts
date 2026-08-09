@@ -88,28 +88,28 @@ export function transferStepIndex(status: OrderStatus): number {
 const SEED: Order[] = [
   {
     id: "PP-RX-3391", invoiceNo: "INV-2026-3391", date: "2026-08-06", type: "fill", status: "out_for_delivery",
-    patient: "Ramesh Chen", address: "221 King St W, Toronto, ON M5H 1K4",
+    patient: "Ramesh Mandal", address: "221 King St W, Toronto, ON M5H 1K4",
     items: [{ name: "Ramipril", strength: "5mg", qty: 90, unitPrice: 0.42 }],
     dispensingFee: 11.99, insuranceCovered: 30.0, payment: { method: "mixed", cardLast4: "4242" },
     prescriber: "Dr. Amrita Shah", pharmacist: "R. Okafor, RPh",
   },
   {
     id: "PP-48210", invoiceNo: "INV-2026-8210", date: "2026-07-18", type: "consultation", status: "delivered",
-    patient: "Ramesh Chen", address: "221 King St W, Toronto, ON M5H 1K4",
+    patient: "Ramesh Mandal", address: "221 King St W, Toronto, ON M5H 1K4",
     items: [{ name: "Alysena", strength: "0.1/0.02mg", qty: 84, unitPrice: 0.21 }],
     dispensingFee: 11.99, insuranceCovered: 29.63, payment: { method: "insurance" },
     prescriber: "Dr. Amrita Shah", pharmacist: "R. Okafor, RPh",
   },
   {
     id: "PP-RX-3120", invoiceNo: "INV-2026-3120", date: "2026-06-15", type: "refill", status: "delivered",
-    patient: "Ramesh Chen", address: "221 King St W, Toronto, ON M5H 1K4",
+    patient: "Ramesh Mandal", address: "221 King St W, Toronto, ON M5H 1K4",
     items: [{ name: "Atorvastatin", strength: "20mg", qty: 90, unitPrice: 0.47 }],
     dispensingFee: 11.99, insuranceCovered: 35.0, payment: { method: "mixed", cardLast4: "4242" },
     pharmacist: "J. Nguyen, RPh",
   },
   {
     id: "PP-TR-2984", invoiceNo: "INV-2026-2984", date: "2026-06-02", type: "transfer", status: "processing",
-    patient: "Ramesh Chen", address: "221 King St W, Toronto, ON M5H 1K4",
+    patient: "Ramesh Mandal", address: "221 King St W, Toronto, ON M5H 1K4",
     fromPharmacy: "Shoppers Drug Mart",
     items: [
       { name: "Metformin", strength: "500mg", qty: 90, unitPrice: 0.11 },
@@ -119,7 +119,7 @@ const SEED: Order[] = [
   },
   {
     id: "PP-RX-2765", invoiceNo: "INV-2026-2765", date: "2026-05-09", type: "fill", status: "delivered",
-    patient: "Ramesh Chen", address: "221 King St W, Toronto, ON M5H 1K4",
+    patient: "Ramesh Mandal", address: "221 King St W, Toronto, ON M5H 1K4",
     items: [{ name: "Salbutamol", strength: "100mcg", qty: 1, unitPrice: 22.0 }],
     dispensingFee: 11.99, insuranceCovered: 20.4, payment: { method: "mixed", cardLast4: "4242" },
     pharmacist: "J. Nguyen, RPh",
@@ -196,7 +196,7 @@ export function createTransferOrder(input: {
     date: today,
     type: "transfer",
     status: "verifying",
-    patient: input.patient ?? "Ramesh Chen",
+    patient: input.patient ?? "Ramesh Mandal",
     address: input.address,
     fromPharmacy: input.fromPharmacy,
     items: [{ name: "Prescription transfer", strength: "—", qty: 1, unitPrice: 0 }],

@@ -108,7 +108,7 @@ const HERO = {
   file: "/hero.mp4",              // self-hosted; falls back to YouTube if missing
   poster: "",                     // e.g. "/hero-poster.jpg"
   youtube: VIDEO_ID,
-  start: 54,
+  start: 6,
 };
 
 function Hero() {
@@ -122,12 +122,34 @@ function Hero() {
     setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
 
-  /* Native video: attempt autoplay, and surface the control if the browser blocks it. */
+  /* Native video: start at HERO.start, attempt autoplay, surface control if blocked. */
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !HERO.file) return;
     if (reduced) { v.pause(); setPlaying(false); return; }
-    v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+
+    const seekStart = () => {
+      if (Math.abs(v.currentTime - HERO.start) > 0.35) v.currentTime = HERO.start;
+    };
+
+    const onLoaded = () => {
+      seekStart();
+      void v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    };
+
+    /* Loop restarts at 0 — jump back to the intended in-point. */
+    const onTimeUpdate = () => {
+      if (v.currentTime > 0 && v.currentTime < 0.4) seekStart();
+    };
+
+    if (v.readyState >= 1) onLoaded();
+    else v.addEventListener("loadedmetadata", onLoaded);
+
+    v.addEventListener("timeupdate", onTimeUpdate);
+    return () => {
+      v.removeEventListener("loadedmetadata", onLoaded);
+      v.removeEventListener("timeupdate", onTimeUpdate);
+    };
   }, [reduced]);
 
   const toggle = () => {
