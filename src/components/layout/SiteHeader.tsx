@@ -195,7 +195,7 @@ function UserMenu() {
       </button>
       {open && (
         <>
-          <div role="menu" className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl bg-[color:var(--pp-primary-100)] shadow-float">
+          <div role="menu" className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-100)] shadow-float">
             <div className="border-b border-line p-4">
               <p className="font-semibold text-[color:var(--pp-primary-950)]">{displayName}</p>
               <p className="truncate text-xs text-ink-tertiary">{user?.email}</p>
@@ -322,6 +322,8 @@ function Brand({ to }: { to: string }) {
   );
 }
 
+import { isAlwaysPublicPath, isDualBrowsePath } from "@/lib/marketingPaths";
+
 /* ── header ────────────────────────────────────────────── */
 export type HeaderVariant = "marketing" | "app" | "focused" | "minimal";
 
@@ -329,10 +331,12 @@ export type HeaderVariant = "marketing" | "app" | "focused" | "minimal";
 function useVariant(): HeaderVariant {
   const { pathname } = useLocation();
   const { signedIn } = useUser();
-  if (pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer") return "focused";
+  if (pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer" || pathname === "/delivery-check") return "focused";
   if (pathname === "/login" || pathname === "/get-started") return "minimal";
-  /* Marketing homepage always keeps the full nav — even when signed in. */
-  if (pathname === "/") return "marketing";
+  /* Homepage + How it works / Support — always marketing nav. */
+  if (pathname === "/" || isAlwaysPublicPath(pathname)) return "marketing";
+  /* Treatment / Pharmacy — marketing when logged out, app when logged in. */
+  if (isDualBrowsePath(pathname) && !signedIn) return "marketing";
   return signedIn ? "app" : "marketing";
 }
 
@@ -361,7 +365,7 @@ function TreatmentMenu() {
       </>}
       cta="/find-care" ctaLabel="Get a prescription"
       asideTitle="Virtual Care"
-      tags={[["Acne (Mild)", "/treatment/acne"], ["Birth Control", "/treatment/birth-control"], ["Erectile Dysfunction", "/find-care"], ["Hair Loss", "/find-care"], ["Urinary Tract Infection", "/treatment/uti"], ["Weight Loss", "/find-care"]]}
+      tags={[["Acne (Mild)", "/consult/acne"], ["Birth Control", "/treatment/birth-control"], ["Erectile Dysfunction", "/find-care"], ["Hair Loss", "/find-care"], ["Urinary Tract Infection", "/treatment/uti"], ["Weight Loss", "/find-care"], ["Minor ailments", "/consult/minor-ailments"]]}
       browseTo="/find-care" browseLabel="See all treatments"
       faqs={["Can I get a prescription online?", "How do I qualify for a prescription?", "How fast is the application process?", "Is delivery free across Canada?"]}
       faqTo="/find-care"
@@ -397,10 +401,8 @@ function SupportMenu() {
         <div className="flex flex-col gap-3 p-3">
           <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-[color:var(--pp-violet)]">Learn</p>
           <div className="flex flex-col gap-2.5">
-            {[["About us", "/find-care"], ["FAQs", "#faq"], ["Browse Ailments", "/find-care"]].map(([l, t]) =>
-              t.startsWith("#")
-                ? <a key={l} href={t} className="text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:text-[color:var(--pp-violet)]">{l}</a>
-                : <Link key={l} to={t} className="text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:text-[color:var(--pp-violet)]">{l}</Link>)}
+            {[["About us", "/about-us"], ["How it works", "/how-it-works"], ["FAQs", "/questions"], ["Browse Ailments", "/consult/minor-ailments"]].map(([l, t]) =>
+              <Link key={l} to={t} className="text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:text-[color:var(--pp-violet)]">{l}</Link>)}
           </div>
         </div>
 
@@ -429,6 +431,7 @@ function SupportMenu() {
 export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}) {
   const derived = useVariant();
   const variant = forced ?? derived;
+  const { pathname } = useLocation();
   const { signedIn } = useUser();
   const [open, setOpen] = useState<string | null>(null);
   // Focused flows keep chrome pinned — losing "Save & exit" mid-checkout is hostile.
@@ -497,7 +500,12 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
           <span className={ITEM}><Link to="/drug">Online Pharmacy</Link><Chevron /></span>
           {open === "p" && <PharmacyMenu />}
         </div>
-        <a href="#how" className={ITEM}>How it works</a>
+        <Link
+          to="/how-it-works"
+          className={ITEM + (pathname === "/how-it-works" ? " bg-[color:var(--state-hover)] text-[color:var(--pp-primary-950)]" : "")}
+        >
+          How it works
+        </Link>
         <div className="relative" onMouseEnter={() => setOpen("s")}>
           <span className={ITEM}><a href="#care">Support</a><Chevron /></span>
           {open === "s" && <SupportMenu />}

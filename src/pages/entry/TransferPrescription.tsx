@@ -385,7 +385,7 @@ export function TransferPrescription() {
           </button>
         </div>
 
-        <div className="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[color:var(--pp-primary-200)]">
+        <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-white">
           {filtered.map((p, i) => (
             <button
               key={p.id}
@@ -426,7 +426,7 @@ export function TransferPrescription() {
         onClose={close}
         footer={<ContinueBar onContinue={() => setStep("trust")} />}
       >
-        <div className="relative overflow-hidden rounded-2xl bg-[color:var(--pp-primary-200)] ring-1 ring-[color:var(--pp-primary-300)]">
+        <div className="relative overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-200)]">
           <iframe
             title={`Map near ${pharmacy.name}`}
             src={mapSrc}
@@ -447,7 +447,7 @@ export function TransferPrescription() {
           Verify that we've got the right pharmacy so we can handle your transfer to get your order ready.
         </p>
 
-        <div className="mt-5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-[color:var(--pp-primary-200)] sm:p-5">
+        <div className="mt-5 rounded-2xl border border-line bg-white p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-medium text-[color:var(--pp-primary-950)]">{pharmacy.name}</p>
@@ -551,10 +551,10 @@ export function TransferPrescription() {
                   type="button"
                   onClick={() => setAddressId(a.id)}
                   className={
-                    "w-full rounded-2xl bg-white p-4 text-left transition-shadow " +
+                    "w-full rounded-2xl border bg-white p-4 text-left transition-[border-color] " +
                     (on
-                      ? "ring-2 ring-[color:var(--pp-primary-950)]"
-                      : "ring-1 ring-[color:var(--pp-primary-200)] hover:ring-[color:var(--pp-primary-400)]")
+                      ? "border-[color:var(--pp-primary-950)]"
+                      : "border-line hover:border-[color:var(--pp-primary-400)]")
                   }
                 >
                   <div className="flex items-center gap-2">
@@ -579,7 +579,7 @@ export function TransferPrescription() {
             <button
               type="button"
               onClick={() => setAddingAddress(true)}
-              className="flex w-full items-center gap-3 rounded-2xl bg-[color:var(--pp-primary-200)] px-4 py-3.5 text-left text-sm font-medium text-[color:var(--pp-primary-950)] transition-opacity hover:opacity-90"
+              className="flex w-full items-center gap-3 rounded-2xl border border-line bg-[color:var(--pp-primary-200)] px-4 py-3.5 text-left text-sm font-medium text-[color:var(--pp-primary-950)] transition-opacity hover:opacity-90"
             >
               <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-white" aria-hidden>+</span>
               Add a new address
@@ -696,7 +696,7 @@ export function TransferPrescription() {
           We'll bill your insurance first. Your card is only charged for any remaining balance after you approve the order.
         </p>
 
-        <div className="mt-5 flex gap-3 rounded-2xl bg-[color:var(--pp-primary-200)] px-4 py-3.5 text-sm text-ink-secondary">
+        <div className="mt-5 flex gap-3 rounded-2xl border border-line bg-[color:var(--pp-primary-200)] px-4 py-3.5 text-sm text-ink-secondary">
           <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-[10px] font-bold text-white" aria-hidden>
             !
           </span>
@@ -754,7 +754,7 @@ export function TransferPrescription() {
           </p>
         )}
 
-        <div className="mt-6 rounded-2xl bg-white p-5 text-left shadow-sm ring-1 ring-[color:var(--pp-primary-200)]">
+        <div className="mt-6 rounded-2xl border border-line bg-white p-5 text-left">
           <p className="mb-1 font-semibold text-[color:var(--pp-primary-950)]">What happens next</p>
           <p className="mb-3 text-xs text-ink-tertiary">Follow these cues — or track live anytime in Pharmacy.</p>
           {TRANSFER_HINTS.map((h, i) => (
@@ -780,7 +780,7 @@ export function TransferPrescription() {
           </p>
         </div>
 
-        <div className="mx-auto mt-6 inline-flex flex-col items-center gap-2 rounded-2xl bg-[color:var(--pp-primary-200)] p-4">
+        <div className="mx-auto mt-6 inline-flex flex-col items-center gap-2 rounded-2xl border border-line bg-[color:var(--pp-primary-200)] p-4">
           <QRCodeSVG
             value={trackId ? `https://pocketpills.com/orders/${trackId}` : "https://pocketpills.com/pharmacy"}
             size={96}

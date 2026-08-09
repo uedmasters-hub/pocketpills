@@ -33,12 +33,58 @@ function FilledArrow() {
 const DASH_IMG = "https://static.pocketpills.com/webapp";
 const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = "none"; };
 
-interface Promo { t: string; d: string; note?: string; img: string; to: string; brand?: boolean; }
+interface Promo {
+  badge: string;
+  t: string;
+  d: string;
+  /** Price / savings hook shown next to the CTA arrow. */
+  offer?: string;
+  /** Short trust line under the CTA (e.g. Free delivery · Cancel anytime). */
+  persuasion: string;
+  img: string;
+  to: string;
+  /** Violet treatment tone (birth control etc.). */
+  brand?: boolean;
+}
+
 const PROMOS: Promo[] = [
-  { t: "Get Your Birth Control Online", d: "Start a free online assessment to get a prescription.", img: `${DASH_IMG}/img/minor-ailment-bc.svg`, to: "/treatment/birth-control", brand: true },
-  { t: "Save 50% on your weight loss journey", d: "Brand-name Ozempic at a generic price", note: "Get it at $139!", img: `${DASH_IMG}/images/dashboard/weight-loss-doctor.png`, to: "/drug/ozempic" },
-  { t: "Hair loss care made easy", d: "Doctor-approved hair loss treatments available now.", img: `${DASH_IMG}/images/dashboard/hair-loss-card.webp`, to: "/find-care" },
-  { t: "ED treatment, simplified", d: "Easy consults, expert care, discreet delivery", img: `${DASH_IMG}/images/dashboard/ed-card.webp`, to: "/find-care" },
+  {
+    badge: "Free assessment",
+    t: "Get Your Birth Control Online",
+    d: "Start a free online assessment to get a prescription — no clinic visit.",
+    offer: "Covered by most plans",
+    persuasion: "Doctor-led · Ships free · Pause anytime",
+    img: `${DASH_IMG}/img/minor-ailment-bc.svg`,
+    to: "/treatment/birth-control",
+    brand: true,
+  },
+  {
+    badge: "Save 50%",
+    t: "Save 50% on your weight loss journey",
+    d: "Brand-name Ozempic at a generic price, with pharmacist support.",
+    offer: "Get it at $139!",
+    persuasion: "Limited-time price · Free standard delivery",
+    img: `${DASH_IMG}/images/dashboard/weight-loss-doctor.png`,
+    to: "/drug/ozempic",
+  },
+  {
+    badge: "First month $39",
+    t: "Hair loss care that actually works",
+    d: "Clinically proven treatments prescribed online by Canadian doctors.",
+    offer: "Start from $39/mo",
+    persuasion: "Discreet packaging · Results in 3–6 months",
+    img: `${DASH_IMG}/images/dashboard/hair-loss-card.webp`,
+    to: "/find-care",
+  },
+  {
+    badge: "Private & discreet",
+    t: "ED treatment, simplified",
+    d: "Easy consults, expert care, and same-day delivery in select cities.",
+    offer: "Consult from $0",
+    persuasion: "Plain packaging · Ships to your door",
+    img: `${DASH_IMG}/images/dashboard/ed-card.webp`,
+    to: "/find-care",
+  },
 ];
 
 function RailHeader({ title, boxRef }: { title?: string; boxRef: React.RefObject<HTMLDivElement | null> }) {
@@ -55,30 +101,54 @@ function RailHeader({ title, boxRef }: { title?: string; boxRef: React.RefObject
 }
 
 function PromoCard({ p, onClick }: { p: Promo; onClick: () => void }) {
+  const ink = p.brand ? "text-[color:var(--pp-violet)]" : "text-[color:var(--pp-primary-950)]";
+  const sub = p.brand ? "text-[color:var(--pp-violet)]/80" : "text-ink-secondary";
+
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="pp-snap flex h-[254px] w-[86%] flex-none items-stretch overflow-hidden rounded-2xl bg-white text-left shadow-sm transition-opacity hover:opacity-95 active:opacity-90 sm:w-[68%]"
+      className="pp-snap group flex h-[270px] w-[88%] flex-none items-stretch overflow-hidden rounded-2xl border border-line bg-white text-left transition-colors hover:bg-[color:var(--state-hover)] active:bg-[color:var(--state-pressed)] sm:w-[70%]"
     >
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 py-5 pl-5 pr-4 sm:pl-7 sm:pr-5">
-        <p className={"font-display text-xl font-medium leading-snug " + (p.brand ? "text-[color:var(--pp-violet)]" : "text-[color:var(--pp-primary-950)]")}>
-          {p.t}
-        </p>
-        <p className={"text-sm " + (p.brand ? "text-[color:var(--pp-violet)]" : "text-ink-secondary")}>{p.d}</p>
-        <span className="mt-3 flex items-center gap-2">
-          {p.note && <span className="text-base font-medium text-[color:var(--pp-primary-950)]">{p.note}</span>}
-          <FilledArrow />
+        <span
+          className={
+            "inline-flex w-max items-center rounded-full px-2.5 py-1 text-2xs font-semibold uppercase tracking-wide " +
+            (p.brand
+              ? "bg-[color:var(--pp-primary-200)] text-[color:var(--pp-violet)]"
+              : "bg-[color:var(--pp-primary-200)] text-[color:var(--pp-primary-950)]")
+          }
+        >
+          {p.badge}
         </span>
+
+        <p className={"font-display text-xl font-medium leading-snug " + ink}>{p.t}</p>
+        <p className={"text-sm leading-snug " + sub}>{p.d}</p>
+
+        <span className="mt-2 flex flex-wrap items-center gap-2">
+          {p.offer && (
+            <span className={"text-base font-medium " + ink}>{p.offer}</span>
+          )}
+          <span className="transition-transform duration-200 group-hover:translate-x-0.5">
+            <FilledArrow />
+          </span>
+        </span>
+
+        <p className="mt-1 text-2xs text-ink-tertiary">{p.persuasion}</p>
       </div>
 
       {/* Full-bleed portrait anchored to the far right edge */}
-      <div className="relative hidden w-[42%] shrink-0 self-stretch sm:block">
+      <div className="relative hidden w-[40%] shrink-0 self-stretch sm:block">
         <img
           src={p.img}
           alt=""
           loading="lazy"
           onError={hideOnError}
           className="absolute inset-0 h-full w-full object-cover object-center"
+        />
+        <span
+          className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent"
+          aria-hidden
         />
       </div>
     </button>
@@ -120,7 +190,7 @@ function ActionRow({ id, title, sub, onClick }: { id: ActionId; title: string; s
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center gap-4 rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-[color:var(--pp-primary-200)] transition-colors hover:bg-[color:var(--state-hover)]"
+      className="flex w-full items-center gap-4 rounded-2xl border border-line bg-white p-4 text-left transition-colors hover:bg-[color:var(--state-hover)]"
     >
       <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: ACTION_ICON[id].bg }}>
         <ActionIcon id={id} />
@@ -141,7 +211,7 @@ function AppCard() {
   const appUrl = "https://pocketpills.com/app";
 
   return (
-    <section className="relative overflow-hidden rounded-2xl bg-[#E5E3FF] p-6 sm:p-8">
+    <section className="relative overflow-hidden rounded-2xl border border-line bg-[#E5E3FF] p-6 sm:p-8">
       {/* Soft organic accent — matches production shell */}
       <span
         className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-[45%] bg-[#C9C2FA]/80"
@@ -156,7 +226,7 @@ function AppCard() {
           Scan the QR code or get the download link
         </p>
 
-        <div className="mt-5 flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-sm sm:flex-row sm:items-stretch sm:gap-5 sm:p-5">
+        <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 sm:flex-row sm:items-stretch sm:gap-5 sm:p-5">
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-3">
             <div
               className="flex gap-1"
@@ -258,7 +328,7 @@ function FaxCard() {
   };
 
   return (
-    <section className="relative overflow-hidden rounded-2xl bg-[color:var(--pp-primary-200)] p-6 sm:p-8">
+    <section className="relative overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-200)] p-6 sm:p-8">
       <div className="relative z-10 max-w-md pr-24 sm:pr-28">
         <h2 className="font-display text-lg font-medium leading-snug text-[color:var(--pp-primary-950)]">
           Fax us your prescription for faster service
@@ -320,9 +390,9 @@ export function Dashboard() {
         </button>
       )}
 
-      {/* promos — 1½ cards so the rail reads as scrollable */}
-      <section>
-        <RailHeader boxRef={promoRef} />
+      {/* Promotional banners — offers, savings, persuasion */}
+      <section aria-label="Promotions">
+        <RailHeader title="Offers for you" boxRef={promoRef} />
         <div ref={promoRef} className="pp-scroll flex gap-4 overflow-x-auto">
           {PROMOS.map((p) => <PromoCard key={p.t} p={p} onClick={() => nav(p.to)} />)}
         </div>

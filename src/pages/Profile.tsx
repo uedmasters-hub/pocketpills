@@ -62,7 +62,7 @@ export function Profile() {
         </p>
       </header>
 
-      <div className="overflow-hidden rounded-2xl bg-surface-2">
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
         {rows.map((r, i) => (
           <Link
             key={r.id}

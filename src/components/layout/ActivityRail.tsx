@@ -70,7 +70,7 @@ function LiveOrderCard({ o, onClick }: { o: Order; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-2xl bg-white px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
+      className="w-full rounded-2xl border border-line bg-white px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
     >
       <span className="flex items-center justify-between gap-2">
         <span className="truncate text-sm font-medium text-[color:var(--pp-primary-950)]">{title}</span>
@@ -101,7 +101,7 @@ function ActivityBody() {
 
   if (empty) {
     return (
-      <div className="rounded-2xl bg-white px-5 py-6">
+      <div className="rounded-2xl border border-line bg-white px-5 py-6">
         <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">You’re all caught up</p>
         <p className="mt-1 text-xs text-ink-tertiary">No pending tasks or live orders.</p>
       </div>
@@ -111,7 +111,7 @@ function ActivityBody() {
   return (
     <div className="space-y-5">
       {pending.length > 0 && (
-        <section className="overflow-hidden rounded-2xl bg-white">
+        <section className="overflow-hidden rounded-2xl border border-line bg-white">
           <div className="border-b border-line px-4 py-4">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -194,7 +194,7 @@ export function MobileActivity() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
+        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line bg-white px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
         aria-expanded={open}
       >
         <span>
@@ -239,7 +239,7 @@ function ReviewBody() {
 
   return (
     <div className="space-y-5">
-      <section className="overflow-hidden rounded-2xl bg-white">
+      <section className="overflow-hidden rounded-2xl border border-line bg-white">
         <div className="border-b border-line px-4 py-4">
           <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{review.title}</p>
           <p className="mt-0.5 text-xs text-ink-tertiary">
@@ -300,7 +300,7 @@ export function MobileReview() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
+        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line bg-white px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
         aria-expanded={open}
       >
         <span>

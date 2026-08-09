@@ -40,6 +40,15 @@ export const SHELL_BLOCK = `${SHELL_X} pb-12 md:pb-14`;
 /** Landing island corner radius. */
 export const ISLAND_RADIUS = "rounded-[28px]";
 
+/** Subtle 1px edge for cards, islands, rails — uses --border-default. */
+export const EDGE = "border border-line";
+
+/** White / surface panel with soft edge (default card shell). */
+export const PANEL = `rounded-2xl ${EDGE} bg-white`;
+
+/** Landing white island with soft edge. */
+export const ISLAND = `${ISLAND_RADIUS} ${EDGE} bg-white`;
+
 /** Landing section title — Satoshi medium, production-scale. */
 export const SECTION_TITLE =
   "font-display text-3xl font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)] md:text-[1.813rem]";

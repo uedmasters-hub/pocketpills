@@ -26,7 +26,7 @@ function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub
   );
 }
 
-const CARD = "rounded-2xl border border-line bg-white shadow-sm";
+const CARD = "rounded-2xl border border-line bg-white";
 const PILL = "rounded-full px-3 py-1 text-xs font-semibold";
 
 function StatusPill({ status }: { status: keyof typeof statusMeta }) {
@@ -406,7 +406,7 @@ export function Account() {
           </div>
 
           {plans.length === 0 && !editing && (
-            <div className="rounded-xl bg-surface-1 p-4">
+            <div className="rounded-xl border border-line bg-surface-1 p-4">
               <p className="font-semibold text-[color:var(--pp-primary-950)]">No plan on file</p>
               <p className="mt-1 text-sm text-ink-tertiary">Add a plan to lower your costs at checkout.</p>
               <Button type="button" className="mt-4" size="sm" onClick={openAdd}>
@@ -418,7 +418,7 @@ export function Account() {
           {plans.length > 0 && (
             <div className="space-y-3">
               {plans.map((p, i) => (
-                <div key={p.id} className="rounded-xl bg-surface-1 p-4">
+                <div key={p.id} className="rounded-xl border border-line bg-surface-1 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">

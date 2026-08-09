@@ -1,7 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useUser } from "@/lib/user";
 import { LogoMark } from "@/components/Logo";
 import { CONTAINER, FOOTER_GAP } from "@/components/layout/Grid";
+import { formatPostal, isValidPostal } from "@/lib/postal";
+import { Button } from "@/components/ui/Button";
+import { isAlwaysPublicPath, isDualBrowsePath } from "@/lib/marketingPaths";
 
 const CDN = "https://static.pocketpills.com/acq-web";
 const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = "none"; };
@@ -12,7 +16,7 @@ const TILE: Record<TileId, { bg: string; label: string; to: string }> = {
   doctor: { bg: "#54C7DA", label: "Doctor-led treatment", to: "/find-care" },
   fill: { bg: "#4E2A84", label: "Fill your prescription", to: "/fill" },
   transfer: { bg: "#8C60FF", label: "Transfer a prescription", to: "/transfer" },
-  how: { bg: "#AAA4FF", label: "How it works", to: "/drug" },
+  how: { bg: "#AAA4FF", label: "How it works", to: "/how-it-works" },
 };
 
 function TileIcon64({ id }: { id: TileId }) {
@@ -99,11 +103,63 @@ const PROVINCES = [
   "Ontario (ON)", "Prince Edward Island (PE)", "Quebec (QC)", "Saskatchewan (SK)", "Yukon (YT)",
 ];
 
+function PostalCheck() {
+  const nav = useNavigate();
+  const [postal, setPostal] = useState("");
+  const [error, setError] = useState(false);
+  const ready = isValidPostal(postal);
+
+  const submit = () => {
+    if (!ready) {
+      setError(true);
+      return;
+    }
+    nav(`/delivery-check?postal=${encodeURIComponent(formatPostal(postal))}`);
+  };
+
+  return (
+    <div className="mt-6 max-w-md">
+      <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">Check your postal code</p>
+      <p className="mt-1 text-sm text-ink-tertiary">See ETA and same-day availability for your address.</p>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-start">
+        <label className="min-w-0 flex-1">
+          <span className="sr-only">Postal code</span>
+          <input
+            value={postal}
+            onChange={(e) => {
+              setPostal(formatPostal(e.target.value));
+              setError(false);
+            }}
+            onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+            placeholder="A1A 1A1"
+            autoComplete="postal-code"
+            className="h-11 w-full rounded-xl border border-line bg-white px-3.5 text-base text-ink outline-none focus:border-primary"
+            aria-invalid={error}
+          />
+        </label>
+        <Button type="button" size="sm" className="shrink-0 sm:h-11" onClick={submit}>
+          Check delivery
+        </Button>
+      </div>
+      {error && (
+        <p className="mt-2 text-xs text-danger">Enter a valid Canadian postal code.</p>
+      )}
+      <button
+        type="button"
+        onClick={() => nav("/delivery-check")}
+        className="mt-3 text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-80"
+      >
+        Full delivery check-up →
+      </button>
+    </div>
+  );
+}
+
 const COLUMNS: { head: string; links: [string, string][]; cta: [string, string] }[] = [
   { head: "Treatment", links: [["Weight loss", "/find-care"], ["Hair loss", "/find-care"], ["Erectile dysfunction", "/find-care"], ["Birth control", "/treatment/birth-control"]], cta: ["See all treatments", "/find-care"] },
-  { head: "Pharmacy", links: [["Fill a prescription", "/fill"], ["Transfer a prescription", "/transfer"], ["Find medications", "/drug"], ["How it works", "/#how"]], cta: ["Get started", "/get-started"] },
+  { head: "Pharmacy", links: [["Fill a prescription", "/fill"], ["Transfer a prescription", "/transfer"], ["Find medications", "/drug"], ["How it works", "/how-it-works"]], cta: ["Get started", "/get-started"] },
   { head: "Medications", links: [["Ozempic", "/drug/ozempic"], ["Browse A–Z", "/drug"], ["Drug information", "/drug"]], cta: ["Search prices", "/drug"] },
-  { head: "Company", links: [["About", "/#faq"], ["Careers", "/#faq"], ["Press", "/#faq"], ["Help centre", "/messages"]], cta: ["Contact us", "/messages"] },
+  { head: "Company", links: [["About", "/about-us"], ["How it works", "/how-it-works"], ["FAQs", "/questions"], ["Help centre", "/questions"]], cta: ["Contact us", "/questions"] },
 ];
 
 export type FooterVariant = "full" | "compact" | "none";
@@ -112,9 +168,11 @@ export type FooterVariant = "full" | "compact" | "none";
 function useFooterVariant(): FooterVariant {
   const { pathname } = useLocation();
   const { signedIn } = useUser();
-  if (pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer") return "none";
+  if (pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer" || pathname === "/delivery-check") return "none";
   if (pathname === "/login" || pathname === "/get-started") return "none";
-  if (pathname === "/") return "full";
+  if (pathname === "/" || isAlwaysPublicPath(pathname)) return "full";
+  /* Treatment / Pharmacy: full footer only for guests. */
+  if (isDualBrowsePath(pathname) && !signedIn) return "full";
   return signedIn ? "compact" : "full";
 }
 
@@ -156,7 +214,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
                 </div>
               </div>
 
-              <div className="relative flex flex-col justify-between gap-10 rounded-2xl bg-white p-8 sm:flex-row sm:gap-6 md:p-10">
+              <div className="relative flex flex-col justify-between gap-10 rounded-2xl border border-line bg-white p-8 sm:flex-row sm:gap-6 md:p-10">
                 <div className="flex flex-col gap-4">
                   <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">Our Care Team</h2>
                   <p className="text-base leading-relaxed text-ink-secondary">Monday - Saturday<br />9:00 AM - 7:00 PM EST</p>
@@ -184,7 +242,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
 
             {/* Get Started tiles — soft fill on white footer */}
             <div className="flex h-full">
-              <div className="grid grow grid-cols-2 gap-6 rounded-2xl bg-[color:var(--primary-200)] p-8 md:rounded-3xl sm:p-12">
+              <div className="grid grow grid-cols-2 gap-6 rounded-2xl border border-line bg-[color:var(--primary-200)] p-8 md:rounded-3xl sm:p-12">
                 {(Object.keys(TILE) as TileId[]).map((id) => (
                   <button key={id} onClick={() => go(TILE[id].to)}
                     className="flex flex-col items-center justify-center gap-5 rounded-2xl p-4 text-center transition-colors hover:bg-white/70">
@@ -219,9 +277,11 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
                 );
               })}
             </ul>
+
+            <PostalCheck />
           </div>
 
-          <aside className="rounded-2xl border border-line/80 bg-[color:var(--primary-200)] p-5 sm:p-6">
+          <aside className="rounded-2xl border border-line bg-[color:var(--primary-200)] p-5 sm:p-6">
             <p className="pp-caps text-ink-tertiary">Your region</p>
             <h3 className="mt-2 font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
               Pocketpills East

@@ -324,7 +324,7 @@ export function Login() {
         </p>
       </div>
 
-      <div className="rounded-[1.75rem] bg-white p-6 shadow-sm sm:p-8">
+      <div className="rounded-[1.75rem] border border-line bg-white p-6 sm:p-8">
         {phase === "form" && (
           <>
             <div className="space-y-4">
@@ -491,7 +491,7 @@ export function Login() {
 
         {phase === "magic" && (
           <div className="space-y-5">
-            <div className="rounded-2xl bg-[color:var(--pp-primary-200)] px-4 py-5 text-center">
+            <div className="rounded-2xl border border-line bg-[color:var(--pp-primary-200)] px-4 py-5 text-center">
               <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">Link sent</p>
               <p className="mt-1 text-sm text-ink-secondary">
                 Open the email on this device to finish signing in.

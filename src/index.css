@@ -200,9 +200,10 @@
     --text-disabled: var(--neutral-500);
     --text-inverse: var(--neutral-0);
 
-    --border-default: var(--neutral-200);
-    --border-divider: var(--neutral-200);
-    --border-strong: var(--neutral-300);
+    /* Hairline edges — lavender-tinted, barely-there on white & tinted fills */
+    --border-default: color-mix(in srgb, var(--primary-800) 12%, transparent);
+    --border-divider: color-mix(in srgb, var(--primary-800) 9%, transparent);
+    --border-strong: color-mix(in srgb, var(--primary-800) 20%, transparent);
 
     /* Legacy / landing aliases (map onto production) */
     --pp-navy: var(--primary-900);
@@ -270,9 +271,9 @@
     --text-disabled: #67648b;
     --text-inverse: #180730;
 
-    --border-default: #37325d;
-    --border-divider: #2a2448;
-    --border-strong: #534b74;
+    --border-default: color-mix(in srgb, #c8c8dc 18%, transparent);
+    --border-divider: color-mix(in srgb, #c8c8dc 12%, transparent);
+    --border-strong: color-mix(in srgb, #c8c8dc 28%, transparent);
 
     --pp-navy: #180730;
     --pp-violet: #aaa4ff;
@@ -338,6 +339,11 @@
 @layer utilities {
   .tnum { font-variant-numeric: tabular-nums; }
 
+  /* Subtle panel edge — prefer this over shadow for card definition */
+  .pp-edge {
+    border: 1px solid var(--border-default);
+  }
+
   /* Caps / eyebrow — production ds-caps-xxs / xs */
   .pp-caps {
     font-size: 0.75rem;
@@ -390,11 +396,27 @@
   .pp-logo-word { animation: none; }
 }
 
-.hero-viewport { height: calc(100vh - 7.5rem); }
-@supports (height: 100svh) { .hero-viewport { height: calc(100svh - 7.5rem); } }
+/*
+  First fold = announcement + hero + a short Welcome peek (label + title + small gap).
+  Keep the video tall so the CTA stays on the next fold.
+*/
+:root {
+  --pp-announce: 2.5rem;
+  /* Short peek: label + title only — CTA stays on the next fold */
+  --pp-welcome-fold: 6.25rem;
+}
 @media (max-width: 640px) {
-  .hero-viewport { height: calc(100vh - 9.5rem); }
-  @supports (height: 100svh) { .hero-viewport { height: calc(100svh - 9.5rem); } }
+  :root { --pp-welcome-fold: 6.75rem; }
+}
+
+.hero-viewport {
+  height: calc(100vh - var(--pp-announce) - var(--pp-welcome-fold));
+  min-height: 28rem;
+}
+@supports (height: 100svh) {
+  .hero-viewport {
+    height: calc(100svh - var(--pp-announce) - var(--pp-welcome-fold));
+  }
 }
 
 @keyframes pp-sheen { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }

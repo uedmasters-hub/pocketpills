@@ -55,8 +55,8 @@ const BASE =
   "hover:bg-[color:var(--state-hover)] active:bg-[color:var(--state-pressed)]";
 const IDLE = "font-normal text-ink-tertiary hover:text-[color:var(--pp-primary-950)]";
 const ACTIVE =
-  "font-medium text-[color:var(--pp-primary-950)] bg-white shadow-sm " +
-  "ring-1 ring-[color:var(--pp-primary-300)] hover:bg-white";
+  "font-medium text-[color:var(--pp-primary-950)] bg-white " +
+  "border border-line hover:bg-white";
 
 function navIsActive(id: NavId, pathname: string) {
   switch (id) {
@@ -196,7 +196,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const chromeHidden = useChromeVisibility();
   const { review } = useRightRail();
   const focusedFlow =
-    pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer";
+    pathname.startsWith("/care/") ||
+    pathname === "/fill" ||
+    pathname === "/transfer" ||
+    pathname === "/delivery-check";
 
   /**
    * One layout for every screen. Left nav + right rail are always reserved on

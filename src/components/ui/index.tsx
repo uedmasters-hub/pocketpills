@@ -9,7 +9,7 @@ export function Card({
   return (
     <div
       className={
-        "bg-surface-2 border border-line rounded-2xl " +
+        "rounded-2xl border border-line bg-surface-2 " +
         (interactive
           ? "cursor-pointer transition-colors duration-200 hover:bg-[color:var(--state-hover)] active:bg-[color:var(--state-pressed)] "
           : "") +

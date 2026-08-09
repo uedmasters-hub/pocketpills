@@ -17,7 +17,7 @@ import {
 } from "@/lib/orders";
 
 const IN_PROGRESS: OrderStatus[] = ["verifying", "processing", "out_for_delivery"];
-const CARD = "rounded-2xl border border-line bg-white shadow-sm";
+const CARD = "rounded-2xl border border-line bg-white";
 const PILL = "rounded-full px-3 py-1 text-xs font-semibold";
 
 function StatusPill({ status }: { status: OrderStatus }) {

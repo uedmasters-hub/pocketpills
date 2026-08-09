@@ -6,7 +6,7 @@ import { useReviewDraft, type ReviewChange } from "@/lib/rightRail";
 
 const FIELD = "h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-base text-ink outline-none focus:border-primary";
 const LABEL = "mb-1.5 block text-sm font-medium text-ink-secondary";
-const CARD = "rounded-2xl bg-surface-2 p-6";
+const CARD = "rounded-2xl border border-line bg-surface-2 p-6";
 
 function Text({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
@@ -63,7 +63,7 @@ const Ico = {
 /** Yes/No question card — the split-button pattern from the reference. */
 function QuestionCard({ q, sub, value, onAnswer }: { q: string; sub: string; value: boolean | null | undefined; onAnswer: (v: boolean) => void }) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-surface-2">
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
       <div className="relative p-6">
         <p className="relative z-10 max-w-[60%] font-display text-lg font-medium text-[color:var(--pp-primary-950)]">{q}</p>
         <p className="relative z-10 mt-1 max-w-[60%] text-sm text-ink-tertiary">{sub}</p>

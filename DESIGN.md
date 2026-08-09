@@ -40,7 +40,10 @@ Production primitives live in `src/index.css` as `--primary-*`, `--neutral-*`,
 | `--neutral-900` | `#180730` | Body text |
 | `--neutral-800` | `#362952` | **Primary CTA** fill |
 | `--neutral-600` | `#67648B` | CTA hover / tertiary text |
-| `--neutral-200` | `#E7E7F2` | Borders, disabled CTA bg |
+| `--neutral-200` | `#E7E7F2` | Disabled CTA bg, legacy fills |
+| `--border-default` | `primary-800` @ 12% | Hairline card / panel edges |
+| `--border-divider` | `primary-800` @ 9% | Section rules |
+| `--border-strong` | `primary-800` @ 20% | Emphasized outlines |
 | `--secondary-800` | `#0A5A68` | Wellness / success |
 
 Theme-color meta: `#4A44A0` (production).
@@ -95,6 +98,18 @@ Section rhythm: `sm` `py-8` · `md` `py-12 md:py-14` · `lg` `py-14 md:py-20`.
 | `radius-l` | 24px | `rounded-2xl` | Cards, panels |
 | `radius-x` | 36px | `rounded-3xl` | Large feature blocks |
 | `radius-full` | pill | `rounded-full` | **All buttons** |
+
+---
+
+## 5b. Borders
+
+Cards, islands, rails, and menus use a **hairline** edge:
+
+`border border-line` → `--border-default` (`primary-800` at 12% opacity).
+
+Prefer the edge over shadow for surface definition. Shared helpers:
+`EDGE`, `PANEL`, `ISLAND` in `Grid.tsx`, and `.pp-edge` in CSS.
+Dividers use `border-line` / `--border-divider` (even softer).
 
 ---
 

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { entryPoints, type EntryIconKey } from "@/lib/data";
 import { useUser } from "@/lib/user";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { FRAME, SURFACE, SECTION_TITLE, SECTION_GAP, SECTION_GAP_Y, ISLAND_PAD, ISLAND_RADIUS, SHELL_X, SHELL_BLOCK } from "@/components/layout/Grid";
+import { FRAME, SURFACE, SECTION_TITLE, SECTION_GAP, SECTION_GAP_Y, ISLAND_PAD, ISLAND_RADIUS, ISLAND, SHELL_X, SHELL_BLOCK } from "@/components/layout/Grid";
 
 const VIDEO_ID = "xbTcp1sTsME";
 
@@ -94,17 +94,171 @@ function CircleArrow({ size = 14 }: { size?: number }) {
   );
 }
 
+const TRUST_ITEMS: { id: string; label: string; icon: "shield" | "truck" | "heart" | "star" | "check" }[] = [
+  { id: "licensed", label: "Licensed Canadian practitioners", icon: "shield" },
+  { id: "shipping", label: "Free and fast shipping", icon: "truck" },
+  { id: "trusted", label: "Trusted by over 800,000 Canadians", icon: "heart" },
+  { id: "appstore", label: "4.8 on the App Store", icon: "star" },
+  { id: "billing", label: "Direct insurance billing", icon: "check" },
+  { id: "trustpilot", label: "4.8 on Trustpilot", icon: "star" },
+];
+
+const ANNOUNCE_INTERVAL_MS = 8000;
+const ANNOUNCE_FADE =
+  "transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
+
+function TrustIcon({ name }: { name: (typeof TRUST_ITEMS)[number]["icon"] }) {
+  const common = {
+    width: 14,
+    height: 14,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true as const,
+  };
+  switch (name) {
+    case "shield":
+      return (
+        <svg {...common}>
+          <path d="M12 3 5 6v5c0 4.5 2.8 7.8 7 9 4.2-1.2 7-4.5 7-9V6l-7-3Z" />
+          <path d="M12 8v5" />
+          <path d="M12 16.2h.01" />
+        </svg>
+      );
+    case "truck":
+      return (
+        <svg {...common}>
+          <path d="M3 7h11v10H3z" />
+          <path d="M14 10h4l3 3v4h-7V10Z" />
+          <circle cx="7" cy="18" r="1.6" fill="currentColor" stroke="none" />
+          <circle cx="17.5" cy="18" r="1.6" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case "heart":
+      return (
+        <svg {...common}>
+          <path d="M12 20s-7-4.4-7-9.2A3.8 3.8 0 0 1 12 8a3.8 3.8 0 0 1 7 2.8C19 15.6 12 20 12 20Z" />
+        </svg>
+      );
+    case "star":
+      return (
+        <svg {...common} fill="currentColor" stroke="none">
+          <path d="m12 3.2 2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 15.6 7.2 18l.9-5.4L4.2 8.9l5.4-.8L12 3.2Z" />
+        </svg>
+      );
+    case "check":
+      return (
+        <svg {...common}>
+          <path d="M12 3 5 6v5c0 4.5 2.8 7.8 7 9 4.2-1.2 7-4.5 7-9V6l-7-3Z" />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
+      );
+  }
+}
+
+function TrustMarquee() {
+  const loop = [...TRUST_ITEMS, ...TRUST_ITEMS];
+  return (
+    <div className="w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
+      <div className="pp-marquee flex w-max items-center gap-8 pr-8" style={{ animationDuration: "36s" }}>
+        {loop.map((item, i) => (
+          <span
+            key={`${item.id}-${i}`}
+            className="inline-flex shrink-0 items-center gap-2 text-2xs text-white/85 sm:text-xs"
+          >
+            <span className="text-white">
+              <TrustIcon name={item.icon} />
+            </span>
+            {item.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AnnouncementBar({ onGo }: { onGo: () => void }) {
   const [show, setShow] = useState(true);
+  const [mode, setMode] = useState<"offer" | "trust">("offer");
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }, []);
+
+  useEffect(() => {
+    if (!show || reduced) return;
+    const id = window.setInterval(() => {
+      setMode((m) => (m === "offer" ? "trust" : "offer"));
+    }, ANNOUNCE_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [show, reduced]);
+
   if (!show) return null;
+
+  const isOffer = reduced || mode === "offer";
+
   return (
-    <div className="relative z-50 bg-[color:var(--pp-navy)] text-white" role="region" aria-label="Promotion">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-center gap-4 px-12 py-2.5 text-2xs sm:text-xs">
-        <span className="text-white/80">Ozempic® now at just $139</span>
-        <button type="button" onClick={onGo} className="inline-flex items-center gap-1.5 font-semibold text-white transition-opacity duration-200 hover:opacity-80">
-          Get started <CircleArrow />
+    <div
+      className="relative z-50 overflow-hidden bg-[color:var(--pp-navy)] text-white"
+      role="region"
+      aria-label={isOffer ? "Promotion" : "Why Pocketpills"}
+      aria-live="polite"
+    >
+      <div className="relative mx-auto flex h-10 max-w-[1600px] items-center px-10 sm:h-11 sm:px-12">
+        <div
+          className={
+            "absolute inset-x-10 flex items-center justify-center gap-3 sm:inset-x-12 sm:gap-4 " +
+            ANNOUNCE_FADE +
+            " " +
+            (isOffer ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-1 opacity-0")
+          }
+        >
+          <span className="text-2xs text-white/85 sm:text-xs">Ozempic® now at just $139</span>
+          <button
+            type="button"
+            onClick={onGo}
+            className="inline-flex items-center gap-1.5 text-2xs font-semibold text-white transition-opacity duration-200 hover:opacity-80 sm:text-xs"
+          >
+            Get started <CircleArrow />
+          </button>
+        </div>
+
+        <div
+          className={
+            "absolute inset-x-10 flex items-center sm:inset-x-12 " +
+            ANNOUNCE_FADE +
+            " " +
+            (isOffer ? "pointer-events-none -translate-y-1 opacity-0" : "translate-y-0 opacity-100")
+          }
+        >
+          {reduced ? (
+            <div className="flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-1 py-1">
+              {TRUST_ITEMS.slice(0, 3).map((item) => (
+                <span key={item.id} className="inline-flex items-center gap-2 text-2xs text-white/85">
+                  <span className="text-white">
+                    <TrustIcon name={item.icon} />
+                  </span>
+                  {item.label}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <TrustMarquee />
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShow(false)}
+          className="absolute right-3 z-10 text-2xs text-white/55 transition-colors hover:text-white sm:right-5"
+          aria-label="Dismiss announcement"
+        >
+          ✕
         </button>
-        <button type="button" onClick={() => setShow(false)} className="absolute right-5 text-white/55 transition-colors hover:text-white" aria-label="Dismiss announcement">✕</button>
       </div>
     </div>
   );
@@ -237,36 +391,119 @@ function Hero() {
 }
 
 /* ═══ 4. Welcome card + stats ═══════════════════ */
-function Welcome({ onStart }: { onStart: () => void }) {
-  const stats = [
-    ["100% Canadian Care", "Trusted by millions of Canadians"],
-    ["Over 2 million", "5-star in-app reviews"],
-    ["4.8 rating", "46K+ App Store reviews"],
-    ["4.6 rating", "13K+ Google Play Store reviews"],
-    ["4.7 score", "9K+ Trustpilot reviews"],
-  ];
+function MapleIcon() {
   return (
-    <header className={`${SHELL_X} pb-10 pt-8 text-center sm:pt-10 md:pb-12`}>
-      <p className="text-base font-semibold text-[color:var(--pp-violet)]">Welcome to Pocketpills</p>
-      <h1 className="mx-auto mt-3 max-w-3xl font-display text-[clamp(2.25rem,4vw,2.875rem)] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-headline)]">
-        Your health, handled.
-      </h1>
-      <button
-        type="button"
-        onClick={onStart}
-        className="mt-8 inline-flex min-w-[12.5rem] items-center justify-center gap-2 rounded-full bg-cta px-12 py-4 text-md font-medium text-white transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed"
-      >
-        get start <CircleArrow size={16} />
-      </button>
-      <div className="mt-10 grid grid-cols-2 gap-y-6 border-t border-line pt-8 text-left sm:grid-cols-3 lg:mt-12 lg:grid-cols-5 lg:divide-x lg:divide-line lg:pt-8">
-        {stats.map(([big, small], i) => (
-          <div key={small} className={i > 0 ? "lg:pl-6" : ""}>
-            <p className="text-sm font-semibold text-ink">{big}</p>
-            <p className="mt-1 text-2xs leading-snug text-ink-tertiary">{small}</p>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2.2 13.4 6.5l4.2-1.2-1.6 3.9 3.5 2.1-4.1.9.6 4.2L12 14.8 8 16.4l.6-4.2-4.1-.9 3.5-2.1-1.6-3.9 4.2 1.2L12 2.2Zm0 14.3v5.3" />
+    </svg>
+  );
+}
+
+function StarsIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="m12 3.2 2.1 4.3 4.7.7-3.4 3.3.8 4.7L12 14.2 7.8 16.2l.8-4.7-3.4-3.3 4.7-.7L12 3.2Z" />
+    </svg>
+  );
+}
+
+function AppStoreIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M16.7 12.9c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.7-1.3-.1-2.5.8-3.2.8-.7 0-1.7-.7-2.8-.7-1.4 0-2.8.9-3.5 2.2-1.5 2.6-.4 6.5 1.1 8.6.7 1 1.5 2.2 2.6 2.1 1.1 0 1.5-.7 2.8-.7s1.6.7 2.8.7c1.2 0 1.9-1 2.6-2 .8-1.2 1.1-2.3 1.1-2.4-.1 0-2.2-.8-2.3-3.7ZM14.6 6.4c.6-.7 1-1.7.9-2.7-1.1.1-2.1.6-2.6 1.4-.5.7-1 1.6-.9 2.6 1 .1 1.9-.5 2.6-1.3Z" />
+    </svg>
+  );
+}
+
+function PlayStoreIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
+      <path d="M4.2 3.1c-.2.2-.4.6-.4 1.1v15.6c0 .5.2.9.4 1.1l.1.1 8.7-8.7v-.2L4.3 3l-.1.1Z" fill="#00A0FF" />
+      <path d="m16.1 15.1-2.9-2.9v-.2l2.9-2.9.1 0 3.5 2c1 .6 1 1.5 0 2.1l-3.5 2-.1.1Z" fill="#FFBD00" />
+      <path d="m16.2 15.1-3-3L4.2 20.1c.3.3.9.4 1.5 0l10.5-5Z" fill="#FF3A44" />
+      <path d="M16.2 8.9 5.7 2.9C5.1 2.5 4.5 2.6 4.2 3l8.8 8.8 3.2-2.9Z" fill="#00F076" />
+    </svg>
+  );
+}
+
+function TrustpilotIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#00B67A" aria-hidden>
+      <path d="m12 2.8 2.5 7.6H22l-6.2 4.5 2.4 7.3L12 17.7 5.8 22.2l2.4-7.3L2 10.4h7.5L12 2.8Z" />
+    </svg>
+  );
+}
+
+type TrustStat = {
+  title: string;
+  sub: string;
+  icon: "maple" | "stars" | "appstore" | "play" | "trustpilot";
+};
+
+const TRUST_STATS: TrustStat[] = [
+  { title: "100% Canadian Care", sub: "Trusted by millions of Canadians", icon: "maple" },
+  { title: "Over 2 million", sub: "5-star in-app reviews", icon: "stars" },
+  { title: "4.8 rating", sub: "46K+ App Store reviews", icon: "appstore" },
+  { title: "4.6 rating", sub: "13K+ Google Play reviews", icon: "play" },
+  { title: "4.7 score", sub: "9K+ Trustpilot reviews", icon: "trustpilot" },
+];
+
+function TrustStatIcon({ name }: { name: TrustStat["icon"] }) {
+  switch (name) {
+    case "maple":
+      return <MapleIcon />;
+    case "stars":
+      return <StarsIcon />;
+    case "appstore":
+      return <AppStoreIcon />;
+    case "play":
+      return <PlayStoreIcon />;
+    case "trustpilot":
+      return <TrustpilotIcon />;
+  }
+}
+
+function Welcome({ onStart }: { onStart: () => void }) {
+  return (
+    <>
+      {/* First-fold peek: label + title + small gap. Video height keeps the CTA below. */}
+      <header className={`${SHELL_X} pt-5 text-center sm:pt-6`}>
+        <p className="text-base font-semibold text-[color:var(--pp-violet)]">Welcome to Pocketpills</p>
+        <h1 className="mx-auto mt-2 max-w-3xl font-display text-[clamp(2.25rem,4vw,2.875rem)] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-headline)]">
+          Your health, handled.
+        </h1>
+      </header>
+
+      {/* Next fold: CTA + trust stats */}
+      <div className={`${SHELL_X} mt-6 pb-10 text-center sm:mt-7 md:pb-12`}>
+        <button
+          type="button"
+          onClick={onStart}
+          className="inline-flex min-w-[12.5rem] items-center justify-center gap-2 rounded-full bg-cta px-12 py-4 text-md font-medium text-white transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed"
+        >
+          get start <CircleArrow size={16} />
+        </button>
+
+        <div
+          className="mt-10 overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-200)] px-4 py-5 text-left sm:px-5 sm:py-6 lg:mt-12"
+          aria-label="Trust and ratings"
+        >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-5 lg:gap-0 lg:divide-x lg:divide-[color:var(--border-default)]">
+            {TRUST_STATS.map((s) => (
+              <div key={s.sub} className="flex items-start gap-3 lg:px-5">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-[color:var(--pp-primary-950)]">
+                  <TrustStatIcon name={s.icon} />
+                </span>
+                <span className="min-w-0 pt-0.5">
+                  <span className="block text-sm font-semibold text-[color:var(--pp-primary-950)]">{s.title}</span>
+                  <span className="mt-0.5 block text-2xs leading-snug text-ink-tertiary">{s.sub}</span>
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
-    </header>
+    </>
   );
 }
 
@@ -587,7 +824,7 @@ function HowItWorks() {
     <section
       ref={sectionRef}
       id="how"
-      className={`overflow-hidden ${ISLAND_RADIUS} bg-white`}
+      className={`overflow-hidden ${ISLAND}`}
       aria-labelledby="how-heading"
     >
       <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-8 xl:gap-10">
@@ -617,6 +854,12 @@ function HowItWorks() {
           <h2 id="how-heading" className={`mt-2 max-w-xl ${SECTION_TITLE}`}>
             Do it <span className="text-[color:var(--pp-violet)]">all</span> without leaving home.
           </h2>
+          <Link
+            to="/how-it-works"
+            className="mt-3 inline-flex text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-80"
+          >
+            See the full guide →
+          </Link>
 
           <ol className="mt-6 grid grid-cols-1 gap-x-3 gap-y-7 sm:mt-7 sm:grid-cols-3 sm:gap-x-3">
             {HOW_STEPS.map((s, i) => {
@@ -797,7 +1040,7 @@ function Testimonials() {
   };
 
   return (
-    <section className={`${ISLAND_RADIUS} bg-white`} aria-labelledby="reviews-heading">
+    <section className={ISLAND} aria-labelledby="reviews-heading">
       <div className={`flex flex-col gap-8 ${ISLAND_PAD} md:gap-10`}>
         <div className="mx-auto flex max-w-2xl flex-col gap-3 text-center text-[color:var(--pp-primary-950)]">
           <h2 id="reviews-heading" className={SECTION_TITLE}>Our members love us</h2>
@@ -820,7 +1063,7 @@ function Testimonials() {
             {REVIEWS.map((r) => (
               <article
                 key={r.name}
-                className="pp-snap flex min-h-[15.5rem] w-[calc((100%-1.5rem)/2)] shrink-0 flex-col rounded-2xl bg-[color:var(--pp-primary-200)] p-6 md:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-4.5rem)/4)]"
+                className="pp-snap flex min-h-[15.5rem] w-[calc((100%-1.5rem)/2)] shrink-0 flex-col rounded-2xl border border-line bg-[color:var(--pp-primary-200)] p-6 md:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-4.5rem)/4)]"
               >
                 <div className="mb-3 flex gap-0.5" aria-label="5 out of 5 stars">
                   {Array.from({ length: 5 }).map((_, i) => <FullStar key={i} />)}
@@ -919,7 +1162,7 @@ function JoinBand({ go }: { go: (to?: string) => void }) {
     </div>
   );
   return (
-    <section className={`${ISLAND_RADIUS} bg-white ${ISLAND_PAD}`} aria-labelledby="join-heading">
+    <section className={`${ISLAND} ${ISLAND_PAD}`} aria-labelledby="join-heading">
       <div className="mb-10 flex flex-col items-center gap-6 md:mb-12">
         <h2 id="join-heading" className={`mx-auto max-w-xl text-center ${SECTION_TITLE}`}>
           Join <span className="text-[color:var(--pp-violet)]">800,000+</span> Canadians who never miss a dose.
@@ -973,7 +1216,7 @@ function NabpBand() {
       </div>
 
       <div
-        className={`flex flex-col gap-6 ${ISLAND_RADIUS} bg-[color:var(--pp-green)] p-8 text-white sm:flex-row sm:items-center sm:gap-8 sm:p-10 md:gap-10 md:px-12 md:py-11`}
+        className={`flex flex-col gap-6 ${ISLAND_RADIUS} border border-white/15 bg-[color:var(--pp-green)] p-8 text-white sm:flex-row sm:items-center sm:gap-8 sm:p-10 md:gap-10 md:px-12 md:py-11`}
       >
         <div className="flex shrink-0 flex-col items-center gap-3 sm:min-w-[7.5rem]">
           <p className="text-2xs uppercase tracking-[0.2em] text-white/60">Accredited by</p>
@@ -1049,7 +1292,7 @@ function Faq({ go }: { go: (to?: string) => void }) {
                 "rounded-2xl bg-white px-6 py-5 transition-[border-color] duration-200 sm:px-8 sm:py-6 " +
                 (isOpen
                   ? "border border-[color:var(--pp-violet)]"
-                  : "border border-transparent")
+                  : "border border-line")
               }
             >
               <button
@@ -1173,8 +1416,8 @@ export function Landing() {
         </Reveal>
 
         {/* Continuous white shell — lavender only shows in the page margins */}
-        <div className={`relative z-20 -mt-10 ${FRAME}`}>
-          <div className={`${SURFACE} overflow-hidden ${ISLAND_RADIUS} bg-white`}>
+        <div className={`relative z-20 -mt-6 ${FRAME}`}>
+          <div className={`${SURFACE} overflow-hidden ${ISLAND}`}>
             <Reveal delay={140}>
               <Welcome onStart={() => go()} />
             </Reveal>
