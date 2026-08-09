@@ -69,47 +69,55 @@ export function TreatmentDetail() {
         ← Find Care
       </Link>
 
-      {/* Mobile: title → CTA → rest. Desktop: content | sticky start box */}
       <div className="mt-5 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-10 lg:gap-y-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="min-w-0 overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-200)] lg:col-start-1 lg:row-start-1">
-          <div className="relative aspect-[16/9] w-full sm:aspect-[2.2/1]">
-            {t.img ? (
-              <img
-                src={t.img}
-                alt=""
-                onError={hideOnError}
-                className="absolute inset-0 h-full w-full object-cover object-top"
-              />
-            ) : (
-              <span className="grid h-full place-items-center text-6xl" aria-hidden>
-                {t.emoji}
-              </span>
-            )}
-          </div>
-        </div>
+        {/* Hero: copy + cutout portrait — not a stretched face crop */}
+        <header className="min-w-0 overflow-hidden rounded-[1.5rem] border border-line bg-[color:var(--pp-primary-200)] lg:col-start-1 lg:row-start-1">
+          <div className="flex flex-col sm:min-h-[17rem] sm:flex-row sm:items-stretch">
+            <div className="flex min-w-0 flex-1 flex-col justify-center px-6 py-7 sm:px-8 sm:py-8 lg:px-10">
+              <p className="pp-caps text-[color:var(--pp-violet)]">{t.category}</p>
+              <h1 className="mt-2 font-display text-[clamp(2rem,4vw,2.75rem)] font-medium leading-[1.1] tracking-tight text-[color:var(--pp-primary-950)]">
+                {t.name}
+              </h1>
+              <p className="mt-3 max-w-md text-base leading-relaxed text-ink-secondary">{t.blurb}</p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {t.eligible && (
+                  <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-wellness shadow-sm">
+                    Available online
+                  </span>
+                )}
+                <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
+                  ~10 min assessment
+                </span>
+                <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
+                  Free delivery
+                </span>
+              </div>
+            </div>
 
-        <header className="min-w-0 lg:col-start-1 lg:row-start-2">
-          <p className="pp-caps text-[color:var(--pp-violet)]">{t.category}</p>
-          <h1 className="mt-2 font-display text-4xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-            {t.name}
-          </h1>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-secondary">{t.blurb}</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {t.eligible && (
-              <span className="rounded-full bg-wellness-subtle px-3 py-1 text-xs font-semibold text-wellness">
-                Available online
-              </span>
-            )}
-            <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-              ~10 min assessment
-            </span>
-            <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-              Free delivery
-            </span>
+            <div className="relative mx-auto h-48 w-full max-w-[14rem] shrink-0 sm:mx-0 sm:h-auto sm:w-[42%] sm:max-w-none lg:w-[38%]">
+              {t.img ? (
+                <>
+                  <img
+                    src={t.img}
+                    alt=""
+                    onError={hideOnError}
+                    className="absolute inset-0 h-full w-full object-contain object-bottom"
+                  />
+                  <span
+                    className="pointer-events-none absolute inset-y-0 left-0 hidden w-12 bg-gradient-to-r from-[color:var(--pp-primary-200)] to-transparent sm:block"
+                    aria-hidden
+                  />
+                </>
+              ) : (
+                <span className="grid h-full place-items-center text-6xl" aria-hidden>
+                  {t.emoji}
+                </span>
+              )}
+            </div>
           </div>
         </header>
 
-        <aside className="space-y-3 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
+        <aside className="space-y-3 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
           <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
             <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">Start care</p>
             <p className="mt-0.5 text-2xs text-ink-tertiary">Online assessment · clinician reviewed</p>
@@ -152,7 +160,7 @@ export function TreatmentDetail() {
           </p>
         </aside>
 
-        <section className="min-w-0 lg:col-start-1 lg:row-start-3">
+        <section className="min-w-0 lg:col-start-1 lg:row-start-2">
           <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
             What to expect
           </h2>
@@ -176,7 +184,7 @@ export function TreatmentDetail() {
           </ol>
         </section>
 
-        <section className="min-w-0 lg:col-start-1 lg:row-start-4">
+        <section className="min-w-0 lg:col-start-1 lg:row-start-3">
           <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
             Included with care
           </h2>
@@ -206,28 +214,28 @@ export function TreatmentDetail() {
               <Link
                 key={s.slug}
                 to={`/treatment/${s.slug}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-white transition-colors hover:bg-[color:var(--state-hover)]"
+                className="group flex overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-200)] transition-opacity hover:opacity-95"
               >
-                <div className="relative aspect-[5/3] bg-[color:var(--pp-primary-200)]">
+                <span className="flex min-w-0 flex-1 flex-col justify-center p-4">
+                  <span className="font-semibold text-[color:var(--pp-primary-950)]">{s.name}</span>
+                  <span className="mt-1 text-sm text-ink-secondary">
+                    {s.from === 0 ? "Covered by most plans" : `From $${s.from}/mo`}
+                  </span>
+                </span>
+                <span className="relative hidden w-[38%] shrink-0 self-stretch sm:block">
                   {s.img ? (
                     <img
                       src={s.img}
                       alt=""
                       loading="lazy"
                       onError={hideOnError}
-                      className="absolute inset-0 h-full w-full object-cover object-top"
+                      className="absolute inset-0 h-full w-full object-contain object-bottom"
                     />
                   ) : (
                     <span className="grid h-full place-items-center text-3xl" aria-hidden>
                       {s.emoji}
                     </span>
                   )}
-                </div>
-                <span className="p-4">
-                  <span className="block font-semibold text-[color:var(--pp-primary-950)]">{s.name}</span>
-                  <span className="mt-1 block text-sm text-ink-tertiary">
-                    {s.from === 0 ? "Covered by most plans" : `From $${s.from}/mo`}
-                  </span>
                 </span>
               </Link>
             ))}

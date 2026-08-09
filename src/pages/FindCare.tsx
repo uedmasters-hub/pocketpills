@@ -41,7 +41,7 @@ function TreatmentCard({ t, onOpen }: { t: Treatment; onOpen: () => void }) {
             alt=""
             loading="lazy"
             onError={hideOnError}
-            className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
+            className="absolute inset-0 h-full w-full object-contain object-bottom transition-transform duration-500 group-hover:scale-[1.03]"
           />
         ) : (
           <span className="grid h-full place-items-center text-5xl" aria-hidden>
