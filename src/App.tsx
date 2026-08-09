@@ -38,6 +38,7 @@ import { TransferPrescription } from "@/pages/entry/TransferPrescription";
 import { DeliveryCheck } from "@/pages/entry/DeliveryCheck";
 import { MedicationsIndex } from "@/pages/drug/MedicationsIndex";
 import { DrugDetail } from "@/pages/drug/DrugDetail";
+import { Offers } from "@/pages/Offers";
 
 import { OrderHistory, OrderDetail } from "@/pages/orders/OrderHistory";
 import { Receipt, Invoice } from "@/pages/orders/Documents";
@@ -90,6 +91,7 @@ export default function App() {
             <Route path="/drug/:slug" element={<DrugDetail />} />
             <Route path="/find-care" element={<FindCare />} />
             <Route path="/treatment/:slug" element={<TreatmentDetail />} />
+            <Route path="/offers" element={<Offers />} />
             <Route path="/medications" element={<Navigate to="/drug" replace />} />
             <Route path="/consult/minor-ailments" element={<Navigate to="/find-care" replace />} />
             <Route path="/consult/:slug" element={<ConsultRedirect />} />

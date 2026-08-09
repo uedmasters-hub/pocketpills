@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "@/lib/user";
 
 const DISMISS_KEY = "pp.announce.dismissed";
 const ANNOUNCE_INTERVAL_MS = 8000;
@@ -118,7 +117,6 @@ function readDismissed() {
  */
 export function AnnouncementBar({ onGo }: { onGo?: () => void } = {}) {
   const nav = useNavigate();
-  const { signedIn } = useUser();
   const [show, setShow] = useState(() => !readDismissed());
   const [mode, setMode] = useState<"offer" | "trust">("offer");
   const [reduced, setReduced] = useState(false);
@@ -126,7 +124,7 @@ export function AnnouncementBar({ onGo }: { onGo?: () => void } = {}) {
   const go =
     onGo ??
     (() => {
-      nav(signedIn ? "/dashboard" : "/get-started");
+      nav("/offers");
     });
 
   useEffect(() => {
@@ -176,7 +174,7 @@ export function AnnouncementBar({ onGo }: { onGo?: () => void } = {}) {
             onClick={go}
             className="inline-flex items-center gap-1.5 text-2xs font-semibold text-white transition-opacity duration-200 hover:opacity-80 sm:text-xs"
           >
-            Get started <CircleArrow />
+            View offers <CircleArrow />
           </button>
         </div>
 

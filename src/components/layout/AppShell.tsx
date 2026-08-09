@@ -47,6 +47,7 @@ const MORE: [string, string][] = [
   ["Profile", "/profile"],
   ["Pharmacy", "/pharmacy"],
   ["Messages", "/messages"],
+  ["Offers", "/offers"],
   ["Edit profile", "/account"],
   ["Family", "/account/family"],
   ["Notifications", "/account/notifications"],

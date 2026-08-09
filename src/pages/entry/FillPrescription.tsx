@@ -4,6 +4,8 @@ import { EntryFlow } from "@/components/layout/EntryFlow";
 import { Card, Field, Badge, Switch } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { drugs } from "@/lib/data";
+import { ActiveOfferBanner } from "@/components/offers/ActiveOfferBanner";
+import { getActiveOffer } from "@/lib/offers";
 
 const DISPENSING_FEE = 11.99;
 const STEPS = ["method", "capture", "meds", "patient", "packaging", "insurance", "delivery", "review", "payment"] as const;
@@ -443,22 +445,48 @@ export function FillPrescription() {
           {hasInsurance && <Row k={`Insurance (~${Math.round(rate * 100)}%)`} v={`−$${covered.toFixed(2)}`} tone="wellness" />}
           <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">Due today</span><span className="font-display text-xl font-medium text-ink tnum">${total$.toFixed(2)}</span></div>
         </Card>
+        <div className="mt-4">
+          <ActiveOfferBanner />
+        </div>
       </EntryFlow>
     );
   }
 
   /* 9. Payment */
-  if (step === "payment")
+  if (step === "payment") {
+    const activeOffer = getActiveOffer();
+    const offerCredit =
+      activeOffer?.id === "first-fill" || activeOffer?.code === "WELCOME20"
+        ? Math.min(20, total$)
+        : 0;
+    const due = Math.max(0, Math.round((total$ - offerCredit) * 100) / 100);
+
     return (
-      <EntryFlow {...common} eyebrow="Fill your prescription" title="Payment" onNext={goNext} nextLabel={total$ > 0 ? `Place order · $${total$.toFixed(2)}` : "Place order"}>
-        {total$ <= 0 ? (
+      <EntryFlow
+        {...common}
+        eyebrow="Fill your prescription"
+        title="Payment"
+        onNext={goNext}
+        nextLabel={due > 0 ? `Place order · $${due.toFixed(2)}` : "Place order"}
+      >
+        <ActiveOfferBanner />
+        {due <= 0 ? (
           <Card className="p-6 text-center">
-            <span className="text-3xl">✅</span>
+            <span className="text-3xl" aria-hidden>✅</span>
             <p className="mt-2 font-semibold text-ink">Nothing due today</p>
-            <p className="mt-1 text-sm text-ink-tertiary">Your plan covers this order. We'll bill your insurance directly.</p>
+            <p className="mt-1 text-sm text-ink-tertiary">
+              {offerCredit > 0
+                ? "Your offer covers what’s left after insurance."
+                : "Your plan covers this order. We'll bill your insurance directly."}
+            </p>
           </Card>
         ) : (
           <Card className="p-5">
+            {offerCredit > 0 && (
+              <div className="mb-4 rounded-xl bg-wellness-subtle px-3.5 py-2.5 text-sm text-wellness">
+                Offer credit −${offerCredit.toFixed(2)} applied · due ${due.toFixed(2)}
+              </div>
+            )}
             <Field label="Card number" placeholder="4242 4242 4242 4242" value={s.card} onChange={(e) => set({ card: e.target.value })} inputMode="numeric" />
             <div className="mt-3 grid grid-cols-2 gap-3">
               <Field label="Expiry" placeholder="12 / 27" value={s.exp} onChange={(e) => set({ exp: e.target.value })} />
@@ -469,6 +497,7 @@ export function FillPrescription() {
         )}
       </EntryFlow>
     );
+  }
 
   /* Confirmation */
   return <Confirmation state={s} total={total$} onHome={() => nav("/app")} onTrack={() => nav("/pharmacy")} />;

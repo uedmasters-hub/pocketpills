@@ -398,7 +398,22 @@ export function Dashboard() {
 
       {/* Promotional banners — offers, savings, persuasion */}
       <section aria-label="Promotions">
-        <RailHeader title="Offers for you" boxRef={promoRef} />
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">Offers for you</h2>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => nav("/offers")}
+              className="text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
+            >
+              See all
+            </button>
+            <div className="flex gap-2">
+              <ArrowBtn dir="l" onClick={() => promoRef.current?.scrollBy({ left: -320, behavior: "smooth" })} />
+              <ArrowBtn dir="r" onClick={() => promoRef.current?.scrollBy({ left: 320, behavior: "smooth" })} />
+            </div>
+          </div>
+        </div>
         <div ref={promoRef} className="pp-scroll flex gap-4 overflow-x-auto">
           {PROMOS.map((p) => <PromoCard key={p.t} p={p} onClick={() => nav(p.to)} />)}
         </div>

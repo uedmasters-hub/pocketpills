@@ -12,7 +12,8 @@ export function isDualBrowsePath(pathname: string) {
   if (
     pathname === "/drug" ||
     pathname === "/find-care" ||
-    pathname === "/delivery-check"
+    pathname === "/delivery-check" ||
+    pathname === "/offers"
   ) {
     return true;
   }

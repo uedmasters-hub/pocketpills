@@ -334,6 +334,7 @@ function PharmacyMenu() {
         <DropTile to="/fill" icon="searchprices" label="Fill a prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
         <DropTile to="/transfer" icon="transfer" label="Transfer a prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
         <DropTile to="/drug" icon="circle" label="Search prices" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/offers" icon="plus" label="Offers & discounts" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
       </>}
       cta="/pharmacy" ctaLabel="Online Pharmacy"
       asideTitle="Explore Medications"
