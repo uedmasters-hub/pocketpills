@@ -205,7 +205,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isDrugDetail = /^\/drug\/[^/]+$/.test(pathname);
   const isTreatmentDetail = /^\/treatment\/[^/]+$/.test(pathname);
   const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname);
-  const hideActivityRail = isDrugDetail || isTreatmentDetail || isOrderDetail;
+  const hideActivityRail =
+    isDrugDetail || isTreatmentDetail || isOrderDetail || pathname === "/messages";
   const showActivity = !focusedFlow && !hideActivityRail;
 
   /**

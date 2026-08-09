@@ -423,7 +423,12 @@ export function OrderDetail() {
                   </Button>
                 )}
                 {isTransfer && o.status !== "cancelled" && (
-                  <Button size="sm" variant="secondary" onClick={() => nav("/messages")}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => nav(`/messages?with=care&order=${encodeURIComponent(o.id)}`)}
+                  >
                     Message care team
                   </Button>
                 )}

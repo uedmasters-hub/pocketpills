@@ -18,7 +18,8 @@ import { TreatmentDetail } from "@/pages/TreatmentDetail";
 import { Dashboard } from "@/pages/Dashboard";
 import { Profile } from "@/pages/Profile";
 import { ProfileSection } from "@/pages/profile/ProfileSection";
-import { Pharmacy, Messages, Account } from "@/pages/Simple";
+import { Pharmacy, Account } from "@/pages/Simple";
+import { Messages } from "@/pages/Messages";
 
 import { Eligibility, Questionnaire } from "@/pages/care/Steps1";
 import { Review, DoctorReview } from "@/pages/care/Steps2";

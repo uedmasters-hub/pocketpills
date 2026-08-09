@@ -179,38 +179,6 @@ export function Pharmacy() {
   );
 }
 
-/* ── Messages ──────────────────────────────────────────── */
-export function Messages() {
-  const threads = [
-    { who: "Dr. Amrita Shah", role: "Clinician", last: "Your prescription is approved and sent to pharmacy.", when: "2h", unread: true },
-    { who: "PocketPills Pharmacy", role: "Pharmacist", last: "We're verifying your order #PP-RX-3391.", when: "1d", unread: false },
-    { who: "Care Support", role: "Support", last: "How was your recent delivery?", when: "3d", unread: false },
-  ];
-  return (
-    <div>
-      <PageHead eyebrow="Messages" title="Your care team" sub="Message a pharmacist or clinician any day of the week." />
-      <div className="space-y-2">
-        {threads.map((m) => (
-          <button key={m.who} className={`${CARD} flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-[color:var(--state-hover)]`}>
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-100)] text-sm font-semibold text-[color:var(--pp-primary-950)]">
-              {m.who.split(" ").map((w) => w[0]).slice(0, 2).join("")}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-2">
-                <span className="truncate font-semibold text-[color:var(--pp-primary-950)]">{m.who}</span>
-                <span className="shrink-0 text-2xs text-ink-tertiary">{m.role}</span>
-              </span>
-              <span className="block truncate text-sm text-ink-tertiary">{m.last}</span>
-            </span>
-            <span className="shrink-0 text-xs text-ink-tertiary">{m.when}</span>
-            {m.unread && <span className="h-2 w-2 shrink-0 rounded-full bg-[color:var(--pp-violet)]" aria-label="unread" />}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* ── Account ───────────────────────────────────────────── */
 const INSURANCE_CARRIERS = [
   "Sun Life",
