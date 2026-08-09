@@ -5,39 +5,57 @@ export default {
   theme: {
     extend: {
       colors: {
-        // ── Primitive palette (raw values; components should prefer semantic below) ──
-        // Brand indigo built around PocketPills' real brand hex #4A44A0 (site theme-color).
+        // Production primitives (prefer semantic tokens in components)
         brand: {
-          50: "#F1F0F9", 100: "#E3E1F2", 200: "#C7C3E5", 300: "#A5A0D3",
-          400: "#7C74BC", 500: "#5A51A6", 600: "#4A44A0", 700: "#3E3985",
-          800: "#322E6B", 900: "#272451",
+          100: "#ffffff",
+          200: "#f5f4fa",
+          300: "#e5e3ff",
+          400: "#aaa4ff",
+          500: "#8c60ff",
+          600: "#7b47ff",
+          700: "#6b1ce2",
+          800: "#37325d",
+          900: "#220f3e",
+          950: "#4e2a84",
         },
-        emerald: {
-          50: "#ECFDF5", 100: "#D1FAE5", 200: "#A7F3D0", 300: "#6EE7B7",
-          400: "#34D399", 500: "#10B981", 600: "#059669", 700: "#047857",
-          800: "#065F46", 900: "#064E3B",
+        pp: {
+          100: "var(--primary-100)",
+          200: "var(--primary-200)",
+          300: "var(--primary-300)",
+          400: "var(--primary-400)",
+          500: "var(--primary-500)",
+          600: "var(--primary-600)",
+          700: "var(--primary-700)",
+          800: "var(--primary-800)",
+          900: "var(--primary-900)",
+          950: "var(--primary-950)",
         },
-        teal: {
-          50: "#F0FDFA", 100: "#CCFBF1", 200: "#99F6E4", 300: "#5EEAD4",
-          400: "#2DD4BF", 500: "#14B8A6", 600: "#0D9488", 700: "#0F766E",
-        },
-        coral: {
-          50: "#FFF7ED", 100: "#FFEDD5", 200: "#FED7AA", 300: "#FDBA74",
-          400: "#FB923C", 500: "#F97316", 600: "#EA580C", 700: "#C2410C",
-        },
-        stone: {
-          50: "#FAFAF9", 100: "#F5F5F4", 200: "#E7E5E4", 300: "#D6D3D1",
-          400: "#A8A29E", 500: "#78716C", 600: "#57534E", 700: "#44403C",
-          800: "#292524", 900: "#1C1917",
+        neutral: {
+          0: "var(--neutral-0)",
+          50: "var(--neutral-50)",
+          100: "var(--neutral-100)",
+          200: "var(--neutral-200)",
+          300: "var(--neutral-300)",
+          400: "var(--neutral-400)",
+          500: "var(--neutral-500)",
+          600: "var(--neutral-600)",
+          700: "var(--neutral-700)",
+          800: "var(--neutral-800)",
+          900: "var(--neutral-900)",
         },
 
-        // ── Semantic tokens (theme-swappable via CSS variables) ──
+        // Semantic (theme-swappable)
         primary: {
           DEFAULT: "var(--color-primary)",
           hover: "var(--color-primary-hover)",
           pressed: "var(--color-primary-pressed)",
           subtle: "var(--color-primary-subtle)",
           fg: "var(--color-primary-fg)",
+        },
+        cta: {
+          DEFAULT: "var(--color-cta)",
+          hover: "var(--color-cta-hover)",
+          pressed: "var(--color-cta-pressed)",
         },
         wellness: { DEFAULT: "var(--color-wellness)", subtle: "var(--color-wellness-subtle)" },
         accent: { DEFAULT: "var(--color-accent)", subtle: "var(--color-accent-subtle)" },
@@ -63,31 +81,36 @@ export default {
           strong: "var(--border-strong)",
         },
       },
-      // ── Type scale ─────────────────────────────────────────
-      // Sizes carry their own line-height so vertical rhythm can't drift.
-      // Nothing smaller than 11px: below that, text fails legibility.
+      // Production type scale (Satoshi)
       fontSize: {
-        "2xs": ["0.6875rem", { lineHeight: "1.45" }],  // 11  eyebrows, meta
-        xs:    ["0.75rem",   { lineHeight: "1.5"  }],  // 12  captions, legal
-        sm:    ["0.8125rem", { lineHeight: "1.55" }],  // 13  secondary
-        base:  ["0.9375rem", { lineHeight: "1.6"  }],  // 15  body
-        md:    ["1.0625rem", { lineHeight: "1.5"  }],  // 17  card titles
-        lg:    ["1.1875rem", { lineHeight: "1.4"  }],  // 19  section titles
-        xl:    ["1.375rem",  { lineHeight: "1.35" }],  // 22  large titles
-        "2xl": ["clamp(1.25rem, 2.2vw, 1.625rem)",  { lineHeight: "1.25" }],  // 20–26
-        "3xl": ["clamp(1.5rem, 2.8vw, 2rem)",       { lineHeight: "1.15" }],  // 24–32
-        "4xl": ["clamp(1.75rem, 3.2vw, 2.375rem)",  { lineHeight: "1.1"  }],  // 28–38
-        "5xl": ["clamp(1.875rem, 3.6vw, 2.875rem)", { lineHeight: "1.05" }],  // 30–46
+        "2xs": ["0.6875rem", { lineHeight: "1.5", letterSpacing: "0.02em" }],   // 11  body-xxs / meta
+        xs:    ["0.75rem",   { lineHeight: "1.25", letterSpacing: "0.04em" }],  // 12  caps-xxs
+        sm:    ["0.875rem",  { lineHeight: "1.5", letterSpacing: "0.02em" }],   // 14  body-xs
+        base:  ["1rem",      { lineHeight: "1.5", letterSpacing: "0.02em" }],   // 16  body-s
+        md:    ["1.125rem",  { lineHeight: "1.5", letterSpacing: "0.02em" }],   // 18  body-m
+        lg:    ["1.25rem",   { lineHeight: "1.2", letterSpacing: "0" }],        // 20  h6 / body-l
+        xl:    ["1.4375rem", { lineHeight: "1.2", letterSpacing: "0.02em" }],   // 23  h5
+        "2xl": ["1.625rem",  { lineHeight: "1.2", letterSpacing: "0" }],        // 26  h4
+        "3xl": ["clamp(1.625rem, 2.8vw, 1.813rem)", { lineHeight: "1.2" }],     // ~26–29 h3
+        "4xl": ["clamp(2rem, 3.2vw, 2.563rem)", { lineHeight: "1.2" }],         // ~32–41 h2
+        "5xl": ["clamp(2.25rem, 4vw, 2.875rem)", { lineHeight: "1.15" }],       // ~36–46 h1
       },
       fontFamily: {
-        display: ['"Hanken Grotesque"', "system-ui", "sans-serif"],
-        sans: ['"Inter"', "system-ui", "sans-serif"],
+        display: ['"Satoshi"', "Arial", "-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "Roboto", "sans-serif"],
+        sans:    ['"Satoshi"', "Arial", "-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "Roboto", "sans-serif"],
       },
-      borderRadius: { lg: "0.625rem", xl: "0.875rem", "2xl": "1.25rem", "3xl": "1.75rem" }, // 10 / 14 / 20 / 28 — reference scale
+      // Production radius: s 8 · m 16 · l 24 · x 36 · xl 48
+      borderRadius: {
+        lg: "0.5rem",    // radius-s
+        xl: "1rem",      // radius-m
+        "2xl": "1.5rem", // radius-l
+        "3xl": "2.25rem",// radius-x
+      },
       boxShadow: {
-        card: "0 1px 2px rgba(28,25,23,0.04), 0 4px 16px rgba(28,25,23,0.06)",
-        float: "0 8px 30px rgba(28,25,23,0.10)",
-        ring: "0 0 0 4px var(--color-primary-subtle)",
+        card: "0 1px 3px -1px rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1)",
+        float: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
+        ring: "0 0 0 3px var(--primary-500)",
+        btn: "0 2px 4px rgba(0,0,0,0.05)",
       },
       keyframes: {
         "fade-up": {
@@ -100,8 +123,10 @@ export default {
         "fade-up": "fade-up 0.5s cubic-bezier(0.16,1,0.3,1) both",
         "fade-in": "fade-in 0.4s ease both",
       },
+      transitionDuration: {
+        DEFAULT: "200ms",
+      },
     },
   },
   plugins: [],
 };
-

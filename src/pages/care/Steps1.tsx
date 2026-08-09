@@ -44,7 +44,7 @@ export function Eligibility() {
                   "h-11 rounded-xl border text-sm font-semibold transition-colors " +
                   (answers.pregnant === opt
                     ? "border-primary bg-primary-subtle text-primary"
-                    : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--pp-primary-100)]")
+                    : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--state-hover)]")
                 }
               >
                 {opt}
@@ -94,7 +94,7 @@ export function Questionnaire() {
                   "h-11 rounded-xl border px-2 text-sm font-semibold transition-colors " +
                   (answers.symptomsSince === opt
                     ? "border-primary bg-primary-subtle text-primary"
-                    : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--pp-primary-100)]")
+                    : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--state-hover)]")
                 }
               >
                 {opt}

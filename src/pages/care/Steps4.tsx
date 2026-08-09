@@ -22,7 +22,7 @@ export function Confirmation() {
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-wellness-subtle text-3xl">
           🎉
         </span>
-        <h1 className="mt-5 text-3xl font-extrabold text-ink">Order confirmed</h1>
+        <h1 className="mt-5 text-3xl font-medium text-ink">Order confirmed</h1>
         <p className="mt-2 text-ink-secondary">
           Your {t?.name.toLowerCase()} treatment is being prepared. We'll text you when it ships.
         </p>

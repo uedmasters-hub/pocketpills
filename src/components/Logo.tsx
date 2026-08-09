@@ -24,23 +24,38 @@ export function LogoMark({ className = "h-7 w-7" }: { className?: string }) {
  * Full lockup: mark + wordmark. Inherits colour the same way.
  *   <Logo />                          → brand purple
  *   <Logo className="text-white" />   → on a dark surface
+ *
+ * Wordmark uses Satoshi Bold (700) to match production brand weight.
+ * Mark and word enter with separate staggered animations.
  */
 export function Logo({
   className = "text-[color:var(--pp-primary-950)]",
   markClassName = "h-7 w-7",
   wordClassName = "text-md",
   showWord = true,
+  animate = true,
 }: {
   className?: string;
   markClassName?: string;
   wordClassName?: string;
   showWord?: boolean;
+  /** Play staggered mark/word entry animation (default true). */
+  animate?: boolean;
 }) {
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
-      <LogoMark className={markClassName} />
+      <span className={animate ? "pp-logo-mark inline-flex origin-left" : "inline-flex"}>
+        <LogoMark className={markClassName} />
+      </span>
       {showWord && (
-        <span className={`font-display font-extrabold tracking-tight ${wordClassName}`}>pocketpills</span>
+        <span
+          className={
+            `font-display font-bold tracking-tight ${wordClassName}` +
+            (animate ? " pp-logo-word" : "")
+          }
+        >
+          pocketpills
+        </span>
       )}
     </span>
   );
@@ -53,17 +68,24 @@ export function LogoLink({
   markClassName,
   wordClassName,
   showWord,
+  animate,
 }: {
   to?: string;
   className?: string;
   markClassName?: string;
   wordClassName?: string;
   showWord?: boolean;
+  animate?: boolean;
 }) {
   return (
-    <Link to={to} aria-label="PocketPills home">
-      <Logo className={className} markClassName={markClassName} wordClassName={wordClassName} showWord={showWord} />
+    <Link to={to} aria-label="PocketPills home" className="inline-flex">
+      <Logo
+        className={className}
+        markClassName={markClassName}
+        wordClassName={wordClassName}
+        showWord={showWord}
+        animate={animate}
+      />
     </Link>
   );
 }
-

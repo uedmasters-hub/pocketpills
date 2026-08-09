@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { QRCodeSVG } from "qrcode.react";
 import { useUser } from "@/lib/user";
 import { treatments } from "@/lib/data";
 import { pendingRows } from "@/lib/profile";
@@ -44,7 +45,7 @@ function RailHeader({ title, boxRef }: { title?: string; boxRef: React.RefObject
   const scroll = (d: number) => boxRef.current?.scrollBy({ left: d * 320, behavior: "smooth" });
   return (
     <div className="mb-4 flex items-center justify-between gap-4">
-      {title ? <h2 className="font-display text-xl font-bold text-[color:var(--pp-primary-950)]">{title}</h2> : <span />}
+      {title ? <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{title}</h2> : <span />}
       <div className="flex gap-2">
         <ArrowBtn dir="l" onClick={() => scroll(-1)} />
         <ArrowBtn dir="r" onClick={() => scroll(1)} />
@@ -57,9 +58,9 @@ function PromoCard({ p, onClick }: { p: Promo; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="pp-snap flex h-[254px] w-[86%] flex-none items-stretch gap-4 overflow-hidden transition-opacity hover:opacity-95 active:opacity-90 rounded-2xl bg-[color:var(--pp-primary-200)] p-4 text-left sm:w-[68%] sm:p-5"
+      className="pp-snap flex h-[254px] w-[86%] flex-none items-stretch overflow-hidden rounded-2xl bg-white text-left shadow-sm transition-opacity hover:opacity-95 active:opacity-90 sm:w-[68%]"
     >
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 pl-3 sm:pl-6">
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 py-5 pl-5 pr-4 sm:pl-7 sm:pr-5">
         <p className={"font-display text-xl font-medium leading-snug " + (p.brand ? "text-[color:var(--pp-violet)]" : "text-[color:var(--pp-primary-950)]")}>
           {p.t}
         </p>
@@ -70,9 +71,15 @@ function PromoCard({ p, onClick }: { p: Promo; onClick: () => void }) {
         </span>
       </div>
 
-      {/* inset, rounded — the artwork sits inside the card rather than bleeding */}
-      <div className="hidden w-[38%] shrink-0 overflow-hidden rounded-xl sm:block">
-        <img src={p.img} alt="" loading="lazy" onError={hideOnError} className="h-full w-full object-cover" />
+      {/* Full-bleed portrait anchored to the far right edge */}
+      <div className="relative hidden w-[42%] shrink-0 self-stretch sm:block">
+        <img
+          src={p.img}
+          alt=""
+          loading="lazy"
+          onError={hideOnError}
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        />
       </div>
     </button>
   );
@@ -111,8 +118,10 @@ function ActionIcon({ id }: { id: ActionId }) {
 
 function ActionRow({ id, title, sub, onClick }: { id: ActionId; title: string; sub: string; onClick: () => void }) {
   return (
-    <button onClick={onClick}
-      className="flex w-full items-center gap-4 rounded-2xl bg-surface-2 p-4 text-left transition-colors hover:bg-[color:var(--pp-primary-100)]">
+    <button
+      onClick={onClick}
+      className="flex w-full items-center gap-4 rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-[color:var(--pp-primary-200)] transition-colors hover:bg-[color:var(--state-hover)]"
+    >
       <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: ACTION_ICON[id].bg }}>
         <ActionIcon id={id} />
       </span>
@@ -120,7 +129,7 @@ function ActionRow({ id, title, sub, onClick }: { id: ActionId; title: string; s
         <span className="block text-base font-semibold text-[color:var(--pp-primary-950)]">{title}</span>
         <span className="block truncate text-sm text-ink-tertiary">{sub}</span>
       </span>
-      <span className="shrink-0 text-ink-tertiary" aria-hidden>›</span>
+      <span className="shrink-0 text-lg text-ink-tertiary" aria-hidden>›</span>
     </button>
   );
 }
@@ -128,50 +137,109 @@ function ActionRow({ id, title, sub, onClick }: { id: ActionId; title: string; s
 /* ── get-the-app ───────────────────────────────────────── */
 function AppCard() {
   const [mode, setMode] = useState<"phone" | "email">("phone");
+  const [sent, setSent] = useState(false);
+  const appUrl = "https://pocketpills.com/app";
+
   return (
     <section className="relative overflow-hidden rounded-2xl bg-[#E5E3FF] p-6 sm:p-8">
-      <span className="pointer-events-none absolute -right-10 -top-16 h-64 w-64 rounded-[40%] bg-[#C9C2FA]" aria-hidden />
+      {/* Soft organic accent — matches production shell */}
+      <span
+        className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-[45%] bg-[#C9C2FA]/80"
+        aria-hidden
+      />
+
       <div className="relative">
         <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
           Stay updated, get the app
         </h2>
-        <p className="mt-1 text-sm text-ink-secondary">Scan the QR code or get the download link</p>
+        <p className="mt-1 text-sm text-ink-secondary">
+          Scan the QR code or get the download link
+        </p>
 
-        <div className="mt-5 flex flex-col gap-4 rounded-2xl bg-white p-4 sm:flex-row sm:items-stretch">
-          <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <div className="flex rounded-full bg-surface-1 p-1">
-              {(["phone", "email"] as const).map((m) => (
-                <button key={m} onClick={() => setMode(m)}
-                  className={
-                    "flex flex-1 items-center justify-center gap-2 rounded-full py-2 text-sm font-medium capitalize transition-colors " +
-                    (mode === m ? "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-violet)]" : "text-ink-tertiary")
-                  }>
-                  {m}
-                </button>
-              ))}
+        <div className="mt-5 flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-sm sm:flex-row sm:items-stretch sm:gap-5 sm:p-5">
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-3">
+            <div
+              className="flex gap-1"
+              role="tablist"
+              aria-label="Link delivery method"
+            >
+              {([
+                {
+                  id: "phone" as const,
+                  label: "Phone",
+                  icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                      <path d="M7 3.5h3.2l1.2 3.2-2 1.4a12 12 0 0 0 5.5 5.5l1.4-2 3.2 1.2V16a2 2 0 0 1-2 2A13.5 13.5 0 0 1 5 6.5a2 2 0 0 1 2-2Z" strokeLinejoin="round" />
+                    </svg>
+                  ),
+                },
+                {
+                  id: "email" as const,
+                  label: "Email",
+                  icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                      <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+                      <path d="m5 8 7 5 7-5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ),
+                },
+              ]).map((tab) => {
+                const on = mode === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={on}
+                    onClick={() => {
+                      setMode(tab.id);
+                      setSent(false);
+                    }}
+                    className={
+                      "inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors " +
+                      (on
+                        ? "bg-[color:var(--pp-primary-200)] text-[color:var(--pp-violet)]"
+                        : "text-ink-tertiary hover:text-[color:var(--pp-primary-950)]")
+                    }
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
-            <div className="flex items-center gap-2 rounded-xl border border-line px-4 py-2.5">
+
+            <div className="flex items-center gap-2 rounded-xl border border-line px-4 py-2.5 focus-within:border-[color:var(--primary-600)]">
               <input
                 className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-tertiary"
                 placeholder={mode === "phone" ? "+1 953-800-0060" : "you@example.com"}
                 aria-label={mode === "phone" ? "Phone number" : "Email address"}
+                inputMode={mode === "phone" ? "tel" : "email"}
               />
-              <button className="shrink-0 text-sm font-medium text-[color:var(--pp-primary-950)] hover:underline">Send link</button>
+              <button
+                type="button"
+                onClick={() => setSent(true)}
+                className="shrink-0 text-sm font-medium text-[color:var(--pp-primary-950)] transition-opacity hover:opacity-70"
+              >
+                {sent ? "Sent" : "Send link"}
+              </button>
             </div>
           </div>
 
-          <div className="grid h-32 w-32 shrink-0 place-items-center self-center rounded-2xl bg-[color:var(--pp-primary-950)] p-3 sm:self-auto" aria-label="QR code">
-            <svg viewBox="0 0 29 29" className="h-full w-full" shapeRendering="crispEdges" aria-hidden>
-              {Array.from({ length: 29 }).map((_, y) =>
-                Array.from({ length: 29 }).map((_, x) => {
-                  const finder = (fx: number, fy: number) =>
-                    x >= fx && x < fx + 7 && y >= fy && y < fy + 7 &&
-                    !(x > fx && x < fx + 6 && y > fy && y < fy + 6 && !(x > fx + 1 && x < fx + 5 && y > fy + 1 && y < fy + 5));
-                  const on = finder(0, 0) || finder(22, 0) || finder(0, 22) || ((x * 7 + y * 13 + x * y) % 5 < 2 && x > 8 && y > 8);
-                  return on ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="#fff" /> : null;
-                }),
-              )}
-            </svg>
+          {/* Real QR — dark tile on the extreme right of the white card */}
+          <div
+            className="mx-auto grid h-[7.25rem] w-[7.25rem] shrink-0 place-items-center rounded-2xl bg-[color:var(--pp-primary-950)] p-3 sm:mx-0 sm:self-center"
+            aria-label="QR code to download the PocketPills app"
+          >
+            <QRCodeSVG
+              value={appUrl}
+              size={92}
+              level="M"
+              marginSize={0}
+              bgColor="#4E2A84"
+              fgColor="#FFFFFF"
+              title="Download the PocketPills app"
+            />
           </div>
         </div>
       </div>
@@ -188,25 +256,40 @@ function FaxCard() {
       setTimeout(() => setCopied(false), 1600);
     }).catch(() => {});
   };
+
   return (
-    <section className="relative overflow-hidden rounded-2xl bg-[color:var(--pp-primary-100)] p-6 sm:p-8">
-      <div className="relative max-w-md">
-        <h2 className="font-display text-lg font-bold text-[color:var(--pp-primary-950)]">
+    <section className="relative overflow-hidden rounded-2xl bg-[color:var(--pp-primary-200)] p-6 sm:p-8">
+      <div className="relative z-10 max-w-md pr-24 sm:pr-28">
+        <h2 className="font-display text-lg font-medium leading-snug text-[color:var(--pp-primary-950)]">
           Fax us your prescription for faster service
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-secondary">
-          Ask your clinic to send it our way.<br />We'll get it to you sooner.
+          Ask your clinic to send it our way.
+          <br />
+          We'll get it to you sooner.
         </p>
-        <button onClick={copy} className="mt-4 inline-flex items-center gap-2 text-md font-medium text-[color:var(--pp-violet)] hover:underline">
-          1-855-950-7226
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden>
-            <rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" />
+        <button
+          type="button"
+          onClick={copy}
+          className="mt-5 inline-flex items-center gap-2.5 text-md font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-80"
+        >
+          <span className="leading-none">1-855-950-7226</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="shrink-0" aria-hidden>
+            <rect x="9" y="9" width="11" height="11" rx="2" />
+            <path d="M5 15V5a2 2 0 0 1 2-2h10" />
           </svg>
-          {copied && <span className="text-xs text-wellness">Copied</span>}
+          {copied && <span className="text-xs font-medium text-wellness">Copied</span>}
         </button>
       </div>
-      <span className="pointer-events-none absolute bottom-4 right-6 grid h-24 w-24 place-items-center rounded-2xl bg-[#DCD7FB]" aria-hidden>
-        <span className="h-10 w-10 rounded-full bg-white" />
+
+      {/* Decorative mark — extreme right */}
+      <span
+        className="pointer-events-none absolute bottom-5 right-5 grid h-[5.5rem] w-[5.5rem] place-items-center rounded-2xl bg-[#D8D3F5] sm:bottom-6 sm:right-6 sm:h-24 sm:w-24"
+        aria-hidden
+      >
+        <span className="relative grid h-11 w-11 place-items-center rounded-full bg-white sm:h-12 sm:w-12">
+          <span className="h-0 w-0 border-y-[7px] border-l-[12px] border-y-transparent border-l-[color:var(--pp-primary-300)]" />
+        </span>
       </span>
     </section>
   );
@@ -219,13 +302,16 @@ export function Dashboard() {
   const promoRef = useRef<HTMLDivElement>(null);
   const treatRef = useRef<HTMLDivElement>(null);
 
-  const pending = pendingRows(user).map((r) => r.label);
+  const pending = pendingRows(user);
 
   return (
     <div className="space-y-8">
       {pending.length > 0 && (
-        <button onClick={() => nav("/profile")}
-          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#B4541F] px-5 py-4 text-base font-medium text-white transition-opacity hover:opacity-95">
+        <button
+          type="button"
+          onClick={() => nav("/profile")}
+          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#B4541F] px-5 py-4 text-base font-medium text-white transition-opacity hover:opacity-95"
+        >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
             <circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.4h.01" />
           </svg>
@@ -293,4 +379,3 @@ export function Dashboard() {
     </div>
   );
 }
-

@@ -3,130 +3,297 @@
 @tailwind utilities;
 
 /*
-  Semantic token layer.
-  Primitive palette lives in tailwind.config.js. Here we bind semantic roles
-  to primitives so components reference roles (primary, surface-1, ink) and a
-  single theme swap re-skins everything — exactly the architecture described in
-  Figma/Color System.md (primitive -> semantic -> component -> theme).
+  PocketPills design tokens — mirrored from production
+  (https://www.pocketpills.com/ design system CSS).
+
+  Architecture: primitive → semantic → component.
+  Components should prefer semantic roles (primary, surface-*, ink, line).
 */
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-Italic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-MediumItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/satoshi/Satoshi-BoldItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 @layer base {
   :root {
-    /* Brand: PocketPills indigo-purple #4A44A0 (real site brand color) */
-    --color-primary: #4E2A84; /* brand-600 */
-    --color-primary-hover: #3E2170; /* brand-700 */
-    --color-primary-pressed: #2E1857; /* brand-800 */
-    --color-primary-subtle: #F5F4FA; /* brand-100 */
-    --color-primary-fg: #ffffff;
+    /* ── Production primitives ───────────────────────────── */
+    --primary-950: #4e2a84;
+    --primary-900: #220f3e;
+    --primary-800: #37325d;
+    --primary-700: #6b1ce2;
+    --primary-600: #7b47ff;
+    --primary-500: #8c60ff;
+    --primary-400: #aaa4ff;
+    --primary-300: #e5e3ff;
+    --primary-200: #f5f4fa;
+    --primary-100: #ffffff;
 
-    /* Wellness green/teal — health, adherence, progress */
-    --color-wellness: #059669; /* emerald-600 */
-    --color-wellness-subtle: #d1fae5; /* emerald-100 */
+    --neutral-900: #180730;
+    --neutral-800: #362952;
+    --neutral-700: #534b74;
+    --neutral-600: #67648b;
+    --neutral-500: #8e90b8;
+    --neutral-400: #aaacca;
+    --neutral-300: #c8c8dc;
+    --neutral-200: #e7e7f2;
+    --neutral-100: #f5f4fa;
+    --neutral-50: #fafafa;
+    --neutral-0: #ffffff;
 
-    /* Coral — used sparingly for recommendations / education, never errors */
-    --color-accent: #ea580c; /* coral-600 */
-    --color-accent-subtle: #ffedd5; /* coral-100 */
+    --secondary-900: #043b45;
+    --secondary-800: #0a5a68;
+    --secondary-700: #54c7da;
+    --secondary-600: #a4eefb;
+    --secondary-500: #dbf7fa;
 
-    /* Status */
-    --color-success: #059669;
-    --color-success-subtle: #d1fae5;
-    --color-warning: #b45309; /* amber-700 for AA on subtle bg */
-    --color-warning-subtle: #fef3c7;
-    --color-danger: #dc2626;
-    --color-danger-subtle: #fee2e2;
-    --color-info: #6b4fd6; /* teal-700 */
-    --color-info-subtle: #EAE6F8;
+    --success-900: #043b45;
+    --success-700: #0a5a68;
+    --success-500: #54c7da;
+    --success-300: #a4eefb;
 
-    /* Layered surfaces on warm neutral (~70% of the UI is neutral) */
-    --surface-0: #F7F6FB;
-    --surface-1: #F5F4FA;
-    --surface-2: #ffffff;
-    --surface-3: #ffffff;
-    --surface-4: #ffffff;
+    --warning-900: #b94801;
+    --warning-700: #ffa13c;
+    --warning-500: #ffebd5;
+    --warning-300: #fff5e8;
 
-    /* Text */
-    --text-primary: #2A2148;
-    --text-secondary: #55507A;
-    --text-tertiary: #6E6992;   /* AA: 5.1:1 on white, 4.7:1 on surface-0 */
-    --text-disabled: #9A96B4;   /* disabled: AA-large only, by design */
-    --text-inverse: #fafaf9;
+    --error-900: #b8310f;
+    --error-700: #ff5950;
+    --error-500: #ffe8e8;
+    --error-300: #fff5f5;
 
-    /* Borders */
-    --border-default: #E6E3F0;
-    --border-divider: #EFEDF7;
-    --border-strong: #CFCADF;
+    --gray-500: #8a8a8a;
 
-  /* ── Landing surface tokens (sampled from the reference design) ── */
-  --pp-navy: #2b1e5e;        /* announcement bar, primary dark buttons */
-  --pp-violet: #6b4fd6;      /* logo mark, accent eyebrow text */
-  --pp-headline: #4E2A84;    /* hero headline ink */
-  --pp-lavender: #e9e4f7;    /* hero backdrop */
-  --pp-nav-glass: rgba(255,255,255,0.72);
-  --pp-primary-950: #4E2A84;  /* ds-bg-primary-950 / ds-text-primary-950 */
-  --pp-primary-100: #F5F4FA;
-  --pp-primary-200: #EAE6F8;  /* review card surface */
-  --pp-primary-800: #5B3A9E;  /* review body text */
-  --pp-star: #8C60FF;
-  --pp-primary-300: #D3CCEF;  /* light review card */
-  --pp-primary-400: #AAA4FF;  /* review card stars */
-  --pp-primary-900: #5C3496;  /* mid-dark review card */         /* rating stars, decorative marks */  /* ds-bg-primary-100 / ds-text-primary-100 */
-  --pp-violet-mid: #5b52ad;  /* purple cards, star ratings */
-  --pp-green: #0f4c3f;       /* NABP accreditation band */
-  --pp-nav-ink: #4b4560;     /* nav link text */
+    /* Space (production) */
+    --space-xxs: 0.125rem;
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 0.75rem;
+    --space-lg: 1rem;
+    --space-xl: 1.5rem;
+    --space-2xl: 2rem;
+    --space-3xl: 2.5rem;
+    --space-4xl: 3rem;
+    --space-5xl: 6rem;
+
+    /* Radius (production) */
+    --radius-xs: 0.125rem;
+    --radius-s: 0.5rem;
+    --radius-m: 1rem;
+    --radius-l: 1.5rem;
+    --radius-x: 2.25rem;
+    --radius-xl: 3rem;
+    --radius-full: 9999px;
+
+    /* Type sizes (production) */
+    --font-size-h1: 2.875rem;      /* 46 */
+    --font-size-h2: 2.563rem;      /* ~41 */
+    --font-size-h3: 1.813rem;      /* ~29 */
+    --font-size-h4: 1.625rem;      /* 26 */
+    --font-size-h5: 1.4375rem;     /* 23 */
+    --font-size-h6: 1.25rem;       /* 20 */
+    --font-size-body-xxl: 1.5rem;
+    --font-size-body-xl: 1.375rem;
+    --font-size-body-l: 1.25rem;
+    --font-size-body-m: 1.125rem;
+    --font-size-body-s: 1rem;
+    --font-size-body-xs: 0.875rem;
+    --font-size-body-xxs: 0.6875rem;
+
+    /* Buttons (production) */
+    --btn-padding-default: 1rem 2rem;
+    --btn-padding-sm: 0.75rem 1.5rem;
+    --btn-padding-lg: 0.625rem 1.5rem;
+    --btn-font-size-default: 1.125rem;
+    --btn-font-size-sm: 0.875rem;
+    --btn-font-size-lg: 1.125rem;
+
+    /* ── Semantic app layer ──────────────────────────────── */
+    --color-primary: var(--primary-950);
+    --color-primary-hover: var(--neutral-600);
+    --color-primary-pressed: var(--neutral-800);
+    --color-primary-subtle: var(--primary-200);
+    --color-primary-fg: var(--neutral-0);
+
+    /* Primary CTA on production is neutral-800, not purple */
+    --color-cta: var(--neutral-800);
+    --color-cta-hover: var(--neutral-600);
+    --color-cta-pressed: var(--neutral-800);
+    --color-cta-disabled-bg: var(--neutral-200);
+    --color-cta-disabled-fg: var(--gray-500);
+
+    --color-wellness: var(--secondary-800);
+    --color-wellness-subtle: var(--secondary-500);
+    --color-accent: var(--primary-500);
+    --color-accent-subtle: var(--primary-300);
+
+    --color-success: var(--success-700);
+    --color-success-subtle: var(--success-300);
+    --color-warning: var(--warning-900);
+    --color-warning-subtle: var(--warning-500);
+    --color-danger: var(--error-900);
+    --color-danger-subtle: var(--error-500);
+    --color-info: var(--primary-600);
+    --color-info-subtle: var(--primary-300);
+
+    --surface-0: var(--neutral-100);
+    --surface-1: var(--neutral-100);
+    --surface-2: var(--neutral-0);
+    --surface-3: var(--neutral-0);
+    --surface-4: var(--neutral-0);
+
+    --text-primary: var(--neutral-900);
+    --text-secondary: var(--neutral-700);
+    --text-tertiary: var(--neutral-600);
+    --text-disabled: var(--neutral-500);
+    --text-inverse: var(--neutral-0);
+
+    --border-default: var(--neutral-200);
+    --border-divider: var(--neutral-200);
+    --border-strong: var(--neutral-300);
+
+    /* Legacy / landing aliases (map onto production) */
+    --pp-navy: var(--primary-900);
+    --pp-violet: var(--primary-600);
+    --pp-headline: var(--primary-950);
+    --pp-lavender: var(--primary-300);
+    --pp-nav-glass: rgba(255, 255, 255, 0.72);
+    --pp-primary-950: var(--primary-950);
+    --pp-primary-900: var(--primary-900);
+    --pp-primary-800: var(--primary-800);
+    --pp-primary-400: var(--primary-400);
+    --pp-primary-300: var(--primary-300);
+    /* Match production card fills: 200 = #F5F4FA, 300 = #E5E3FF.
+       100 stays the soft lavender fill used on white islands (footer tiles, chips). */
+    --pp-primary-200: var(--primary-200);
+    --pp-primary-100: var(--primary-200);
+    /* Page canvas — production homepage lavender, not flat white */
+    --pp-page: var(--primary-200);
+    --pp-star: var(--primary-500);
+    --pp-violet-mid: var(--primary-500);
+    --pp-green: #0f4c3f;
+    --pp-nav-ink: var(--neutral-700);
+
+    /* Interaction tints — must read darker than the lavender page canvas */
+    --state-hover: var(--primary-300);
+    --state-pressed: color-mix(in srgb, var(--primary-400) 35%, var(--primary-300));
   }
 
   .dark {
-    --color-primary: #a5a0d3; /* brand-300 reads better on dark */
-    --color-primary-hover: #c7c3e5;
-    --color-primary-pressed: #e3e1f2;
-    --color-primary-subtle: #272451;
-    --color-primary-fg: #1c1917;
+    --color-primary: #c4b5fd;
+    --color-primary-hover: #ddd6fe;
+    --color-primary-pressed: #ede9fe;
+    --color-primary-subtle: #221d3f;
+    --color-primary-fg: #180730;
 
-    --color-wellness: #34d399;
-    --color-wellness-subtle: #064e3b;
-    --color-accent: #fb923c;
-    --color-accent-subtle: #431407;
+    --color-cta: #c4b5fd;
+    --color-cta-hover: #ddd6fe;
+    --color-cta-pressed: #ede9fe;
+    --color-cta-disabled-bg: #2a2448;
+    --color-cta-disabled-fg: #8e90b8;
 
-    --color-success: #34d399;
-    --color-success-subtle: #064e3b;
-    --color-warning: #fbbf24;
+    --color-wellness: #54c7da;
+    --color-wellness-subtle: #043b45;
+    --color-accent: #aaa4ff;
+    --color-accent-subtle: #2a2448;
+
+    --color-success: #54c7da;
+    --color-success-subtle: #043b45;
+    --color-warning: #ffa13c;
     --color-warning-subtle: #451a03;
-    --color-danger: #f87171;
+    --color-danger: #ff5950;
     --color-danger-subtle: #450a0a;
-    --color-info: #2dd4bf;
-    --color-info-subtle: #134e4a;
+    --color-info: #aaa4ff;
+    --color-info-subtle: #2a2448;
 
-    --surface-0: #17140f;
-    --surface-1: #1c1917;
-    --surface-2: #262220;
-    --surface-3: #2e2926;
-    --surface-4: #37312d;
+    --surface-0: #180730;
+    --surface-1: #220f3e;
+    --surface-2: #2a2448;
+    --surface-3: #362952;
+    --surface-4: #37325d;
 
-    --text-primary: #fafaf9;
-    --text-secondary: #d6d3d1;
-    --text-tertiary: #a8a29e;
-    --text-disabled: #57534e;
-    --text-inverse: #1c1917;
+    --text-primary: #f5f4fa;
+    --text-secondary: #c8c8dc;
+    --text-tertiary: #aaacca;
+    --text-disabled: #67648b;
+    --text-inverse: #180730;
 
-    --border-default: #37312d;
-    --border-divider: #292524;
-    --border-strong: #44403c;
+    --border-default: #37325d;
+    --border-divider: #2a2448;
+    --border-strong: #534b74;
 
-    --pp-navy: #1a1338;
-    --pp-violet: #a5a0d3;
+    --pp-navy: #180730;
+    --pp-violet: #aaa4ff;
     --pp-headline: #ede9fe;
-    --pp-lavender: #221d3f;
-    --pp-nav-glass: rgba(38,34,32,0.72);
-    --pp-primary-950: #C4B5FD;
-    --pp-primary-100: #1a1338;
-    --pp-primary-200: #241c4a;
-    --pp-primary-800: #C4B5FD;
-    --pp-star: #A78BFA;
-    --pp-primary-300: #2f2560;
-    --pp-primary-400: #AAA4FF;
-    --pp-primary-900: #3a2470;
-    --pp-violet-mid: #7c74bc;
+    --pp-lavender: #2a2448;
+    --pp-nav-glass: rgba(42, 36, 72, 0.72);
+    --pp-primary-950: #c4b5fd;
+    --pp-primary-900: #ddd6fe;
+    --pp-primary-800: #c4b5fd;
+    --pp-primary-400: #aaa4ff;
+    --pp-primary-300: #37325d;
+    --pp-primary-200: #2a2448;
+    --pp-primary-100: #221d3f;
+    --pp-page: #180730;
+    --pp-star: #aaa4ff;
+    --pp-violet-mid: #8c60ff;
     --pp-green: #0f4c3f;
-    --pp-nav-ink: #d6d3d1;
+    --pp-nav-ink: #c8c8dc;
+
+    --state-hover: #2a2448;
+    --state-pressed: #37325d;
   }
 
   html {
@@ -138,20 +305,26 @@
     margin: 0;
     background-color: var(--surface-0);
     color: var(--text-primary);
-    font-family: "Inter", system-ui, sans-serif;
-    font-feature-settings: "cv11", "ss01";
+    font-family: "Satoshi", Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: var(--font-size-body-s);
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    font-weight: 400;
   }
 
-  h1, h2, h3, h4 {
-    font-family: "Hanken Grotesque", system-ui, sans-serif;
-    letter-spacing: -0.02em;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Satoshi", Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.2;
+    color: var(--pp-primary-950);
   }
 
-  /* Accessible focus — visible ring on every interactive element (WCAG AA) */
+  /* Production focus: 3px primary-500 ring */
   :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--surface-1), 0 0 0 4px var(--color-primary);
-    border-radius: 0.5rem;
+    outline: 3px solid var(--primary-500);
+    outline-offset: 2px;
+    box-shadow: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -164,6 +337,22 @@
 
 @layer utilities {
   .tnum { font-variant-numeric: tabular-nums; }
+
+  /* Caps / eyebrow — production ds-caps-xxs / xs */
+  .pp-caps {
+    font-size: 0.75rem;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .pp-caps-xs {
+    font-size: 0.875rem;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
 }
 
 /* Print: hide app chrome, keep documents clean */
@@ -178,35 +367,110 @@
 .pp-scroll { scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x mandatory; }
 .pp-scroll::-webkit-scrollbar { display: none; }
 .pp-snap { scroll-snap-align: start; }
-@media (prefers-reduced-motion: reduce) { .pp-marquee { animation: none; } }
 
+/* Logo lockup — mark and wordmark enter separately */
+@keyframes pp-logo-mark {
+  from { opacity: 0; transform: scale(0.72) rotate(-8deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+@keyframes pp-logo-word {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.pp-logo-mark {
+  animation: pp-logo-mark 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.pp-logo-word {
+  animation: pp-logo-word 560ms cubic-bezier(0.22, 1, 0.36, 1) 160ms both;
+}
 
-/* Hero fills one viewport below the announcement bar (2.25rem).
-   svh accounts for mobile browser chrome; vh is the fallback. */
-/* Reserve just enough of the Welcome card for the eyebrow + headline.
-   Budget: pt-7 (28) + eyebrow (20) + mt-3 (12) + headline (~55) ≈ 115px.
-   The Start CTA sits below this and is intentionally past the fold. */
+@media (prefers-reduced-motion: reduce) {
+  .pp-marquee { animation: none; }
+  .pp-logo-mark,
+  .pp-logo-word { animation: none; }
+}
+
 .hero-viewport { height: calc(100vh - 7.5rem); }
 @supports (height: 100svh) { .hero-viewport { height: calc(100svh - 7.5rem); } }
 @media (max-width: 640px) {
-  /* headline wraps to two lines on small screens */
   .hero-viewport { height: calc(100vh - 9.5rem); }
   @supports (height: 100svh) { .hero-viewport { height: calc(100svh - 9.5rem); } }
 }
 
-
-/* Skeleton placeholder — a slow sheen rather than a hard pulse. */
 @keyframes pp-sheen { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .pp-skeleton {
-  background-image: linear-gradient(90deg, var(--surface-1) 25%, var(--pp-primary-100) 37%, var(--surface-1) 63%);
+  background-color: color-mix(in srgb, var(--primary-300) 70%, white);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, white 55%, transparent) 45%,
+    transparent 90%
+  );
   background-size: 200% 100%;
   animation: pp-sheen 1.4s ease-in-out infinite;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-m);
 }
-@media (prefers-reduced-motion: reduce) { .pp-skeleton { animation: none; } }
 
+/* How-it-works card placeholder — very light gray before visual loads */
+.pp-how-skel {
+  position: absolute;
+  inset: 0;
+  background-color: #ececf1;
+  background-image: linear-gradient(
+    90deg,
+    #ececf1 0%,
+    #f7f7fa 40%,
+    #ececf1 80%
+  );
+  background-size: 200% 100%;
+  animation: pp-sheen 1.35s ease-in-out infinite;
+}
+.pp-how-skel::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border-radius: 1rem;
+  background: #e2e2e9;
+  opacity: 0.9;
+}
 
-/* Skip link — visually hidden until focused, then anchored top-left. */
+@keyframes pp-how-card-in {
+  from { opacity: 0; transform: scale(1.04); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.pp-how-card-in {
+  animation: pp-how-card-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Landing section enter — subtle fade + lift on load / scroll into view */
+.pp-reveal {
+  opacity: 0;
+  transform: translate3d(0, 1.125rem, 0);
+  transition:
+    opacity 720ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pp-reveal-in {
+  opacity: 1;
+  transform: none;
+}
+.pp-reveal-soft {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-skeleton,
+  .pp-how-skel { animation: none; }
+  .pp-how-card-in { animation: none; }
+  .pp-reveal,
+  .pp-reveal-soft {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+}
+
 .pp-skip {
   position: fixed;
   top: 0.75rem;
@@ -216,4 +480,3 @@
   transition: transform 150ms ease;
 }
 .pp-skip:focus-visible { transform: translateY(0); }
-

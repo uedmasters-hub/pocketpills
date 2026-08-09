@@ -32,7 +32,7 @@ export function FlowLayout({
     <div className="w-full max-w-3xl">
       <JourneyStepper current={step} />
       <div className="animate-fade-up">
-        <h1 className="text-2xl font-extrabold text-ink sm:text-3xl">{title}</h1>
+        <h1 className="text-2xl font-medium text-ink sm:text-3xl">{title}</h1>
         {subtitle && <p className="mt-2 text-ink-secondary">{subtitle}</p>}
         <div className="mt-6">{children}</div>
       </div>

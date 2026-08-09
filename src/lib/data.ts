@@ -9,20 +9,20 @@ export const treatments: Treatment[] = [
   { slug: "erectile-dysfunction", name: "Erectile dysfunction", category: "Sexual health", blurb: "Easy consults, expert care, discreet delivery.", from: 24, eligible: true, emoji: "💙", img: "/img/treatments/ed.png" },
   { slug: "acne", name: "Acne", category: "Dermatology", blurb: "Prescription treatments for clearer skin, assessed online.", from: 20, eligible: true, emoji: "✨", img: "/img/treatments/acne.png" },
   { slug: "birth-control", name: "Birth control", category: "Sexual health", blurb: "Ongoing prescription and free delivery, renewed automatically.", from: 0, eligible: true, emoji: "💊", img: "/img/treatments/birth-control.png" },
-  { slug: "uti", name: "UTI", category: "Everyday care", blurb: "Fast assessment and treatment for urinary tract infections.", from: 25, eligible: true, emoji: "💧" },
-  { slug: "high-blood-pressure", name: "Blood pressure", category: "Chronic care", blurb: "Continuous monitoring, medication, and pharmacist support.", from: 25, eligible: true, emoji: "❤️" },
-  { slug: "diabetes", name: "Diabetes", category: "Chronic care", blurb: "Long-term management with refills, reminders, and check-ins.", from: 30, eligible: true, emoji: "🩸" },
-  { slug: "acid-reflux", name: "Acid reflux", category: "Digestive", blurb: "Manage heartburn and GERD with a tailored plan.", from: 22, eligible: true, emoji: "🔥" },
+  { slug: "uti", name: "UTI", category: "Everyday care", blurb: "Fast assessment and treatment for urinary tract infections.", from: 25, eligible: true, emoji: "💧", img: "/img/treatments/uti.png" },
+  { slug: "high-blood-pressure", name: "Blood pressure", category: "Chronic care", blurb: "Continuous monitoring, medication, and pharmacist support.", from: 25, eligible: true, emoji: "❤️", img: "/img/treatments/blood-pressure.png" },
+  { slug: "diabetes", name: "Diabetes", category: "Chronic care", blurb: "Long-term management with refills, reminders, and check-ins.", from: 30, eligible: true, emoji: "🩸", img: "/img/treatments/diabetes.png" },
+  { slug: "acid-reflux", name: "Acid reflux", category: "Digestive", blurb: "Manage heartburn and GERD with a tailored plan.", from: 22, eligible: true, emoji: "🔥", img: "/img/treatments/acid-reflux.png" },
 ];
 
 
 export type EntryIconKey = "treatment" | "fill" | "transfer" | "explore";
 export interface EntryPoint { id: EntryIconKey; title: string; desc: string; to: string; tile: string; fg: string; bg: string; }
 export const entryPoints: EntryPoint[] = [
-  { id: "treatment", title: "Doctor-led treatment", desc: "Get assessed online and prescribed by a Canadian clinician.", to: "/find-care", tile: "#3FBFB5", fg: "#ffffff", bg: "#F5F4FA" },
-  { id: "fill", title: "Fill your prescription", desc: "Already have a prescription? We'll fill and deliver it free.", to: "/fill", tile: "#4E2A84", fg: "#ffffff", bg: "#F5F5F4" },
-  { id: "transfer", title: "Transfer a prescription", desc: "Move your medications from another pharmacy—we handle it.", to: "/transfer", tile: "#7040D9", fg: "#ffffff", bg: "#F5F5F4" },
-  { id: "explore", title: "Explore medications", desc: "Search prices, coverage, and info on 5,000+ medications.", to: "/drug", tile: "#B0A1E8", fg: "#ffffff", bg: "#F5F4FA" },
+  { id: "treatment", title: "Doctor-led treatment", desc: "Get assessed online and prescribed by a Canadian clinician.", to: "/find-care", tile: "#3FBFB5", fg: "#ffffff", bg: "#FFFFFF" },
+  { id: "fill", title: "Fill your prescription", desc: "Already have a prescription? We'll fill and deliver it free.", to: "/fill", tile: "#4E2A84", fg: "#ffffff", bg: "#FFFFFF" },
+  { id: "transfer", title: "Transfer a prescription", desc: "Move your medications from another pharmacy—we handle it.", to: "/transfer", tile: "#7040D9", fg: "#ffffff", bg: "#FFFFFF" },
+  { id: "explore", title: "Explore medications", desc: "Search prices, coverage, and info on 5,000+ medications.", to: "/drug", tile: "#B0A1E8", fg: "#ffffff", bg: "#FFFFFF" },
 ];
 
 /* ── Medications Index ──────────────────────────────────── */

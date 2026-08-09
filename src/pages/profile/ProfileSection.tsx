@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
-import { useUser } from "@/lib/user";
+import { useUser, newInsuranceId, primaryInsurance, fmtInsuranceList, fmtInsurancePlan, type InsurancePlan } from "@/lib/user";
 import { profileChecklist, isChecklistId, type ChecklistId } from "@/lib/profile";
+import { useReviewDraft, type ReviewChange } from "@/lib/rightRail";
 
 const FIELD = "h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-base text-ink outline-none focus:border-primary";
 const LABEL = "mb-1.5 block text-sm font-medium text-ink-secondary";
@@ -26,7 +27,7 @@ function Tags({ label, items, onChange, placeholder }: { label: string; items: s
         <input className={FIELD} value={draft} placeholder={placeholder}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
-        <button onClick={add} className="shrink-0 rounded-xl border border-line px-4 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-100)]">Add</button>
+        <button onClick={add} className="shrink-0 rounded-xl border border-line px-4 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]">Add</button>
       </div>
       {items.length > 0 && (
         <div className="mt-2.5 flex flex-wrap gap-2">
@@ -76,7 +77,7 @@ function QuestionCard({ q, sub, value, onAnswer }: { q: string; sub: string; val
             <button key={String(label)} onClick={() => onAnswer(v as boolean)}
               className={
                 "py-4 text-base font-medium transition-colors " +
-                (active ? "bg-[color:var(--pp-primary-950)] text-white" : "bg-surface-1 text-ink-secondary hover:bg-[color:var(--pp-primary-100)]") +
+                (active ? "bg-[color:var(--pp-primary-950)] text-white" : "bg-surface-1 text-ink-secondary hover:bg-[color:var(--state-hover)]") +
                 (label === "No" ? " border-r border-line" : "")
               }>
               {label}
@@ -126,13 +127,14 @@ export function ProfileSection() {
      change the hook count between renders. */
   const [saved, setSaved] = useState(false);
   const [ready, setReady] = useState(false);
+  const primary = primaryInsurance(user);
   const [f, setF] = useState({
     firstName: user?.firstName ?? "", lastName: user?.lastName ?? "", dob: user?.dob ?? "",
     phone: user?.phone ?? "", email: user?.email ?? "", gender: user?.gender ?? "",
     allergies: user?.allergies ?? [], conditions: user?.conditions ?? [],
     province: user?.province ?? "ON", healthCard: user?.healthCard ?? "",
-    hasInsurance: Boolean(user?.insurance), carrier: user?.insurance?.carrier ?? "",
-    group: user?.insurance?.group ?? "", member: user?.insurance?.member ?? "",
+    hasInsurance: Boolean(primary), carrier: primary?.carrier ?? "",
+    group: primary?.group ?? "", member: primary?.member ?? "",
     address: user?.address ?? "", card: "", exp: "", cvc: "",
   });
 
@@ -154,12 +156,88 @@ export function ProfileSection() {
     if (id === "personal") update({ firstName: f.firstName, lastName: f.lastName, dob: f.dob, phone: f.phone, email: f.email, gender: f.gender });
     if (id === "health") update({ allergies: f.allergies, conditions: f.conditions });
     if (id === "card") update({ province: f.province, healthCard: f.healthCard });
-    if (id === "insurance") update({ insurance: f.hasInsurance ? { carrier: f.carrier || "Sun Life", group: f.group, member: f.member } : null });
+    if (id === "insurance") {
+      if (!f.hasInsurance) update({ insurances: [] });
+      else {
+        const rest = (user?.insurances ?? []).slice(1);
+        const nextPrimary: InsurancePlan = {
+          id: primary?.id ?? newInsuranceId(),
+          carrier: f.carrier || "Sun Life",
+          group: f.group,
+          member: f.member,
+        };
+        update({ insurances: [nextPrimary, ...rest] });
+      }
+    }
     if (id === "shipping") update({ address: f.address });
     if (id === "payment") update({ paymentOnFile: f.card.replace(/\s/g, "").length >= 12, cardLast4: f.card.replace(/\s/g, "").slice(-4) });
     setSaved(true);
     setTimeout(() => { setSaved(false); nav("/profile"); }, 900);
   };
+
+  const changes = useMemo(() => {
+    const rows: ReviewChange[] = [];
+    if (id === "personal") {
+      if (f.firstName !== (user?.firstName ?? "")) rows.push({ label: "First name", from: user?.firstName || "—", to: f.firstName || "—" });
+      if (f.lastName !== (user?.lastName ?? "")) rows.push({ label: "Last name", from: user?.lastName || "—", to: f.lastName || "—" });
+      if (f.dob !== (user?.dob ?? "")) rows.push({ label: "Date of birth", from: user?.dob || "—", to: f.dob || "—" });
+      if (f.phone !== (user?.phone ?? "")) rows.push({ label: "Phone", from: user?.phone || "—", to: f.phone || "—" });
+      if (f.email !== (user?.email ?? "")) rows.push({ label: "Email", from: user?.email || "—", to: f.email || "—" });
+      if (f.gender !== (user?.gender ?? "")) rows.push({ label: "Gender", from: user?.gender || "—", to: f.gender || "—" });
+    }
+    if (id === "health") {
+      const a0 = (user?.allergies ?? []).join(", ") || "None";
+      const a1 = f.allergies.join(", ") || "None";
+      if (a0 !== a1) rows.push({ label: "Allergies", from: a0, to: a1 });
+      const c0 = (user?.conditions ?? []).join(", ") || "None";
+      const c1 = f.conditions.join(", ") || "None";
+      if (c0 !== c1) rows.push({ label: "Conditions", from: c0, to: c1 });
+    }
+    if (id === "card") {
+      if (f.province !== (user?.province ?? "ON")) rows.push({ label: "Province", from: user?.province || "—", to: f.province });
+      if (f.healthCard !== (user?.healthCard ?? "")) rows.push({ label: "Health card", from: user?.healthCard || "—", to: f.healthCard || "—" });
+    }
+    if (id === "insurance") {
+      const prev = fmtInsuranceList(user?.insurances ?? []);
+      const next = f.hasInsurance
+        ? fmtInsuranceList([
+            { id: "draft", carrier: f.carrier || "Sun Life", group: f.group, member: f.member },
+            ...(user?.insurances ?? []).slice(1),
+          ])
+        : "None";
+      if (prev !== next) rows.push({ label: "Insurance", from: prev, to: next });
+    }
+    if (id === "shipping" && f.address !== (user?.address ?? "")) {
+      rows.push({ label: "Address", from: user?.address || "—", to: f.address || "—" });
+    }
+    if (id === "payment" && f.card.replace(/\s/g, "").length >= 4) {
+      const next = `····${f.card.replace(/\s/g, "").slice(-4)}`;
+      const prev = user?.cardLast4 ? `····${user.cardLast4}` : "None";
+      if (next !== prev) rows.push({ label: "Card", from: prev, to: next });
+    }
+    return rows;
+  }, [id, f, user]);
+
+  const resetForm = () => {
+    setF({
+      firstName: user?.firstName ?? "", lastName: user?.lastName ?? "", dob: user?.dob ?? "",
+      phone: user?.phone ?? "", email: user?.email ?? "", gender: user?.gender ?? "",
+      allergies: user?.allergies ?? [], conditions: user?.conditions ?? [],
+      province: user?.province ?? "ON", healthCard: user?.healthCard ?? "",
+      hasInsurance: Boolean(primaryInsurance(user)), carrier: primaryInsurance(user)?.carrier ?? "",
+      group: primaryInsurance(user)?.group ?? "", member: primaryInsurance(user)?.member ?? "",
+      address: user?.address ?? "", card: "", exp: "", cvc: "",
+    });
+  };
+
+  useReviewDraft({
+    active: ready && changes.length > 0,
+    title: META[id].title,
+    changes,
+    ctaLabel: saved ? "Saved" : "Save changes",
+    onConfirm: save,
+    onDiscard: resetForm,
+  });
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
 
@@ -173,7 +251,7 @@ export function ProfileSection() {
       </Link>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-3xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
+        <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
           {META[id].title}
         </h1>
         <span className={
@@ -202,7 +280,13 @@ export function ProfileSection() {
             {user?.conditions?.length ? <SummaryLine icon={Ico.heart}>Conditions: {user.conditions.join(", ")}</SummaryLine> : null}
           </>)}
           {id === "card" && <SummaryLine icon={Ico.card}>{user?.province} · {user?.healthCard}</SummaryLine>}
-          {id === "insurance" && <SummaryLine icon={Ico.shield}>{user?.insurance ? `${user.insurance.carrier} · Group ${user.insurance.group || "—"}` : "No plan on file"}</SummaryLine>}
+          {id === "insurance" && (
+            <SummaryLine icon={Ico.shield}>
+              {(user?.insurances?.length ?? 0) > 0
+                ? user!.insurances.map((p, i) => `${i === 0 ? "Primary" : `Plan ${i + 1}`}: ${fmtInsurancePlan(p)}`).join(" · ")
+                : "No plan on file"}
+            </SummaryLine>
+          )}
           {id === "shipping" && <SummaryLine icon={Ico.pin}>{user?.address}</SummaryLine>}
           {id === "payment" && <SummaryLine icon={Ico.card}>{user?.cardLast4 ? `Visa ····${user.cardLast4}` : "On file"}</SummaryLine>}
         </div>
@@ -256,11 +340,14 @@ export function ProfileSection() {
           </label>
           {f.hasInsurance && (
             <div className="grid gap-4 sm:grid-cols-3">
-              <Text label="Carrier" value={f.carrier} onChange={(v) => set("carrier", v)} placeholder="Sun Life" />
+              <Text label="Primary carrier" value={f.carrier} onChange={(v) => set("carrier", v)} placeholder="Sun Life" />
               <Text label="Group #" value={f.group} onChange={(v) => set("group", v)} />
               <Text label="Member ID" value={f.member} onChange={(v) => set("member", v)} />
             </div>
           )}
+          <p className="text-xs text-ink-tertiary">
+            Edits your primary plan. Manage multiple plans in Profile & settings.
+          </p>
         </>)}
         {id === "shipping" && <Text label="Delivery address" value={f.address} onChange={(v) => set("address", v)} placeholder="Street, city, province, postal code" />}
         {id === "payment" && (<>
@@ -272,13 +359,18 @@ export function ProfileSection() {
           <p className="text-xs text-ink-tertiary">Demo only — no card is stored or charged.</p>
         </>)}
 
-        <div className="flex items-center gap-3 pt-1">
-          <button onClick={save}
-            className="rounded-full bg-[color:var(--pp-primary-950)] px-6 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90">
-            {saved ? "Saved" : "Save"}
-          </button>
-          <Link to="/profile" className="rounded-full px-4 py-2.5 text-sm font-medium text-ink-secondary hover:text-[color:var(--pp-primary-950)]">Cancel</Link>
-        </div>
+        {changes.length === 0 && (
+          <div className="flex items-center gap-3 pt-1">
+            <Link to="/profile" className="rounded-full px-4 py-2.5 text-sm font-medium text-ink-secondary hover:text-[color:var(--pp-primary-950)]">
+              Back to profile
+            </Link>
+          </div>
+        )}
+        {changes.length > 0 && (
+          <p className="pt-1 text-sm text-ink-tertiary">
+            Review your updates in the panel, then save.
+          </p>
+        )}
       </div>
 
       {/* contextual question, per the reference */}

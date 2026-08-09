@@ -11,7 +11,7 @@ export function Card({
       className={
         "bg-surface-2 border border-line rounded-2xl " +
         (interactive
-          ? "cursor-pointer transition-colors duration-150 hover:bg-[color:var(--pp-primary-100)] active:bg-[color:var(--pp-primary-200)] "
+          ? "cursor-pointer transition-colors duration-200 hover:bg-[color:var(--state-hover)] active:bg-[color:var(--state-pressed)] "
           : "") +
         className
       }
@@ -35,7 +35,7 @@ const toneMap: Record<Tone, string> = {
 export function Badge({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${toneMap[tone]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium ${toneMap[tone]}`}
     >
       {children}
     </span>
@@ -55,13 +55,14 @@ export function Field({ label, hint, id, className = "", ...props }: FieldProps)
       <input
         id={fieldId}
         className={
-          "w-full h-11 rounded-xl border border-line bg-surface-2 px-3.5 text-ink " +
-          "placeholder:text-ink-tertiary transition-colors focus:border-primary " +
+          "w-full h-12 rounded-xl border border-line bg-surface-2 px-4 text-base text-ink " +
+          "placeholder:text-ink-tertiary transition-colors duration-200 " +
+          "hover:bg-[color:var(--state-hover)] focus:border-[color:var(--primary-600)] " +
           className
         }
         {...props}
       />
-      {hint && <span className="mt-1 block text-xs text-ink-tertiary">{hint}</span>}
+      {hint && <span className="mt-1 block text-sm text-ink-tertiary">{hint}</span>}
     </label>
   );
 }
@@ -90,11 +91,10 @@ export function SectionHead({ eyebrow, title, sub }: { eyebrow?: string; title: 
   return (
     <div className="mb-5">
       {eyebrow && (
-        <p className="mb-1.5 text-2xs font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">{eyebrow}</p>
+        <p className="pp-caps mb-1.5 text-[color:var(--pp-violet)]">{eyebrow}</p>
       )}
-      <h2 className="font-display text-2xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">{title}</h2>
-      {sub && <p className="mt-1.5 max-w-2xl text-ink-secondary">{sub}</p>}
+      <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">{title}</h2>
+      {sub && <p className="mt-1.5 max-w-2xl text-base text-ink-secondary">{sub}</p>}
     </div>
   );
 }
-

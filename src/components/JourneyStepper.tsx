@@ -12,7 +12,7 @@ export function JourneyStepper({ current }: { current: CareStepKey }) {
   return (
     <div className="mb-8">
       <div className="mb-3 flex items-baseline justify-between">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+        <p className="pp-caps text-[color:var(--pp-violet)]">
           Your care journey
         </p>
         <p className="text-xs font-medium text-ink-tertiary tnum">

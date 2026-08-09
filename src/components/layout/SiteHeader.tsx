@@ -84,7 +84,7 @@ function Icon({ id }: { id: string }) {
 /* ── small building blocks ────────────────────────────── */
 function Chevron() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pp-violet)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="pt-[0.1rem]" aria-hidden>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-55" aria-hidden>
       <path d="m6 9 6 6 6-6" />
     </svg>
   );
@@ -105,28 +105,32 @@ function UnderlineLink({ to, children }: { to: string; children: ReactNode }) {
 }
 function Tag({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Link to={to} className="w-max rounded-full border border-line px-4 py-1.5 text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]">
+    <Link to={to} className="w-max rounded-full border border-line px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]">
       {children}
     </Link>
   );
 }
 function DropTile({ to, icon, label, chip, hover }: { to: string; icon: string; label: string; chip: string; hover: string }) {
   return (
-    <Link to={to} className={"flex w-fit cursor-pointer items-center gap-4 rounded-2xl p-3 transition-all duration-300 " + hover}>
-      <span className="flex items-center justify-center rounded-xl p-2.5" style={{ backgroundColor: chip }}>
+    <Link to={to} className={"flex w-full cursor-pointer items-center gap-3 rounded-xl p-2.5 transition-all duration-200 " + hover}>
+      <span className="flex shrink-0 items-center justify-center rounded-lg p-2" style={{ backgroundColor: chip }}>
         <Icon id={icon} />
       </span>
-      <p className="text-base font-medium text-[color:var(--pp-primary-950)]">{label}</p>
+      <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{label}</p>
     </Link>
   );
 }
 function FaqList({ items, to }: { items: string[]; to: string }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2.5">
       <h2 className="text-2xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">Frequently Asked</h2>
-      <ul className="flex list-none flex-col gap-3">
+      <ul className="flex list-none flex-col gap-2">
         {items.map((q) => (
-          <li key={q}><Link to={to} className="text-sm text-ink-secondary transition-colors hover:text-[color:var(--pp-violet)]">{q}</Link></li>
+          <li key={q}>
+            <Link to={to} className="text-sm text-ink-secondary transition-colors hover:text-[color:var(--pp-violet)]">
+              {q}
+            </Link>
+          </li>
         ))}
       </ul>
       <UnderlineLink to={to}>See all FAQs</UnderlineLink>
@@ -140,18 +144,25 @@ function MegaPanel({ bg, eyebrow, tiles, cta, ctaLabel, asideTitle, tags, faqs, 
   asideTitle: string; tags: [string, string][]; faqs: string[]; faqTo: string; browseTo: string; browseLabel: string;
 }) {
   return (
-    <div className="absolute left-1/2 top-full z-50 w-[min(72rem,92vw)] -translate-x-1/2 pt-4">
-      <div className="flex gap-3 rounded-2xl border border-line bg-surface-2 px-6 pb-12 pt-6 shadow-float">
-        <div className="flex-[0_0_50%] rounded-xl bg-cover bg-center p-8" style={{ backgroundImage: `url(${bg})`, backgroundColor: "var(--pp-primary-100)" }}>
+    <div className="absolute left-1/2 top-full z-50 w-[min(64rem,94vw)] -translate-x-1/2 pt-2.5">
+      <div className="flex gap-3 rounded-2xl border border-line bg-white p-3 shadow-float">
+        <div
+          className="flex min-w-0 flex-1 flex-col rounded-xl bg-cover bg-center p-5"
+          style={{ backgroundImage: `url(${bg})`, backgroundColor: "var(--pp-primary-100)" }}
+        >
           <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-[color:var(--pp-violet)]">{eyebrow}</p>
-          <span className="mt-1 block font-display text-xl font-bold text-[color:var(--pp-primary-950)]">What would you like to do?</span>
-          <div className="mt-4 grid grid-cols-2 gap-2">{tiles}</div>
-          <div className="mt-6"><UnderlineLink to={cta}>{ctaLabel}</UnderlineLink></div>
+          <span className="mt-1 block font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
+            What would you like to do?
+          </span>
+          <div className="mt-3 grid grid-cols-2 gap-1.5">{tiles}</div>
+          <div className="mt-4"><UnderlineLink to={cta}>{ctaLabel}</UnderlineLink></div>
         </div>
-        <aside className="flex w-full flex-[0_0_50%] flex-col gap-8 p-4">
-          <div className="flex flex-col gap-5">
+        <aside className="flex min-w-0 flex-1 flex-col gap-4 p-3">
+          <div className="flex flex-col gap-3">
             <h2 className="text-2xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">{asideTitle}</h2>
-            <nav aria-label="Popular treatments" className="flex flex-wrap gap-2">{tags.map(([label, to]) => <Tag key={label} to={to}>{label}</Tag>)}</nav>
+            <nav aria-label="Popular treatments" className="flex flex-wrap gap-1.5">
+              {tags.map(([label, to]) => <Tag key={label} to={to}>{label}</Tag>)}
+            </nav>
             <UnderlineLink to={browseTo}>{browseLabel}</UnderlineLink>
           </div>
           <div role="separator" className="h-px w-full bg-line" />
@@ -174,7 +185,7 @@ function UserMenu() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-100)]"
+        className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]"
         aria-expanded={open}
         aria-haspopup="menu"
       >
@@ -191,16 +202,16 @@ function UserMenu() {
             </div>
             {[["My Health", "/dashboard"], ["Orders & receipts", "/orders"], ["Pharmacy", "/pharmacy"], ["Messages", "/messages"], ["Profile & settings", "/account"]].map(([label, to]) => (
               <button key={to} role="menuitem" onClick={() => { setOpen(false); nav(to); }}
-                className="block w-full px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--pp-primary-100)]">
+                className="block w-full px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--state-hover)]">
                 {label}
               </button>
             ))}
             <button role="menuitem" onClick={() => setDark((d) => !d)}
-              className="flex w-full items-center justify-between border-t border-line px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--pp-primary-100)]">
+              className="flex w-full items-center justify-between border-t border-line px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--state-hover)]">
               {dark ? "Light mode" : "Dark mode"} <span aria-hidden>{dark ? "☀️" : "🌙"}</span>
             </button>
             <button role="menuitem" onClick={() => { setOpen(false); logOut(); nav("/"); }}
-              className="block w-full border-t border-line px-4 py-2.5 text-left text-sm font-semibold text-danger hover:bg-[color:var(--pp-primary-100)]">
+              className="block w-full border-t border-line px-4 py-2.5 text-left text-sm font-semibold text-danger hover:bg-[color:var(--state-hover)]">
               Sign out
             </button>
           </div>
@@ -210,20 +221,90 @@ function UserMenu() {
   );
 }
 
+/** Compact profile control used on the marketing homepage when signed in. */
+function MarketingProfile() {
+  const { user, displayName, logOut } = useUser();
+  const [open, setOpen] = useState(false);
+  const nav = useNavigate();
+  const ref = useDismiss<HTMLDivElement>(open, () => setOpen(false));
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex h-10 items-center gap-1.5 rounded-full px-2.5 text-[color:var(--pp-nav-ink)] transition-colors duration-200 hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label="Account menu"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+          <circle cx="12" cy="8" r="3.6" />
+          <path d="M4.5 20c0-3.8 3.4-5.8 7.5-5.8s7.5 2 7.5 5.8" />
+        </svg>
+        <Chevron />
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl border border-line bg-white/95 shadow-float backdrop-blur-md">
+          <div className="border-b border-line px-4 py-3.5">
+            <p className="font-medium text-[color:var(--pp-primary-950)]">{displayName}</p>
+            <p className="truncate text-xs text-ink-tertiary">{user?.email}</p>
+          </div>
+          {[["My Health", "/dashboard"], ["Orders & receipts", "/orders"], ["Pharmacy", "/pharmacy"], ["Messages", "/messages"], ["Profile & settings", "/account"]].map(([label, to]) => (
+            <button
+              key={to}
+              type="button"
+              role="menuitem"
+              onClick={() => { setOpen(false); nav(to); }}
+              className="block w-full px-4 py-2.5 text-left text-sm font-medium text-ink-secondary transition-colors hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => { setOpen(false); logOut(); nav("/"); }}
+            className="block w-full border-t border-line px-4 py-2.5 text-left text-sm font-medium text-danger transition-colors hover:bg-[color:var(--state-hover)]"
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* Hoisted to module scope: declaring these inside SiteHeader would create a new
    component type each render, forcing React to remount the node and killing the
    CSS transition (the header appeared to blink rather than slide). */
-function Shell({ hidden, children }: { hidden: boolean; children: ReactNode }) {
+function Shell({
+  hidden,
+  balanced,
+  children,
+}: {
+  hidden: boolean;
+  /** Three-column marketing layout: brand | nav | actions */
+  balanced?: boolean;
+  children: ReactNode;
+}) {
   return (
     <div
-      className="sticky top-3 z-50 mt-3 px-5 will-change-transform md:px-8 xl:px-20"
+      className="sticky top-3 z-50 mt-3 px-4 will-change-transform sm:px-6 md:px-8 xl:px-20"
       style={{
         transform: hidden ? "translateY(calc(-100% - 1.5rem))" : "translateY(0)",
         opacity: hidden ? 0 : 1,
         transition: "transform 380ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease",
       }}
     >
-      <div className="mx-auto flex h-14 w-full max-w-[105rem] items-center justify-between gap-4 rounded-2xl bg-white px-5 py-3 shadow-[0_1px_3px_rgba(28,25,23,0.06)] md:px-7 md:py-4">
+      <div
+        className={
+          "mx-auto flex h-[3.75rem] w-full max-w-[105rem] items-center rounded-[1.25rem] " +
+          "border border-[color:var(--neutral-200)]/80 bg-white/90 px-4 shadow-[0_10px_40px_rgba(24,7,48,0.06)] " +
+          "backdrop-blur-xl backdrop-saturate-150 md:h-16 md:px-6 " +
+          (balanced ? "grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 md:gap-6" : "justify-between gap-4")
+        }
+      >
         {children}
       </div>
     </div>
@@ -250,11 +331,19 @@ function useVariant(): HeaderVariant {
   const { signedIn } = useUser();
   if (pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer") return "focused";
   if (pathname === "/login" || pathname === "/get-started") return "minimal";
+  /* Marketing homepage always keeps the full nav — even when signed in. */
+  if (pathname === "/") return "marketing";
   return signedIn ? "app" : "marketing";
 }
 
 const ITEM =
-  "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]";
+  "group flex items-center gap-1 rounded-full px-3 py-2 text-[13px] font-medium tracking-[0.01em] " +
+  "text-[color:var(--pp-nav-ink)] transition-colors duration-200 " +
+  "hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]";
+
+const CTA =
+  "inline-flex h-10 items-center rounded-full bg-cta px-5 text-[13px] font-medium text-white " +
+  "transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed";
 
 const SEC = "#3FBFB5";
 const PRI = "#7040D9";
@@ -265,10 +354,10 @@ function TreatmentMenu() {
       bg={`${NAVCDN}/nav_bg_green.png`}
       eyebrow="Get Prescribed Online"
       tiles={<>
-        <DropTile to="/find-care" icon="weight" label="Lose weight" chip={SEC} hover="hover:bg-[color:var(--pp-primary-100)]" />
-        <DropTile to="/find-care" icon="hair" label="Reverse hair loss" chip={SEC} hover="hover:bg-[color:var(--pp-primary-100)]" />
-        <DropTile to="/find-care" icon="ed" label="Male sexual health" chip={SEC} hover="hover:bg-[color:var(--pp-primary-100)]" />
-        <DropTile to="/treatment/birth-control" icon="birth" label="Prevent pregnancy" chip={SEC} hover="hover:bg-[color:var(--pp-primary-100)]" />
+        <DropTile to="/find-care" icon="weight" label="Lose weight" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/find-care" icon="hair" label="Reverse hair loss" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/find-care" icon="ed" label="Male sexual health" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/treatment/birth-control" icon="birth" label="Prevent pregnancy" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
       </>}
       cta="/find-care" ctaLabel="Get a prescription"
       asideTitle="Virtual Care"
@@ -286,10 +375,10 @@ function PharmacyMenu() {
       bg={`${NAVCDN}/nav_bg_lilac.png`}
       eyebrow="Get Started"
       tiles={<>
-        <DropTile to="/find-care" icon="plus" label="Get a new prescription" chip={PRI} hover="hover:bg-[color:var(--pp-primary-100)]" />
-        <DropTile to="/fill" icon="searchprices" label="Fill a prescription" chip={PRI} hover="hover:bg-[color:var(--pp-primary-100)]" />
-        <DropTile to="/transfer" icon="transfer" label="Transfer a prescription" chip={PRI} hover="hover:bg-[color:var(--pp-primary-100)]" />
-        <DropTile to="/drug" icon="circle" label="Search prices" chip={PRI} hover="hover:bg-[color:var(--pp-primary-100)]" />
+        <DropTile to="/find-care" icon="plus" label="Get a new prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/fill" icon="searchprices" label="Fill a prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/transfer" icon="transfer" label="Transfer a prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/drug" icon="circle" label="Search prices" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
       </>}
       cta="/pharmacy" ctaLabel="Online Pharmacy"
       asideTitle="Explore Medications"
@@ -303,29 +392,32 @@ function PharmacyMenu() {
 
 function SupportMenu() {
   return (
-    <div className="absolute left-1/2 top-full z-50 w-[min(60rem,92vw)] -translate-x-1/2 pt-4">
-      <div className="flex justify-between rounded-2xl border border-line bg-surface-2 px-6 pb-12 pt-6 shadow-float">
-        <div className="flex flex-[0_0_40%] flex-col gap-6 p-5">
+    <div className="absolute left-1/2 top-full z-50 w-[min(52rem,94vw)] -translate-x-1/2 pt-2.5">
+      <div className="grid grid-cols-[minmax(10rem,0.9fr)_minmax(0,1.6fr)] gap-3 rounded-2xl border border-line bg-white p-3 shadow-float">
+        <div className="flex flex-col gap-3 p-3">
           <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-[color:var(--pp-violet)]">Learn</p>
-          {[["About us", "/find-care"], ["FAQs", "#faq"], ["Browse Ailments", "/find-care"]].map(([l, t]) =>
-            t.startsWith("#")
-              ? <a key={l} href={t} className="text-base text-[color:var(--pp-primary-950)] hover:text-[color:var(--pp-violet)]">{l}</a>
-              : <Link key={l} to={t} className="text-base text-[color:var(--pp-primary-950)] hover:text-[color:var(--pp-violet)]">{l}</Link>)}
+          <div className="flex flex-col gap-2.5">
+            {[["About us", "/find-care"], ["FAQs", "#faq"], ["Browse Ailments", "/find-care"]].map(([l, t]) =>
+              t.startsWith("#")
+                ? <a key={l} href={t} className="text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:text-[color:var(--pp-violet)]">{l}</a>
+                : <Link key={l} to={t} className="text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:text-[color:var(--pp-violet)]">{l}</Link>)}
+          </div>
         </div>
-        <div className="flex w-full flex-[0_0_60%] justify-around rounded-2xl bg-[color:var(--pp-primary-100)] p-5">
-          <div className="flex flex-col justify-between">
-            <h2 className="font-display text-lg font-bold text-[color:var(--pp-primary-950)]">Our Care Team</h2>
+
+        <div className="grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-4 rounded-xl bg-[color:var(--pp-primary-100)] p-4">
+          <div className="flex flex-col gap-3">
+            <h2 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">Our Care Team</h2>
             <UnderlineLink to="/messages">Get in touch</UnderlineLink>
           </div>
-          <div className="flex flex-col gap-6 text-sm">
+          <div className="flex flex-col gap-3 text-sm">
             <Row label="Hours">
-              <p>Monday – Saturday<br />9:00 AM – 7:00 PM EST</p>
-              <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-danger-subtle px-2.5 py-1 text-2xs font-semibold text-danger">
+              <p className="leading-snug">Monday – Saturday<br />9:00 AM – 7:00 PM EST</p>
+              <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-danger-subtle px-2 py-0.5 text-2xs font-semibold text-danger">
                 <span className="h-1.5 w-1.5 rounded-full bg-danger" />Closed Now
               </span>
             </Row>
-            <Row label="Email"><a href="mailto:care@pocketpills.com">care@pocketpills.com</a></Row>
-            <Row label="Text"><a href="sms:18559507225">1-855-950-7225</a></Row>
+            <Row label="Email"><a href="mailto:care@pocketpills.com" className="hover:text-[color:var(--pp-violet)]">care@pocketpills.com</a></Row>
+            <Row label="Text"><a href="sms:18559507225" className="hover:text-[color:var(--pp-violet)]">1-855-950-7225</a></Row>
             <Row label="Fax"><span>1-855-950-7226</span></Row>
           </div>
         </div>
@@ -337,6 +429,7 @@ function SupportMenu() {
 export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}) {
   const derived = useVariant();
   const variant = forced ?? derived;
+  const { signedIn } = useUser();
   const [open, setOpen] = useState<string | null>(null);
   // Focused flows keep chrome pinned — losing "Save & exit" mid-checkout is hostile.
   const scrolledAway = useChromeVisibility();
@@ -366,51 +459,69 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
 
   const isApp = variant === "app";
 
-  return (
-    <Shell hidden={hidden}>
-      <Brand to={isApp ? "/app" : "/"} />
+  if (isApp) {
+    return (
+      <Shell hidden={hidden}>
+        <Brand to="/app" />
+        <div className="flex items-center gap-5 md:gap-6">
+          <a href="#" className="hidden items-center gap-2 text-[13px] font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><rect x="7" y="2" width="10" height="20" rx="2.5" /><path d="M11 18h2" /></svg>
+            Get app
+          </a>
+          <Link to="/" className="hidden items-center gap-2 text-[13px] font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" /></svg>
+            Pocketpills.com
+          </Link>
+          <UserMenu />
+        </div>
+      </Shell>
+    );
+  }
 
-      {/* Signed in: primary nav lives in the sidebar, so the bar stays quiet. */}
-      <nav aria-label="Primary" className="hidden items-center gap-1 md:flex" onMouseLeave={() => setOpen(null)}>
-        {isApp ? null : (
-          <>
-            <div className="relative" onMouseEnter={() => setOpen("t")}>
-              <span className={ITEM}><Link to="/find-care">Treatment</Link><Chevron /></span>
-              {open === "t" && <TreatmentMenu />}
-            </div>
-            <div className="relative" onMouseEnter={() => setOpen("p")}>
-              <span className={ITEM}><Link to="/drug">Online Pharmacy</Link><Chevron /></span>
-              {open === "p" && <PharmacyMenu />}
-            </div>
-            <a href="#how" className={ITEM}>How it works</a>
-            <div className="relative" onMouseEnter={() => setOpen("s")}>
-              <span className={ITEM}><a href="#care">Support</a><Chevron /></span>
-              {open === "s" && <SupportMenu />}
-            </div>
-          </>
-        )}
+  return (
+    <Shell hidden={hidden} balanced>
+      <div className="justify-self-start">
+        <Brand to="/" />
+      </div>
+
+      <nav
+        aria-label="Primary"
+        className="hidden items-center justify-center gap-0.5 md:flex"
+        onMouseLeave={() => setOpen(null)}
+      >
+        <div className="relative" onMouseEnter={() => setOpen("t")}>
+          <span className={ITEM}><Link to="/find-care">Treatment</Link><Chevron /></span>
+          {open === "t" && <TreatmentMenu />}
+        </div>
+        <div className="relative" onMouseEnter={() => setOpen("p")}>
+          <span className={ITEM}><Link to="/drug">Online Pharmacy</Link><Chevron /></span>
+          {open === "p" && <PharmacyMenu />}
+        </div>
+        <a href="#how" className={ITEM}>How it works</a>
+        <div className="relative" onMouseEnter={() => setOpen("s")}>
+          <span className={ITEM}><a href="#care">Support</a><Chevron /></span>
+          {open === "s" && <SupportMenu />}
+        </div>
       </nav>
 
-      <div className="flex items-center gap-7">
-        {isApp ? (
+      <div className="flex items-center justify-end gap-2 justify-self-end sm:gap-3">
+        {signedIn ? (
           <>
-            <a href="#" className="hidden items-center gap-2 text-sm font-medium text-[color:var(--pp-nav-ink)] hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><rect x="7" y="2" width="10" height="20" rx="2.5" /><path d="M11 18h2" /></svg>
-              Get app
-            </a>
-            <Link to="/" className="hidden items-center gap-2 text-sm font-medium text-[color:var(--pp-nav-ink)] hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" /></svg>
-              Pocketpills.com
+            <MarketingProfile />
+            <Link to="/dashboard" className={CTA}>
+              My Dashboard
             </Link>
-            <UserMenu />
           </>
         ) : (
           <>
-            <Link to="/login" className="hidden items-center gap-1.5 text-sm font-medium text-[color:var(--pp-nav-ink)] hover:text-[color:var(--pp-primary-950)] sm:inline-flex">
+            <Link
+              to="/login"
+              className="hidden h-10 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)] sm:inline-flex"
+            >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><circle cx="12" cy="8" r="3.6" /><path d="M4.5 20c0-3.8 3.4-5.8 7.5-5.8s7.5 2 7.5 5.8" /></svg>
               Log in
             </Link>
-            <Link to="/get-started" className="inline-flex h-9 items-center rounded-full bg-[color:var(--pp-primary-950)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90">
+            <Link to="/get-started" className={CTA}>
               Join Pocketpills
             </Link>
           </>
@@ -422,9 +533,9 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex">
-      <div className="flex w-20 shrink-0 items-start gap-2 pt-0.5 text-2xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">{label}</div>
-      <div className="text-ink-secondary">{children}</div>
+    <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-2">
+      <div className="pt-0.5 text-2xs font-semibold uppercase tracking-[0.1em] text-ink-tertiary">{label}</div>
+      <div className="min-w-0 text-ink-secondary">{children}</div>
     </div>
   );
 }

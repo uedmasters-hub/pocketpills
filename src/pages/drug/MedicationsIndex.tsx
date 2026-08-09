@@ -61,10 +61,10 @@ export function MedicationsIndex() {
   return (
     <div>
       <header className="mb-8">
-        <p className="text-2xs font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">
+        <p className="pp-caps text-[color:var(--pp-violet)]">
           Medications Index
         </p>
-        <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
+        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
           Search 5,000+ medications
         </h1>
         <p className="mt-2 max-w-xl text-base text-ink-secondary">
@@ -113,7 +113,7 @@ export function MedicationsIndex() {
         <div className="flex flex-wrap gap-0.5">
           {groups.map(([L]) => (
             <button key={L} onClick={() => jump(L)}
-              className="h-7 w-7 rounded-lg text-sm font-semibold text-[color:var(--pp-violet)] hover:bg-[color:var(--pp-primary-100)]">
+              className="h-7 w-7 rounded-lg text-sm font-semibold text-[color:var(--pp-violet)] hover:bg-[color:var(--state-hover)]">
               {L}
             </button>
           ))}
@@ -131,13 +131,13 @@ export function MedicationsIndex() {
           <div className="space-y-10">
             {groups.map(([letter, items]) => (
               <section key={letter} id={`letter-${letter}`} className="scroll-mt-28">
-                <h2 className="mb-3 font-display text-base font-bold text-[color:var(--pp-violet)]">{letter}</h2>
+                <h2 className="mb-3 font-display text-base font-medium text-[color:var(--pp-violet)]">{letter}</h2>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {items.map((d) => (
                     <Link
                       key={d.slug}
                       to={`/drug/${d.slug}`}
-                      className="group flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4 transition-colors hover:bg-[color:var(--pp-primary-100)]"
+                      className="group flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4 transition-colors hover:bg-[color:var(--state-hover)]"
                     >
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">

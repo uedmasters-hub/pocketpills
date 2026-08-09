@@ -1,214 +1,165 @@
 # PocketPills — Design Reference
 
-The **landing page (`src/pages/Landing.tsx`)** is the canonical reference. Every other
-page follows the rules below. When something conflicts, the landing wins.
+Mirrored from production [`pocketpills.com`](https://www.pocketpills.com/)
+design-system CSS. The **landing page (`src/pages/Landing.tsx`)** is the
+canonical screen reference; tokens below are the source of truth for every
+other page.
 
 ---
 
-## 1. Grid
+## 1. Font
 
-One container, everywhere. Defined once in `src/components/layout/Grid.tsx`.
+**Satoshi only** — self-hosted in `/public/fonts/satoshi/`.
 
-| Token | Value |
-|---|---|
-| Max width | `max-w-[105rem]` — **1680px** |
-| Gutters | `px-5` → `md:px-8` → `xl:px-20` (20 / 32 / 80px) |
-| Narrow measure | `max-w-3xl` — forms, flows, documents, reading |
+| Role | Weight | Notes |
+|---|---|---|
+| Body | 400 | `letter-spacing: 0.02em`, line-height 1.5 |
+| Headings (h1–h6) | **500** | line-height 1.2, tracking 0 — never extrabold |
+| Caps / eyebrows | **700** | `.pp-caps` — 12px, `0.04em`, uppercase |
+| Buttons | 500 | |
 
-```tsx
-import { Container, Section, PageHeader } from "@/components/layout/Grid";
-
-<Section space="md">…</Section>        // full-width content
-<Section narrow>…</Section>            // forms / flows
-```
-
-Do **not** hand-roll `mx-auto max-w-…`. The landing, `AppShell`, footer and header all
-resolve to the same left/right edges — that alignment is the point.
+Do not load Inter or Hanken Grotesque.
 
 ---
 
-## 2. Vertical rhythm
+## 2. Colour
 
-Sections use one scale. No ad-hoc `py-10` / `py-14` / `pt-9`.
-
-| Name | Class |
-|---|---|
-| `sm` | `py-8` |
-| `md` (default) | `py-12 md:py-14` |
-| `lg` | `py-14 md:py-20` |
-
----
-
-## 3. Colour
-
-Semantic tokens live in `src/index.css`. Two layers, both now pointing at the same
-palette, so a single change re-skins the whole app.
-
-**Reference (`--pp-*`)** — sampled from production:
+Production primitives live in `src/index.css` as `--primary-*`, `--neutral-*`,
+`--secondary-*`, plus status scales. Semantic roles (`--color-*`, `--surface-*`,
+`--text-*`, `--border-*`) map onto them.
 
 | Token | Value | Use |
 |---|---|---|
-| `--pp-primary-950` | `#4E2A84` | headings, dark surfaces, primary buttons |
-| `--pp-primary-900` | `#5C3496` | alternate dark card |
-| `--pp-primary-800` | `#5B3A9E` | body copy on tinted surfaces |
-| `--pp-primary-400` | `#AAA4FF` | review stars |
-| `--pp-primary-300` | `#D3CCEF` | light card |
-| `--pp-primary-200` | `#EAE6F8` | tinted panels, footer block |
-| `--pp-primary-100` | `#F5F4FA` | subtle fills, hover |
-| `--pp-violet` | `#6B4FD6` | eyebrows, links, accents |
-| `--pp-star` | `#8C60FF` | rating stars, decorative marks |
-| `--pp-navy` | `#2B1E5E` | announcement bar |
-| `--pp-lavender` | `#E9E4F7` | hero backdrop |
-| `--pp-green` | `#0F4C3F` | NABP band |
+| `--primary-950` | `#4E2A84` | Headings, brand ink |
+| `--primary-900` | `#220F3E` | Announcement / darkest |
+| `--primary-800` | `#37325D` | Body on tinted surfaces |
+| `--primary-600` | `#7B47FF` | Eyebrows, links (`.pp-caps`) |
+| `--primary-500` | `#8C60FF` | Stars, focus ring |
+| `--primary-300` | `#E5E3FF` | Pressed tint, lavender panels |
+| `--primary-200` | `#F5F4FA` | Hover tint, subtle fills |
+| `--neutral-900` | `#180730` | Body text |
+| `--neutral-800` | `#362952` | **Primary CTA** fill |
+| `--neutral-600` | `#67648B` | CTA hover / tertiary text |
+| `--neutral-200` | `#E7E7F2` | Borders, disabled CTA bg |
+| `--secondary-800` | `#0A5A68` | Wellness / success |
 
-**App layer** (`--color-primary`, `--surface-*`, `--text-*`, `--border-*`) is mapped onto
-the same palette, so existing `text-ink` / `bg-surface-2` / `border-line` classes across
-the 17 in-app pages render in the reference style without per-file edits.
+Theme-color meta: `#4A44A0` (production).
+
+Legacy `--pp-*` aliases remain for landing/components; prefer semantic roles
+for new work.
 
 ---
 
-## 4. Radius
+## 3. Type scale
 
-| Class | Value | Use |
+| Class | Size | Use |
 |---|---|---|
-| `rounded-lg` | 10px | chips, small controls |
-| `rounded-xl` | 14px | inputs, icon tiles |
-| `rounded-2xl` | 20px | cards, panels (`ds-radius-l`) |
-| `rounded-3xl` / `rounded-[28px]` | 28px | large feature blocks (`ds-radius-xl`) |
-| `rounded-full` | pill | **all buttons** |
+| `text-2xs` | 11px | Meta, legal |
+| `text-xs` / `.pp-caps` | 12px | Eyebrows |
+| `text-sm` | 14px | Captions, body-xs |
+| `text-base` | 16px | Body (default) |
+| `text-md` | 18px | Card titles, button label |
+| `text-lg` | 20px | h6 / section titles |
+| `text-xl` | 23px | h5 |
+| `text-2xl` | 26px | h4 |
+| `text-3xl` | ~29px | h3 / page titles |
+| `text-4xl` | ~41px | h2 |
+| `text-5xl` | ~46px | h1 / hero |
+
+Nothing below **11px**.
 
 ---
 
-## 5. Type
+## 4. Space & grid
 
-- **Display** — Hanken Grotesque. Headings use `font-display` + `font-extrabold` +
-  `tracking-tight`, sized fluidly with `clamp()`.
-- **Body** — Inter, 13–15px in-app.
-- **Eyebrow** — 11px, `font-semibold`, `uppercase`, `tracking-[0.14em]`, in `--pp-violet`.
+Production space scale: `xxs 2 · xs 4 · sm 8 · md 12 · lg 16 · xl 24 · 2xl 32 ·
+3xl 40 · 4xl 48 · 5xl 96`.
 
----
+App container (unchanged):
 
-## 6. Motion
+| Token | Value |
+|---|---|
+| Max width | `max-w-[105rem]` — 1680px |
+| Gutters | `px-5` → `md:px-8` → `xl:px-20` |
 
-- Hover lift on cards: `hover:-translate-y-0.5`
-- Marquees: `.pp-marquee`, paused under `prefers-reduced-motion`
-- Carousels: `.pp-scroll` + `.pp-snap`
-- All transitions 150–300ms
+Section rhythm: `sm` `py-8` · `md` `py-12 md:py-14` · `lg` `py-14 md:py-20`.
 
 ---
 
-## 7. Imagery
+## 5. Radius
 
-Real assets come from `static.pocketpills.com`. Every `<img>` carries
-`loading="lazy"` and an `onError` handler that hides the element, so a dead URL
-degrades rather than leaving a broken frame. To self-host, replace the `IMG` /
-`CDN` maps at the top of `Landing.tsx` and `SiteFooter.tsx`.
-
+| Token | Value | Tailwind | Use |
+|---|---|---|---|
+| `radius-s` | 8px | `rounded-lg` | Chips |
+| `radius-m` | 16px | `rounded-xl` | Inputs, icon tiles |
+| `radius-l` | 24px | `rounded-2xl` | Cards, panels |
+| `radius-x` | 36px | `rounded-3xl` | Large feature blocks |
+| `radius-full` | pill | `rounded-full` | **All buttons** |
 
 ---
 
-## 8. Consistency rules
+## 6. Interaction states
 
-These are enforced across every page — a new screen that breaks one will look
-out of place immediately.
+Duration **200ms**, ease-in-out. Colour only on light surfaces — no lift,
+shadow, or scale on nav/cards.
 
-**Width.** There is exactly **one** signed-in layout, in `AppShell`:
+| Surface | Hover | Pressed / Active | Disabled |
+|---|---|---|---|
+| Light (cards, rows, nav, chips) | `--state-hover` (`primary-200`) | `--state-pressed` (`primary-300`) | opacity / muted text |
+| Primary CTA | `neutral-600` | `neutral-800` | `neutral-200` / `gray-500` |
+| Secondary / light btn | `neutral-300` | invert to `neutral-600`+white | same as primary |
+| Ghost | `neutral-300` | invert | same |
 
-```
-[ 15rem left column ][ gap-8 ][ content: flex-1 ]
-```
+**Focus:** `outline: 3px solid var(--primary-500); outline-offset: 2px`
+(production). Never remove without an equivalent.
 
-The left column is always reserved. In a focused flow the nav is withheld but
-the space is kept, so the content column sits at the same x-position on every
-route — no shifting between Find Care, a treatment page and a checkout step.
+**Active (current page):** weight + colour only —
+`font-medium` + `--primary-950` vs `font-normal` + tertiary. No filled pill.
 
-Pages never set their own container. `AppShell` supplies the measure:
-content fills the space beside the sidebar, identical on every route. Cap long prose *inside* the page (`max-w-2xl` / `max-w-3xl` / `62ch`) and keep
-those caps **left-aligned** — never `mx-auto`, which would re-centre the content
-and break the shared left edge. Auth is the one exception: it renders outside
-`AppShell` entirely.
+Put states on shared constants (`Button`, `Card interactive`, `BASE` in
+`AppShell`) so new elements inherit them.
 
-**Hover & pressed.** Every interactive element has both. Two families:
+---
 
-| Surface | Hover | Pressed |
-|---|---|---|
-| Light (cards, rows, nav, chips) | `bg-primary-100` | `bg-primary-200` |
-| Solid / dark (buttons, badges, icon controls) | `opacity-90…85` | `opacity-80…75` |
+## 7. Components
 
-150ms, colour only — no lift, shadow, scale or border swap. Elements already on
-`primary-100` step to `primary-200`. Put the state on the shared constant
-(`BASE`, `ITEM`, `Card interactive`, `Button`) rather than per instance, so new
-elements inherit it.
+**Button** (`src/components/ui/Button.tsx`) mirrors `.ds-btn-*`:
+primary CTA is **neutral-800**, not purple. Variants: `primary` · `secondary` ·
+`ghost` · `outline` · `wellness`.
 
-**Active (current page).** Carried by **weight + colour**, never a filled pill:
-`font-semibold` + `--pp-primary-950` against `font-normal` + `--text-tertiary`.
-Icons use `currentColor` and follow automatically.
+**PageHeader / SectionHead:** `.pp-caps` eyebrow → Satoshi medium title →
+optional 16px sub.
 
-**Motion.**
+**Width.** One signed-in layout in `AppShell`:
+`[ 15rem left ][ gap-8 ][ flex-1 content ]`. Pages never set their own
+container; keep long prose left-aligned (`max-w-2xl` / `max-w-3xl`).
+
+---
+
+## 8. Motion
 
 | Purpose | Duration |
 |---|---|
-| Hover / interaction | 150ms |
+| Hover / interaction | 200ms |
 | Reveal, chrome slide | 300–380ms |
 | Progress, marquee | 500ms+ |
 
-Every routed page enters with `animate-fade-up`, keyed on the pathname.
-
-**Radius.** Use the scale, never literals: `lg` 10 · `xl` 14 · `2xl` 20 ·
-`3xl` 28 · `full` for all buttons.
-
-**Page header.** Eyebrow (11px, uppercase, `--pp-violet`) → title
-(`font-display`, extrabold, `clamp`) → optional sub (15px, `max-w-xl`).
-
+Routed pages enter with `animate-fade-up`. `prefers-reduced-motion` disables
+marquee, chrome hide/show, skeleton sheen, and hero autoplay.
 
 ---
 
-## 9. Type scale
+## 9. Accessibility
 
-Every size is a named step with its line-height baked in — never an arbitrary
-`text-[13px]`. Nothing renders below **11px**.
+Contrast targets (light theme):
 
-| Class | Size | Line-height | Use |
-|---|---|---|---|
-| `text-2xs` | 11px | 1.45 | eyebrows, meta, legal |
-| `text-xs` | 12px | 1.5 | captions |
-| `text-sm` | 13px | 1.55 | secondary copy |
-| `text-base` | 15px | 1.6 | body |
-| `text-md` | 17px | 1.5 | card titles |
-| `text-lg` | 19px | 1.4 | section titles |
-| `text-xl` | 22px | 1.35 | large titles |
-| `text-2xl` | 20→26px | 1.25 | fluid |
-| `text-3xl` | 24→32px | 1.15 | page titles |
-| `text-4xl` | 28→38px | 1.1 | fluid |
-| `text-5xl` | 30→46px | 1.05 | hero |
+| Token | On white |
+|---|---|
+| `--text-primary` `#180730` | AAA |
+| `--text-secondary` `#534B74` | AA |
+| `--text-tertiary` `#67648B` | AA |
+| `--primary-600` `#7B47FF` | AA on white |
+| `--primary-950` `#4E2A84` | AAA |
 
-Fluid steps use `clamp()` so headings scale with the viewport without breakpoints.
-
----
-
-## 10. Accessibility
-
-**Contrast (WCAG AA).** All text tokens are verified against their surfaces:
-
-| Token | On white | Verdict |
-|---|---|---|
-| `--text-primary` #2A2148 | 13.9:1 | AAA |
-| `--text-secondary` #55507A | 6.9:1 | AA |
-| `--text-tertiary` #6E6992 | 5.1:1 | AA |
-| `--pp-violet` #6B4FD6 | 5.7:1 | AA |
-| `--pp-primary-950` #4E2A84 | 10.6:1 | AAA |
-
-`--text-tertiary` was #8B87A8 (3.2:1 — failing) and is now #6E6992. Avoid pairing
-it with `--pp-primary-200`, the one combination still under 4.5:1.
-
-**Focus.** Every interactive element gets a two-layer ring
-(surface + `--color-primary`) at ~9.7:1 — well past the 3:1 WCAG 2.2 requires for
-non-text indicators. Never remove it without an equivalent replacement.
-
-**Structure.** A skip link precedes the header; `<main id="main" tabIndex={-1}>`
-receives focus; every `<nav>` carries an `aria-label`; icon-only controls carry
-`aria-label`; decorative art is `aria-hidden` or `alt=""`.
-
-**Motion.** `prefers-reduced-motion` disables the marquee, chrome hide/show,
-skeleton sheen and hero autoplay.
-
+Skip link → `<main id="main">`; every `<nav>` has `aria-label`; icon-only
+controls have `aria-label`.

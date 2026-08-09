@@ -3,7 +3,9 @@ import { useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { JourneyProvider } from "@/lib/journey";
 import { UserProvider } from "@/lib/user";
+import { RightRailProvider } from "@/lib/rightRail";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ScrollToTopFab } from "@/components/ScrollToTopFab";
 import { SignUp, Login, RequireAuth } from "@/pages/auth/Auth";
 
 import { Landing } from "@/pages/Landing";
@@ -51,8 +53,10 @@ export default function App() {
     <ErrorBoundary>
       <BrowserRouter>
       <UserProvider>
+        <RightRailProvider>
         <JourneyProvider>
         <ScrollToTop />
+        <ScrollToTopFab />
         <Routes>
           {/* Public */}
           <Route path="/" element={<Landing />} />
@@ -103,7 +107,8 @@ export default function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </JourneyProvider>
+        </JourneyProvider>
+        </RightRailProvider>
       </UserProvider>
       </BrowserRouter>
     </ErrorBoundary>

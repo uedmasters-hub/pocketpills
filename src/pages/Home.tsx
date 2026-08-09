@@ -13,9 +13,9 @@ export function Home() {
       <section>
         <div className="mb-1">
           <p className="text-ink-tertiary">{greeting()},</p>
-          <h1 className="font-display text-3xl font-extrabold text-ink">{displayName}</h1>
+          <h1 className="font-display text-3xl font-medium text-ink">{displayName}</h1>
         </div>
-        <p className="mb-5 mt-3 font-display text-sm font-bold uppercase tracking-[0.14em] text-ink-tertiary">
+        <p className="mb-5 mt-3 pp-caps text-ink-tertiary">
           What would you like to do?
         </p>
         <EntryPoints />

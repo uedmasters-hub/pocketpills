@@ -4,6 +4,7 @@ import { entryPoints, type EntryIconKey } from "@/lib/data";
 import { useUser } from "@/lib/user";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { FRAME, SURFACE, SECTION_TITLE, SECTION_GAP, SECTION_GAP_Y, ISLAND_PAD, ISLAND_RADIUS, SHELL_X, SHELL_BLOCK } from "@/components/layout/Grid";
 
 const VIDEO_ID = "xbTcp1sTsME";
 
@@ -61,19 +62,19 @@ function ArrowCircle({ size = 24, circleFill = "var(--pp-primary-950)", arrowFil
   );
 }
 
-/** 2×2 entry tiles — centered icon + label on a tinted card. */
+/** 2×2 entry tiles — simple icon + label on the lavender well (no card chrome). */
 function Tiles({ onPick, last }: { onPick: (to: string) => void; last?: { title: string; to: string } }) {
   const items = last ? [...entryPoints.slice(0, 3), { ...entryPoints[3], title: last.title, to: last.to }] : entryPoints;
   return (
-    <div className="grid h-full grid-cols-2 grid-rows-2 gap-3 sm:gap-4">
+    <div className="grid h-full w-full grid-cols-2 grid-rows-2">
       {items.map((e) => (
         <button
           key={e.title}
+          type="button"
           onClick={() => onPick(e.to)}
-          style={{ backgroundColor: e.bg }}
-          className="flex h-full min-h-[140px] flex-col items-center justify-center gap-4 rounded-2xl px-3 py-6 text-center transition-transform sm:gap-6"
+          className="flex h-full min-h-[140px] w-full flex-col items-center justify-center gap-4 px-3 py-6 text-center transition-opacity duration-200 hover:opacity-80 active:opacity-70 sm:min-h-[160px] sm:gap-5"
         >
-          <span className="grid h-12 w-12 place-items-center rounded-xl shadow-sm sm:h-14 sm:w-14" style={{ backgroundColor: e.tile }}>
+          <span className="grid h-14 w-14 place-items-center rounded-2xl sm:h-16 sm:w-16" style={{ backgroundColor: e.tile }}>
             <TileIcon id={e.id} />
           </span>
           <span className="text-sm font-medium leading-snug text-[color:var(--pp-headline)] sm:text-base">{e.title}</span>
@@ -97,13 +98,13 @@ function AnnouncementBar({ onGo }: { onGo: () => void }) {
   const [show, setShow] = useState(true);
   if (!show) return null;
   return (
-    <div className="relative z-50 bg-[color:var(--pp-navy)] text-white">
+    <div className="relative z-50 bg-[color:var(--pp-navy)] text-white" role="region" aria-label="Promotion">
       <div className="mx-auto flex max-w-[1600px] items-center justify-center gap-4 px-12 py-2.5 text-2xs sm:text-xs">
         <span className="text-white/80">Ozempic® now at just $139</span>
-        <button onClick={onGo} className="inline-flex items-center gap-1.5 font-semibold text-white hover:opacity-80">
+        <button type="button" onClick={onGo} className="inline-flex items-center gap-1.5 font-semibold text-white transition-opacity duration-200 hover:opacity-80">
           Get started <CircleArrow />
         </button>
-        <button onClick={() => setShow(false)} className="absolute right-5 text-white/55 hover:text-white" aria-label="Dismiss">✕</button>
+        <button type="button" onClick={() => setShow(false)} className="absolute right-5 text-white/55 transition-colors hover:text-white" aria-label="Dismiss announcement">✕</button>
       </div>
     </div>
   );
@@ -207,22 +208,29 @@ function Hero() {
         />
       )}
 
+      {/* Soft gray wash — mutes the video and adds depth for badges */}
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-[#D8D6E0]/45" aria-hidden />
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-black/10 via-transparent to-black/25" aria-hidden />
+
       <button
+        type="button"
         onClick={toggle}
-        className="absolute bottom-4 left-1/2 z-20 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full bg-black/30 text-2xs text-white backdrop-blur transition-colors hover:bg-black/50 sm:bottom-auto sm:left-auto sm:right-5 sm:top-28 sm:translate-x-0"
+        className="absolute bottom-4 left-1/2 z-20 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full bg-black/30 text-2xs text-white backdrop-blur transition-colors duration-200 hover:bg-black/50 sm:bottom-auto sm:left-auto sm:right-5 sm:top-28 sm:translate-x-0"
         aria-label={playing ? "Pause video" : "Play video"}
       >
         {playing ? "❚❚" : "▶"}
       </button>
 
-      {/* corner labels */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-16 z-30 mx-auto flex w-full max-w-[105rem] flex-wrap items-center justify-between gap-3 px-5 md:px-8 xl:px-20">
-        <span className="flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 text-xs font-medium text-[color:var(--pp-navy)] backdrop-blur-sm">
-          <span aria-hidden>🇨🇦</span>Complete care, without leaving home
-        </span>
-        <span className="rounded-full bg-white/70 px-3 py-1.5 text-xs font-medium text-[color:var(--pp-navy)] backdrop-blur-sm">
-          Trusted by 800,000+ Canadians · 4.8★ rated
-        </span>
+      {/* Align with white shell below: FRAME gutters + SURFACE width */}
+      <div className={`pointer-events-none absolute inset-x-0 bottom-14 z-30 md:bottom-16 ${FRAME}`}>
+        <div className={`${SURFACE} flex flex-wrap items-center justify-between gap-3`}>
+          <span className="flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-[color:var(--pp-navy)] shadow-sm backdrop-blur-sm">
+            <span aria-hidden>🇨🇦</span>Complete care, without leaving home
+          </span>
+          <span className="rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-[color:var(--pp-navy)] shadow-sm backdrop-blur-sm">
+            Trusted by 800,000+ Canadians · 4.8★ rated
+          </span>
+        </div>
       </div>
     </section>
   );
@@ -238,37 +246,40 @@ function Welcome({ onStart }: { onStart: () => void }) {
     ["4.7 score", "9K+ Trustpilot reviews"],
   ];
   return (
-    <section className="relative z-20 -mt-10 px-5 md:px-8 xl:px-20">
-      <div className="mx-auto w-full max-w-[105rem] rounded-t-[28px] bg-surface-2 px-6 pb-12 pt-7 text-center sm:px-14">
-        <p className="text-base font-semibold text-[color:var(--pp-violet)]">Welcome to Pocketpills</p>
-        <h1 className="mt-3 font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-[color:var(--pp-headline)] sm:text-5xl">
-          Your health, handled.
-        </h1>
-        <button
-          onClick={onStart}
-          className="mt-8 inline-flex items-center gap-2 rounded-full bg-[color:var(--pp-navy)] px-8 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90"
-        >
-          Start <CircleArrow size={16} />
-        </button>
-        <div className="mt-11 grid grid-cols-2 gap-y-6 border-t border-line pt-7 text-left sm:grid-cols-3 lg:grid-cols-5 lg:divide-x lg:divide-line">
-          {stats.map(([big, small], i) => (
-            <div key={small} className={i > 0 ? "lg:pl-6" : ""}>
-              <p className="text-sm font-bold text-ink">{big}</p>
-              <p className="mt-1 text-2xs leading-snug text-ink-tertiary">{small}</p>
-            </div>
-          ))}
-        </div>
+    <header className={`${SHELL_X} pb-10 pt-8 text-center sm:pt-10 md:pb-12`}>
+      <p className="text-base font-semibold text-[color:var(--pp-violet)]">Welcome to Pocketpills</p>
+      <h1 className="mx-auto mt-3 max-w-3xl font-display text-[clamp(2.25rem,4vw,2.875rem)] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-headline)]">
+        Your health, handled.
+      </h1>
+      <button
+        type="button"
+        onClick={onStart}
+        className="mt-8 inline-flex min-w-[12.5rem] items-center justify-center gap-2 rounded-full bg-cta px-12 py-4 text-md font-medium text-white transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed"
+      >
+        get start <CircleArrow size={16} />
+      </button>
+      <div className="mt-10 grid grid-cols-2 gap-y-6 border-t border-line pt-8 text-left sm:grid-cols-3 lg:mt-12 lg:grid-cols-5 lg:divide-x lg:divide-line lg:pt-8">
+        {stats.map(([big, small], i) => (
+          <div key={small} className={i > 0 ? "lg:pl-6" : ""}>
+            <p className="text-sm font-semibold text-ink">{big}</p>
+            <p className="mt-1 text-2xs leading-snug text-ink-tertiary">{small}</p>
+          </div>
+        ))}
       </div>
-    </section>
+    </header>
   );
 }
 
 /* ═══ 5. Buy again + tiles ════════════════════ */
 function SectionHeads({ title, onLink }: { title: string; onLink: () => void }) {
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1">
-      <p className="text-md font-bold text-[color:var(--pp-primary-950)]">{title}</p>
-      <button onClick={onLink} className="inline-flex items-center gap-2 text-base text-[color:var(--pp-primary-950)] hover:opacity-70">
+    <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+      <h2 className="text-md font-semibold text-[color:var(--pp-primary-950)]">{title}</h2>
+      <button
+        type="button"
+        onClick={onLink}
+        className="inline-flex items-center gap-1.5 text-base text-[color:var(--pp-primary-950)] transition-opacity duration-200 hover:opacity-70"
+      >
         Talk to a licensed clinician <span className="text-lg leading-none" aria-hidden>›</span>
       </button>
     </div>
@@ -287,29 +298,29 @@ function RingArrow({ size = 20, color = "#4E2A84" }: { size?: number; color?: st
 
 function BuyAgain({ go }: { go: (to?: string) => void }) {
   return (
-    <section className="mx-auto w-full max-w-[105rem] px-5 pt-12 md:px-8 md:pt-16 xl:px-20">
-      <div className="grid gap-6 lg:min-h-[430px] lg:grid-cols-[1.06fr_1fr] lg:gap-8">
-        {/* promo — grid-cols-2: copy left, pen right */}
-        <div className="flex flex-col">
+    <section className={SHELL_BLOCK} aria-label="Shop and get care">
+      <div className="grid gap-6 lg:min-h-[430px] lg:grid-cols-2 lg:gap-8">
+        <div className="flex min-h-0 flex-col">
           <SectionHeads title="Buy again!" onLink={() => go("/messages")} />
           <div
-            className="relative flex-1 overflow-hidden rounded-3xl transition-shadow duration-300"
+            className="relative flex min-h-[280px] flex-1 overflow-hidden rounded-3xl lg:min-h-0"
             style={{ backgroundImage: "linear-gradient(135deg,#A78BEE 0%,#8A6FE3 45%,#6B4FC7 100%)" }}
           >
-            <div className="grid h-full grid-cols-2 overflow-hidden">
-              <div className="relative z-10 flex flex-col justify-center gap-8 p-8 sm:p-12">
-                <h2 className="font-display text-3xl font-light leading-[1.14] text-[color:var(--pp-primary-100)]">
+            <div className="grid h-full w-full grid-cols-2 overflow-hidden">
+              <div className="relative z-10 flex flex-col justify-center gap-6 p-7 sm:gap-8 sm:p-10">
+                <h3 className="font-display text-2xl font-light leading-[1.2] text-white sm:text-3xl sm:leading-[1.14]">
                   Ozempic<sup className="align-super text-[0.42em] font-normal">®</sup> now<br />at just $139
-                </h2>
+                </h3>
                 <button
+                  type="button"
                   onClick={() => go("/drug/ozempic")}
-                  className="inline-flex w-max items-center gap-2.5 rounded-full bg-white px-6 py-3 text-base font-medium text-[color:var(--pp-primary-950)] transition-transform"
+                  className="inline-flex w-max items-center gap-2.5 rounded-full bg-white px-6 py-3 text-base font-medium text-[color:var(--pp-primary-950)] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   Get started <RingArrow />
                 </button>
               </div>
 
-              <div className="relative min-h-[240px]">
+              <div className="relative min-h-[220px]">
                 <div className="pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[125%] -translate-x-1/2 -translate-y-1/2" aria-hidden>
                   {[0.42, 0.6, 0.78, 0.96].map((k) => (
                     <span key={k} className="absolute left-1/2 top-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/25" style={{ width: `${k * 100}%` }} />
@@ -327,10 +338,9 @@ function BuyAgain({ go }: { go: (to?: string) => void }) {
           </div>
         </div>
 
-        {/* tiles */}
-        <div className="flex flex-col">
+        <div className="flex min-h-0 w-full flex-col">
           <SectionHeads title="Doctor-led treatment" onLink={() => go("/find-care")} />
-          <div className="flex-1">
+          <div className="w-full flex-1 rounded-3xl bg-[color:var(--primary-200)] p-2 sm:p-3">
             <Tiles onPick={(to) => go(to)} />
           </div>
         </div>
@@ -350,17 +360,20 @@ function FeatureCard({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={"relative flex aspect-[13/9] min-h-[260px] flex-1 flex-col justify-between overflow-hidden rounded-2xl p-8 text-left transition-opacity hover:opacity-95 active:opacity-90 " + bgClass}
+      className={"group relative flex aspect-[13/9] min-h-[240px] flex-1 flex-col justify-between overflow-hidden rounded-3xl p-7 text-left transition-opacity duration-200 hover:opacity-95 active:opacity-90 sm:min-h-[260px] sm:p-8 " + bgClass}
     >
       <img src={img} alt={alt} loading="lazy" onError={hideOnError}
-        className="absolute inset-0 h-full w-full object-cover object-right" />
-      <div className="relative z-10 max-w-xs">
-        <p className={"font-display text-xl font-medium leading-snug " + textClass}>{children}</p>
+        className="absolute inset-0 h-full w-full object-cover object-right transition-transform duration-500 group-hover:scale-[1.02]" />
+      <div className="relative z-10 max-w-[16rem]">
+        <p className={"font-display text-lg font-medium leading-snug sm:text-xl " + textClass}>{children}</p>
       </div>
       <div className="relative z-10 flex items-center gap-3">
         <p className={"text-base font-medium " + textClass}>{cta}</p>
-        <ArrowCircle circleFill={circleFill} arrowFill={arrowFill} />
+        <span className="transition-transform duration-200 group-hover:translate-x-0.5">
+          <ArrowCircle circleFill={circleFill} arrowFill={arrowFill} />
+        </span>
       </div>
     </button>
   );
@@ -368,11 +381,11 @@ function FeatureCard({
 
 function FeatureCards({ go }: { go: (to?: string) => void }) {
   return (
-    <section className="mx-auto w-full max-w-[105rem] px-5 pt-12 md:px-8 md:pt-14 xl:px-20">
-      <div className="flex flex-col gap-5 md:flex-row md:justify-between">
+    <section className={SHELL_BLOCK} aria-label="Featured treatments">
+      <div className="flex flex-col gap-4 md:flex-row md:gap-5">
         <FeatureCard
           onClick={() => go("/drug/ozempic")}
-          bgClass="bg-[color:var(--pp-primary-100)]"
+          bgClass="bg-[color:var(--primary-200)]"
           img={IMG.ozempicCard}
           alt="Doctor-prescribed weight-loss treatments, now available through PocketPills."
           textClass="text-[color:var(--pp-primary-950)]"
@@ -388,7 +401,7 @@ function FeatureCards({ go }: { go: (to?: string) => void }) {
           bgClass="bg-[color:var(--pp-primary-950)]"
           img={IMG.sildenafilCard}
           alt="Get a Sildenafil prescription online through PocketPills."
-          textClass="text-[color:var(--pp-primary-100)]"
+          textClass="text-white"
           cta="Learn more"
           circleFill="#F5F4FA"
           arrowFill="#4E2A84"
@@ -398,7 +411,7 @@ function FeatureCards({ go }: { go: (to?: string) => void }) {
 
         <FeatureCard
           onClick={() => go("/find-care")}
-          bgClass="bg-[#E5E4F6]"
+          bgClass="bg-[color:var(--pp-primary-300)]"
           img={IMG.novoCard}
           alt="PocketPills and Novo Nordisk, changing care for Canadians."
           textClass="text-[color:var(--pp-primary-950)]"
@@ -429,7 +442,7 @@ const PARTNERS: { file: string; name: string; alt: string; w: number; h: number 
 function PartnerLogo({ file, name, alt, w, h }: (typeof PARTNERS)[number]) {
   const [failed, setFailed] = useState(false);
   if (failed)
-    return <span className="flex h-9 shrink-0 items-center whitespace-nowrap font-display text-base font-bold text-ink-tertiary/70">{name}</span>;
+    return <span className="flex h-9 shrink-0 items-center whitespace-nowrap font-display text-base font-medium text-ink-tertiary/70">{name}</span>;
   return (
     <img
       src={`${ENTERPRISE}/${file}`}
@@ -450,16 +463,231 @@ function Partners() {
     </div>
   );
   return (
-    <section className="overflow-hidden py-12 md:py-16">
+    <section className={`${SHELL_X} pb-14 pt-2 md:pb-16`} aria-label="Enterprise partners">
       <div className="flex flex-col items-center">
-        <h2 className="text-base text-[color:var(--pp-primary-950)]">Proud pharmacy of:</h2>
-        <div className="mt-7 w-full">
-          <div className="w-full overflow-hidden">
+        <h2 className="text-md font-medium text-[color:var(--pp-primary-950)]">Proud pharmacy of:</h2>
+        <div className="mt-8 w-full">
+          <div className="w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
             <div className="pp-marquee flex w-fit" style={{ animationDuration: "47.2667s" }}>
               {group("a")}
               {group("b")}
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══ 8b. How it works ═══════════════════════════════ */
+const HOW_CDN = "https://static.pocketpills.com/acq-web/redesign/home";
+/** Seconds into each step clip before its card visual populates. */
+const HOW_REVEAL_AT = 1.8;
+const HOW_STEPS = [
+  {
+    title: "Become a member",
+    video: `${HOW_CDN}/videos/step1.webm`,
+    poster: `${HOW_CDN}/posterStep1.webp`,
+    card: "/img/how/card1-welcome.webp",
+    alt: "Welcome to Pocketpills — become a member.",
+  },
+  {
+    title: "Match with experts",
+    video: `${HOW_CDN}/videos/step2.webm`,
+    poster: `${HOW_CDN}/posterStep2.webp`,
+    // Multi-option floating expert scene (calling UI also at /img/how/card2-call.jpg)
+    card: "/img/how/card2-experts.jpg",
+    alt: "Match with Pocketpills clinicians and pharmacists.",
+  },
+  {
+    title: "Manage your health on the go",
+    video: `${HOW_CDN}/videos/step3.webm`,
+    poster: `${HOW_CDN}/posterStep3.webp`,
+    card: "/img/how/card3-manage.webp",
+    alt: "Manage prescriptions, refills, and care from your phone with Pocketpills.",
+  },
+] as const;
+
+function HowItWorks() {
+  const [active, setActive] = useState(0);
+  const [revealed, setRevealed] = useState<boolean[]>(() => HOW_STEPS.map(() => false));
+  const [inView, setInView] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const advanceTimer = useRef<number | null>(null);
+  const step = HOW_STEPS[active];
+
+  /* Start the sequence once the section is meaningfully on screen. */
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setInView(true);
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  /* Reduced motion: skip the staged reveal and show everything. */
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setRevealed(HOW_STEPS.map(() => true));
+      setInView(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!inView) return;
+    const v = videoRef.current;
+    if (!v) return;
+    v.load();
+    void v.play().catch(() => {});
+  }, [active, inView]);
+
+  useEffect(
+    () => () => {
+      if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+    },
+    [],
+  );
+
+  const revealStep = (index: number) => {
+    setRevealed((prev) => {
+      if (prev[index]) return prev;
+      const next = [...prev];
+      next[index] = true;
+      return next;
+    });
+  };
+
+  const onTimeUpdate = () => {
+    const v = videoRef.current;
+    if (!v || !Number.isFinite(v.duration) || v.duration <= 0) return;
+    const beat = Math.min(HOW_REVEAL_AT, Math.max(0.6, v.duration * 0.2));
+    if (v.currentTime >= beat) revealStep(active);
+  };
+
+  const onEnded = () => {
+    revealStep(active);
+    if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+    advanceTimer.current = window.setTimeout(() => {
+      setActive((i) => (i + 1) % HOW_STEPS.length);
+    }, 450);
+  };
+
+  const onCardClick = (i: number) => {
+    if (!revealed[i]) return;
+    setActive(i);
+  };
+
+  return (
+    <section
+      ref={sectionRef}
+      id="how"
+      className={`overflow-hidden ${ISLAND_RADIUS} bg-white`}
+      aria-labelledby="how-heading"
+    >
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-8 xl:gap-10">
+        <div className="relative mx-auto aspect-[3/4] w-full max-w-[24rem] shrink-0 overflow-hidden bg-[color:var(--primary-500)] lg:mx-0 lg:aspect-auto lg:w-[min(48%,30rem)] lg:max-w-none lg:self-stretch">
+          {inView ? (
+            <video
+              key={step.video}
+              ref={videoRef}
+              muted
+              playsInline
+              autoPlay
+              poster={step.poster}
+              onTimeUpdate={onTimeUpdate}
+              onEnded={onEnded}
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              aria-label={step.alt}
+            >
+              <source src={step.video} type="video/webm" />
+            </video>
+          ) : (
+            <div className="pp-skeleton absolute inset-0" aria-hidden />
+          )}
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col justify-center px-5 py-6 sm:px-6 lg:pl-2 lg:pr-8">
+          <p className="pp-caps text-[color:var(--pp-violet)]">How it works</p>
+          <h2 id="how-heading" className={`mt-2 max-w-xl ${SECTION_TITLE}`}>
+            Do it <span className="text-[color:var(--pp-violet)]">all</span> without leaving home.
+          </h2>
+
+          <ol className="mt-6 grid grid-cols-1 gap-x-3 gap-y-7 sm:mt-7 sm:grid-cols-3 sm:gap-x-3">
+            {HOW_STEPS.map((s, i) => {
+              const isActive = i === active && revealed[i];
+              const isReady = revealed[i];
+              return (
+                <li key={s.title}>
+                  <button
+                    type="button"
+                    onClick={() => onCardClick(i)}
+                    disabled={!isReady}
+                    className={
+                      "group flex w-full flex-col items-center text-center " +
+                      (isReady ? "cursor-pointer" : "cursor-default")
+                    }
+                    aria-current={isActive ? "step" : undefined}
+                    aria-busy={!isReady}
+                  >
+                    <span className="relative w-full pb-3.5">
+                      <span
+                        className={
+                          "relative mx-auto block aspect-[3/4] w-full max-w-[9.5rem] overflow-hidden rounded-t-2xl rounded-b-none transition-[border-color,transform,box-shadow] duration-300 sm:max-w-[10.5rem] " +
+                          (isReady ? "bg-[color:var(--pp-primary-200)]" : "bg-[#ececf1]") +
+                          " " +
+                          (isActive
+                            ? "border border-[color:var(--pp-primary-950)] shadow-[0_8px_24px_rgba(78,42,132,0.12)]"
+                            : "border border-transparent")
+                        }
+                      >
+                        {isReady ? (
+                          <img
+                            src={s.card}
+                            alt=""
+                            loading="lazy"
+                            onError={hideOnError}
+                            className="pp-how-card-in absolute inset-0 h-full w-full object-cover object-top"
+                          />
+                        ) : (
+                          <span className="pp-how-skel" aria-hidden />
+                        )}
+                      </span>
+                      <span
+                        className={
+                          "absolute bottom-0 left-1/2 grid h-7 w-7 -translate-x-1/2 place-items-center rounded-full text-xs font-semibold transition-colors duration-300 " +
+                          (isActive
+                            ? "bg-[color:var(--pp-primary-950)] text-white"
+                            : isReady
+                              ? "bg-white text-[color:var(--pp-primary-950)] ring-1 ring-[color:var(--pp-primary-300)]"
+                              : "bg-[color:var(--pp-primary-200)] text-[color:var(--pp-primary-400)] ring-1 ring-[color:var(--pp-primary-300)]")
+                        }
+                      >
+                        {i + 1}
+                      </span>
+                    </span>
+                    <span
+                      className={
+                        "mt-1.5 max-w-[9.5rem] text-xs font-medium leading-snug transition-colors duration-300 sm:text-sm " +
+                        (isActive
+                          ? "text-[color:var(--pp-primary-950)]"
+                          : isReady
+                            ? "text-[color:var(--pp-primary-800)]"
+                            : "text-[color:var(--pp-primary-400)]")
+                      }
+                    >
+                      {s.title}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </div>
     </section>
@@ -511,8 +739,14 @@ function ReviewMark({ id }: { id: "capsule" | "multi" | "plus" | "transfer" }) {
 function CarouselArrow({ dir, active, onClick }: { dir: "l" | "r"; active: boolean; onClick: () => void }) {
   const c = active ? "#4E2A84" : "#AAACCA";
   return (
-    <button onClick={onClick} aria-label={dir === "l" ? "Previous reviews" : "Next reviews"} className="hidden shrink-0 cursor-pointer transition-opacity hover:opacity-70 active:opacity-50 md:block">
-      <svg width="48" height="49" viewBox="0 0 48 49" fill="none" className="transition-all duration-300">
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!active}
+      aria-label={dir === "l" ? "Previous reviews" : "Next reviews"}
+      className="hidden shrink-0 cursor-pointer transition-opacity duration-200 hover:opacity-70 active:opacity-50 disabled:cursor-default disabled:opacity-40 md:block"
+    >
+      <svg width="48" height="49" viewBox="0 0 48 49" fill="none" className="transition-all duration-300" aria-hidden>
         <path d="M1 24.1499C1 11.4474 11.2975 1.1499 24 1.1499C36.7025 1.1499 47 11.4474 47 24.1499C47 36.8525 36.7025 47.1499 24 47.1499C11.2975 47.1499 1 36.8525 1 24.1499Z" stroke={c} strokeWidth="2" />
         {dir === "l"
           ? <path d="M27.4145 16.4503C27.8009 16.8449 27.7942 17.478 27.3996 17.8644L20.9293 24.1999L27.3996 30.5354C27.7942 30.9218 27.8009 31.5549 27.4145 31.9495C27.0281 32.3441 26.395 32.3508 26.0004 31.9644L18.8004 24.9144C18.6083 24.7263 18.5 24.4688 18.5 24.1999C18.5 23.931 18.6083 23.6735 18.8004 23.4854L26.0004 16.4354C26.395 16.049 27.0281 16.0557 27.4145 16.4503Z" fill={c} />
@@ -543,43 +777,71 @@ function Testimonials() {
     setAtStart(el.scrollLeft <= 4);
     setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
   };
-  useEffect(() => { sync(); }, []);
-  const scroll = (d: number) => box.current?.scrollBy({ left: d * 332, behavior: "smooth" });
+  useEffect(() => {
+    sync();
+    const el = box.current;
+    if (!el) return;
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const scroll = (d: number) => {
+    const el = box.current;
+    if (!el) return;
+    const card = el.querySelector("article");
+    const styles = getComputedStyle(el);
+    const gap = parseFloat(styles.columnGap || styles.gap) || 24;
+    const step = (card?.getBoundingClientRect().width ?? 280) + gap;
+    el.scrollBy({ left: d * step, behavior: "smooth" });
+  };
 
   return (
-    <section id="reviews" className="mx-auto flex w-full max-w-[105rem] flex-col gap-6 px-5 py-12 md:gap-12 md:px-8 md:py-16 xl:px-20">
-      <div className="flex flex-col gap-6 text-center text-[color:var(--pp-primary-950)]">
-        <h3 className="font-display text-3xl font-extrabold">Our members love us</h3>
-        <p className="text-base">
-          See why thousands across Canada choose <span className="font-medium">Pocketpills</span>.
-        </p>
-      </div>
-
-      <div className="flex items-center justify-between gap-8">
-        <CarouselArrow dir="l" active={!atStart} onClick={() => scroll(-1)} />
-
-        <div ref={box} onScroll={sync} className="pp-scroll flex w-full max-w-[62rem] gap-8 overflow-x-scroll">
-          {REVIEWS.map((r) => (
-            <div key={r.name} className="pp-snap flex min-h-[15.5rem] w-[17.5rem] shrink-0 flex-col rounded-2xl bg-[color:var(--pp-primary-200)] p-6">
-              <div className="mb-3 flex">
-                {Array.from({ length: 5 }).map((_, i) => <FullStar key={i} />)}
-              </div>
-              <p className="text-base leading-relaxed text-[color:var(--pp-primary-800)]">{r.text}</p>
-              <div className="mt-auto flex w-full items-center justify-between pt-5">
-                <p className="text-base font-bold text-[color:var(--pp-primary-950)]">{r.name}</p>
-                <ReviewMark id={r.mark} />
-              </div>
-            </div>
-          ))}
+    <section className={`${ISLAND_RADIUS} bg-white`} aria-labelledby="reviews-heading">
+      <div className={`flex flex-col gap-8 ${ISLAND_PAD} md:gap-10`}>
+        <div className="mx-auto flex max-w-2xl flex-col gap-3 text-center text-[color:var(--pp-primary-950)]">
+          <h2 id="reviews-heading" className={SECTION_TITLE}>Our members love us</h2>
+          <p className="text-base leading-relaxed text-ink-secondary">
+            See why thousands across Canada choose <span className="font-medium text-[color:var(--pp-primary-950)]">Pocketpills</span>.
+          </p>
         </div>
 
-        <CarouselArrow dir="r" active={!atEnd} onClick={() => scroll(1)} />
-      </div>
+        <div className="flex items-center gap-4 lg:gap-6">
+          <CarouselArrow dir="l" active={!atStart} onClick={() => scroll(-1)} />
 
-      <div className="mx-auto flex items-center justify-center gap-1 rounded-xl border border-line px-6 py-4">
-        <span className="text-base font-medium text-[color:var(--pp-primary-950)]">4.9</span>
-        <span className="px-1"><FullStar w={16} /></span>
-        <img src="https://static.pocketpills.com/acq-web/redesign/home/google-logo.png" alt="Google" width={73} height={25} loading="lazy" onError={hideOnError} className="mt-1" />
+          <div
+            ref={box}
+            onScroll={sync}
+            className="pp-scroll flex w-full min-w-0 flex-1 gap-6 overflow-x-scroll scroll-smooth"
+            tabIndex={0}
+            role="region"
+            aria-label="Member reviews"
+          >
+            {REVIEWS.map((r) => (
+              <article
+                key={r.name}
+                className="pp-snap flex min-h-[15.5rem] w-[calc((100%-1.5rem)/2)] shrink-0 flex-col rounded-2xl bg-[color:var(--pp-primary-200)] p-6 md:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-4.5rem)/4)]"
+              >
+                <div className="mb-3 flex gap-0.5" aria-label="5 out of 5 stars">
+                  {Array.from({ length: 5 }).map((_, i) => <FullStar key={i} />)}
+                </div>
+                <p className="text-base leading-relaxed text-[color:var(--pp-primary-800)]">{r.text}</p>
+                <div className="mt-auto flex w-full items-center justify-between pt-5">
+                  <p className="text-base font-semibold text-[color:var(--pp-primary-950)]">{r.name}</p>
+                  <ReviewMark id={r.mark} />
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <CarouselArrow dir="r" active={!atEnd} onClick={() => scroll(1)} />
+        </div>
+
+        <div className="mx-auto flex items-center justify-center gap-1.5 rounded-xl border border-line px-5 py-3.5">
+          <span className="text-base font-medium text-[color:var(--pp-primary-950)]">4.9</span>
+          <span className="px-0.5" aria-hidden><FullStar w={16} /></span>
+          <img src="https://static.pocketpills.com/acq-web/redesign/home/google-logo.png" alt="Google" width={73} height={25} loading="lazy" onError={hideOnError} className="mt-0.5" />
+        </div>
       </div>
     </section>
   );
@@ -608,8 +870,8 @@ function SmallStar() {
 
 function TestimonialCard({ m }: { m: Member }) {
   return (
-    <div
-      className="flex h-[330px] min-w-[17rem] shrink-0 snap-center flex-col-reverse overflow-hidden rounded-2xl md:min-w-[38rem] md:flex-row"
+    <article
+      className="flex h-[300px] min-w-[17rem] shrink-0 snap-center flex-col-reverse overflow-hidden rounded-2xl md:h-[330px] md:min-w-[38rem] md:flex-row"
       style={{ backgroundColor: m.bg }}
     >
       <div className="h-1/2 w-full shrink-0 md:h-full md:w-1/2">
@@ -626,21 +888,21 @@ function TestimonialCard({ m }: { m: Member }) {
           />
         </picture>
       </div>
-      <div className="flex flex-1 flex-col justify-center gap-5 p-7 md:p-10">
-        <h2 className={"font-display text-xl font-medium leading-tight " + (m.dark ? "text-white" : "text-[color:var(--pp-primary-950)]")}>{m.n}</h2>
-        <div className="flex gap-1 text-[color:var(--pp-primary-400)]">
+      <div className="flex flex-1 flex-col justify-center gap-4 p-6 md:gap-5 md:p-10">
+        <h3 className={"font-display text-xl font-medium leading-tight " + (m.dark ? "text-white" : "text-[color:var(--pp-primary-950)]")}>{m.n}</h3>
+        <div className="flex gap-1 text-[color:var(--pp-primary-400)]" aria-label="5 out of 5 stars">
           {Array.from({ length: 5 }).map((_, i) => <SmallStar key={i} />)}
         </div>
         <p className={"text-sm leading-relaxed " + (m.dark ? "text-[color:var(--pp-primary-200)]" : "text-[color:var(--pp-primary-800)]")}>{m.t}</p>
       </div>
-    </div>
+    </article>
   );
 }
 
 function TrustpilotBadge() {
   return (
-    <div className="mx-auto mt-10 hidden max-w-sm items-center justify-center gap-4 rounded-lg bg-[color:var(--pp-primary-200)] px-4 py-1.5 md:flex">
-      <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-ink-secondary">Excellent</p>
+    <div className="mx-auto mt-10 hidden max-w-md items-center justify-center gap-4 rounded-xl bg-[color:var(--pp-primary-200)] px-5 py-2 md:flex">
+      <p className="pp-caps text-ink-secondary">Excellent</p>
       <span className="rounded-full bg-white px-4 py-1.5 text-sm font-medium text-[color:var(--pp-primary-800)]">4.8 out of 5</span>
       <svg width="88" height="32" viewBox="0 0 88 32" fill="none" aria-label="Trustpilot">
         <path d="M8.61539 20.2816L12.359 19.3329L13.9231 24.1534L8.61539 20.2816ZM17.2308 14.0508H10.641L8.61539 7.8457L6.58975 14.0508H0L5.33334 17.897L3.30769 24.1021L8.64103 20.256L11.9231 17.897L17.2308 14.0508Z" fill="#219653" />
@@ -657,19 +919,22 @@ function JoinBand({ go }: { go: (to?: string) => void }) {
     </div>
   );
   return (
-    <section className="mx-4 rounded-3xl bg-white py-12 md:mx-8 md:py-16 xl:mx-11">
-      <div className="mb-10 flex flex-col gap-6">
-        <h2 className="mx-auto max-w-xl text-center font-display text-3xl font-extrabold leading-snug text-[color:var(--pp-primary-950)]">
+    <section className={`${ISLAND_RADIUS} bg-white ${ISLAND_PAD}`} aria-labelledby="join-heading">
+      <div className="mb-10 flex flex-col items-center gap-6 md:mb-12">
+        <h2 id="join-heading" className={`mx-auto max-w-xl text-center ${SECTION_TITLE}`}>
           Join <span className="text-[color:var(--pp-violet)]">800,000+</span> Canadians who never miss a dose.
         </h2>
-        <button onClick={() => go()} className="mx-auto w-max rounded-full bg-[color:var(--pp-primary-950)] px-7 py-3 text-base font-medium text-white transition-opacity hover:opacity-90">
+        <button
+          type="button"
+          onClick={() => go()}
+          className="w-max rounded-full bg-cta px-8 py-4 text-md font-medium text-white transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed"
+        >
           Join Pocketpills
         </button>
       </div>
 
-      {/* desktop: auto-scrolling marquee */}
       <div className="hidden md:block">
-        <div className="w-full overflow-hidden">
+        <div className="w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_4%,black_96%,transparent)]">
           <div className="pp-marquee flex w-fit" style={{ animationDuration: "49.65s" }}>
             {group("a")}
             {group("b")}
@@ -677,9 +942,8 @@ function JoinBand({ go }: { go: (to?: string) => void }) {
         </div>
       </div>
 
-      {/* mobile: swipeable */}
       <div className="md:hidden">
-        <div className="pp-scroll flex w-full gap-4 overflow-x-auto px-5 pb-2">
+        <div className="pp-scroll -mx-2 flex w-[calc(100%+1rem)] gap-4 overflow-x-auto px-2 pb-2">
           {MEMBERS.map((m) => <TestimonialCard key={m.n} m={m} />)}
         </div>
       </div>
@@ -692,18 +956,43 @@ function JoinBand({ go }: { go: (to?: string) => void }) {
 /* ═══ 10. NABP band ═════════════════════════════════════ */
 function NabpBand() {
   return (
-    <section className="mx-auto w-full max-w-[105rem] px-5 py-12 md:px-8 md:py-16 xl:px-20">
-      <div className="flex flex-col gap-6 rounded-2xl bg-[color:var(--pp-green)] p-8 text-white sm:flex-row sm:items-center sm:p-10">
-        <div className="shrink-0 text-center">
+    <section
+      className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(16rem,0.85fr)_minmax(0,1.35fr)] lg:items-stretch"
+      aria-labelledby="nabp-heading"
+    >
+      <div className={`${ISLAND_RADIUS} relative min-h-[220px] overflow-hidden sm:min-h-[280px] lg:min-h-0`}>
+        <img
+          src="/img/nabp-care.png"
+          alt="Licensed clinician writing a prescription"
+          width={800}
+          height={600}
+          loading="lazy"
+          onError={hideOnError}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      </div>
+
+      <div
+        className={`flex flex-col gap-6 ${ISLAND_RADIUS} bg-[color:var(--pp-green)] p-8 text-white sm:flex-row sm:items-center sm:gap-8 sm:p-10 md:gap-10 md:px-12 md:py-11`}
+      >
+        <div className="flex shrink-0 flex-col items-center gap-3 sm:min-w-[7.5rem]">
           <p className="text-2xs uppercase tracking-[0.2em] text-white/60">Accredited by</p>
-          <div className="mx-auto mt-1 grid h-12 w-12 place-items-center rounded-full border-2 border-white/40"><span className="font-display text-sm font-extrabold">◈</span></div>
-          <p className="mt-1 font-display text-lg font-extrabold leading-none">NABP</p>
-          <p className="text-2xs text-white/50">Healthcare Merchant</p>
+          <img
+            src="https://static.pocketpills.com/acq-web/redesign/home/nabp.svg"
+            alt="Pocketpills Online Pharmacy is an accredited member with NABP National Association of Boards of Pharmacy"
+            width={205}
+            height={241}
+            loading="lazy"
+            onError={hideOnError}
+            className="h-auto w-20"
+          />
         </div>
-        <div className="hidden w-px self-stretch bg-white/20 sm:block" />
-        <div>
-          <h3 className="font-display text-2xl font-bold">Putting you first, every time.</h3>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
+        <div className="hidden w-px self-stretch bg-white/20 sm:block" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <h2 id="nabp-heading" className="font-display text-2xl font-medium leading-snug text-white md:text-3xl">
+            Putting you first, every time.
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">
             Our licensed healthcare providers carefully assess each concern and provide expert medical guidance.
             Whether it's a diagnosis, treatment plan, or prescription, you can trust you're in good hands.
           </p>
@@ -716,7 +1005,10 @@ function NabpBand() {
 /* ═══ 11. FAQ ═══════════════════════════════════════════ */
 function Faq({ go }: { go: (to?: string) => void }) {
   const faqs: [string, string][] = [
-    ["What is Pocketpills?", "An online healthcare platform: consult a licensed provider, get prescriptions, and have medication delivered—free, all in one place."],
+    [
+      "What is Pocketpills?",
+      "Pocketpills is now a comprehensive online healthcare platform that brings doctor visits, prescription renewals, and pharmacy deliveries together in one place. You can consult with licensed Canadian healthcare providers, manage medications for yourself or your family, and have prescriptions delivered to your door—without ever stepping into a clinic or pharmacy. All online, on your time.",
+    ],
     ["What's new at Pocketpills?", "Doctor-led treatment plans, faster telehealth, and expanded same-day delivery in select regions."],
     ["Who can use Pocketpills online healthcare platform?", "Anyone in Canada with a valid address and either provincial or private coverage."],
     ["Can I order a prescription online?", "Yes. Upload it, have your clinic fax it, mail it in, or transfer from another pharmacy—we handle the rest."],
@@ -727,31 +1019,137 @@ function Faq({ go }: { go: (to?: string) => void }) {
     ["Can Pocketpills refill prescription orders for me?", "Yes. Auto-refill prepares your next fill and reminds you before you run out."],
     ["Is delivery free with Pocketpills online pharmacy?", "Always—free delivery to every province and territory."],
   ];
-  const [open, setOpen] = useState<number | null>(null);
+  const [open, setOpen] = useState<number | null>(0);
   return (
-    <section id="faq" className="mx-auto w-full max-w-[105rem] px-5 py-12 md:px-8 md:py-16 xl:px-20">
-      <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
-        <div>
-          <p className="text-sm font-semibold text-primary">Frequently Asked</p>
-          <h2 className="mt-1.5 font-display text-2xl font-extrabold leading-snug text-[color:var(--pp-headline)]">Your questions, answered.</h2>
-          <button onClick={() => go()} className="mt-4 rounded-full bg-[color:var(--pp-navy)] px-4 py-2 text-xs font-semibold text-white">More FAQs</button>
-        </div>
-        <div className="space-y-2">
-          {faqs.map(([q, a], i) => {
-            const isOpen = open === i;
-            return (
-              <div key={q} className="overflow-hidden rounded-xl bg-surface-1">
-                <button onClick={() => setOpen(isOpen ? null : i)} className="flex w-full items-center justify-between gap-4 px-5 py-3.5 text-left" aria-expanded={isOpen}>
-                  <span className="text-sm font-medium text-ink">{q}</span>
-                  <span className={"shrink-0 text-ink-tertiary transition-transform " + (isOpen ? "rotate-45" : "")}>＋</span>
-                </button>
-                {isOpen && <p className="px-5 pb-4 text-sm leading-relaxed text-ink-secondary">{a}</p>}
+    <section id="faq" className="grid gap-8 lg:grid-cols-[minmax(240px,300px)_1fr] lg:gap-14" aria-labelledby="faq-heading">
+      <div className="lg:sticky lg:top-28 lg:self-start">
+        <p className="pp-caps text-[color:var(--pp-violet)]">Frequently Asked</p>
+        <h2 id="faq-heading" className={`mt-3 ${SECTION_TITLE}`}>
+          Your questions,<br className="hidden lg:block" /> answered.
+        </h2>
+        <button
+          type="button"
+          onClick={() => go()}
+          className="mt-6 rounded-full bg-cta px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed"
+        >
+          More FAQs
+        </button>
+      </div>
+
+      <div className="flex w-full min-w-0 flex-col gap-4" role="list">
+        {faqs.map(([q, a], i) => {
+          const isOpen = open === i;
+          const panelId = `faq-panel-${i}`;
+          const btnId = `faq-btn-${i}`;
+          return (
+            <div
+              key={q}
+              role="listitem"
+              className={
+                "rounded-2xl bg-white px-6 py-5 transition-[border-color] duration-200 sm:px-8 sm:py-6 " +
+                (isOpen
+                  ? "border border-[color:var(--pp-violet)]"
+                  : "border border-transparent")
+              }
+            >
+              <button
+                id={btnId}
+                type="button"
+                onClick={() => setOpen(isOpen ? null : i)}
+                className="flex w-full items-start justify-between gap-4 text-left"
+                aria-expanded={isOpen}
+                aria-controls={panelId}
+              >
+                <span className="text-base font-medium leading-snug text-[color:var(--pp-primary-900)] sm:text-md">{q}</span>
+                <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center text-[color:var(--pp-primary-900)]" aria-hidden>
+                  {isOpen ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M5 12h14" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M5 12h14" />
+                      <path d="M12 5v14" />
+                    </svg>
+                  )}
+                </span>
+              </button>
+              <div id={panelId} role="region" aria-labelledby={btnId} hidden={!isOpen}>
+                {isOpen && (
+                  <p className="mt-4 pr-8 text-sm leading-relaxed text-[color:var(--pp-primary-800)] sm:text-base">
+                    {a}
+                  </p>
+                )}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </section>
+  );
+}
+
+/* Soft enter when a section loads / scrolls into view */
+function Reveal({
+  children,
+  className = "",
+  delay = 0,
+  soft = false,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+  /** Opacity-only (no lift) — better for full-bleed media */
+  soft?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [on, setOn] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setOn(true);
+      return;
+    }
+    let done = false;
+    const show = () => {
+      if (done) return;
+      done = true;
+      setOn(true);
+    };
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          show();
+          io.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -5% 0px" },
+    );
+    io.observe(el);
+    const fallback = window.setTimeout(show, 2400);
+    return () => {
+      io.disconnect();
+      window.clearTimeout(fallback);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={[
+        "pp-reveal",
+        soft ? "pp-reveal-soft" : "",
+        on ? "pp-reveal-in" : "",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={delay ? { transitionDelay: `${delay}ms` } : undefined}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -762,19 +1160,61 @@ export function Landing() {
   const go = (to?: string) => nav(signedIn ? (to ?? "/app") : "/get-started");
 
   return (
-    <div className="min-h-screen bg-surface-2">
-      <AnnouncementBar onGo={() => go()} />
-      <SiteHeader />
-      <Hero />
-      <Welcome onStart={() => go()} />
-      <BuyAgain go={go} />
-      <FeatureCards go={go} />
-      <Partners />
-      <Testimonials />
-      <JoinBand go={go} />
-      <NabpBand />
-      <Faq go={go} />
-      <SiteFooter go={go} variant="full" />
+    <div className="min-h-screen bg-[color:var(--pp-page)]">
+      <Reveal soft delay={0}>
+        <AnnouncementBar onGo={() => go()} />
+      </Reveal>
+      <Reveal soft delay={60}>
+        <SiteHeader />
+      </Reveal>
+      <main>
+        <Reveal soft delay={100}>
+          <Hero />
+        </Reveal>
+
+        {/* Continuous white shell — lavender only shows in the page margins */}
+        <div className={`relative z-20 -mt-10 ${FRAME}`}>
+          <div className={`${SURFACE} overflow-hidden ${ISLAND_RADIUS} bg-white`}>
+            <Reveal delay={140}>
+              <Welcome onStart={() => go()} />
+            </Reveal>
+            <Reveal delay={220}>
+              <BuyAgain go={go} />
+            </Reveal>
+            <Reveal delay={300}>
+              <FeatureCards go={go} />
+            </Reveal>
+            <Reveal delay={380}>
+              <Partners />
+            </Reveal>
+          </div>
+        </div>
+
+        {/* Lower islands — same FRAME + SURFACE as the shell so edges align */}
+        <div className={`${FRAME} ${SECTION_GAP_Y}`}>
+          <div className={`${SURFACE} flex flex-col ${SECTION_GAP} pb-0`}>
+            <Reveal>
+              <HowItWorks />
+            </Reveal>
+            <Reveal>
+              <Testimonials />
+            </Reveal>
+            <Reveal>
+              <JoinBand go={go} />
+            </Reveal>
+            <Reveal>
+              <NabpBand />
+            </Reveal>
+            <Reveal>
+              <Faq go={go} />
+            </Reveal>
+          </div>
+        </div>
+      </main>
+
+      <Reveal>
+        <SiteFooter go={go} variant="full" />
+      </Reveal>
     </div>
   );
 }

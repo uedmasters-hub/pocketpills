@@ -39,14 +39,14 @@ export function EntryFlow({
     <div className="w-full max-w-3xl">
       <div className="mb-8">
         <div className="mb-3 flex items-baseline justify-between">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{eyebrow}</p>
+          <p className="pp-caps text-[color:var(--pp-violet)]">{eyebrow}</p>
           <p className="text-xs font-medium text-ink-tertiary tnum">Step {step} of {total}</p>
         </div>
         <Progress value={pct} />
       </div>
 
       <div className="animate-fade-up">
-        <h1 className="text-2xl font-extrabold text-ink sm:text-3xl">{title}</h1>
+        <h1 className="text-2xl font-medium text-ink sm:text-3xl">{title}</h1>
         {subtitle && <p className="mt-2 text-ink-secondary">{subtitle}</p>}
         <div className="mt-6">{children}</div>
       </div>

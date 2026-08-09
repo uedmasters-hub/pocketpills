@@ -87,7 +87,7 @@ export function MedicationReview() {
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
             <span className="font-semibold text-ink">You pay today</span>
-            <span className="font-display text-xl font-extrabold text-ink tnum">
+            <span className="font-display text-xl font-medium text-ink tnum">
               ${(useInsurance ? LIST_PRICE - INSURANCE_COVERED : LIST_PRICE).toFixed(2)}
             </span>
           </div>

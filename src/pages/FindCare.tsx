@@ -39,7 +39,7 @@ export function FindCare() {
               onClick={() => setCat(c)}
               className={
                 "rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors " +
-                (cat === c ? "bg-primary text-[color:var(--color-primary-fg)]" : "bg-surface-2 text-ink-secondary border border-line hover:bg-[color:var(--pp-primary-100)]")
+                (cat === c ? "bg-primary text-[color:var(--color-primary-fg)]" : "bg-surface-2 text-ink-secondary border border-line hover:bg-[color:var(--state-hover)]")
               }
             >
               {c}

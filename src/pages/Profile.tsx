@@ -51,8 +51,8 @@ export function Profile() {
   return (
     <div>
       <header className="mb-8">
-        <p className="text-2xs font-semibold uppercase tracking-[0.14em] text-[color:var(--pp-violet)]">Profile</p>
-        <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
+        <p className="pp-caps text-[color:var(--pp-violet)]">Profile</p>
+        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
           Your profile
         </h1>
         <p className="mt-2 max-w-xl text-base text-ink-secondary">
@@ -68,7 +68,7 @@ export function Profile() {
             key={r.id}
             to={`/profile/${r.id}`}
             className={
-              "flex w-full items-center gap-4 px-6 py-5 text-left transition-colors hover:bg-[color:var(--pp-primary-100)] " +
+              "flex w-full items-center gap-4 px-6 py-5 text-left transition-colors hover:bg-[color:var(--state-hover)] " +
               (i < rows.length - 1 ? "border-b border-line" : "")
             }
           >

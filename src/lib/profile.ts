@@ -46,7 +46,11 @@ export function profileChecklist(user: Profile | null): ChecklistRow[] {
       id: "insurance",
       label: "Insurance",
       done: true,
-      value: user?.insurance?.carrier ?? "None",
+      value: user?.insurances?.length
+        ? user.insurances.length === 1
+          ? user.insurances[0].carrier
+          : `${user.insurances.length} plans`
+        : "None",
       required: false,
     },
     {

@@ -112,11 +112,11 @@ function MedPicker({ onAdd }: { onAdd: (m: Med) => void }) {
       {q.trim() && (
         <div className="mt-2 overflow-hidden rounded-xl border border-line">
           {matches.map((d) => (
-            <button key={d.slug} onClick={() => addFromDrug(d.slug)} className="flex w-full items-center gap-3 border-b border-line bg-surface-2 p-3 text-left last:border-0 hover:bg-[color:var(--pp-primary-100)]">
+            <button key={d.slug} onClick={() => addFromDrug(d.slug)} className="flex w-full items-center gap-3 border-b border-line bg-surface-2 p-3 text-left last:border-0 hover:bg-[color:var(--state-hover)]">
               <span>💊</span><span className="flex-1"><span className="block font-semibold text-ink">{d.name}</span>{d.generic && <span className="block text-xs text-ink-tertiary">{d.generic}</span>}</span><span className="text-primary">+ Add</span>
             </button>
           ))}
-          <button onClick={addManual} className="flex w-full items-center gap-2 bg-surface-1 transition-colors hover:bg-[color:var(--pp-primary-100)] p-3 text-left text-sm font-semibold text-primary">＋ Add “{q.trim()}” manually</button>
+          <button onClick={addManual} className="flex w-full items-center gap-2 bg-surface-1 transition-colors hover:bg-[color:var(--state-hover)] p-3 text-left text-sm font-semibold text-primary">＋ Add “{q.trim()}” manually</button>
         </div>
       )}
     </div>
@@ -274,7 +274,7 @@ export function FillPrescription() {
           <div className="grid grid-cols-2 gap-3">
             {(["self", "other"] as const).map((w) => (
               <button key={w} onClick={() => set({ who: w })}
-                className={"h-12 rounded-xl border text-sm font-semibold transition-colors " + (s.who === w ? "border-primary bg-primary-subtle text-primary" : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--pp-primary-100)]")}>
+                className={"h-12 rounded-xl border text-sm font-semibold transition-colors " + (s.who === w ? "border-primary bg-primary-subtle text-primary" : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--state-hover)]")}>
                 {w === "self" ? "Myself" : "A family member"}
               </button>
             ))}
@@ -304,7 +304,7 @@ export function FillPrescription() {
             <p className="mb-2.5 text-sm font-medium text-ink-secondary">Pregnant or breastfeeding?</p>
             <div className="grid grid-cols-3 gap-2">
               {["No", "Yes", "N/A"].map((o) => (
-                <button key={o} onClick={() => set({ pregnant: o })} className={"h-10 rounded-xl border text-sm font-semibold " + (s.pregnant === o ? "border-primary bg-primary-subtle text-primary" : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--pp-primary-100)]")}>{o}</button>
+                <button key={o} onClick={() => set({ pregnant: o })} className={"h-10 rounded-xl border text-sm font-semibold " + (s.pregnant === o ? "border-primary bg-primary-subtle text-primary" : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--state-hover)]")}>{o}</button>
               ))}
             </div>
           </Card>
@@ -358,7 +358,7 @@ export function FillPrescription() {
             <Row k="Medications" v={`$${subtotal.toFixed(2)}`} />
             <Row k="Dispensing fee" v={`$${(s.meds.length ? DISPENSING_FEE : 0).toFixed(2)}`} />
             <Row k={hasInsurance ? `Insurance (~${Math.round(rate * 100)}%)` : "Insurance"} v={hasInsurance ? `−$${covered.toFixed(2)}` : "—"} tone={hasInsurance ? "wellness" : undefined} />
-            <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">Estimated total</span><span className="font-display text-lg font-extrabold text-ink tnum">${total$.toFixed(2)}</span></div>
+            <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">Estimated total</span><span className="font-display text-lg font-medium text-ink tnum">${total$.toFixed(2)}</span></div>
           </Card>
         </div>
       </EntryFlow>
@@ -375,7 +375,7 @@ export function FillPrescription() {
               { id: "standard", t: "Standard", d: "Free · 1–3 business days" },
               { id: "sameday", t: "Same-day", d: "Select locations · free" },
             ] as const).map((o) => (
-              <button key={o.id} onClick={() => set({ speed: o.id })} className={"rounded-2xl border p-4 text-left " + (s.speed === o.id ? "border-primary bg-primary-subtle" : "border-line bg-surface-2 hover:bg-[color:var(--pp-primary-100)]")}>
+              <button key={o.id} onClick={() => set({ speed: o.id })} className={"rounded-2xl border p-4 text-left " + (s.speed === o.id ? "border-primary bg-primary-subtle" : "border-line bg-surface-2 hover:bg-[color:var(--state-hover)]")}>
                 <p className="font-semibold text-ink">{o.t}</p><p className="text-sm text-ink-tertiary">{o.d}</p>
               </button>
             ))}
@@ -414,7 +414,7 @@ export function FillPrescription() {
           <Row k="Dispensing fee" v={`$${(s.meds.length ? DISPENSING_FEE : 0).toFixed(2)}`} />
           <Row k="Delivery" v="FREE" tone="wellness" />
           {hasInsurance && <Row k={`Insurance (~${Math.round(rate * 100)}%)`} v={`−$${covered.toFixed(2)}`} tone="wellness" />}
-          <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">Due today</span><span className="font-display text-xl font-extrabold text-ink tnum">${total$.toFixed(2)}</span></div>
+          <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">Due today</span><span className="font-display text-xl font-medium text-ink tnum">${total$.toFixed(2)}</span></div>
         </Card>
       </EntryFlow>
     );
@@ -461,7 +461,7 @@ function Confirmation({ state, total, onHome, onTrack }: { state: State; total: 
       ) : (
         <div className="animate-fade-up text-center">
           <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-wellness-subtle text-3xl">🎉</span>
-          <h1 className="mt-5 text-3xl font-extrabold text-ink">Order placed</h1>
+          <h1 className="mt-5 text-3xl font-medium text-ink">Order placed</h1>
           <p className="mt-2 text-ink-secondary">
             {state.meds.length} medication{state.meds.length === 1 ? "" : "s"} · {state.packaging === "pocketpacks" ? "PocketPacks" : "vials"}
             {total > 0 ? ` · $${total.toFixed(2)} charged` : " · covered by your plan"}.

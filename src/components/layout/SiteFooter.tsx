@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/lib/user";
 import { LogoMark } from "@/components/Logo";
+import { CONTAINER, FOOTER_GAP } from "@/components/layout/Grid";
 
 const CDN = "https://static.pocketpills.com/acq-web";
 const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = "none"; };
@@ -52,40 +53,46 @@ function ArrowRight({ w = 16 }: { w?: number }) {
 }
 
 function StoreBadge({ kind }: { kind: "ios" | "android" }) {
+  const label = kind === "ios" ? "Download on the App Store" : "Get it on Google Play";
   return (
     <a href="#" className="inline-flex w-[172px] items-center gap-3 rounded-lg bg-black px-4 py-2 text-white transition-opacity hover:opacity-85 active:opacity-75">
       {kind === "ios" ? (
         <svg width="24" height="28" viewBox="0 0 24 28" fill="white" aria-hidden><path d="M17.05 14.9c.03-2.6 2.13-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.9-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.65 3.24 2.6 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.38.81 1.4-.02 2.28-1.27 3.13-2.53.99-1.45 1.4-2.85 1.42-2.92-.03-.01-2.72-1.04-2.72-4.12zM14.5 6.5c.71-.87 1.19-2.07 1.06-3.27-1.02.04-2.26.68-3 1.54-.66.76-1.24 1.98-1.08 3.15 1.14.09 2.3-.58 3.02-1.42z" /></svg>
       ) : (
-        <svg width="24" height="26" viewBox="0 0 26 28" aria-hidden>
+        <svg width="24" height="26" viewBox="0 0 24 26" aria-hidden>
           <path d="M3 2.2c-.3.32-.48.8-.48 1.44v20.72c0 .64.18 1.12.5 1.42l.07.07 11.6-11.6v-.27L3.07 2.14 3 2.2z" fill="#00A0FF" />
           <path d="M18.6 18.13l-3.9-3.9v-.28l3.9-3.9.09.05 4.6 2.62c1.32.75 1.32 1.97 0 2.72l-4.6 2.62-.09.07z" fill="#FFBD00" />
           <path d="M18.7 18.06l-4-4L3 25.78c.43.46 1.15.52 1.96.06l13.74-7.78z" fill="#FF3A44" />
           <path d="M18.7 10.1L4.96 2.32C4.15 1.86 3.43 1.92 3 2.38l11.7 11.68 4-3.96z" fill="#00F076" />
         </svg>
       )}
-      <span className="text-left leading-tight">
-        <span className="block text-2xs font-medium tracking-wide">{kind === "ios" ? "Download on the" : "GET IT ON"}</span>
-        <span className="block text-md font-semibold leading-tight">{kind === "ios" ? "App Store" : "Google Play"}</span>
+      <span className="flex flex-col leading-tight">
+        <span className="text-[9px] opacity-80">{kind === "ios" ? "Download on the" : "GET IT ON"}</span>
+        <span className="text-sm font-semibold">{kind === "ios" ? "App Store" : "Google Play"}</span>
       </span>
+      <span className="sr-only">{label}</span>
     </a>
   );
 }
 
-/* ── Social icons ─────────────────────────────────────── */
 const SOCIAL_FILL = "#4E2A84";
 function Social() {
   return (
     <div className="flex items-center gap-3">
-      <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 25" fill="none"><path d="M12 2.96758C15.2063 2.96758 15.5859 2.98164 16.8469 3.03789C18.0187 3.08945 18.6516 3.28633 19.0734 3.45039C19.6313 3.66602 20.0344 3.92852 20.4516 4.3457C20.8734 4.76758 21.1313 5.16602 21.3469 5.72383C21.5109 6.1457 21.7078 6.7832 21.7594 7.95039C21.8156 9.21601 21.8297 9.5957 21.8297 12.7973C21.8297 16.0035 21.8156 16.3832 21.7594 17.6441C21.7078 18.816 21.5109 19.4488 21.3469 19.8707C21.1313 20.4285 20.8687 20.8316 20.4516 21.2488C20.0297 21.6707 19.6313 21.9285 19.0734 22.1441C18.6516 22.3082 18.0141 22.5051 16.8469 22.5566C15.5813 22.6129 15.2016 22.627 12 22.627C8.79375 22.627 8.41406 22.6129 7.15313 22.5566C5.98125 22.5051 5.34844 22.3082 4.92656 22.1441C4.36875 21.9285 3.96562 21.666 3.54844 21.2488C3.12656 20.827 2.86875 20.4285 2.65312 19.8707C2.48906 19.4488 2.29219 18.8113 2.24062 17.6441C2.18438 16.3785 2.17031 15.9988 2.17031 12.7973C2.17031 9.59101 2.18438 9.21133 2.24062 7.95039C2.29219 6.77851 2.48906 6.1457 2.65312 5.72383C2.86875 5.16602 3.13125 4.76289 3.54844 4.3457C3.97031 3.92383 4.36875 3.66602 4.92656 3.45039C5.34844 3.28633 5.98594 3.08945 7.15313 3.03789C8.41406 2.98164 8.79375 2.96758 12 2.96758ZM12 0.806641C8.74219 0.806641 8.33438 0.820703 7.05469 0.876953C5.77969 0.933203 4.90312 1.13945 4.14375 1.43477C3.35156 1.74414 2.68125 2.15195 2.01562 2.82227C1.34531 3.48789 0.9375 4.1582 0.628125 4.9457C0.332812 5.70977 0.126563 6.58164 0.0703125 7.85664C0.0140625 9.14102 0 9.54883 0 12.8066C0 16.0645 0.0140625 16.4723 0.0703125 17.752C0.126563 19.027 0.332812 19.9035 0.628125 20.6629C0.9375 21.4551 1.34531 22.1254 2.01562 22.791C2.68125 23.4566 3.35156 23.8691 4.13906 24.1738C4.90313 24.4691 5.775 24.6754 7.05 24.7316C8.32969 24.7879 8.7375 24.802 11.9953 24.802C15.2531 24.802 15.6609 24.7879 16.9406 24.7316C18.2156 24.6754 19.0922 24.4691 19.8516 24.1738C20.6391 23.8691 21.3094 23.4566 21.975 22.791C22.6406 22.1254 23.0531 21.4551 23.3578 20.6676C23.6531 19.9035 23.8594 19.0316 23.9156 17.7566C23.9719 16.477 23.9859 16.0691 23.9859 12.8113C23.9859 9.55352 23.9719 9.1457 23.9156 7.86602C23.8594 6.59102 23.6531 5.71445 23.3578 4.95508C23.0625 4.1582 22.6547 3.48789 21.9844 2.82227C21.3188 2.15664 20.6484 1.74414 19.8609 1.43945C19.0969 1.14414 18.225 0.937891 16.95 0.881641C15.6656 0.820703 15.2578 0.806641 12 0.806641Z" fill={SOCIAL_FILL} /><path d="M12 6.64258C8.59687 6.64258 5.83594 9.40351 5.83594 12.8066C5.83594 16.2098 8.59687 18.9707 12 18.9707C15.4031 18.9707 18.1641 16.2098 18.1641 12.8066C18.1641 9.40351 15.4031 6.64258 12 6.64258ZM12 16.8051C9.79219 16.8051 8.00156 15.0145 8.00156 12.8066C8.00156 10.5988 9.79219 8.8082 12 8.8082C14.2078 8.8082 15.9984 10.5988 15.9984 12.8066C15.9984 15.0145 14.2078 16.8051 12 16.8051Z" fill={SOCIAL_FILL} /><path d="M19.8469 6.39878C19.8469 7.19566 19.2 7.83785 18.4078 7.83785C17.6109 7.83785 16.9687 7.19097 16.9687 6.39878C16.9687 5.60191 17.6156 4.95972 18.4078 4.95972C19.2 4.95972 19.8469 5.6066 19.8469 6.39878Z" fill={SOCIAL_FILL} /></svg></a>
-      <a href="#" aria-label="LinkedIn"><svg width="18" height="18" viewBox="0 0 24 25" fill="none"><path d="M22.2234 0.806641H1.77187C0.792187 0.806641 0 1.58008 0 2.53633V23.0723C0 24.0285 0.792187 24.8066 1.77187 24.8066H22.2234C23.2031 24.8066 24 24.0285 24 23.077V2.53633C24 1.58008 23.2031 0.806641 22.2234 0.806641ZM7.12031 21.2582H3.55781V9.80195H7.12031V21.2582ZM5.33906 8.24102C4.19531 8.24102 3.27187 7.31758 3.27187 6.17851C3.27187 5.03945 4.19531 4.11602 5.33906 4.11602C6.47812 4.11602 7.40156 5.03945 7.40156 6.17851C7.40156 7.31289 6.47812 8.24102 5.33906 8.24102ZM20.4516 21.2582H16.8937V15.6895C16.8937 14.3629 16.8703 12.652 15.0422 12.652C13.1906 12.652 12.9094 14.1004 12.9094 15.5957V21.2582H9.35625V9.80195H12.7687V11.3676H12.8156C13.2891 10.4676 14.4516 9.51602 16.1812 9.51602C19.7859 9.51602 20.4516 11.8879 20.4516 14.9723V21.2582Z" fill={SOCIAL_FILL} /></svg></a>
-      <a href="#" aria-label="X"><svg width="17" height="17" viewBox="0 0 22 21" fill="none"><path d="M17.3263 0.710938H20.6998L13.3297 9.13443L22 20.5969H15.2112L9.89403 13.645L3.80995 20.5969H0.434432L8.31743 11.587L0 0.710938H6.96111L11.7674 7.06527L17.3263 0.710938ZM16.1423 18.5777H18.0116L5.94539 2.62407H3.93946L16.1423 18.5777Z" fill={SOCIAL_FILL} /></svg></a>
-      <a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 25" fill="none"><path d="M12 0.806641C5.37264 0.806641 0 6.17928 0 12.8066C0 18.4342 3.87456 23.1564 9.10128 24.4534V16.4738H6.62688V12.8066H9.10128V11.2265C9.10128 7.14216 10.9498 5.24904 14.9597 5.24904C15.72 5.24904 17.0318 5.39832 17.5685 5.54712V8.87112C17.2853 8.84136 16.7933 8.82648 16.1822 8.82648C14.2147 8.82648 13.4544 9.57192 13.4544 11.5097V12.8066H17.3741L16.7006 16.4738H13.4544V24.7188C19.3963 24.0012 24.0005 18.942 24.0005 12.8066C24 6.17928 18.6274 0.806641 12 0.806641Z" fill={SOCIAL_FILL} /></svg></a>
+      {[
+        <svg key="ig" width="20" height="20" viewBox="0 0 24 24" fill={SOCIAL_FILL} aria-label="Instagram"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.9.2 2.3.4.6.2 1 .5 1.5 1 .4.4.7.9 1 1.5.2.4.4 1.1.4 2.3.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.9-.4 2.3-.2.6-.5 1-1 1.5-.4.4-.9.7-1.5 1-.4.2-1.1.4-2.3.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.5-1.5-1-.4-.4-.7-.9-1-1.5-.2-.4-.4-1.1-.4-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.9.4-2.3.2-.6.5-1 1-1.5.4-.4.9-.7 1.5-1 .4-.2 1.1-.4 2.3-.4C8.4 2.2 8.8 2.2 12 2.2zm0 1.8c-3.2 0-3.5 0-4.8.1-1 .1-1.6.2-1.9.4-.5.2-.8.4-1.1.7-.3.3-.5.6-.7 1.1-.2.4-.3.9-.4 1.9-.1 1.2-.1 1.6-.1 4.8s0 3.5.1 4.8c.1 1 .2 1.6.4 1.9.2.5.4.8.7 1.1.3.3.6.5 1.1.7.4.2.9.3 1.9.4 1.2.1 1.6.1 4.8.1s3.5 0 4.8-.1c1-.1 1.6-.2 1.9-.4.5-.2.8-.4 1.1-.7.3-.3.5-.6.7-1.1.2-.4.3-.9.4-1.9.1-1.2.1-1.6.1-4.8s0-3.5-.1-4.8c-.1-1-.2-1.6-.4-1.9-.2-.5-.4-.8-.7-1.1-.3-.3-.6-.5-1.1-.7-.4-.2-.9-.3-1.9-.4-1.2-.1-1.6-.1-4.8-.1zm0 3.1a4.9 4.9 0 1 1 0 9.8 4.9 4.9 0 0 1 0-9.8zm0 8.1a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zm6.4-8.3a1.2 1.2 0 1 1-2.3 0 1.2 1.2 0 0 1 2.3 0z" /></svg>,
+        <svg key="fb" width="20" height="20" viewBox="0 0 24 24" fill={SOCIAL_FILL} aria-label="Facebook"><path d="M14 8.2h2.5V5H14c-2.4 0-4.4 2-4.4 4.4V12H7v3.5h2.6V22h3.5v-6.5H16L16.7 12h-3.6V9.4c0-.7.5-1.2 1-1.2z" /></svg>,
+        <svg key="x" width="20" height="20" viewBox="0 0 24 24" fill={SOCIAL_FILL} aria-label="X"><path d="M18.9 2H22l-6.8 7.8L23 22h-6.5l-5.1-6.6L5.7 22H2.5l7.3-8.3L1 2h6.6l4.6 6L18.9 2zm-1.1 18h1.8L6.3 3.9H4.4L17.8 20z" /></svg>,
+        <svg key="yt" width="20" height="20" viewBox="0 0 24 24" fill={SOCIAL_FILL} aria-label="YouTube"><path d="M23.5 7.2a3 3 0 0 0-2.1-2.1C19.5 4.6 12 4.6 12 4.6s-7.5 0-9.4.5A3 3 0 0 0 .5 7.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 4.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-4.8zM9.8 15.5v-7l6.3 3.5-6.3 3.5z" /></svg>,
+      ].map((icon) => (
+        <a key={icon.key} href="#" className="grid h-9 w-9 place-items-center rounded-full transition-colors hover:bg-[color:var(--state-hover)]" aria-label={String(icon.key)}>
+          {icon}
+        </a>
+      ))}
     </div>
   );
 }
 
-/* ── Footer ───────────────────────────────────────────── */
 const PROVINCES = [
   "Alberta (AB)", "British Columbia (BC)", "Manitoba (MB)", "Newfoundland & Labrador (NL)",
   "New Brunswick (NB)", "Nova Scotia (NS)", "Northwest Territories (NT)", "Nunavut (NU)",
@@ -93,10 +100,10 @@ const PROVINCES = [
 ];
 
 const COLUMNS: { head: string; links: [string, string][]; cta: [string, string] }[] = [
-  { head: "Treatment", links: [["Treatment", "/find-care"], ["Weight loss", "/find-care"], ["Hair loss treatment", "/find-care"], ["ED treatment", "/find-care"], ["Birth control pills", "/treatment/birth-control"]], cta: ["See all treatments", "/find-care"] },
-  { head: "Pharmacy", links: [["Online pharmacy", "/pharmacy"], ["Transfer a prescription", "/transfer"], ["Online drugstore", "/drug"], ["Drug prices", "/drug"]], cta: ["Get online prescription", "/find-care"] },
-  { head: "Medications", links: [["Ozempic", "/drug/ozempic"], ["Wegovy", "/drug/wegovy"], ["Modafinil", "/drug/modafinil"], ["Mounjaro", "/drug/mounjaro"], ["Finasteride", "/drug/finasteride"]], cta: ["Buy drugs online", "/drug"] },
-  { head: "Company", links: [["About Us", "/find-care"], ["Contact Pocketpills", "/messages"], ["Help Center", "/drug"], ["FAQs", "#faq"], ["Accessibility", "/drug"]], cta: ["Join Pocketpills", "/get-started"] },
+  { head: "Treatment", links: [["Weight loss", "/find-care"], ["Hair loss", "/find-care"], ["Erectile dysfunction", "/find-care"], ["Birth control", "/treatment/birth-control"]], cta: ["See all treatments", "/find-care"] },
+  { head: "Pharmacy", links: [["Fill a prescription", "/fill"], ["Transfer a prescription", "/transfer"], ["Find medications", "/drug"], ["How it works", "/#how"]], cta: ["Get started", "/get-started"] },
+  { head: "Medications", links: [["Ozempic", "/drug/ozempic"], ["Browse A–Z", "/drug"], ["Drug information", "/drug"]], cta: ["Search prices", "/drug"] },
+  { head: "Company", links: [["About", "/#faq"], ["Careers", "/#faq"], ["Press", "/#faq"], ["Help centre", "/messages"]], cta: ["Contact us", "/messages"] },
 ];
 
 export type FooterVariant = "full" | "compact" | "none";
@@ -107,11 +114,14 @@ function useFooterVariant(): FooterVariant {
   const { signedIn } = useUser();
   if (pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer") return "none";
   if (pathname === "/login" || pathname === "/get-started") return "none";
-  // The landing page is marketing: it always shows the full footer, signed in or not.
   if (pathname === "/") return "full";
   return signedIn ? "compact" : "full";
 }
 
+/**
+ * Footer is full-bleed white (edge-to-edge), contrasting the lavender body.
+ * Inner content uses the same CONTAINER gutters as landing sections so edges align.
+ */
 export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string) => void; variant?: FooterVariant } = {}) {
   const nav = useNavigate();
   const derived = useFooterVariant();
@@ -121,162 +131,192 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
   if (variant === "none") return null;
 
   return (
-    <section className="mx-auto flex w-full max-w-[105rem] flex-col gap-6 px-5 pb-12 md:px-8 xl:px-20">
-      {/* Stay in control + Get Started — conversion block, public pages only */}
-      {variant === "full" && (<>
-      <div className="grid justify-center gap-6 md:gap-12 lg:grid-cols-[minmax(0,50rem)_1fr]">
-        <div className="relative flex w-full flex-col gap-16 overflow-hidden rounded-2xl bg-[color:var(--pp-primary-950)] p-6 md:rounded-3xl sm:p-12">
-          {/* decorative shapes */}
-          <span className="pointer-events-none absolute -right-24 -top-32 h-[26rem] w-[26rem] rounded-full bg-[#7C4DFF]/45" aria-hidden />
-          <span className="pointer-events-none absolute right-0 top-0 h-full w-[14%] bg-[#6B3FD4]/35" aria-hidden />
-          <span className="pointer-events-none absolute -bottom-40 -left-24 h-[24rem] w-[24rem] rounded-full bg-[#5B2E9D]/40" aria-hidden />
-          <img src={`${CDN}/redesign/home/footer-background.svg`} alt="" aria-hidden loading="lazy" onError={hideOnError}
-            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40" />
+    <footer className={`${FOOTER_GAP} w-full bg-white`}>
+      <div className={`${CONTAINER} py-10 md:py-12 flex flex-col gap-10 md:gap-12`}>
+        {/* Stay in control + Get Started */}
+        {variant === "full" && (
+          <div className="grid justify-center gap-6 md:gap-12 lg:grid-cols-[minmax(0,50rem)_1fr]">
+            <div className="relative flex w-full flex-col gap-16 overflow-hidden rounded-2xl bg-[color:var(--pp-primary-950)] p-6 md:rounded-3xl sm:p-12">
+              <span className="pointer-events-none absolute -right-24 -top-32 h-[26rem] w-[26rem] rounded-full bg-[#7C4DFF]/45" aria-hidden />
+              <span className="pointer-events-none absolute right-0 top-0 h-full w-[14%] bg-[#6B3FD4]/35" aria-hidden />
+              <span className="pointer-events-none absolute -bottom-40 -left-24 h-[24rem] w-[24rem] rounded-full bg-[#5B2E9D]/40" aria-hidden />
+              <img src={`${CDN}/redesign/home/footer-background.svg`} alt="" aria-hidden loading="lazy" onError={hideOnError}
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40" />
 
-          <div className="relative flex justify-between gap-6">
-            <div className="flex w-full flex-col gap-6">
-              <LogoMark className="h-11 w-11 text-white" />
-              <h2 className="font-display text-5xl font-medium leading-[1.12] tracking-tight text-white">
-                Stay in control<br />of your health.
-              </h2>
-            </div>
-            <div className="hidden shrink-0 flex-col gap-2 sm:flex">
-              <StoreBadge kind="ios" />
-              <StoreBadge kind="android" />
-            </div>
-          </div>
+              <div className="relative flex justify-between gap-6">
+                <div className="flex w-full flex-col gap-6">
+                  <LogoMark className="h-11 w-11 text-white" />
+                  <h2 className="font-display text-4xl font-medium leading-[1.12] tracking-tight text-white md:text-5xl">
+                    Stay in control<br />of your health.
+                  </h2>
+                </div>
+                <div className="hidden shrink-0 flex-col gap-2 sm:flex">
+                  <StoreBadge kind="ios" />
+                  <StoreBadge kind="android" />
+                </div>
+              </div>
 
-          {/* Care Team */}
-          <div className="relative flex flex-col justify-between gap-10 rounded-2xl bg-white p-8 sm:flex-row sm:gap-6 md:p-10">
-            <div className="flex flex-col gap-4">
-              <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">Our Care Team</h2>
-              <p className="text-base leading-relaxed text-ink-secondary">Monday - Saturday<br />9:00 AM - 7:00 PM EST</p>
-              <span className="inline-flex w-max items-center gap-2 rounded-full bg-[#FDE8E8] px-3 py-1.5 text-sm font-medium text-[#D9534F]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#D9534F]" />Closed Now
-              </span>
-            </div>
+              <div className="relative flex flex-col justify-between gap-10 rounded-2xl bg-white p-8 sm:flex-row sm:gap-6 md:p-10">
+                <div className="flex flex-col gap-4">
+                  <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">Our Care Team</h2>
+                  <p className="text-base leading-relaxed text-ink-secondary">Monday - Saturday<br />9:00 AM - 7:00 PM EST</p>
+                  <span className="inline-flex w-max items-center gap-2 rounded-full bg-[#FDE8E8] px-3 py-1.5 text-sm font-medium text-[#D9534F]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#D9534F]" />Closed Now
+                  </span>
+                </div>
 
-            <div className="flex flex-col justify-between gap-8">
-              <div className="flex flex-col gap-3">
-                {[["EMAIL", "care@pocketpills.com"], ["TEXT", "1-855-950-7225"], ["FAX", "1-855-950-7226"]].map(([k, v]) => (
-                  <div key={k} className="flex items-center gap-8">
-                    <p className="mb-0 w-12 text-2xs font-semibold tracking-[0.1em] text-ink-tertiary">{k}</p>
-                    <span className="text-base text-[color:var(--pp-primary-950)] hover:underline">{v}</span>
+                <div className="flex flex-col justify-between gap-8">
+                  <div className="flex flex-col gap-3">
+                    {[["EMAIL", "care@pocketpills.com"], ["TEXT", "1-855-950-7225"], ["FAX", "1-855-950-7226"]].map(([k, v]) => (
+                      <div key={k} className="flex items-center gap-8">
+                        <p className="mb-0 w-12 text-2xs font-semibold tracking-[0.1em] text-ink-tertiary">{k}</p>
+                        <span className="text-base text-[color:var(--pp-primary-950)] hover:underline">{v}</span>
+                      </div>
+                    ))}
                   </div>
+                  <button onClick={() => go("/messages")}
+                    className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-[color:var(--pp-primary-950)] px-6 py-3 text-base font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]">
+                    Get In Touch <ArrowRight w={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Get Started tiles — soft fill on white footer */}
+            <div className="flex h-full">
+              <div className="grid grow grid-cols-2 gap-6 rounded-2xl bg-[color:var(--primary-200)] p-8 md:rounded-3xl sm:p-12">
+                {(Object.keys(TILE) as TileId[]).map((id) => (
+                  <button key={id} onClick={() => go(TILE[id].to)}
+                    className="flex flex-col items-center justify-center gap-5 rounded-2xl p-4 text-center transition-colors hover:bg-white/70">
+                    <TileIcon64 id={id} />
+                    <p className="text-base text-[color:var(--pp-primary-950)]">{TILE[id].label}</p>
+                  </button>
                 ))}
               </div>
-              <button onClick={() => go("/messages")}
-                className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-[color:var(--pp-primary-950)] px-6 py-3 text-base font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]">
-                Get In Touch <ArrowRight w={18} />
-              </button>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Get Started tiles */}
-        <div className="flex h-full">
-          <div className="grid grow grid-cols-2 gap-6 rounded-2xl bg-[color:var(--pp-primary-100)] p-8 md:rounded-3xl sm:p-12">
-            {(Object.keys(TILE) as TileId[]).map((id) => (
-              <button key={id} onClick={() => go(TILE[id].to)}
-                className="flex flex-col items-center justify-center gap-5 rounded-2xl p-4 text-center transition-transform">
-                <TileIcon64 id={id} />
-                <p className="text-base text-[color:var(--pp-primary-950)]">{TILE[id].label}</p>
-              </button>
-            ))}
+        {/* Delivery + license — denser, balanced width */}
+        <div className="grid items-start gap-8 border-t border-line pt-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12">
+          <div>
+            <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
+              Pocketpills delivers to:
+            </h2>
+            <ul className="mt-5 flex flex-wrap gap-2" aria-label="Delivery regions">
+              {PROVINCES.map((p) => {
+                const m = p.match(/^(.+?)\s*\(([^)]+)\)$/);
+                const name = m ? m[1] : p;
+                const code = m ? m[2] : "";
+                return (
+                  <li
+                    key={p}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--primary-200)] px-3 py-1.5 text-sm text-[color:var(--pp-primary-950)]"
+                  >
+                    <span className="font-medium">{name}</span>
+                    {code && <span className="text-2xs text-ink-tertiary">{code}</span>}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
-        </div>
-      </div>
 
-      </>)}
-
-      {/* Delivers to + links + legal */}
-      <div className="flex flex-col gap-10 rounded-2xl bg-[color:var(--pp-primary-200)] px-3 py-8 md:rounded-3xl md:p-12">
-        <div className="grid gap-10 px-3 py-8 sm:grid-cols-2 sm:gap-0 sm:p-0">
-          <div className="flex flex-col gap-6 p-0 sm:py-8">
-            <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">Pocketpills delivers to:</h2>
-            <div className="grid grid-cols-1 gap-y-2 md:grid-cols-2">
-              {PROVINCES.map((p) => <span key={p} className="text-sm text-[color:var(--pp-primary-950)]">{p}</span>)}
-            </div>
-          </div>
-          <div className="flex flex-col gap-6 rounded-2xl bg-[#E5E3FF80] px-4 py-8 sm:p-8">
-            <div className="flex flex-col gap-6 text-sm text-ink-secondary">
-              <p className="text-2xs font-bold uppercase tracking-[0.12em]">Your Region</p>
-              <div className="flex flex-col gap-3">
-                <h2 className="font-display text-lg font-bold text-[color:var(--pp-primary-950)]">Pocketpills East</h2>
-                <p className="text-2xs font-medium uppercase tracking-wide hover:underline">Unit 6 - 6375 Dixie Rd, Mississauga, ON, L5T 2E7</p>
+          <aside className="rounded-2xl border border-line/80 bg-[color:var(--primary-200)] p-5 sm:p-6">
+            <p className="pp-caps text-ink-tertiary">Your region</p>
+            <h3 className="mt-2 font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
+              Pocketpills East
+            </h3>
+            <p className="mt-1 text-sm leading-snug text-ink-secondary">
+              Unit 6 - 6375 Dixie Rd, Mississauga, ON, L5T 2E7
+            </p>
+            <p className="mt-4 text-sm leading-snug text-[color:var(--pp-primary-950)]">
+              Licensed by{" "}
+              <span className="font-medium text-[color:var(--pp-violet)]">Ontario College of Pharmacists</span>
+            </p>
+            <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <dt className="text-2xs text-ink-tertiary">License No.</dt>
+                <dd className="mt-0.5 font-medium text-[color:var(--pp-primary-800)]">#307234</dd>
               </div>
-            </div>
-            <div className="flex flex-col gap-4">
-              <p className="text-sm text-[color:var(--pp-primary-950)]">
-                Pocketpills is licensed by <span className="text-[color:var(--pp-violet)] hover:underline">Ontario College of Pharmacists</span>
-              </p>
-              <div className="flex justify-between text-sm">
-                <div className="flex flex-col"><p className="text-ink-secondary">Pharmacy License No.</p><p className="text-[color:var(--pp-primary-800)]">#307234</p></div>
-                <div className="flex flex-col"><p className="text-ink-secondary">Pharmacy Manager</p><p className="text-[color:var(--pp-primary-800)]">Aisha Abo Saada</p></div>
+              <div>
+                <dt className="text-2xs text-ink-tertiary">Pharmacy Manager</dt>
+                <dd className="mt-0.5 font-medium text-[color:var(--pp-primary-800)]">Aisha Abo Saada</dd>
               </div>
-            </div>
-          </div>
+            </dl>
+          </aside>
         </div>
 
-        <div className="border-t border-line" />
-
-        <div className="grid w-full grid-cols-2 gap-8 md:grid-cols-4">
+        {/* Link directories — clearer hierarchy, full usable width */}
+        <nav aria-label="Footer" className="grid grid-cols-2 gap-x-6 gap-y-8 border-t border-line pt-10 sm:grid-cols-4 sm:gap-8">
           {COLUMNS.map((c) => (
-            <div key={c.head} className="flex flex-col gap-6">
-              <h4 className="text-2xs font-bold uppercase tracking-[0.12em] text-ink-tertiary">{c.head}</h4>
-              <ul className="space-y-3">
+            <div key={c.head} className="min-w-0">
+              <h4 className="pp-caps text-[color:var(--pp-violet)]">{c.head}</h4>
+              <ul className="mt-4 space-y-2.5">
                 {c.links.map(([l, to]) => (
-                  <li key={l} className="text-sm text-ink-secondary">
-                    {to.startsWith("#") ? <a href={to} className="hover:text-[color:var(--pp-violet)]">{l}</a>
-                      : <Link to={to} className="hover:text-[color:var(--pp-violet)]">{l}</Link>}
+                  <li key={l}>
+                    {to.startsWith("#") || to.includes("/#") ? (
+                      <a href={to.includes("#") ? to.slice(to.indexOf("#")) : to} className="text-sm text-ink-secondary transition-colors hover:text-[color:var(--pp-primary-950)]">
+                        {l}
+                      </a>
+                    ) : (
+                      <Link to={to} className="text-sm text-ink-secondary transition-colors hover:text-[color:var(--pp-primary-950)]">
+                        {l}
+                      </Link>
+                    )}
                   </li>
                 ))}
-                <li>
-                  <button onClick={() => go(c.cta[1])} className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--pp-primary-950)] hover:underline">
-                    {c.cta[0]} <ArrowRight />
+                <li className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => go(c.cta[1])}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-80"
+                  >
+                    {c.cta[0]} <ArrowRight w={14} />
                   </button>
                 </li>
               </ul>
             </div>
           ))}
-        </div>
+        </nav>
 
-        <div className="border-t border-line" />
-
-        {/* utility row — inside the card */}
-        <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-          <div className="flex flex-wrap items-center gap-4">
-            <Social />
-            <button className="flex items-center gap-2 rounded-md border border-line bg-white transition-colors hover:bg-[color:var(--pp-primary-100)] px-2.5 py-1.5 text-sm text-ink-secondary">
-              EN
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="m6 9 6 6 6-6" /></svg>
-            </button>
-            <p className="text-xs text-ink-tertiary">Pocketpills is not a pharmacy&nbsp; or a drug manufacturer</p>
-          </div>
-
-          <div className="flex flex-col items-center gap-2">
-            <h3 className="text-2xs font-semibold uppercase tracking-[0.14em] text-ink-tertiary">Certifications</h3>
-            <div className="flex items-center gap-3">
-              <img loading="lazy" onError={hideOnError} src={`${CDN}/images/landing/footer/legitScript_logo.png`} width={52} height={52} alt="LegitScript approved" />
-              <img loading="lazy" onError={hideOnError} src="https://static.pocketpills.com/webapp/rebrand/landing/logo_soc2.webp" width={52} height={52} className="h-[52px]" alt="SOC 2 certification" />
+        {/* Bottom bar — social, certs, legal in one compact band */}
+        <div className="flex flex-col gap-6 border-t border-line pt-8">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <Social />
+              <button
+                type="button"
+                className="flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 text-sm text-ink-secondary transition-colors hover:bg-[color:var(--state-hover)]"
+              >
+                EN
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+            </div>
+            <div className="flex items-center gap-4">
+              <p className="pp-caps text-ink-tertiary">Certifications</p>
+              <div className="flex items-center gap-3">
+                <img loading="lazy" onError={hideOnError} src={`${CDN}/images/landing/footer/legitScript_logo.png`} width={44} height={44} alt="LegitScript approved" className="h-11 w-11 object-contain" />
+                <img loading="lazy" onError={hideOnError} src="https://static.pocketpills.com/webapp/rebrand/landing/logo_soc2.webp" width={44} height={44} alt="SOC 2 certification" className="h-11 w-11 object-contain" />
+              </div>
             </div>
           </div>
+
+          <div className="flex flex-col justify-between gap-3 border-t border-line/70 pt-5 text-xs text-ink-tertiary sm:flex-row sm:items-center">
+            <p>
+              ©2026 Pocketpills · Conceptual redesign, not affiliated with Pocketpills Inc.
+              <span className="mt-1 block text-[11px] sm:mt-0 sm:ml-2 sm:inline">Pocketpills is not a pharmacy or a drug manufacturer.</span>
+            </p>
+            <nav className="flex flex-wrap items-center gap-x-1" aria-label="Legal">
+              {["Security", "Terms of Use", "Privacy Policy", "Return Policy"].map((l, i, a) => (
+                <span key={l} className="flex items-center">
+                  <a href="#faq" className="hover:text-[color:var(--pp-violet)]">{l}</a>
+                  {i < a.length - 1 && <span className="px-2.5 text-ink-tertiary/50" aria-hidden>|</span>}
+                </span>
+              ))}
+            </nav>
+          </div>
         </div>
       </div>
-
-      {/* legal bar — outside the card */}
-      <div className="flex flex-col justify-between gap-2 px-2 pt-2 text-xs text-ink-secondary sm:flex-row">
-        <span>©2026 Pocketpills · Conceptual redesign, not affiliated with Pocketpills Inc.</span>
-        <span className="flex flex-wrap items-center">
-          {["Security", "Terms of Use", "Privacy Policy", "Return Policy"].map((l, i, a) => (
-            <span key={l} className="flex items-center">
-              <a href="#faq" className="hover:text-[color:var(--pp-violet)]">{l}</a>
-              {i < a.length - 1 && <span className="px-3 text-ink-tertiary">|</span>}
-            </span>
-          ))}
-        </span>
-      </div>
-    </section>
+    </footer>
   );
 }
-

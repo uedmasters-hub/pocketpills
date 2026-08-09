@@ -44,7 +44,7 @@ export function DrugDetail() {
 
       {/* header */}
       <header className="mt-5">
-        <h1 className="font-display text-4xl font-extrabold tracking-tight text-[color:var(--pp-primary-950)]">
+        <h1 className="font-display text-4xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
           {drug.name}
         </h1>
         {drug.generic && drug.generic !== drug.name && (
@@ -78,7 +78,7 @@ export function DrugDetail() {
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_20rem]">
         {/* drug information — horizontal tabs so the prose gets full width */}
         <section>
-          <h2 className="font-display text-xl font-bold text-[color:var(--pp-primary-950)]">Drug information</h2>
+          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">Drug information</h2>
 
           <div className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist">
             {monograph.map((m, i) => (
@@ -100,7 +100,7 @@ export function DrugDetail() {
           </div>
 
           <div className="mt-5 rounded-2xl border border-line bg-surface-2 p-6">
-            <h3 className="font-display text-md font-bold text-[color:var(--pp-primary-950)]">{monograph[tab].section}</h3>
+            <h3 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">{monograph[tab].section}</h3>
             <p className="mt-2 max-w-[62ch] text-base leading-relaxed text-ink-secondary">{monograph[tab].body}</p>
           </div>
 
@@ -138,7 +138,7 @@ export function DrugDetail() {
               <Row k={`Insurance (${drug.coverage}%)`} v={`−$${covered.toFixed(2)}`} tone />
               <div className="flex items-center justify-between border-t border-line pt-2.5">
                 <span className="font-semibold text-[color:var(--pp-primary-950)]">Total</span>
-                <span className="font-display text-xl font-extrabold text-[color:var(--pp-primary-950)] tnum">${total.toFixed(2)}</span>
+                <span className="font-display text-xl font-medium text-[color:var(--pp-primary-950)] tnum">${total.toFixed(2)}</span>
               </div>
             </div>
             <p className="mt-3 text-2xs leading-relaxed text-ink-tertiary">
@@ -155,12 +155,12 @@ export function DrugDetail() {
 
       {similar.length > 0 && (
         <section className="mt-12 border-t border-line pt-8">
-          <h2 className="font-display text-xl font-bold text-[color:var(--pp-primary-950)]">Similar medications</h2>
+          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">Similar medications</h2>
           <p className="text-sm text-ink-tertiary">Others in {drug.cls}.</p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {similar.map((d) => (
               <Link key={d.slug} to={`/drug/${d.slug}`}
-                className="rounded-2xl border border-line bg-surface-2 p-4 font-semibold text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-100)]">
+                className="rounded-2xl border border-line bg-surface-2 p-4 font-semibold text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]">
                 {d.name}
               </Link>
             ))}
