@@ -343,7 +343,7 @@ export function Messages() {
                   }
                 }}
                 placeholder={`Message ${active.who.split(" ")[0]}…`}
-                className="max-h-28 min-h-[2.5rem] flex-1 resize-none bg-transparent px-2 py-2 text-sm text-ink placeholder:text-ink-tertiary focus:outline-none"
+                className="max-h-28 min-h-[2.5rem] flex-1 resize-none bg-transparent px-2 py-2 text-sm text-ink placeholder:text-ink-tertiary"
               />
               <Button type="submit" size="sm" disabled={!compose.trim()}>
                 Send

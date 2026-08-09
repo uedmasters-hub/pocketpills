@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { Card, Field, Progress, Badge } from "@/components/ui";
+import { Card, Field, Progress, Badge, Switch } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { useUser, newInsuranceId } from "@/lib/user";
 import { SiteHeader } from "@/components/layout/SiteHeader";
@@ -569,7 +569,7 @@ export function SignUp() {
           <p className="pp-caps text-[color:var(--pp-violet)]">Join PocketPills</p>
           <p className="text-xs text-ink-tertiary tnum">Step {step + 1} of {STEPS.length}</p>
         </div>
-        <Progress value={((step + 1) / STEPS.length) * 100} />
+        <Progress value={((step + 1) / STEPS.length) * 100} label={`Step ${step + 1} of ${STEPS.length}`} />
       </div>
 
       <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
@@ -606,19 +606,25 @@ export function SignUp() {
         {step === 2 && (
           <>
             <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-ink-secondary">Province</span>
-              <select value={f.province} onChange={(e) => set("province", e.target.value)} className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3 text-ink focus:border-primary">
+              <span className="mb-1.5 block text-sm font-medium text-ink-secondary" id="auth-province-label">Province</span>
+              <select
+                value={f.province}
+                onChange={(e) => set("province", e.target.value)}
+                aria-labelledby="auth-province-label"
+                className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3 text-ink focus:border-primary"
+              >
                 {["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"].map((p) => <option key={p}>{p}</option>)}
               </select>
             </label>
             <Field label="Health card number (optional)" value={f.healthCard} onChange={(e) => set("healthCard", e.target.value)} />
-            <label className="flex cursor-pointer items-center justify-between gap-4 border-t border-line pt-4">
-              <span><span className="font-semibold text-ink">I have private insurance</span><span className="mt-0.5 block text-sm text-ink-tertiary">We'll bill your plan directly.</span></span>
-              <span onClick={() => set("hasInsurance", !f.hasInsurance)} role="switch" aria-checked={f.hasInsurance} tabIndex={0}
-                className={"relative h-7 w-12 shrink-0 rounded-full transition-colors " + (f.hasInsurance ? "bg-primary" : "bg-stone-300 dark:bg-stone-600")}>
-                <span className={"absolute top-1 h-5 w-5 rounded-full bg-white transition-all " + (f.hasInsurance ? "left-6" : "left-1")} />
-              </span>
-            </label>
+            <div className="border-t border-line pt-4">
+              <Switch
+                checked={f.hasInsurance}
+                onChange={(v) => set("hasInsurance", v)}
+                label="I have private insurance"
+                desc="We'll bill your plan directly."
+              />
+            </div>
             {f.hasInsurance && (
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field label="Carrier" placeholder="Sun Life" value={f.carrier} onChange={(e) => set("carrier", e.target.value)} />

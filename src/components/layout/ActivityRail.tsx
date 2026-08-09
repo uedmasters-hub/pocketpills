@@ -193,9 +193,11 @@ export function MobileActivity() {
     <div className="lg:hidden">
       <button
         type="button"
+        id="mobile-activity-trigger"
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line bg-white px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
         aria-expanded={open}
+        aria-controls="mobile-activity-panel"
       >
         <span>
           <span className="block text-sm font-medium text-[color:var(--pp-primary-950)]">Activity</span>
@@ -210,7 +212,7 @@ export function MobileActivity() {
         </span>
       </button>
       {open && (
-        <div className="mt-3">
+        <div id="mobile-activity-panel" className="mt-3">
           <ActivityBody />
         </div>
       )}
@@ -299,9 +301,11 @@ export function MobileReview() {
     <div className="lg:hidden">
       <button
         type="button"
+        id="mobile-review-trigger"
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line bg-white px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
         aria-expanded={open}
+        aria-controls="mobile-review-panel"
       >
         <span>
           <span className="block text-sm font-medium text-[color:var(--pp-primary-950)]">Review changes</span>
@@ -314,7 +318,7 @@ export function MobileReview() {
         </span>
       </button>
       {open && (
-        <div className="mt-3">
+        <div id="mobile-review-panel" className="mt-3">
           <ReviewBody />
         </div>
       )}

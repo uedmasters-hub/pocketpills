@@ -121,7 +121,7 @@ export function Pharmacy() {
               const t = orderTotals(o);
               const pct = o.status === "verifying" ? 33 : o.status === "processing" ? 55 : 80;
               return (
-                <button key={o.id} onClick={() => nav(`/orders/${o.id}`)} className={`${CARD} w-full p-5 text-left transition-colors hover:bg-[color:var(--state-hover)]`}>
+                <button type="button" key={o.id} onClick={() => nav(`/orders/${o.id}`)} className={`${CARD} w-full p-5 text-left transition-colors hover:bg-[color:var(--state-hover)]`}>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold text-[color:var(--pp-primary-950)]">{o.id}</p>
@@ -129,7 +129,14 @@ export function Pharmacy() {
                     </div>
                     <StatusPill status={o.status} />
                   </div>
-                  <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-1">
+                  <div
+                    className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-1"
+                    role="progressbar"
+                    aria-valuenow={pct}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Order ${o.id} progress`}
+                  >
                     <div className="h-full rounded-full bg-[color:var(--pp-primary-950)] transition-[width] duration-500" style={{ width: `${pct}%` }} />
                   </div>
                 </button>

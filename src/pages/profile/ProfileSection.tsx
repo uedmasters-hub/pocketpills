@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useUser, newInsuranceId, primaryInsurance, fmtInsuranceList, fmtInsurancePlan, type InsurancePlan } from "@/lib/user";
 import { profileChecklist, isChecklistId, type ChecklistId } from "@/lib/profile";
 import { useReviewDraft, type ReviewChange } from "@/lib/rightRail";
+import { Switch } from "@/components/ui";
 
 const FIELD = "h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-base text-ink outline-none focus:border-primary";
 const LABEL = "mb-1.5 block text-sm font-medium text-ink-secondary";
@@ -20,23 +21,30 @@ function Text({ label, value, onChange, placeholder }: { label: string; value: s
 function Tags({ label, items, onChange, placeholder }: { label: string; items: string[]; onChange: (v: string[]) => void; placeholder: string }) {
   const [draft, setDraft] = useState("");
   const add = () => { const v = draft.trim(); if (v && !items.includes(v)) onChange([...items, v]); setDraft(""); };
+  const inputId = `tags-${label.toLowerCase().replace(/\s+/g, "-")}`;
   return (
     <div>
-      <span className={LABEL}>{label}</span>
+      <label htmlFor={inputId} className={LABEL}>{label}</label>
       <div className="flex gap-2">
-        <input className={FIELD} value={draft} placeholder={placeholder}
+        <input
+          id={inputId}
+          className={FIELD}
+          value={draft}
+          placeholder={placeholder}
           onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
-        <button onClick={add} className="shrink-0 rounded-xl border border-line px-4 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]">Add</button>
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+        />
+        <button type="button" onClick={add} className="shrink-0 rounded-xl border border-line px-4 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]">Add</button>
       </div>
       {items.length > 0 && (
-        <div className="mt-2.5 flex flex-wrap gap-2">
+        <ul className="mt-2.5 flex flex-wrap gap-2" aria-label={label}>
           {items.map((it) => (
-            <span key={it} className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--pp-primary-100)] px-3 py-1 text-sm font-medium text-[color:var(--pp-primary-950)]">
-              {it}<button onClick={() => onChange(items.filter((x) => x !== it))} aria-label={`Remove ${it}`}>✕</button>
-            </span>
+            <li key={it} className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--pp-primary-100)] px-3 py-1 text-sm font-medium text-[color:var(--pp-primary-950)]">
+              {it}
+              <button type="button" onClick={() => onChange(items.filter((x) => x !== it))} aria-label={`Remove ${it}`}>✕</button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
@@ -70,16 +78,21 @@ function QuestionCard({ q, sub, value, onAnswer }: { q: string; sub: string; val
         <span className="pointer-events-none absolute inset-y-0 right-0 w-[42%]"
           style={{ backgroundImage: "linear-gradient(120deg,#F3F1FB 0%,#DED8F5 60%,#CFC7EF 100%)" }} aria-hidden />
       </div>
-      <div className="grid grid-cols-2 border-t border-line">
-        {[["No", false], ["Yes", true]].map(([label, v]) => {
+      <div className="grid grid-cols-2 border-t border-line" role="group" aria-label={q}>
+        {([["No", false], ["Yes", true]] as const).map(([label, v]) => {
           const active = value === v;
           return (
-            <button key={String(label)} onClick={() => onAnswer(v as boolean)}
+            <button
+              key={String(label)}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onAnswer(v)}
               className={
                 "py-4 text-base font-medium transition-colors " +
                 (active ? "bg-[color:var(--pp-primary-950)] text-white" : "bg-surface-1 text-ink-secondary hover:bg-[color:var(--state-hover)]") +
                 (label === "No" ? " border-r border-line" : "")
-              }>
+              }
+            >
               {label}
             </button>
           );
@@ -331,13 +344,11 @@ export function ProfileSection() {
           </div>
         )}
         {id === "insurance" && (<>
-          <label className="flex cursor-pointer items-center justify-between gap-4">
-            <span className="text-base font-medium text-[color:var(--pp-primary-950)]">I have private insurance</span>
-            <span onClick={() => set("hasInsurance", !f.hasInsurance)} role="switch" aria-checked={f.hasInsurance} tabIndex={0}
-              className={"relative h-7 w-12 shrink-0 rounded-full transition-colors " + (f.hasInsurance ? "bg-[color:var(--pp-primary-950)]" : "bg-stone-300")}>
-              <span className={"absolute top-1 h-5 w-5 rounded-full bg-white transition-all " + (f.hasInsurance ? "left-6" : "left-1")} />
-            </span>
-          </label>
+          <Switch
+            checked={f.hasInsurance}
+            onChange={(v) => set("hasInsurance", v)}
+            label="I have private insurance"
+          />
           {f.hasInsurance && (
             <div className="grid gap-4 sm:grid-cols-3">
               <Text label="Primary carrier" value={f.carrier} onChange={(v) => set("carrier", v)} placeholder="Sun Life" />

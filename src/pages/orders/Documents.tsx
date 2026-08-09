@@ -9,7 +9,7 @@ function DocShell({ children, backTo, docName }: { children: React.ReactNode; ba
       <div className="no-print sticky top-0 z-10 border-b border-line bg-surface-1/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
           <Link to={backTo} className="text-sm font-semibold text-ink-secondary hover:text-ink">← Back to order</Link>
-          <button onClick={() => window.print()} className="inline-flex h-9 items-center rounded-full bg-cta px-4 text-sm font-medium text-white transition-colors duration-200 hover:bg-cta-hover">
+          <button type="button" onClick={() => window.print()} className="inline-flex h-9 items-center rounded-full bg-cta px-4 text-sm font-medium text-white transition-colors duration-200 hover:bg-cta-hover">
             Download / Print {docName}
           </button>
         </div>

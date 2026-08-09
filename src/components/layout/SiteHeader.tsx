@@ -184,38 +184,40 @@ function UserMenu() {
   return (
     <div className="relative" ref={ref}>
       <button
+        type="button"
+        id="user-menu-trigger"
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]"
         aria-expanded={open}
         aria-haspopup="menu"
+        aria-controls={open ? "user-menu" : undefined}
+        aria-label={`Account menu for ${displayName}`}
       >
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-2xs text-white">{initials}</span>
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-2xs text-white" aria-hidden>{initials}</span>
         <span className="hidden sm:inline">{displayName}</span>
         <span className="text-2xs opacity-60" aria-hidden>▼</span>
       </button>
       {open && (
-        <>
-          <div role="menu" className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-100)] shadow-float">
-            <div className="border-b border-line p-4">
-              <p className="font-semibold text-[color:var(--pp-primary-950)]">{displayName}</p>
-              <p className="truncate text-xs text-ink-tertiary">{user?.email}</p>
-            </div>
-            {[["My Health", "/dashboard"], ["Orders & receipts", "/orders"], ["Pharmacy", "/pharmacy"], ["Messages", "/messages"], ["Profile & settings", "/account"]].map(([label, to]) => (
-              <button key={to} role="menuitem" onClick={() => { setOpen(false); nav(to); }}
-                className="block w-full px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--state-hover)]">
-                {label}
-              </button>
-            ))}
-            <button role="menuitem" onClick={() => setDark((d) => !d)}
-              className="flex w-full items-center justify-between border-t border-line px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--state-hover)]">
-              {dark ? "Light mode" : "Dark mode"} <span aria-hidden>{dark ? "☀️" : "🌙"}</span>
-            </button>
-            <button role="menuitem" onClick={() => { setOpen(false); logOut(); nav("/"); }}
-              className="block w-full border-t border-line px-4 py-2.5 text-left text-sm font-semibold text-danger hover:bg-[color:var(--state-hover)]">
-              Sign out
-            </button>
+        <div id="user-menu" role="menu" aria-labelledby="user-menu-trigger" className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-100)] shadow-float">
+          <div className="border-b border-line p-4">
+            <p className="font-semibold text-[color:var(--pp-primary-950)]">{displayName}</p>
+            <p className="truncate text-xs text-ink-tertiary">{user?.email}</p>
           </div>
-        </>
+          {[["My Health", "/dashboard"], ["Orders & receipts", "/orders"], ["Pharmacy", "/pharmacy"], ["Messages", "/messages"], ["Profile & settings", "/account"]].map(([label, to]) => (
+            <button key={to} type="button" role="menuitem" onClick={() => { setOpen(false); nav(to); }}
+              className="block w-full px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--state-hover)]">
+              {label}
+            </button>
+          ))}
+          <button type="button" role="menuitem" onClick={() => setDark((d) => !d)}
+            className="flex w-full items-center justify-between border-t border-line px-4 py-2.5 text-left text-sm font-medium text-ink-secondary hover:bg-[color:var(--state-hover)]">
+            {dark ? "Light mode" : "Dark mode"} <span aria-hidden>{dark ? "☀️" : "🌙"}</span>
+          </button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); logOut(); nav("/"); }}
+            className="block w-full border-t border-line px-4 py-2.5 text-left text-sm font-semibold text-danger hover:bg-[color:var(--state-hover)]">
+            Sign out
+          </button>
+        </div>
       )}
     </div>
   );
@@ -467,7 +469,12 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
       <Shell hidden={hidden}>
         <Brand to="/app" />
         <div className="flex items-center gap-5 md:gap-6">
-          <a href="#" className="hidden items-center gap-2 text-[13px] font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
+          <a
+            href="https://apps.apple.com/ca/app/pocketpills-doctor-pharmacy/id1367442074"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden items-center gap-2 text-[13px] font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:text-[color:var(--pp-primary-950)] lg:inline-flex"
+          >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><rect x="7" y="2" width="10" height="20" rx="2.5" /><path d="M11 18h2" /></svg>
             Get app
           </a>

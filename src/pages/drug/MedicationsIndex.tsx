@@ -101,11 +101,12 @@ export function MedicationsIndex() {
         />
       </div>
 
-      <div className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1">
+      <div className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Filter by class">
         {["All", ...activeClasses].map((c) => (
           <button
             key={c}
             type="button"
+            aria-pressed={cls === c}
             onClick={() => setCls(c)}
             className={
               "shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors " +
@@ -129,6 +130,7 @@ export function MedicationsIndex() {
               key={L}
               type="button"
               onClick={() => jump(L)}
+              aria-label={`Jump to medications starting with ${L}`}
               className="h-7 w-7 rounded-lg text-sm font-semibold text-[color:var(--pp-violet)] hover:bg-[color:var(--state-hover)]"
             >
               {L}

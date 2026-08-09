@@ -87,9 +87,10 @@ export function DeliveryCheck() {
 
       {step === "postal" && (
         <section className="mt-8 space-y-4">
-          <label className="block">
+          <label className="block" htmlFor="delivery-postal">
             <span className="mb-1.5 block text-sm font-medium text-ink-secondary">Postal code</span>
             <input
+              id="delivery-postal"
               value={postal}
               onChange={(e) => setPostal(formatPostal(e.target.value))}
               onKeyDown={(e) => { if (e.key === "Enter") check(); }}
@@ -97,11 +98,14 @@ export function DeliveryCheck() {
               autoComplete="postal-code"
               inputMode="text"
               className="h-12 w-full rounded-xl border border-line bg-white px-4 text-base text-ink outline-none focus:border-primary"
-              aria-invalid={touched && !valid}
+              aria-invalid={touched && !valid ? true : undefined}
+              aria-describedby={touched && !valid ? "delivery-postal-error" : undefined}
             />
           </label>
           {touched && !valid && (
-            <p className="text-sm text-danger">Enter a valid Canadian postal code (e.g. M5H 2N2).</p>
+            <p id="delivery-postal-error" className="text-sm text-danger" role="alert">
+              Enter a valid Canadian postal code (e.g. M5H 2N2).
+            </p>
           )}
           <Button type="button" fullWidth onClick={check} disabled={postal.length < 3}>
             Check delivery

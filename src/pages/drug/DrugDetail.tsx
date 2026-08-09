@@ -170,13 +170,16 @@ export function DrugDetail() {
             Drug information
           </h2>
 
-          <div className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist">
+          <div className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Drug information sections">
             {monograph.map((m, i) => (
               <button
                 key={m.section}
                 type="button"
+                id={`drug-tab-${i}`}
                 role="tab"
                 aria-selected={tab === i}
+                aria-controls={`drug-panel-${i}`}
+                tabIndex={tab === i ? 0 : -1}
                 onClick={() => setTab(i)}
                 className={
                   "shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors " +
@@ -190,7 +193,12 @@ export function DrugDetail() {
             ))}
           </div>
 
-          <div className="mt-5 rounded-2xl border border-line bg-white p-6">
+          <div
+            id={`drug-panel-${tab}`}
+            role="tabpanel"
+            aria-labelledby={`drug-tab-${tab}`}
+            className="mt-5 rounded-2xl border border-line bg-white p-6"
+          >
             <h3 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">
               {monograph[tab].section}
             </h3>

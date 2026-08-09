@@ -136,13 +136,12 @@ export function FindCare() {
         />
       </div>
 
-      <div className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Filter by category">
+      <div className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Filter by category">
         {cats.map((c) => (
           <button
             key={c}
             type="button"
-            role="tab"
-            aria-selected={cat === c}
+            aria-pressed={cat === c}
             onClick={() => setCat(c)}
             className={
               "shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors " +

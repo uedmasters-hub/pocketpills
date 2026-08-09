@@ -230,7 +230,7 @@ function AppCard() {
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-3">
             <div
               className="flex gap-1"
-              role="tablist"
+              role="group"
               aria-label="Link delivery method"
             >
               {([
@@ -259,8 +259,7 @@ function AppCard() {
                   <button
                     key={tab.id}
                     type="button"
-                    role="tab"
-                    aria-selected={on}
+                    aria-pressed={on}
                     onClick={() => {
                       setMode(tab.id);
                       setSent(false);
@@ -294,6 +293,9 @@ function AppCard() {
                 {sent ? "Sent" : "Send link"}
               </button>
             </div>
+            <p className="sr-only" aria-live="polite">
+              {sent ? "Download link sent" : ""}
+            </p>
           </div>
 
           {/* Real QR — dark tile on the extreme right of the white card */}
@@ -342,14 +344,18 @@ function FaxCard() {
           type="button"
           onClick={copy}
           className="mt-5 inline-flex items-center gap-2.5 text-md font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-80"
+          aria-label={copied ? "Fax number copied" : "Copy fax number 1-855-950-7226"}
         >
           <span className="leading-none">1-855-950-7226</span>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="shrink-0" aria-hidden>
             <rect x="9" y="9" width="11" height="11" rx="2" />
             <path d="M5 15V5a2 2 0 0 1 2-2h10" />
           </svg>
-          {copied && <span className="text-xs font-medium text-wellness">Copied</span>}
+          {copied && <span className="text-xs font-medium text-wellness" aria-hidden>Copied</span>}
         </button>
+        <span className="sr-only" aria-live="polite">
+          {copied ? "Fax number copied to clipboard" : ""}
+        </span>
       </div>
 
       {/* Decorative mark — extreme right */}

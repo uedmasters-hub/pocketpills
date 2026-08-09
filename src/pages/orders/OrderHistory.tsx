@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import {
@@ -172,13 +172,12 @@ export function OrderHistory() {
       )}
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter orders">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter orders">
           {tabs.map(([id, label, count]) => (
             <button
               key={id}
               type="button"
-              role="tab"
-              aria-selected={tab === id}
+              aria-pressed={tab === id}
               onClick={() => setTab(id)}
               className={
                 "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors " +
@@ -333,11 +332,23 @@ export function OrderDetail() {
   const nav = useNavigate();
   const [o, setO] = useState(() => getOrder(id));
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const cancelDialogRef = useRef<HTMLDivElement>(null);
+  const keepOrderRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setO(getOrder(id));
     setConfirmCancel(false);
   }, [id]);
+
+  useEffect(() => {
+    if (!confirmCancel) return;
+    keepOrderRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setConfirmCancel(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [confirmCancel]);
 
   if (!o) {
     return (
@@ -446,11 +457,18 @@ export function OrderDetail() {
           </div>
 
           {confirmCancel && cancellable && (
-            <div className={`${CARD} p-5`} role="alertdialog" aria-labelledby="cancel-order-title">
+            <div
+              ref={cancelDialogRef}
+              className={`${CARD} p-5`}
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="cancel-order-title"
+              aria-describedby="cancel-order-desc"
+            >
               <p id="cancel-order-title" className="font-semibold text-[color:var(--pp-primary-950)]">
                 Cancel this order?
               </p>
-              <p className="mt-1 text-sm text-ink-secondary">
+              <p id="cancel-order-desc" className="mt-1 text-sm text-ink-secondary">
                 {isTransfer
                   ? "We’ll stop contacting your pharmacy. You can start a new transfer anytime."
                   : "We’ll stop processing this fill. You won’t be charged if payment hasn’t settled."}
@@ -459,7 +477,12 @@ export function OrderDetail() {
                 <Button size="sm" variant="outline" onClick={onCancel}>
                   Yes, cancel order
                 </Button>
-                <Button size="sm" variant="secondary" onClick={() => setConfirmCancel(false)}>
+                <Button
+                  ref={keepOrderRef}
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setConfirmCancel(false)}
+                >
                   Keep order
                 </Button>
               </div>

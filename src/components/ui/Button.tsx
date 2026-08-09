@@ -51,9 +51,10 @@ const sizes: Record<Size, string> = {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = "primary", size = "md", fullWidth, className = "", ...props }, ref) => (
+  ({ variant = "primary", size = "md", fullWidth, className = "", type = "button", ...props }, ref) => (
     <button
       ref={ref}
+      type={type}
       className={`${base} ${variants[variant]} ${sizes[size]} ${fullWidth ? "w-full" : ""} ${className}`}
       {...props}
     />

@@ -58,8 +58,18 @@ function ArrowRight({ w = 16 }: { w?: number }) {
 
 function StoreBadge({ kind }: { kind: "ios" | "android" }) {
   const label = kind === "ios" ? "Download on the App Store" : "Get it on Google Play";
+  const href =
+    kind === "ios"
+      ? "https://apps.apple.com/ca/app/pocketpills-doctor-pharmacy/id1367442074"
+      : "https://play.google.com/store/apps/details?id=com.pocketpills&hl=en_CA";
   return (
-    <a href="#" className="inline-flex w-[172px] items-center gap-3 rounded-lg bg-black px-4 py-2 text-white transition-opacity hover:opacity-85 active:opacity-75">
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex w-[172px] items-center gap-3 rounded-lg bg-black px-4 py-2 text-white transition-opacity hover:opacity-85 active:opacity-75"
+      aria-label={label}
+    >
       {kind === "ios" ? (
         <svg width="24" height="28" viewBox="0 0 24 28" fill="white" aria-hidden><path d="M17.05 14.9c.03-2.6 2.13-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.9-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.65 3.24 2.6 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.38.81 1.4-.02 2.28-1.27 3.13-2.53.99-1.45 1.4-2.85 1.42-2.92-.03-.01-2.72-1.04-2.72-4.12zM14.5 6.5c.71-.87 1.19-2.07 1.06-3.27-1.02.04-2.26.68-3 1.54-.66.76-1.24 1.98-1.08 3.15 1.14.09 2.3-.58 3.02-1.42z" /></svg>
       ) : (
@@ -70,27 +80,71 @@ function StoreBadge({ kind }: { kind: "ios" | "android" }) {
           <path d="M18.7 10.1L4.96 2.32C4.15 1.86 3.43 1.92 3 2.38l11.7 11.68 4-3.96z" fill="#00F076" />
         </svg>
       )}
-      <span className="flex flex-col leading-tight">
+      <span className="flex flex-col leading-tight" aria-hidden>
         <span className="text-[9px] opacity-80">{kind === "ios" ? "Download on the" : "GET IT ON"}</span>
         <span className="text-sm font-semibold">{kind === "ios" ? "App Store" : "Google Play"}</span>
       </span>
-      <span className="sr-only">{label}</span>
     </a>
   );
 }
 
 const SOCIAL_FILL = "#4E2A84";
+const SOCIAL = [
+  {
+    key: "ig",
+    label: "PocketPills on Instagram",
+    href: "https://www.instagram.com/pocketpills/",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill={SOCIAL_FILL} aria-hidden>
+        <path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.9.2 2.3.4.6.2 1 .5 1.5 1 .4.4.7.9 1 1.5.2.4.4 1.1.4 2.3.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.9-.4 2.3-.2.6-.5 1-1 1.5-.4.4-.9.7-1.5 1-.4.2-1.1.4-2.3.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.5-1.5-1-.4-.4-.7-.9-1-1.5-.2-.4-.4-1.1-.4-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.9.4-2.3.2-.6.5-1 1-1.5.4-.4.9-.7 1.5-1 .4-.2 1.1-.4 2.3-.4C8.4 2.2 8.8 2.2 12 2.2zm0 1.8c-3.2 0-3.5 0-4.8.1-1 .1-1.6.2-1.9.4-.5.2-.8.4-1.1.7-.3.3-.5.6-.7 1.1-.2.4-.3.9-.4 1.9-.1 1.2-.1 1.6-.1 4.8s0 3.5.1 4.8c.1 1 .2 1.6.4 1.9.2.5.4.8.7 1.1.3.3.6.5 1.1.7.4.2.9.3 1.9.4 1.2.1 1.6.1 4.8.1s3.5 0 4.8-.1c1-.1 1.6-.2 1.9-.4.5-.2.8-.4 1.1-.7.3-.3.5-.6.7-1.1.2-.4.3-.9.4-1.9.1-1.2.1-1.6.1-4.8s0-3.5-.1-4.8c-.1-1-.2-1.6-.4-1.9-.2-.5-.4-.8-.7-1.1-.3-.3-.6-.5-1.1-.7-.4-.2-.9-.3-1.9-.4-1.2-.1-1.6-.1-4.8-.1zm0 3.1a4.9 4.9 0 1 1 0 9.8 4.9 4.9 0 0 1 0-9.8zm0 8.1a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zm6.4-8.3a1.2 1.2 0 1 1-2.3 0 1.2 1.2 0 0 1 2.3 0z" />
+      </svg>
+    ),
+  },
+  {
+    key: "fb",
+    label: "PocketPills on Facebook",
+    href: "https://www.facebook.com/pocketpills",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill={SOCIAL_FILL} aria-hidden>
+        <path d="M14 8.2h2.5V5H14c-2.4 0-4.4 2-4.4 4.4V12H7v3.5h2.6V22h3.5v-6.5H16L16.7 12h-3.6V9.4c0-.7.5-1.2 1-1.2z" />
+      </svg>
+    ),
+  },
+  {
+    key: "x",
+    label: "PocketPills on X",
+    href: "https://x.com/pocketpills",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill={SOCIAL_FILL} aria-hidden>
+        <path d="M18.9 2H22l-6.8 7.8L23 22h-6.5l-5.1-6.6L5.7 22H2.5l7.3-8.3L1 2h6.6l4.6 6L18.9 2zm-1.1 18h1.8L6.3 3.9H4.4L17.8 20z" />
+      </svg>
+    ),
+  },
+  {
+    key: "yt",
+    label: "PocketPills on YouTube",
+    href: "https://www.youtube.com/@pocketpills",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill={SOCIAL_FILL} aria-hidden>
+        <path d="M23.5 7.2a3 3 0 0 0-2.1-2.1C19.5 4.6 12 4.6 12 4.6s-7.5 0-9.4.5A3 3 0 0 0 .5 7.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 4.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-4.8zM9.8 15.5v-7l6.3 3.5-6.3 3.5z" />
+      </svg>
+    ),
+  },
+] as const;
+
 function Social() {
   return (
     <div className="flex items-center gap-3">
-      {[
-        <svg key="ig" width="20" height="20" viewBox="0 0 24 24" fill={SOCIAL_FILL} aria-label="Instagram"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.9.2 2.3.4.6.2 1 .5 1.5 1 .4.4.7.9 1 1.5.2.4.4 1.1.4 2.3.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.9-.4 2.3-.2.6-.5 1-1 1.5-.4.4-.9.7-1.5 1-.4.2-1.1.4-2.3.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.5-1.5-1-.4-.4-.7-.9-1-1.5-.2-.4-.4-1.1-.4-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.9.4-2.3.2-.6.5-1 1-1.5.4-.4.9-.7 1.5-1 .4-.2 1.1-.4 2.3-.4C8.4 2.2 8.8 2.2 12 2.2zm0 1.8c-3.2 0-3.5 0-4.8.1-1 .1-1.6.2-1.9.4-.5.2-.8.4-1.1.7-.3.3-.5.6-.7 1.1-.2.4-.3.9-.4 1.9-.1 1.2-.1 1.6-.1 4.8s0 3.5.1 4.8c.1 1 .2 1.6.4 1.9.2.5.4.8.7 1.1.3.3.6.5 1.1.7.4.2.9.3 1.9.4 1.2.1 1.6.1 4.8.1s3.5 0 4.8-.1c1-.1 1.6-.2 1.9-.4.5-.2.8-.4 1.1-.7.3-.3.5-.6.7-1.1.2-.4.3-.9.4-1.9.1-1.2.1-1.6.1-4.8s0-3.5-.1-4.8c-.1-1-.2-1.6-.4-1.9-.2-.5-.4-.8-.7-1.1-.3-.3-.6-.5-1.1-.7-.4-.2-.9-.3-1.9-.4-1.2-.1-1.6-.1-4.8-.1zm0 3.1a4.9 4.9 0 1 1 0 9.8 4.9 4.9 0 0 1 0-9.8zm0 8.1a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zm6.4-8.3a1.2 1.2 0 1 1-2.3 0 1.2 1.2 0 0 1 2.3 0z" /></svg>,
-        <svg key="fb" width="20" height="20" viewBox="0 0 24 24" fill={SOCIAL_FILL} aria-label="Facebook"><path d="M14 8.2h2.5V5H14c-2.4 0-4.4 2-4.4 4.4V12H7v3.5h2.6V22h3.5v-6.5H16L16.7 12h-3.6V9.4c0-.7.5-1.2 1-1.2z" /></svg>,
-        <svg key="x" width="20" height="20" viewBox="0 0 24 24" fill={SOCIAL_FILL} aria-label="X"><path d="M18.9 2H22l-6.8 7.8L23 22h-6.5l-5.1-6.6L5.7 22H2.5l7.3-8.3L1 2h6.6l4.6 6L18.9 2zm-1.1 18h1.8L6.3 3.9H4.4L17.8 20z" /></svg>,
-        <svg key="yt" width="20" height="20" viewBox="0 0 24 24" fill={SOCIAL_FILL} aria-label="YouTube"><path d="M23.5 7.2a3 3 0 0 0-2.1-2.1C19.5 4.6 12 4.6 12 4.6s-7.5 0-9.4.5A3 3 0 0 0 .5 7.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 4.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-4.8zM9.8 15.5v-7l6.3 3.5-6.3 3.5z" /></svg>,
-      ].map((icon) => (
-        <a key={icon.key} href="#" className="grid h-9 w-9 place-items-center rounded-full transition-colors hover:bg-[color:var(--state-hover)]" aria-label={String(icon.key)}>
-          {icon}
+      {SOCIAL.map((s) => (
+        <a
+          key={s.key}
+          href={s.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="grid h-9 w-9 place-items-center rounded-full transition-colors hover:bg-[color:var(--state-hover)]"
+          aria-label={s.label}
+        >
+          {s.icon}
         </a>
       ))}
     </div>
@@ -122,9 +176,10 @@ function PostalCheck() {
       <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">Check your postal code</p>
       <p className="mt-1 text-sm text-ink-tertiary">See ETA and same-day availability for your address.</p>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-start">
-        <label className="min-w-0 flex-1">
+        <label className="min-w-0 flex-1" htmlFor="footer-postal">
           <span className="sr-only">Postal code</span>
           <input
+            id="footer-postal"
             value={postal}
             onChange={(e) => {
               setPostal(formatPostal(e.target.value));
@@ -134,7 +189,8 @@ function PostalCheck() {
             placeholder="A1A 1A1"
             autoComplete="postal-code"
             className="h-11 w-full rounded-xl border border-line bg-white px-3.5 text-base text-ink outline-none focus:border-primary"
-            aria-invalid={error}
+            aria-invalid={error || undefined}
+            aria-describedby={error ? "footer-postal-error" : undefined}
           />
         </label>
         <Button type="button" size="sm" className="shrink-0 sm:h-11" onClick={submit}>
@@ -142,7 +198,9 @@ function PostalCheck() {
         </Button>
       </div>
       {error && (
-        <p className="mt-2 text-xs text-danger">Enter a valid Canadian postal code.</p>
+        <p id="footer-postal-error" className="mt-2 text-xs text-danger" role="alert">
+          Enter a valid Canadian postal code.
+        </p>
       )}
       <button
         type="button"
@@ -310,7 +368,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
         <nav aria-label="Footer" className="grid grid-cols-2 gap-x-6 gap-y-8 border-t border-line pt-10 sm:grid-cols-4 sm:gap-8">
           {COLUMNS.map((c) => (
             <div key={c.head} className="min-w-0">
-              <h4 className="pp-caps text-[color:var(--pp-violet)]">{c.head}</h4>
+              <h3 className="pp-caps text-[color:var(--pp-violet)]">{c.head}</h3>
               <ul className="mt-4 space-y-2.5">
                 {c.links.map(([l, to]) => (
                   <li key={l}>

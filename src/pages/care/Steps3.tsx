@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { FlowLayout } from "@/components/layout/FlowLayout";
-import { Card, Badge, Field } from "@/components/ui";
+import { Card, Badge, Field, Switch } from "@/components/ui";
 import { useJourney } from "@/lib/journey";
 import { treatments } from "@/lib/data";
 
@@ -44,30 +44,12 @@ export function MedicationReview() {
         </Card>
 
         <Card className="p-5">
-          <label className="flex cursor-pointer items-center justify-between gap-4">
-            <span>
-              <span className="font-semibold text-ink">Apply insurance</span>
-              <span className="mt-0.5 block text-sm text-ink-tertiary">Sun Life · Group 4402 · verified</span>
-            </span>
-            <span
-              onClick={() => setUseInsurance(!useInsurance)}
-              className={
-                "relative h-7 w-12 shrink-0 rounded-full transition-colors " +
-                (useInsurance ? "bg-primary" : "bg-stone-300 dark:bg-stone-600")
-              }
-              role="switch"
-              aria-checked={useInsurance}
-              tabIndex={0}
-              onKeyDown={(e) => e.key === "Enter" && setUseInsurance(!useInsurance)}
-            >
-              <span
-                className={
-                  "absolute top-1 h-5 w-5 rounded-full bg-white transition-all " +
-                  (useInsurance ? "left-6" : "left-1")
-                }
-              />
-            </span>
-          </label>
+          <Switch
+            checked={useInsurance}
+            onChange={setUseInsurance}
+            label="Apply insurance"
+            desc="Sun Life · Group 4402 · verified"
+          />
         </Card>
 
         <Card className="p-5">

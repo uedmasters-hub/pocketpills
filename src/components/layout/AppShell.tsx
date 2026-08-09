@@ -108,22 +108,31 @@ function Sidebar() {
         <div className="relative" ref={moreRef}>
           <button
             type="button"
+            id="nav-more-trigger"
             onClick={() => setOpenMore((o) => !o)}
             className={`${BASE} w-full ${moreActive || openMore ? ACTIVE : IDLE}`}
             aria-expanded={openMore}
+            aria-haspopup="menu"
+            aria-controls={openMore ? "nav-more-menu" : undefined}
             aria-current={moreActive ? "page" : undefined}
           >
             <NavIcon id="more" />
             More
           </button>
           {openMore && (
-            <div className="absolute left-2 right-0 z-20 mt-1 overflow-hidden rounded-2xl border border-line bg-white shadow-float">
+            <div
+              id="nav-more-menu"
+              role="menu"
+              aria-labelledby="nav-more-trigger"
+              className="absolute left-2 right-0 z-20 mt-1 overflow-hidden rounded-2xl border border-line bg-white shadow-float"
+            >
               {MORE.map(([label, to]) => {
                 const on = pathname.startsWith(to);
                 return (
                   <button
                     key={to}
                     type="button"
+                    role="menuitem"
                     onClick={() => {
                       setOpenMore(false);
                       nav(to);

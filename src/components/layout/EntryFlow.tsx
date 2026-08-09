@@ -42,7 +42,7 @@ export function EntryFlow({
           <p className="pp-caps text-[color:var(--pp-violet)]">{eyebrow}</p>
           <p className="text-xs font-medium text-ink-tertiary tnum">Step {step} of {total}</p>
         </div>
-        <Progress value={pct} />
+        <Progress value={pct} label={`Step ${step} of ${total}`} />
       </div>
 
       <div className="animate-fade-up">

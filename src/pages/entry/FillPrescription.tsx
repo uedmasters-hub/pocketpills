@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { EntryFlow } from "@/components/layout/EntryFlow";
-import { Card, Field, Badge } from "@/components/ui";
+import { Card, Field, Badge, Switch } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { drugs } from "@/lib/data";
 
@@ -45,50 +45,54 @@ function RadioCards<T extends string>({ options, value, onChange }: {
   options: { id: T; icon: string; title: string; desc: string }[]; value: T | null; onChange: (v: T) => void;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role="radiogroup">
       {options.map((o) => (
-        <Card key={o.id} interactive onClick={() => onChange(o.id)}
-          className={"flex items-center gap-4 p-4 " + (value === o.id ? "ring-2 ring-primary" : "")}>
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary-subtle text-xl">{o.icon}</span>
+        <Card
+          key={o.id}
+          interactive
+          role="radio"
+          aria-checked={value === o.id}
+          onClick={() => onChange(o.id)}
+          className={"flex items-center gap-4 p-4 " + (value === o.id ? "ring-2 ring-primary" : "")}
+        >
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary-subtle text-xl" aria-hidden>{o.icon}</span>
           <div className="min-w-0"><p className="font-semibold text-ink">{o.title}</p><p className="text-sm text-ink-tertiary">{o.desc}</p></div>
-          {value === o.id && <span className="ml-auto text-primary">✓</span>}
+          {value === o.id && <span className="ml-auto text-primary" aria-hidden>✓</span>}
         </Card>
       ))}
     </div>
   );
 }
 
-function Switch({ checked, onChange, label, desc }: { checked: boolean; onChange: (v: boolean) => void; label: string; desc?: string }) {
-  return (
-    <label className="flex cursor-pointer items-center justify-between gap-4">
-      <span><span className="font-semibold text-ink">{label}</span>{desc && <span className="mt-0.5 block text-sm text-ink-tertiary">{desc}</span>}</span>
-      <span onClick={() => onChange(!checked)} role="switch" aria-checked={checked} tabIndex={0}
-        onKeyDown={(e) => e.key === "Enter" && onChange(!checked)}
-        className={"relative h-7 w-12 shrink-0 rounded-full transition-colors " + (checked ? "bg-primary" : "bg-stone-300 dark:bg-stone-600")}>
-        <span className={"absolute top-1 h-5 w-5 rounded-full bg-white transition-all " + (checked ? "left-6" : "left-1")} />
-      </span>
-    </label>
-  );
-}
-
-function Chips({ items, onAdd, onRemove, placeholder }: { items: string[]; onAdd: (v: string) => void; onRemove: (i: number) => void; placeholder: string }) {
+function Chips({ items, onAdd, onRemove, placeholder, label }: { items: string[]; onAdd: (v: string) => void; onRemove: (i: number) => void; placeholder: string; label: string }) {
   const [v, setV] = useState("");
   const add = () => { if (v.trim()) { onAdd(v.trim()); setV(""); } };
+  const inputId = `chips-${label.toLowerCase().replace(/\s+/g, "-")}`;
   return (
     <div>
       <div className="flex gap-2">
-        <input value={v} onChange={(e) => setV(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), add())}
-          placeholder={placeholder} className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-ink placeholder:text-ink-tertiary focus:border-primary" />
+        <label className="min-w-0 flex-1">
+          <span className="sr-only">{label}</span>
+          <input
+            id={inputId}
+            value={v}
+            onChange={(e) => setV(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), add())}
+            placeholder={placeholder}
+            className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-ink placeholder:text-ink-tertiary focus:border-primary"
+          />
+        </label>
         <Button variant="secondary" size="sm" onClick={add}>Add</Button>
       </div>
       {items.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <ul className="mt-3 flex flex-wrap gap-2" aria-label={label}>
           {items.map((it, i) => (
-            <span key={i} className="inline-flex items-center gap-1.5 rounded-full bg-primary-subtle px-3 py-1 text-sm font-medium text-primary">
-              {it}<button onClick={() => onRemove(i)} aria-label={`Remove ${it}`}>✕</button>
-            </span>
+            <li key={i} className="inline-flex items-center gap-1.5 rounded-full bg-primary-subtle px-3 py-1 text-sm font-medium text-primary">
+              {it}
+              <button type="button" onClick={() => onRemove(i)} aria-label={`Remove ${it}`}>✕</button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
@@ -107,16 +111,25 @@ function MedPicker({ onAdd }: { onAdd: (m: Med) => void }) {
   const addManual = () => { onAdd({ id: crypto.randomUUID(), name: q.trim(), strength: "", qty: 30, directions: "", asNeeded: false, price: 0, coverage: 0, dosages: [] }); setQ(""); };
   return (
     <div>
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search a medication (e.g. Ramipril)…"
-        className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-ink placeholder:text-ink-tertiary focus:border-primary" />
+      <label className="block">
+        <span className="sr-only">Search medications</span>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search a medication (e.g. Ramipril)…"
+          aria-autocomplete="list"
+          aria-controls={q.trim() ? "med-picker-results" : undefined}
+          className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-ink placeholder:text-ink-tertiary focus:border-primary"
+        />
+      </label>
       {q.trim() && (
-        <div className="mt-2 overflow-hidden rounded-xl border border-line">
+        <div id="med-picker-results" role="listbox" aria-label="Medication matches" className="mt-2 overflow-hidden rounded-xl border border-line">
           {matches.map((d) => (
-            <button key={d.slug} onClick={() => addFromDrug(d.slug)} className="flex w-full items-center gap-3 border-b border-line bg-surface-2 p-3 text-left last:border-0 hover:bg-[color:var(--state-hover)]">
-              <span>💊</span><span className="flex-1"><span className="block font-semibold text-ink">{d.name}</span>{d.generic && <span className="block text-xs text-ink-tertiary">{d.generic}</span>}</span><span className="text-primary">+ Add</span>
+            <button key={d.slug} type="button" role="option" onClick={() => addFromDrug(d.slug)} className="flex w-full items-center gap-3 border-b border-line bg-surface-2 p-3 text-left last:border-0 hover:bg-[color:var(--state-hover)]">
+              <span aria-hidden>💊</span><span className="flex-1"><span className="block font-semibold text-ink">{d.name}</span>{d.generic && <span className="block text-xs text-ink-tertiary">{d.generic}</span>}</span><span className="text-primary">+ Add</span>
             </button>
           ))}
-          <button onClick={addManual} className="flex w-full items-center gap-2 bg-surface-1 transition-colors hover:bg-[color:var(--state-hover)] p-3 text-left text-sm font-semibold text-primary">＋ Add “{q.trim()}” manually</button>
+          <button type="button" onClick={addManual} className="flex w-full items-center gap-2 bg-surface-1 transition-colors hover:bg-[color:var(--state-hover)] p-3 text-left text-sm font-semibold text-primary">＋ Add “{q.trim()}” manually</button>
         </div>
       )}
     </div>
@@ -298,8 +311,8 @@ export function FillPrescription() {
               <Field label="Health card number" placeholder="Optional" value={s.healthNumber} onChange={(e) => set({ healthNumber: e.target.value })} />
             </div>
           </Card>
-          <Card className="p-5"><p className="mb-2 text-sm font-medium text-ink-secondary">Allergies</p><Chips items={s.allergies} placeholder="e.g. penicillin" onAdd={(v) => set({ allergies: [...s.allergies, v] })} onRemove={(i) => set({ allergies: s.allergies.filter((_, idx) => idx !== i) })} /></Card>
-          <Card className="p-5"><p className="mb-2 text-sm font-medium text-ink-secondary">Other medications you take</p><Chips items={s.currentMeds} placeholder="e.g. vitamin D" onAdd={(v) => set({ currentMeds: [...s.currentMeds, v] })} onRemove={(i) => set({ currentMeds: s.currentMeds.filter((_, idx) => idx !== i) })} /></Card>
+          <Card className="p-5"><p className="mb-2 text-sm font-medium text-ink-secondary">Allergies</p><Chips label="Allergies" items={s.allergies} placeholder="e.g. penicillin" onAdd={(v) => set({ allergies: [...s.allergies, v] })} onRemove={(i) => set({ allergies: s.allergies.filter((_, idx) => idx !== i) })} /></Card>
+          <Card className="p-5"><p className="mb-2 text-sm font-medium text-ink-secondary">Other medications you take</p><Chips label="Other medications" items={s.currentMeds} placeholder="e.g. vitamin D" onAdd={(v) => set({ currentMeds: [...s.currentMeds, v] })} onRemove={(i) => set({ currentMeds: s.currentMeds.filter((_, idx) => idx !== i) })} /></Card>
           <Card className="p-5">
             <p className="mb-2.5 text-sm font-medium text-ink-secondary">Pregnant or breastfeeding?</p>
             <div className="grid grid-cols-3 gap-2">
@@ -316,15 +329,22 @@ export function FillPrescription() {
   if (step === "packaging")
     return (
       <EntryFlow {...common} eyebrow="Fill your prescription" title="How should we pack it?" onNext={goNext}>
-        <div className="space-y-4">
+        <div className="space-y-4" role="radiogroup" aria-label="Packaging">
           {([
             { id: "pocketpacks", icon: "🗓️", title: "PocketPacks (recommended)", desc: "Pouches sorted by date & time—ideal when taking multiple meds." },
             { id: "vials", icon: "💊", title: "Traditional vials", desc: "Standard prescription bottles." },
           ] as const).map((o) => (
-            <Card key={o.id} interactive onClick={() => set({ packaging: o.id })} className={"flex items-center gap-4 p-4 " + (s.packaging === o.id ? "ring-2 ring-primary" : "")}>
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary-subtle text-xl">{o.icon}</span>
+            <Card
+              key={o.id}
+              interactive
+              role="radio"
+              aria-checked={s.packaging === o.id}
+              onClick={() => set({ packaging: o.id })}
+              className={"flex items-center gap-4 p-4 " + (s.packaging === o.id ? "ring-2 ring-primary" : "")}
+            >
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary-subtle text-xl" aria-hidden>{o.icon}</span>
               <div><p className="font-semibold text-ink">{o.title}</p><p className="text-sm text-ink-tertiary">{o.desc}</p></div>
-              {s.packaging === o.id && <span className="ml-auto text-primary">✓</span>}
+              {s.packaging === o.id && <span className="ml-auto text-primary" aria-hidden>✓</span>}
             </Card>
           ))}
           <Card className="space-y-4 p-5">
@@ -370,12 +390,19 @@ export function FillPrescription() {
       <EntryFlow {...common} eyebrow="Fill your prescription" title="Delivery" onNext={goNext} nextDisabled={!s.address}>
         <div className="space-y-4">
           <Card className="p-5"><Field label="Delivery address" value={s.address} onChange={(e) => set({ address: e.target.value })} /></Card>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Delivery speed">
             {([
               { id: "standard", t: "Standard", d: "Free · 1–3 business days" },
               { id: "sameday", t: "Same-day", d: "Select locations · free" },
             ] as const).map((o) => (
-              <button key={o.id} onClick={() => set({ speed: o.id })} className={"rounded-2xl border p-4 text-left " + (s.speed === o.id ? "border-primary bg-primary-subtle" : "border-line bg-surface-2 hover:bg-[color:var(--state-hover)]")}>
+              <button
+                key={o.id}
+                type="button"
+                role="radio"
+                aria-checked={s.speed === o.id}
+                onClick={() => set({ speed: o.id })}
+                className={"rounded-2xl border p-4 text-left " + (s.speed === o.id ? "border-primary bg-primary-subtle" : "border-line bg-surface-2 hover:bg-[color:var(--state-hover)]")}
+              >
                 <p className="font-semibold text-ink">{o.t}</p><p className="text-sm text-ink-tertiary">{o.d}</p>
               </button>
             ))}

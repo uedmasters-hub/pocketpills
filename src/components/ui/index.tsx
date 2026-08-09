@@ -1,23 +1,31 @@
-import type { HTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
+import type {
+  ButtonHTMLAttributes,
+  HTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+} from "react";
 
 /* ── Card ───────────────────────────────────────────────── */
-export function Card({
-  className = "",
-  interactive,
-  ...props
-}: HTMLAttributes<HTMLDivElement> & { interactive?: boolean }) {
-  return (
-    <div
-      className={
-        "rounded-2xl border border-line bg-surface-2 " +
-        (interactive
-          ? "cursor-pointer transition-colors duration-200 hover:bg-[color:var(--state-hover)] active:bg-[color:var(--state-pressed)] "
-          : "") +
-        className
-      }
-      {...props}
-    />
-  );
+type CardProps = HTMLAttributes<HTMLElement> & {
+  interactive?: boolean;
+};
+
+export function Card({ className = "", interactive, ...props }: CardProps) {
+  const cls =
+    "rounded-2xl border border-line bg-surface-2 " +
+    (interactive
+      ? "w-full cursor-pointer text-left transition-colors duration-200 hover:bg-[color:var(--state-hover)] active:bg-[color:var(--state-pressed)] "
+      : "") +
+    className;
+
+  if (interactive) {
+    const { onClick, ...rest } = props as ButtonHTMLAttributes<HTMLButtonElement>;
+    return (
+      <button type="button" className={cls} onClick={onClick} {...rest} />
+    );
+  }
+
+  return <div className={cls} {...(props as HTMLAttributes<HTMLDivElement>)} />;
 }
 
 /* ── Badge / status pill ────────────────────────────────── */
@@ -46,14 +54,21 @@ export function Badge({ tone = "neutral", children }: { tone?: Tone; children: R
 interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   hint?: string;
+  error?: string;
 }
-export function Field({ label, hint, id, className = "", ...props }: FieldProps) {
+export function Field({ label, hint, error, id, className = "", ...props }: FieldProps) {
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, "-");
+  const hintId = hint ? `${fieldId}-hint` : undefined;
+  const errorId = error ? `${fieldId}-error` : undefined;
+  const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
+
   return (
     <label htmlFor={fieldId} className="block">
       <span className="mb-1.5 block text-sm font-medium text-ink-secondary">{label}</span>
       <input
         id={fieldId}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy}
         className={
           "w-full h-12 rounded-xl border border-line bg-surface-2 px-4 text-base text-ink " +
           "placeholder:text-ink-tertiary transition-colors duration-200 " +
@@ -62,21 +77,86 @@ export function Field({ label, hint, id, className = "", ...props }: FieldProps)
         }
         {...props}
       />
-      {hint && <span className="mt-1 block text-sm text-ink-tertiary">{hint}</span>}
+      {hint && !error && (
+        <span id={hintId} className="mt-1 block text-sm text-ink-tertiary">
+          {hint}
+        </span>
+      )}
+      {error && (
+        <span id={errorId} className="mt-1 block text-sm text-danger" role="alert">
+          {error}
+        </span>
+      )}
     </label>
   );
 }
 
+/* ── Switch (accessible toggle) ─────────────────────────── */
+export function Switch({
+  checked,
+  onChange,
+  label,
+  desc,
+  id,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  desc?: string;
+  id?: string;
+}) {
+  const switchId = id ?? `switch-${label.toLowerCase().replace(/\s+/g, "-")}`;
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="min-w-0">
+        <label htmlFor={switchId} className="cursor-pointer font-semibold text-ink">
+          {label}
+        </label>
+        {desc && <span className="mt-0.5 block text-sm text-ink-tertiary">{desc}</span>}
+      </span>
+      <button
+        id={switchId}
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={
+          "relative h-7 w-12 shrink-0 rounded-full transition-colors " +
+          (checked ? "bg-primary" : "bg-stone-300 dark:bg-stone-600")
+        }
+      >
+        <span
+          className={
+            "pointer-events-none absolute top-1 h-5 w-5 rounded-full bg-white transition-all " +
+            (checked ? "left-6" : "left-1")
+          }
+          aria-hidden
+        />
+      </button>
+    </div>
+  );
+}
+
 /* ── Progress bar ───────────────────────────────────────── */
-export function Progress({ value, tone = "primary" }: { value: number; tone?: "primary" | "wellness" }) {
+export function Progress({
+  value,
+  tone = "primary",
+  label,
+}: {
+  value: number;
+  tone?: "primary" | "wellness";
+  /** Accessible name, e.g. "Step 2 of 5" */
+  label?: string;
+}) {
   const clamped = Math.max(0, Math.min(100, value));
   return (
     <div
-      className="h-2 w-full overflow-hidden rounded-full bg-surface-1 border border-line"
+      className="h-2 w-full overflow-hidden rounded-full border border-line bg-surface-1"
       role="progressbar"
       aria-valuenow={clamped}
       aria-valuemin={0}
       aria-valuemax={100}
+      aria-label={label ?? "Progress"}
     >
       <div
         className={`h-full rounded-full transition-[width] duration-500 ${tone === "wellness" ? "bg-wellness" : "bg-primary"}`}
