@@ -71,6 +71,7 @@ function OfferCard({
   offer,
   claimed,
   active,
+  copied,
   onClaim,
   onActivate,
   onCopy,
@@ -78,6 +79,7 @@ function OfferCard({
   offer: Offer;
   claimed: boolean;
   active: boolean;
+  copied: boolean;
   onClaim: () => void;
   onActivate: () => void;
   onCopy: (code: string) => void;
@@ -87,50 +89,60 @@ function OfferCard({
   return (
     <article
       className={
-        `${CARD} flex flex-col p-5 sm:p-6 ` +
+        `${CARD} flex flex-col gap-4 p-5 sm:p-6 ` +
         (active ? "ring-2 ring-[color:var(--pp-primary-950)]" : "")
       }
     >
       <div className="flex items-start gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[color:var(--pp-primary-200)] text-[color:var(--pp-primary-950)]">
           <KindIcon kind={offer.kind} />
         </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-[color:var(--pp-primary-200)] px-2.5 py-0.5 text-2xs font-semibold uppercase tracking-wide text-[color:var(--pp-primary-950)]">
-              {offer.badge}
-            </span>
-            {offer.expires && (
-              <span className="text-2xs text-ink-tertiary">{offer.expires}</span>
-            )}
+        <div className="min-w-0 flex-1 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-[color:var(--pp-primary-200)] px-2.5 py-0.5 text-2xs font-semibold uppercase tracking-wide text-[color:var(--pp-primary-950)]">
+                {offer.badge}
+              </span>
+              {offer.expires && (
+                <span className="text-2xs text-ink-tertiary">{offer.expires}</span>
+              )}
+            </div>
+            <p className="shrink-0 font-display text-xl font-medium leading-none text-[color:var(--pp-violet)] tnum">
+              {offer.savings}
+            </p>
           </div>
-          <h3 className="mt-2 font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-            {offer.title}
-          </h3>
-          <p className="mt-1 text-sm leading-relaxed text-ink-secondary">{offer.summary}</p>
+          <div className="space-y-1.5">
+            <h3 className="font-display text-lg font-medium leading-snug text-[color:var(--pp-primary-950)]">
+              {offer.title}
+            </h3>
+            <p className="text-sm leading-relaxed text-ink-secondary">{offer.summary}</p>
+          </div>
         </div>
-        <p className="shrink-0 text-right font-display text-xl font-medium text-[color:var(--pp-violet)] tnum">
-          {offer.savings}
-        </p>
       </div>
 
       {offer.code && (
-        <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-[color:var(--pp-primary-100)]/70 px-3.5 py-2.5">
-          <span className="text-xs font-medium text-ink-tertiary">Code</span>
-          <code className="font-semibold tracking-wide text-[color:var(--pp-primary-950)]">{offer.code}</code>
+        <div className="flex items-center gap-3 rounded-xl bg-[color:var(--pp-primary-200)] px-3.5 py-2.5">
+          <span className="shrink-0 text-xs text-ink-tertiary">Code</span>
+          <code className="min-w-0 flex-1 truncate font-mono text-sm font-semibold tracking-wide text-[color:var(--pp-primary-950)]">
+            {offer.code}
+          </code>
           <button
             type="button"
             onClick={() => onCopy(offer.code!)}
-            className="ml-auto text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
+            aria-label={copied ? `${offer.code} copied` : `Copy code ${offer.code}`}
+            className={
+              "shrink-0 text-sm font-medium transition-opacity hover:opacity-70 " +
+              (copied ? "text-[color:var(--pp-green)]" : "text-[color:var(--pp-violet)]")
+            }
           >
-            Copy
+            {copied ? "Copied" : "Copy"}
           </button>
         </div>
       )}
 
-      <p className="mt-3 text-2xs leading-relaxed text-ink-tertiary">{offer.terms}</p>
+      <p className="text-2xs leading-relaxed text-ink-tertiary">{offer.terms}</p>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className="mt-auto flex flex-wrap gap-2 pt-1">
         <Button
           type="button"
           size="sm"
@@ -456,6 +468,7 @@ export function Offers() {
                     offer={o}
                     claimed={claimed.has(o.id)}
                     active={activeId === o.id}
+                    copied={copied === o.code}
                     onClaim={() => toggleClaim(o.id)}
                     onActivate={() => activate(o.id)}
                     onCopy={onCopy}

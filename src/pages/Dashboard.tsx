@@ -396,29 +396,6 @@ export function Dashboard() {
         </button>
       )}
 
-      {/* Promotional banners — offers, savings, persuasion */}
-      <section aria-label="Promotions">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">Offers for you</h2>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => nav("/offers")}
-              className="text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
-            >
-              See all
-            </button>
-            <div className="flex gap-2">
-              <ArrowBtn dir="l" onClick={() => promoRef.current?.scrollBy({ left: -320, behavior: "smooth" })} />
-              <ArrowBtn dir="r" onClick={() => promoRef.current?.scrollBy({ left: 320, behavior: "smooth" })} />
-            </div>
-          </div>
-        </div>
-        <div ref={promoRef} className="pp-scroll flex gap-4 overflow-x-auto">
-          {PROMOS.map((p) => <PromoCard key={p.t} p={p} onClick={() => nav(p.to)} />)}
-        </div>
-      </section>
-
       {/* treatments */}
       <section>
         <RailHeader title="Start a new treatment" boxRef={treatRef} />
@@ -460,6 +437,29 @@ export function Dashboard() {
         <ActionRow id="renew" title="Renew my prescription" sub="Renew an expired prescription" onClick={() => nav("/fill")} />
         <ActionRow id="treatments" title="Explore treatments" sub="Get care from healthcare practitioners" onClick={() => nav("/find-care")} />
         <ActionRow id="prices" title="See drug prices" sub="Look up pricing details" onClick={() => nav("/drug")} />
+      </section>
+
+      {/* Offers sit directly above the get-the-app / QR block */}
+      <section aria-label="Promotions">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">Offers for you</h2>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => nav("/offers")}
+              className="text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
+            >
+              See all
+            </button>
+            <div className="flex gap-2">
+              <ArrowBtn dir="l" onClick={() => promoRef.current?.scrollBy({ left: -320, behavior: "smooth" })} />
+              <ArrowBtn dir="r" onClick={() => promoRef.current?.scrollBy({ left: 320, behavior: "smooth" })} />
+            </div>
+          </div>
+        </div>
+        <div ref={promoRef} className="pp-scroll flex gap-4 overflow-x-auto">
+          {PROMOS.map((p) => <PromoCard key={p.t} p={p} onClick={() => nav(p.to)} />)}
+        </div>
       </section>
 
       <AppCard />

@@ -39,6 +39,7 @@ import { DeliveryCheck } from "@/pages/entry/DeliveryCheck";
 import { MedicationsIndex } from "@/pages/drug/MedicationsIndex";
 import { DrugDetail } from "@/pages/drug/DrugDetail";
 import { Offers } from "@/pages/Offers";
+import { PharmaciesIndex, PharmaciesByRegion } from "@/pages/PharmaciesByRegion";
 
 import { OrderHistory, OrderDetail } from "@/pages/orders/OrderHistory";
 import { Receipt, Invoice } from "@/pages/orders/Documents";
@@ -92,6 +93,8 @@ export default function App() {
             <Route path="/find-care" element={<FindCare />} />
             <Route path="/treatment/:slug" element={<TreatmentDetail />} />
             <Route path="/offers" element={<Offers />} />
+            <Route path="/pharmacies" element={<PharmaciesIndex />} />
+            <Route path="/pharmacies/:region" element={<PharmaciesByRegion />} />
             <Route path="/medications" element={<Navigate to="/drug" replace />} />
             <Route path="/consult/minor-ailments" element={<Navigate to="/find-care" replace />} />
             <Route path="/consult/:slug" element={<ConsultRedirect />} />

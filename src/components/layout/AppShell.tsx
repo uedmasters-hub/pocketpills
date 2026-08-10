@@ -48,11 +48,19 @@ const MORE: [string, string][] = [
   ["Pharmacy", "/pharmacy"],
   ["Messages", "/messages"],
   ["Offers", "/offers"],
+  ["Pharmacies by region", "/pharmacies"],
   ["Edit profile", "/account"],
   ["Family", "/account/family"],
   ["Notifications", "/account/notifications"],
 ];
 
+/** Exact for leaf paths; prefix only when the path has real nested segments. */
+function moreLinkActive(to: string, pathname: string) {
+  if (pathname === to) return true;
+  /* `/account` must not light up for `/account/family`, etc. */
+  if (to === "/account") return false;
+  return pathname.startsWith(`${to}/`);
+}
 /* Active: filled pill so current page is obvious. Hover: darker lavender tint. */
 const BASE =
   "flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-base transition-colors duration-200 " +
@@ -88,7 +96,7 @@ function Sidebar() {
   const { pathname } = useLocation();
   const nav = useNavigate();
   const moreRef = useDismiss<HTMLDivElement>(openMore, () => setOpenMore(false));
-  const moreActive = MORE.some(([, to]) => pathname.startsWith(to)) && !navIsActive("orders", pathname);
+  const moreActive = MORE.some(([, to]) => moreLinkActive(to, pathname)) && !navIsActive("orders", pathname);
 
   return (
     <aside className="hidden w-60 shrink-0 lg:block">
@@ -130,7 +138,7 @@ function Sidebar() {
               className="absolute left-2 right-0 z-20 mt-1 overflow-hidden rounded-2xl border border-line bg-white shadow-float"
             >
               {MORE.map(([label, to]) => {
-                const on = pathname.startsWith(to);
+                const on = moreLinkActive(to, pathname);
                 return (
                   <button
                     key={to}
@@ -213,19 +221,24 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname === "/fill" ||
     pathname === "/transfer" ||
     pathname === "/delivery-check";
-  /* PDP pages own a sticky right column — Activity would collide. */
+  /* PDP / focused browse pages own a sticky right column — Activity would collide. */
   const isDrugDetail = /^\/drug\/[^/]+$/.test(pathname);
   const isTreatmentDetail = /^\/treatment\/[^/]+$/.test(pathname);
   const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname);
+  const isPharmacies = pathname === "/pharmacies" || pathname.startsWith("/pharmacies/");
   const hideActivityRail =
-    isDrugDetail || isTreatmentDetail || isOrderDetail || pathname === "/messages";
+    isDrugDetail ||
+    isTreatmentDetail ||
+    isOrderDetail ||
+    isPharmacies ||
+    pathname === "/messages";
   const showActivity = !focusedFlow && !hideActivityRail;
 
   /**
    * One layout for every screen. Left nav + right rail are usually reserved on
    * large screens so the middle column never shifts. The right rail swaps
-   * Activity ↔ Review when a page has unsaved edits. Drug / treatment / order
-   * detail drop the rail so their sticky summary owns the third column.
+   * Activity ↔ Review when a page has unsaved edits. Drug / treatment / order /
+   * pharmacies pages drop the rail so their sticky map or summary owns the third column.
    */
   return (
     <div className="min-h-screen bg-surface-0">

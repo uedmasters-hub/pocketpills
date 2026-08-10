@@ -9,14 +9,35 @@ import {
   type DeliverySpeed,
 } from "@/lib/postal";
 import { useUser } from "@/lib/user";
+import { getRegion } from "@/lib/pharmacies";
 
 type Step = "postal" | "result" | "options";
+
+/** Demo postal seeds when arriving from a province pharmacy page. */
+const PROVINCE_POSTAL: Record<string, string> = {
+  ab: "T2P 1J9",
+  bc: "V6B 1A1",
+  mb: "R3C 0A1",
+  nl: "A1C 1A1",
+  nb: "E3B 1A1",
+  ns: "B3J 1A1",
+  nt: "X1A 1A1",
+  nu: "X0A 0H0",
+  on: "M5H 2N2",
+  pe: "C1A 1A1",
+  qc: "H2Y 1C6",
+  sk: "S7K 1A1",
+  yt: "Y1A 1A1",
+};
 
 export function DeliveryCheck() {
   const nav = useNavigate();
   const [params] = useSearchParams();
   const { signedIn } = useUser();
-  const initial = formatPostal(params.get("postal") ?? "");
+  const provinceSlug = (params.get("province") ?? "").toLowerCase();
+  const region = getRegion(provinceSlug);
+  const seeded = provinceSlug ? PROVINCE_POSTAL[provinceSlug] : "";
+  const initial = formatPostal(params.get("postal") ?? seeded ?? "");
 
   const [step, setStep] = useState<Step>(isValidPostal(initial) ? "result" : "postal");
   const [postal, setPostal] = useState(initial);
@@ -87,6 +108,23 @@ export function DeliveryCheck() {
 
       {step === "postal" && (
         <section className="mt-8 space-y-4">
+          {region && (
+            <div className="rounded-2xl border border-line bg-[color:var(--pp-primary-100)] px-4 py-3.5 text-sm">
+              <p className="font-medium text-[color:var(--pp-primary-950)]">
+                Checking delivery for {region.name}
+              </p>
+              <p className="mt-0.5 text-ink-secondary">
+                Enter any postal code in {region.code}, or{" "}
+                <Link
+                  to={`/pharmacies/${region.slug}`}
+                  className="font-medium text-[color:var(--pp-violet)] hover:underline"
+                >
+                  browse pharmacies
+                </Link>
+                .
+              </p>
+            </div>
+          )}
           <label className="block" htmlFor="delivery-postal">
             <span className="mb-1.5 block text-sm font-medium text-ink-secondary">Postal code</span>
             <input

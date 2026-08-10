@@ -16,7 +16,9 @@ import {
   upsertSavedAccount,
   type FamilyMember,
   type LangCode,
+  type NotifChannel,
   type NotifPrefs,
+  type NotifTopic,
   type SavedAccount,
 } from "@/lib/accountPrefs";
 
@@ -65,26 +67,71 @@ function SavedToast({ show, label = "Saved" }: { show: boolean; label?: string }
 }
 
 /* ── Notifications ─────────────────────────────────────── */
-const NOTIF_ROWS: { key: keyof NotifPrefs; title: string; desc: string }[] = [
-  { key: "meds", title: "Medication reminders", desc: "Dose times and adherence nudges." },
-  { key: "delivery", title: "Delivery updates", desc: "When your order ships and arrives." },
-  { key: "refill", title: "Refill reminders", desc: "Before you run out of refills." },
-  { key: "care", title: "Care team messages", desc: "Clinician and pharmacist replies." },
-  { key: "marketing", title: "Offers & tips", desc: "Occasional product news. Optional." },
+const NOTIF_CHANNELS: { key: NotifChannel; title: string; desc: string }[] = [
+  {
+    key: "sms",
+    title: "SMS",
+    desc: "Text messages to your phone number on file.",
+  },
+  {
+    key: "email",
+    title: "Email",
+    desc: "Messages to the email on your account.",
+  },
+  {
+    key: "app",
+    title: "App notification",
+    desc: "Push alerts in the PocketPills app.",
+  },
 ];
+
+const NOTIF_TOPICS: { key: NotifTopic; label: string }[] = [
+  { key: "meds", label: "Medication reminders" },
+  { key: "delivery", label: "Delivery updates" },
+  { key: "refill", label: "Refill reminders" },
+  { key: "care", label: "Care team messages" },
+  { key: "marketing", label: "Offers & tips" },
+];
+
+/** Defaults applied when a channel is turned on. */
+const CHANNEL_ON_DEFAULTS: Record<NotifTopic, boolean> = {
+  meds: true,
+  delivery: true,
+  refill: true,
+  care: true,
+  marketing: false,
+};
 
 export function NotificationSettings() {
   const [prefs, setPrefs] = useState(() => loadNotifs());
   const [saved, setSaved] = useState(false);
 
-  const set = (key: keyof NotifPrefs, value: boolean) => {
-    setPrefs((p) => {
-      const next = { ...p, [key]: value };
-      saveNotifs(next);
-      return next;
-    });
+  const persist = (next: NotifPrefs) => {
+    saveNotifs(next);
+    setPrefs(next);
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1200);
+  };
+
+  const channelOn = (channel: NotifChannel) =>
+    NOTIF_TOPICS.some((t) => prefs[t.key][channel]);
+
+  const setChannelEnabled = (channel: NotifChannel, on: boolean) => {
+    const next = { ...prefs };
+    for (const topic of NOTIF_TOPICS) {
+      next[topic.key] = {
+        ...prefs[topic.key],
+        [channel]: on ? CHANNEL_ON_DEFAULTS[topic.key] : false,
+      };
+    }
+    persist(next);
+  };
+
+  const setTopic = (topic: NotifTopic, channel: NotifChannel, value: boolean) => {
+    persist({
+      ...prefs,
+      [topic]: { ...prefs[topic], [channel]: value },
+    });
   };
 
   return (
@@ -92,26 +139,64 @@ export function NotificationSettings() {
       <BackLink />
       <PageHead
         title="Notification settings"
-        sub="Choose how PocketPills keeps you in the loop. Changes save automatically."
+        sub="Turn a channel on or off. Optionally refine topics when it’s on. Changes save automatically."
       />
       <SavedToast show={saved} />
 
-      <section className={`${CARD} divide-y divide-line overflow-hidden`}>
-        {NOTIF_ROWS.map((row) => (
-          <div key={row.key} className="px-5 py-4 sm:px-6">
-            <Switch
-              checked={prefs[row.key]}
-              onChange={(v) => set(row.key, v)}
-              label={row.title}
-              desc={row.desc}
-              id={`notif-${row.key}`}
-            />
-          </div>
-        ))}
-      </section>
+      <h2 className="mb-4 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
+        How should we keep you updated?
+      </h2>
+
+      <div className="space-y-4">
+        {NOTIF_CHANNELS.map((channel) => {
+          const on = channelOn(channel.key);
+          return (
+            <section key={channel.key} className={`${CARD} overflow-hidden`}>
+              <div className="px-5 py-5 sm:px-6">
+                <Switch
+                  checked={on}
+                  onChange={(v) => setChannelEnabled(channel.key, v)}
+                  label={channel.title}
+                  desc={channel.desc}
+                  id={`notif-channel-${channel.key}`}
+                />
+              </div>
+
+              {on && (
+                <fieldset className="space-y-1 border-t border-line px-5 py-4 sm:px-6">
+                  <legend className="mb-2 px-2 text-xs font-medium text-ink-tertiary">
+                    Include (optional)
+                  </legend>
+                  {NOTIF_TOPICS.map((topic) => {
+                    const id = `notif-${channel.key}-${topic.key}`;
+                    return (
+                      <label
+                        key={topic.key}
+                        htmlFor={id}
+                        className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-[color:var(--pp-primary-200)]"
+                      >
+                        <input
+                          id={id}
+                          type="checkbox"
+                          checked={prefs[topic.key][channel.key]}
+                          onChange={(e) => setTopic(topic.key, channel.key, e.target.checked)}
+                          className="h-4 w-4 shrink-0 rounded border-line accent-[color:var(--pp-primary-950)]"
+                        />
+                        <span className="text-sm font-medium text-[color:var(--pp-primary-950)]">
+                          {topic.label}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </fieldset>
+              )}
+            </section>
+          );
+        })}
+      </div>
 
       <p className="mt-4 text-xs text-ink-tertiary">
-        Transactional emails (receipts, security) always send. Manage SMS in your phone settings.
+        Transactional emails (receipts, security) always send. Carrier rates may apply for SMS.
       </p>
     </div>
   );

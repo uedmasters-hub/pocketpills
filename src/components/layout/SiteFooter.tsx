@@ -1,10 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
 import { useUser } from "@/lib/user";
 import { LogoMark } from "@/components/Logo";
 import { CONTAINER, FOOTER_GAP } from "@/components/layout/Grid";
-import { formatPostal, isValidPostal } from "@/lib/postal";
-import { Button } from "@/components/ui/Button";
 import { isAlwaysPublicPath, isDualBrowsePath } from "@/lib/marketingPaths";
 
 const CDN = "https://static.pocketpills.com/acq-web";
@@ -152,70 +149,24 @@ function Social() {
 }
 
 const PROVINCES = [
-  "Alberta (AB)", "British Columbia (BC)", "Manitoba (MB)", "Newfoundland & Labrador (NL)",
-  "New Brunswick (NB)", "Nova Scotia (NS)", "Northwest Territories (NT)", "Nunavut (NU)",
-  "Ontario (ON)", "Prince Edward Island (PE)", "Quebec (QC)", "Saskatchewan (SK)", "Yukon (YT)",
+  { name: "Alberta", code: "AB", slug: "ab" },
+  { name: "British Columbia", code: "BC", slug: "bc" },
+  { name: "Manitoba", code: "MB", slug: "mb" },
+  { name: "Newfoundland & Labrador", code: "NL", slug: "nl" },
+  { name: "New Brunswick", code: "NB", slug: "nb" },
+  { name: "Nova Scotia", code: "NS", slug: "ns" },
+  { name: "Northwest Territories", code: "NT", slug: "nt" },
+  { name: "Nunavut", code: "NU", slug: "nu" },
+  { name: "Ontario", code: "ON", slug: "on" },
+  { name: "Prince Edward Island", code: "PE", slug: "pe" },
+  { name: "Quebec", code: "QC", slug: "qc" },
+  { name: "Saskatchewan", code: "SK", slug: "sk" },
+  { name: "Yukon", code: "YT", slug: "yt" },
 ];
-
-function PostalCheck() {
-  const nav = useNavigate();
-  const [postal, setPostal] = useState("");
-  const [error, setError] = useState(false);
-  const ready = isValidPostal(postal);
-
-  const submit = () => {
-    if (!ready) {
-      setError(true);
-      return;
-    }
-    nav(`/delivery-check?postal=${encodeURIComponent(formatPostal(postal))}`);
-  };
-
-  return (
-    <div className="mt-6 max-w-md">
-      <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">Check your postal code</p>
-      <p className="mt-1 text-sm text-ink-tertiary">See ETA and same-day availability for your address.</p>
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-start">
-        <label className="min-w-0 flex-1" htmlFor="footer-postal">
-          <span className="sr-only">Postal code</span>
-          <input
-            id="footer-postal"
-            value={postal}
-            onChange={(e) => {
-              setPostal(formatPostal(e.target.value));
-              setError(false);
-            }}
-            onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
-            placeholder="A1A 1A1"
-            autoComplete="postal-code"
-            className="h-11 w-full rounded-xl border border-line bg-white px-3.5 text-base text-ink outline-none focus:border-primary"
-            aria-invalid={error || undefined}
-            aria-describedby={error ? "footer-postal-error" : undefined}
-          />
-        </label>
-        <Button type="button" size="sm" className="shrink-0 sm:h-11" onClick={submit}>
-          Check delivery
-        </Button>
-      </div>
-      {error && (
-        <p id="footer-postal-error" className="mt-2 text-xs text-danger" role="alert">
-          Enter a valid Canadian postal code.
-        </p>
-      )}
-      <button
-        type="button"
-        onClick={() => nav("/delivery-check")}
-        className="mt-3 text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-80"
-      >
-        Full delivery check-up →
-      </button>
-    </div>
-  );
-}
 
 const COLUMNS: { head: string; links: [string, string][]; cta: [string, string] }[] = [
   { head: "Treatment", links: [["Weight loss", "/find-care"], ["Hair loss", "/find-care"], ["Erectile dysfunction", "/find-care"], ["Birth control", "/treatment/birth-control"]], cta: ["See all treatments", "/find-care"] },
-  { head: "Pharmacy", links: [["Fill a prescription", "/fill"], ["Transfer a prescription", "/transfer"], ["Find medications", "/drug"], ["Offers & discounts", "/offers"]], cta: ["Get started", "/get-started"] },
+  { head: "Pharmacy", links: [["Fill a prescription", "/fill"], ["Transfer a prescription", "/transfer"], ["Find medications", "/drug"], ["Pharmacies by region", "/pharmacies"]], cta: ["Get started", "/get-started"] },
   { head: "Medications", links: [["Ozempic", "/drug/ozempic"], ["Browse A–Z", "/drug"], ["Offers", "/offers"]], cta: ["Search prices", "/drug"] },
   { head: "Company", links: [["About", "/about-us"], ["How it works", "/how-it-works"], ["FAQs", "/questions"], ["Help centre", "/questions"]], cta: ["Contact us", "/questions"] },
 ];
@@ -320,23 +271,24 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
               Pocketpills delivers to:
             </h2>
             <ul className="mt-5 flex flex-wrap gap-2" aria-label="Delivery regions">
-              {PROVINCES.map((p) => {
-                const m = p.match(/^(.+?)\s*\(([^)]+)\)$/);
-                const name = m ? m[1] : p;
-                const code = m ? m[2] : "";
-                return (
-                  <li
-                    key={p}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--primary-200)] px-3 py-1.5 text-sm text-[color:var(--pp-primary-950)]"
+              {PROVINCES.map((p) => (
+                <li key={p.code}>
+                  <Link
+                    to={`/pharmacies/${p.slug}`}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--primary-200)] px-3 py-1.5 text-sm text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-200)] active:bg-[color:var(--state-pressed)]"
                   >
-                    <span className="font-medium">{name}</span>
-                    {code && <span className="text-2xs text-ink-tertiary">{code}</span>}
-                  </li>
-                );
-              })}
+                    <span className="font-medium">{p.name}</span>
+                    <span className="text-2xs text-ink-tertiary">{p.code}</span>
+                  </Link>
+                </li>
+              ))}
             </ul>
-
-            <PostalCheck />
+            <Link
+              to="/pharmacies"
+              className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-80"
+            >
+              More… <ArrowRight w={14} />
+            </Link>
           </div>
 
           <aside className="rounded-2xl border border-line bg-[color:var(--primary-200)] p-5 sm:p-6">

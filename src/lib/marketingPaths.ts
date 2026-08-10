@@ -13,13 +13,15 @@ export function isDualBrowsePath(pathname: string) {
     pathname === "/drug" ||
     pathname === "/find-care" ||
     pathname === "/delivery-check" ||
-    pathname === "/offers"
+    pathname === "/offers" ||
+    pathname === "/pharmacies"
   ) {
     return true;
   }
   if (pathname.startsWith("/drug/")) return true;
   if (pathname.startsWith("/treatment/")) return true;
   if (pathname.startsWith("/consult/")) return true;
+  if (pathname.startsWith("/pharmacies/")) return true;
   return false;
 }
 

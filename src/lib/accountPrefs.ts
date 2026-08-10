@@ -2,13 +2,17 @@
 
 export type LangCode = "en" | "fr";
 
-export interface NotifPrefs {
-  meds: boolean;
-  delivery: boolean;
-  refill: boolean;
-  care: boolean;
-  marketing: boolean;
+export type NotifChannel = "sms" | "email" | "app";
+
+export interface NotifChannels {
+  sms: boolean;
+  email: boolean;
+  app: boolean;
 }
+
+export type NotifTopic = "meds" | "delivery" | "refill" | "care" | "marketing";
+
+export type NotifPrefs = Record<NotifTopic, NotifChannels>;
 
 export interface FamilyMember {
   id: string;
@@ -33,13 +37,33 @@ const LANG_KEY = "pp.prefs.language";
 const FAMILY_KEY = "pp.prefs.family";
 const ACCOUNTS_KEY = "pp.prefs.accounts";
 
+const ALL_ON: NotifChannels = { sms: true, email: true, app: true };
+const ALL_OFF: NotifChannels = { sms: false, email: false, app: false };
+
 const DEFAULT_NOTIFS: NotifPrefs = {
-  meds: true,
-  delivery: true,
-  refill: true,
-  care: true,
-  marketing: false,
+  meds: { ...ALL_ON },
+  delivery: { ...ALL_ON },
+  refill: { ...ALL_ON },
+  care: { ...ALL_ON },
+  marketing: { ...ALL_OFF },
 };
+
+const NOTIF_TOPICS: NotifTopic[] = ["meds", "delivery", "refill", "care", "marketing"];
+
+function channelsFromLegacy(on: boolean): NotifChannels {
+  return on ? { ...ALL_ON } : { ...ALL_OFF };
+}
+
+function normalizeChannels(value: unknown, fallback: NotifChannels): NotifChannels {
+  if (typeof value === "boolean") return channelsFromLegacy(value);
+  if (!value || typeof value !== "object") return { ...fallback };
+  const v = value as Partial<NotifChannels>;
+  return {
+    sms: typeof v.sms === "boolean" ? v.sms : fallback.sms,
+    email: typeof v.email === "boolean" ? v.email : fallback.email,
+    app: typeof v.app === "boolean" ? v.app : fallback.app,
+  };
+}
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -60,7 +84,12 @@ function write(key: string, value: unknown) {
 }
 
 export function loadNotifs(): NotifPrefs {
-  return { ...DEFAULT_NOTIFS, ...read(NOTIF_KEY, {}) };
+  const raw = read<Record<string, unknown>>(NOTIF_KEY, {});
+  const next = { ...DEFAULT_NOTIFS };
+  for (const topic of NOTIF_TOPICS) {
+    next[topic] = normalizeChannels(raw[topic], DEFAULT_NOTIFS[topic]);
+  }
+  return next;
 }
 
 export function saveNotifs(p: NotifPrefs) {

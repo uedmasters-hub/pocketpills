@@ -1,10 +1,12 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState, useEffect, type ReactNode } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { Field, Badge } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
+import { MapEmbed } from "@/components/MapEmbed";
 import { createTransferOrder, TRANSFER_HINTS, type Order } from "@/lib/orders";
 import { useUser } from "@/lib/user";
+import { getPharmacy, loadSelectedPharmacy } from "@/lib/pharmacies";
 
 /* ── Flow model ─────────────────────────────────────────── */
 const STEPS = [
@@ -240,6 +242,7 @@ function ContinueBar({
 /* ── Page ───────────────────────────────────────────────── */
 export function TransferPrescription() {
   const nav = useNavigate();
+  const [params] = useSearchParams();
   const { user, displayName } = useUser();
   const [step, setStep] = useState<StepKey>("postal");
   const [postal, setPostal] = useState("");
@@ -258,6 +261,31 @@ export function TransferPrescription() {
     postal: "",
   });
   const [card, setCard] = useState({ number: "", exp: "", cvv: "" });
+
+  /* Prefill from /pharmacies/:region → Transfer from this pharmacy (once). */
+  useEffect(() => {
+    const id = params.get("pharmacy");
+    const area = (id ? getPharmacy(id) : null) ?? loadSelectedPharmacy();
+    if (!area) return;
+    const mapped: Pharmacy = {
+      id: area.id,
+      name: area.name,
+      address: `${area.address}, ${area.city}, ${area.province}`,
+      distance: area.distance,
+      lat: area.lat,
+      lng: area.lng,
+      photos: [
+        "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?w=240&h=160&fit=crop",
+        "https://images.unsplash.com/photo-1576602976047-174e57a47881?w=240&h=160&fit=crop",
+        "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=240&h=160&fit=crop",
+      ],
+    };
+    setPharmacy(mapped);
+    setQuery(area.name);
+    setStep("review");
+    // Intentionally once on mount — don't re-force review if the user goes back.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const close = () => nav("/app");
   const etaReady = isValidPostal(postal) || useLocation;
@@ -427,11 +455,10 @@ export function TransferPrescription() {
         footer={<ContinueBar onContinue={() => setStep("trust")} />}
       >
         <div className="relative overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-200)]">
-          <iframe
+          <MapEmbed
             title={`Map near ${pharmacy.name}`}
             src={mapSrc}
-            className="h-48 w-full border-0 sm:h-56"
-            loading="lazy"
+            className="h-48 sm:h-56"
           />
           <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
             <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)] shadow-sm">
