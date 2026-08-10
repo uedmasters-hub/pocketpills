@@ -431,24 +431,86 @@ export function ManageFamily() {
 }
 
 /* ── Benefits ──────────────────────────────────────────── */
-const BENEFITS = [
+type BenefitIconId = "delivery" | "billing" | "care" | "packs" | "family";
+
+function BenefitIcon({ id }: { id: BenefitIconId }) {
+  const c = {
+    width: 22,
+    height: 22,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.6,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true as const,
+  };
+  switch (id) {
+    case "delivery":
+      return (
+        <svg {...c}>
+          <path d="M3.5 7.5h11v9h-11z" />
+          <path d="M14.5 10.5h3.2l2.3 3v3h-5.5z" />
+          <circle cx="7.5" cy="17.5" r="1.6" />
+          <circle cx="17.5" cy="17.5" r="1.6" />
+        </svg>
+      );
+    case "billing":
+      return (
+        <svg {...c}>
+          <path d="M12 3.5 19.5 7v5.2c0 4.2-2.9 7.4-7.5 8.8-4.6-1.4-7.5-4.6-7.5-8.8V7L12 3.5Z" />
+          <path d="M9 12.2 11 14.2 15.2 10" />
+        </svg>
+      );
+    case "care":
+      return (
+        <svg {...c}>
+          <circle cx="12" cy="12" r="8" />
+          <path d="M12 8v8M8 12h8" />
+        </svg>
+      );
+    case "packs":
+      return (
+        <svg {...c}>
+          <rect x="4" y="5" width="16" height="14" rx="2" />
+          <path d="M8 5v14M12 5v14M16 5v14M4 10h16M4 14h16" />
+        </svg>
+      );
+    default:
+      return (
+        <svg {...c}>
+          <circle cx="9" cy="8" r="2.8" />
+          <path d="M3.5 19c0-2.9 2.4-4.8 5.5-4.8" />
+          <circle cx="16.5" cy="9" r="2.2" />
+          <path d="M13.2 19c0-2.4 1.7-4 3.8-4s3.5 1.4 3.5 3.5" />
+        </svg>
+      );
+  }
+}
+
+const BENEFITS: { icon: BenefitIconId; title: string; body: string }[] = [
   {
+    icon: "delivery",
     title: "Free delivery, every time",
     body: "Standard shipping to every province and territory — no membership fee.",
   },
   {
+    icon: "billing",
     title: "Direct insurance billing",
     body: "We bill your provincial and private plans so you only pay what’s left.",
   },
   {
+    icon: "care",
     title: "Licensed Canadian care",
     body: "Pharmacists and clinicians review every prescription before it ships.",
   },
   {
+    icon: "packs",
     title: "PocketPacks & auto-refill",
     body: "Sorted pouches and refill reminders so you never scramble for a fill.",
   },
   {
+    icon: "family",
     title: "Family coverage",
     body: "Manage meds for the people you care for from one account.",
   },
@@ -476,9 +538,14 @@ export function PocketpillsBenefits() {
 
       <ul className="mt-6 space-y-3">
         {BENEFITS.map((b) => (
-          <li key={b.title} className={`${CARD} p-5`}>
-            <p className="font-semibold text-[color:var(--pp-primary-950)]">{b.title}</p>
-            <p className="mt-1 text-sm text-ink-secondary">{b.body}</p>
+          <li key={b.title} className={`${CARD} flex gap-4 p-5`}>
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[color:var(--pp-primary-200)] text-[color:var(--pp-primary-950)]">
+              <BenefitIcon id={b.icon} />
+            </span>
+            <div className="min-w-0">
+              <p className="font-semibold text-[color:var(--pp-primary-950)]">{b.title}</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-secondary">{b.body}</p>
+            </div>
           </li>
         ))}
       </ul>
@@ -533,13 +600,21 @@ export function SwitchAccount() {
       snapshot: { ...user },
     });
 
-    const snap = (account.snapshot ?? {
+    const snap: Profile = {
       firstName: account.firstName,
       lastName: account.lastName,
-      email: account.email,
+      phone: "",
+      dob: "",
+      province: "ON",
+      healthCard: "",
+      address: "",
+      insurances: [],
+      allergies: [],
       onboarded: true,
-    }) as Profile;
-    replace({ ...snap, email: account.email });
+      ...(account.snapshot as Partial<Profile> | undefined),
+      email: account.email,
+    };
+    replace(snap);
     setSwitched(true);
     window.setTimeout(() => {
       setSwitched(false);

@@ -60,14 +60,25 @@ function orderTitle(o: Order) {
 }
 
 function OrderCard({ o }: { o: Order }) {
+  const nav = useNavigate();
   const total = orderTotals(o).total;
   const cancelled = o.status === "cancelled";
+  const delivered = o.status === "delivered";
+  const showDocs = delivered && o.type !== "transfer";
 
   return (
-    <Link
-      to={`/orders/${o.id}`}
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={() => nav(`/orders/${o.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          nav(`/orders/${o.id}`);
+        }
+      }}
       className={
-        `group relative flex items-center gap-4 overflow-hidden ${CARD} py-4 pl-5 pr-4 transition-colors ` +
+        `group relative flex cursor-pointer items-center gap-4 overflow-hidden ${CARD} py-4 pl-5 pr-4 transition-colors ` +
         "hover:bg-[color:var(--state-hover)] active:bg-[color:var(--state-pressed)] sm:gap-6 sm:py-5 sm:pl-6 sm:pr-5 " +
         (cancelled ? "opacity-70" : "")
       }
@@ -91,17 +102,42 @@ function OrderCard({ o }: { o: Order }) {
         </span>
       </span>
 
-      <span className="shrink-0 text-right">
-        <span className="block font-display text-lg font-medium text-[color:var(--pp-primary-950)] tnum">
-          {o.type === "transfer" && total === 0 ? "Free" : money(total)}
+      {showDocs ? (
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              nav(`/orders/${o.id}/receipt`);
+            }}
+            className="text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
+          >
+            View receipt
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              nav(`/orders/${o.id}/invoice`);
+            }}
+            className="text-2xs font-medium text-ink-tertiary transition-colors hover:text-[color:var(--pp-primary-950)]"
+          >
+            Invoice
+          </button>
         </span>
-        <span className="mt-0.5 block text-2xs text-ink-tertiary">
-          {o.type === "transfer"
-            ? "No charge yet"
-            : `${o.items.length} item${o.items.length === 1 ? "" : "s"}`}
+      ) : (
+        <span className="shrink-0 text-right">
+          <span className="block font-display text-lg font-medium text-[color:var(--pp-primary-950)] tnum">
+            {o.type === "transfer" && total === 0 ? "Free" : money(total)}
+          </span>
+          <span className="mt-0.5 block text-2xs text-ink-tertiary">
+            {o.type === "transfer"
+              ? "No charge yet"
+              : `${o.items.length} item${o.items.length === 1 ? "" : "s"}`}
+          </span>
         </span>
-      </span>
-    </Link>
+      )}
+    </div>
   );
 }
 
