@@ -7,6 +7,7 @@ import { MapEmbed } from "@/components/MapEmbed";
 import { createTransferOrder, TRANSFER_HINTS, type Order } from "@/lib/orders";
 import { useUser } from "@/lib/user";
 import { getPharmacy, loadSelectedPharmacy } from "@/lib/pharmacies";
+import { useI18n } from "@/lib/i18n";
 
 /* ── Flow model ─────────────────────────────────────────── */
 const STEPS = [
@@ -134,6 +135,7 @@ function TransferShell({
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  const { tx } = useI18n();
   const idx = STEPS.findIndex((s) => s.key === stepKey);
   const visible = STEPS.filter((s) => s.key !== "done");
   const visIdx = Math.min(idx, visible.length - 1);
@@ -153,16 +155,16 @@ function TransferShell({
               : "pointer-events-none text-transparent")
           }
         >
-          <span aria-hidden>‹</span> Back
+          <span aria-hidden>‹</span> {tx("Back")}
         </button>
         <h1 className="text-sm font-medium text-[color:var(--pp-primary-950)] sm:text-base">
-          Transfer prescriptions
+          {tx("Transfer prescriptions")}
         </h1>
         <button
           type="button"
           onClick={onClose}
           className="grid h-8 w-8 place-items-center rounded-full text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]"
-          aria-label="Close transfer"
+          aria-label={tx("Close transfer")}
         >
           ✕
         </button>
@@ -173,13 +175,15 @@ function TransferShell({
         <div className="mb-8">
           <div className="mb-2 flex items-baseline justify-between gap-3">
             <p className="pp-caps text-[color:var(--pp-violet)]">
-              {visible[visIdx]?.label}
+              {tx(visible[visIdx]?.label)}
             </p>
             <p className="text-xs font-medium text-ink-tertiary tnum">
-              Step {visIdx + 1} of {visible.length}
+              {tx("Step {n} of {total}")
+                .replace("{n}", String(visIdx + 1))
+                .replace("{total}", String(visible.length))}
             </p>
           </div>
-          <ol className="flex gap-1.5" aria-label="Transfer progress">
+          <ol className="flex gap-1.5" aria-label={tx("Transfer progress")}>
             {visible.map((s, i) => {
               const done = i < visIdx;
               const active = i === visIdx;
@@ -192,7 +196,9 @@ function TransferShell({
                         ? "bg-[color:var(--pp-primary-950)]"
                         : "bg-[color:var(--pp-primary-300)]")
                     }
-                    title={`Step ${i + 1}: ${s.label}`}
+                    title={tx("Step {n}: {label}")
+                      .replace("{n}", String(i + 1))
+                      .replace("{label}", tx(s.label))}
                   />
                 </li>
               );
@@ -200,8 +206,8 @@ function TransferShell({
           </ol>
           <p className="mt-2 text-2xs text-ink-tertiary">
             {visIdx + 1 < visible.length
-              ? `Next: ${visible[visIdx + 1]?.label}`
-              : "Almost done — confirm payment to finish"}
+              ? tx("Next: {label}").replace("{label}", tx(visible[visIdx + 1]?.label))
+              : tx("Almost done — confirm payment to finish")}
           </p>
         </div>
       )}
@@ -216,7 +222,7 @@ function TransferShell({
 function ContinueBar({
   onContinue,
   disabled,
-  label = "Continue",
+  label,
   trust,
 }: {
   onContinue: () => void;
@@ -224,16 +230,17 @@ function ContinueBar({
   label?: string;
   trust?: boolean;
 }) {
+  const { tx } = useI18n();
   return (
     <>
       {trust && (
         <p className="flex items-center justify-center gap-1.5 text-center text-2xs text-ink-tertiary">
           <span aria-hidden>🇨🇦</span>
-          Trusted by 800,000+ Canadians
+          {tx("Trusted by 800,000+ Canadians")}
         </p>
       )}
       <Button fullWidth onClick={onContinue} disabled={disabled} className="!rounded-full">
-        {label}
+        {label ?? tx("Continue")}
       </Button>
     </>
   );
@@ -241,6 +248,7 @@ function ContinueBar({
 
 /* ── Page ───────────────────────────────────────────────── */
 export function TransferPrescription() {
+  const { tx } = useI18n();
   const nav = useNavigate();
   const [params] = useSearchParams();
   const { user, displayName } = useUser();
@@ -316,21 +324,21 @@ export function TransferPrescription() {
         <ContinueBar trust onContinue={() => setStep("pharmacy")} disabled={!etaReady} />
       }>
         <h2 className="font-display text-[1.65rem] font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)] sm:text-3xl">
-          See how quickly we can deliver to your door.
+          {tx("See how quickly we can deliver to your door.")}
         </h2>
         <p className="mt-3 text-base text-ink-secondary">
-          We provide free 2-day delivery to over 85% of Canadian homes.
+          {tx("We provide free 2-day delivery to over 85% of Canadian homes.")}
         </p>
 
         <label className="mt-8 block">
-          <span className="mb-1.5 block text-sm font-medium text-ink-secondary">Postal code</span>
+          <span className="mb-1.5 block text-sm font-medium text-ink-secondary">{tx("Postal code")}</span>
           <input
             value={postal}
             onChange={(e) => {
               setPostal(formatPostal(e.target.value));
               setUseLocation(false);
             }}
-            placeholder="Enter postal code"
+            placeholder={tx("Enter postal code")}
             autoComplete="postal-code"
             className="h-12 w-full rounded-xl border border-line bg-white px-4 text-base text-ink placeholder:text-ink-tertiary focus:border-[color:var(--primary-600)]"
           />
@@ -346,17 +354,17 @@ export function TransferPrescription() {
             }}
             className="h-4 w-4 rounded border-line text-[color:var(--pp-primary-950)]"
           />
-          Use my current location
+          {tx("Use my current location")}
         </label>
 
         {etaReady && (
           <div className="mt-6 animate-fade-up rounded-2xl bg-[#D6F0EC] px-4 py-3.5 text-sm text-[color:var(--secondary-800)]">
             <p className="font-medium text-[color:var(--pp-primary-950)]">
-              Good news! We deliver to you. Most orders arrive within:
+              {tx("Good news! We deliver to you. Most orders arrive within:")}
             </p>
             <p className="mt-2 flex items-center gap-2 font-medium text-[#0A5A68]">
               <span className="grid h-5 w-5 place-items-center rounded-full bg-[#0A5A68] text-[10px] text-white" aria-hidden>✓</span>
-              2–8 business days
+              {tx("2–8 business days")}
             </p>
           </div>
         )}
@@ -369,14 +377,14 @@ export function TransferPrescription() {
     return (
       <TransferShell stepKey="pharmacy" onBack={() => setStep("postal")} onClose={close}>
         <h2 className="font-display text-[1.65rem] font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)] sm:text-3xl">
-          Find your current pharmacy
+          {tx("Find your current pharmacy")}
         </h2>
         <p className="mt-3 text-base text-ink-secondary">
-          Our team handles the entire transfer process with your old pharmacy from start to finish.
+          {tx("Our team handles the entire transfer process with your old pharmacy from start to finish.")}
         </p>
 
         <p className="mt-5 text-right text-sm text-ink-secondary">
-          Search pharmacy near:{" "}
+          {tx("Search pharmacy near:")}{" "}
           <button
             type="button"
             onClick={() => setStep("postal")}
@@ -388,11 +396,11 @@ export function TransferPrescription() {
 
         <div className="mt-3 flex gap-2">
           <label className="relative min-w-0 flex-1">
-            <span className="sr-only">Search pharmacy</span>
+            <span className="sr-only">{tx("Search pharmacy")}</span>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Enter pharmacy or address"
+              placeholder={tx("Enter pharmacy or address")}
               className="h-12 w-full rounded-xl border border-line bg-white py-2 pl-4 pr-11 text-base text-ink placeholder:text-ink-tertiary focus:border-[color:var(--primary-600)]"
             />
             <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-tertiary" aria-hidden>
@@ -404,7 +412,7 @@ export function TransferPrescription() {
           <button
             type="button"
             className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-line bg-white text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]"
-            aria-label="Open map"
+            aria-label={tx("Open map")}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden>
               <path d="M9 4.5 3.5 6.5v13l5.5-2 6 2 5.5-2v-13L15 6.5 9 4.5Z" strokeLinejoin="round" />
@@ -436,7 +444,7 @@ export function TransferPrescription() {
             </button>
           ))}
           {filtered.length === 0 && (
-            <p className="px-4 py-8 text-center text-sm text-ink-tertiary">No pharmacies match that search.</p>
+            <p className="px-4 py-8 text-center text-sm text-ink-tertiary">{tx("No pharmacies match that search.")}</p>
           )}
         </div>
       </TransferShell>
@@ -456,22 +464,22 @@ export function TransferPrescription() {
       >
         <div className="relative overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-200)]">
           <MapEmbed
-            title={`Map near ${pharmacy.name}`}
+            title={tx("Map near {name}").replace("{name}", pharmacy.name)}
             src={mapSrc}
             className="h-48 sm:h-56"
           />
           <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
             <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)] shadow-sm">
-              Show all ▾
+              {tx("Show all ▾")}
             </span>
           </div>
         </div>
 
         <h2 className="mt-6 font-display text-[1.65rem] font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)] sm:text-3xl">
-          Review pharmacy location
+          {tx("Review pharmacy location")}
         </h2>
         <p className="mt-3 text-base text-ink-secondary">
-          Verify that we've got the right pharmacy so we can handle your transfer to get your order ready.
+          {tx("Verify that we've got the right pharmacy so we can handle your transfer to get your order ready.")}
         </p>
 
         <div className="mt-5 rounded-2xl border border-line bg-white p-4 sm:p-5">
@@ -485,7 +493,7 @@ export function TransferPrescription() {
               onClick={() => setStep("pharmacy")}
               className="shrink-0 text-sm font-medium text-[color:var(--pp-primary-950)] underline underline-offset-2"
             >
-              Change
+              {tx("Change")}
             </button>
           </div>
           <div className="mt-4 flex gap-2 overflow-x-auto">
@@ -515,11 +523,11 @@ export function TransferPrescription() {
       >
         <div className="overflow-hidden rounded-3xl bg-[color:var(--pp-primary-950)] px-6 py-10 text-center text-white sm:px-8 sm:py-12">
           <p className="font-display text-xl font-medium leading-snug sm:text-2xl">
-            The pharmacy{" "}
+            {tx("The pharmacy")}{" "}
             <span className="mx-0.5 inline-block rounded-md bg-[#F5FF7A] px-1.5 py-0.5 font-semibold text-[color:var(--pp-primary-950)]">
               800,000+
             </span>{" "}
-            Canadians Love
+            {tx("Canadians Love")}
           </p>
 
           <p className="mt-10 font-display text-5xl font-medium text-[color:var(--pp-primary-400)]">4.8</p>
@@ -530,16 +538,16 @@ export function TransferPrescription() {
               <path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" />
               <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" />
             </svg>
-            Verified customer reviews
+            {tx("Verified customer reviews")}
           </div>
-          <div className="mt-2 flex justify-center gap-0.5 text-[color:var(--pp-star)]" aria-label="4.8 out of 5 stars">
+          <div className="mt-2 flex justify-center gap-0.5 text-[color:var(--pp-star)]" aria-label={tx("4.8 out of 5 stars")}>
             {"★★★★★".split("").map((s, i) => (
               <span key={i} className={i === 4 ? "opacity-45" : ""}>{s}</span>
             ))}
           </div>
 
           <blockquote className="mx-auto mt-8 max-w-sm text-sm leading-relaxed text-white/90 sm:text-base">
-            “Pocketpills makes life so much easier! My prescriptions are refilled and sent right to my door whenever they are needed, no more driving to a pharmacy or standing in line for them.”
+            {tx("“Pocketpills makes life so much easier! My prescriptions are refilled and sent right to my door whenever they are needed, no more driving to a pharmacy or standing in line for them.”")}
           </blockquote>
           <p className="mt-4 text-sm font-medium text-[color:var(--pp-primary-400)]">Louisa</p>
         </div>
@@ -562,10 +570,10 @@ export function TransferPrescription() {
         }
       >
         <h2 className="font-display text-[1.65rem] font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)] sm:text-3xl">
-          Where should we deliver your medications?
+          {tx("Where should we deliver your medications?")}
         </h2>
         <p className="mt-3 text-base text-ink-secondary">
-          We can deliver to your home, a loved one's place, or any location that suits your preference.
+          {tx("We can deliver to your home, a loved one's place, or any location that suits your preference.")}
         </p>
 
         {!addingAddress ? (
@@ -585,10 +593,10 @@ export function TransferPrescription() {
                   }
                 >
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-[color:var(--pp-primary-950)]">{a.label}</span>
+                    <span className="font-medium text-[color:var(--pp-primary-950)]">{tx(a.label)}</span>
                     {a.isDefault && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--pp-primary-200)] px-2 py-0.5 text-2xs font-semibold text-[color:var(--pp-primary-950)]">
-                        Default <span aria-hidden>✓</span>
+                        {tx("Default")} <span aria-hidden>✓</span>
                       </span>
                     )}
                   </div>
@@ -597,7 +605,7 @@ export function TransferPrescription() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                       <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
                     </svg>
-                    Edit
+                    {tx("Edit")}
                   </span>
                 </button>
               );
@@ -609,14 +617,14 @@ export function TransferPrescription() {
               className="flex w-full items-center gap-3 rounded-2xl border border-line bg-[color:var(--pp-primary-200)] px-4 py-3.5 text-left text-sm font-medium text-[color:var(--pp-primary-950)] transition-opacity hover:opacity-90"
             >
               <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-white" aria-hidden>+</span>
-              Add a new address
+              {tx("Add a new address")}
             </button>
           </div>
         ) : (
           <div className="mt-6 space-y-4">
             <label className="block">
               <span className="mb-1.5 block text-sm font-medium text-ink-secondary">
-                Name / Location <span className="text-danger">*</span>
+                {tx("Name / Location")} <span className="text-danger">*</span>
               </span>
               <select
                 value={newAddress.label}
@@ -624,38 +632,38 @@ export function TransferPrescription() {
                 className="h-12 w-full rounded-xl border border-line bg-white px-4 text-ink focus:border-[color:var(--primary-600)]"
               >
                 {["Home", "Work", "Family", "Other"].map((l) => (
-                  <option key={l}>{l}</option>
+                  <option key={l} value={l}>{tx(l)}</option>
                 ))}
               </select>
             </label>
             <div>
               <span className="mb-1.5 block text-sm font-medium text-ink-secondary">
-                Street address <span className="text-danger">*</span>
+                {tx("Street address")} <span className="text-danger">*</span>
               </span>
               <div className="space-y-2">
                 <input
                   value={newAddress.line1}
                   onChange={(e) => setNewAddress((a) => ({ ...a, line1: e.target.value }))}
-                  placeholder="Address Line 1"
+                  placeholder={tx("Address Line 1")}
                   className="h-12 w-full rounded-xl border border-line bg-white px-4 text-ink placeholder:text-ink-tertiary focus:border-[color:var(--primary-600)]"
                 />
                 <input
                   value={newAddress.line2}
                   onChange={(e) => setNewAddress((a) => ({ ...a, line2: e.target.value }))}
-                  placeholder="Address Line 2"
+                  placeholder={tx("Address Line 2")}
                   className="h-12 w-full rounded-xl border border-line bg-white px-4 text-ink placeholder:text-ink-tertiary focus:border-[color:var(--primary-600)]"
                 />
               </div>
             </div>
             <Field
-              label="City *"
-              placeholder="City"
+              label={tx("City *")}
+              placeholder={tx("City")}
               value={newAddress.city}
               onChange={(e) => setNewAddress((a) => ({ ...a, city: e.target.value }))}
             />
             <label className="block">
               <span className="mb-1.5 block text-sm font-medium text-ink-secondary">
-                Province <span className="text-danger">*</span>
+                {tx("Province")} <span className="text-danger">*</span>
               </span>
               <select
                 value={newAddress.province}
@@ -668,7 +676,7 @@ export function TransferPrescription() {
               </select>
             </label>
             <Field
-              label="Postal code *"
+              label={tx("Postal code *")}
               placeholder="A0A 0A0"
               value={newAddress.postal}
               onChange={(e) => setNewAddress((a) => ({ ...a, postal: formatPostal(e.target.value) }))}
@@ -678,7 +686,7 @@ export function TransferPrescription() {
               onClick={() => setAddingAddress(false)}
               className="text-sm font-medium text-ink-secondary hover:text-[color:var(--pp-primary-950)]"
             >
-              ← Use saved address instead
+              {tx("← Use saved address instead")}
             </button>
           </div>
         )}
@@ -706,21 +714,21 @@ export function TransferPrescription() {
         onClose={close}
         footer={
           <>
-            <p className="text-center text-2xs text-ink-tertiary">Powered by Moneris</p>
+            <p className="text-center text-2xs text-ink-tertiary">{tx("Powered by Moneris")}</p>
             <Button fullWidth disabled={!canAdd} onClick={submit} className="!rounded-full">
-              Add Card
+              {tx("Add Card")}
             </Button>
             <p className="text-center text-2xs text-ink-tertiary">
-              If you have zero copay, your card will not be charged anything.
+              {tx("If you have zero copay, your card will not be charged anything.")}
             </p>
           </>
         }
       >
         <h2 className="font-display text-[1.65rem] font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)] sm:text-3xl">
-          Enter payment method to setup seamless delivery.
+          {tx("Enter payment method to setup seamless delivery.")}
         </h2>
         <p className="mt-3 text-base text-ink-secondary">
-          We'll bill your insurance first. Your card is only charged for any remaining balance after you approve the order.
+          {tx("We'll bill your insurance first. Your card is only charged for any remaining balance after you approve the order.")}
         </p>
 
         <div className="mt-5 flex gap-3 rounded-2xl border border-line bg-[color:var(--pp-primary-200)] px-4 py-3.5 text-sm text-ink-secondary">
@@ -728,13 +736,13 @@ export function TransferPrescription() {
             !
           </span>
           <p>
-            Transfers are always free and your card will not be charged until you approve the cost of your order.
+            {tx("Transfers are always free and your card will not be charged until you approve the cost of your order.")}
           </p>
         </div>
 
         <div className="mt-6 space-y-4">
           <Field
-            label="Card Number"
+            label={tx("Card Number")}
             placeholder="•••• •••• •••• ••••"
             inputMode="numeric"
             value={card.number}
@@ -742,15 +750,15 @@ export function TransferPrescription() {
           />
           <div className="grid grid-cols-2 gap-3">
             <Field
-              label="Expiry (MMYY)"
-              placeholder="MMYY"
+              label={tx("Expiry (MMYY)")}
+              placeholder={tx("MMYY")}
               inputMode="numeric"
               value={card.exp}
               onChange={(e) => setCard((c) => ({ ...c, exp: e.target.value }))}
             />
             <Field
-              label="CVV"
-              placeholder="CVV"
+              label={tx("CVV")}
+              placeholder={tx("CVV")}
               inputMode="numeric"
               value={card.cvv}
               onChange={(e) => setCard((c) => ({ ...c, cvv: e.target.value }))}
@@ -770,20 +778,23 @@ export function TransferPrescription() {
           ✓
         </span>
         <h2 className="mt-5 font-display text-3xl font-medium text-[color:var(--pp-primary-950)]">
-          Transfer requested
+          {tx("Transfer requested")}
         </h2>
         <p className="mt-2 text-ink-secondary">
-          We'll contact {pharmacy?.name || "your pharmacy"} and move your prescriptions. Most transfers complete within 1–2 business days.
+          {tx("We'll contact {pharmacy} and move your prescriptions. Most transfers complete within 1–2 business days.").replace(
+            "{pharmacy}",
+            pharmacy?.name || tx("your pharmacy"),
+          )}
         </p>
         {trackId && (
           <p className="mt-2 text-sm font-medium text-[color:var(--pp-primary-950)]">
-            Tracking ID · <span className="tnum">{trackId}</span>
+            {tx("Tracking ID")} · <span className="tnum">{trackId}</span>
           </p>
         )}
 
         <div className="mt-6 rounded-2xl border border-line bg-white p-5 text-left">
-          <p className="mb-1 font-semibold text-[color:var(--pp-primary-950)]">What happens next</p>
-          <p className="mb-3 text-xs text-ink-tertiary">Follow these cues — or track live anytime in Pharmacy.</p>
+          <p className="mb-1 font-semibold text-[color:var(--pp-primary-950)]">{tx("What happens next")}</p>
+          <p className="mb-3 text-xs text-ink-tertiary">{tx("Follow these cues — or track live anytime in Pharmacy.")}</p>
           {TRANSFER_HINTS.map((h, i) => (
             <div key={h.title} className={"flex gap-3 py-3 " + (i > 0 ? "border-t border-line" : "")}>
               <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-200)] text-xs font-bold text-[color:var(--pp-primary-950)] tnum">
@@ -791,19 +802,21 @@ export function TransferPrescription() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="text-sm font-medium text-[color:var(--pp-primary-950)]">{h.title}</span>
-                  <Badge tone="neutral">{h.when}</Badge>
+                  <span className="text-sm font-medium text-[color:var(--pp-primary-950)]">{tx(h.title)}</span>
+                  <Badge tone="neutral">{tx(h.when)}</Badge>
                 </span>
-                <span className="mt-0.5 block text-sm text-ink-secondary">{h.detail}</span>
+                <span className="mt-0.5 block text-sm text-ink-secondary">{tx(h.detail)}</span>
               </span>
             </div>
           ))}
         </div>
 
         <div className="mt-4 rounded-2xl bg-[#D6F0EC] px-4 py-3.5 text-left text-sm text-[color:var(--secondary-800)]">
-          <p className="font-medium text-[color:var(--pp-primary-950)]">Tip</p>
+          <p className="font-medium text-[color:var(--pp-primary-950)]">{tx("Tip")}</p>
           <p className="mt-1">
-            Open <span className="font-medium">Pharmacy → Transfers</span> to see live status, pharmacy details, and next actions.
+            {tx("Open")}{" "}
+            <span className="font-medium">{tx("Pharmacy → Transfers")}</span>{" "}
+            {tx("to see live status, pharmacy details, and next actions.")}
           </p>
         </div>
 
@@ -815,14 +828,14 @@ export function TransferPrescription() {
             bgColor="#E5E3FF"
             marginSize={1}
           />
-          <p className="text-2xs font-medium text-[color:var(--pp-primary-800)]">Scan to track this transfer</p>
+          <p className="text-2xs font-medium text-[color:var(--pp-primary-800)]">{tx("Scan to track this transfer")}</p>
         </div>
 
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
           <Button onClick={() => nav(trackId ? `/orders/${trackId}` : "/pharmacy")}>
-            Track transfer
+            {tx("Track transfer")}
           </Button>
-          <Button variant="secondary" onClick={() => nav("/pharmacy")}>Go to Pharmacy</Button>
+          <Button variant="secondary" onClick={() => nav("/pharmacy")}>{tx("Go to Pharmacy")}</Button>
         </div>
       </div>
     </TransferShell>

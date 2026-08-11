@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Progress } from "@/components/ui";
+import { useI18n } from "@/lib/i18n";
 
 interface EntryFlowProps {
   eyebrow: string;
@@ -28,21 +29,25 @@ export function EntryFlow({
   onBack,
   backTo = "/app",
   onNext,
-  nextLabel = "Continue",
+  nextLabel,
   nextDisabled,
   hideNav,
 }: EntryFlowProps) {
   const nav = useNavigate();
+  const { tx } = useI18n();
   const pct = (step / total) * 100;
+  const stepLabel = tx("Step {n} of {total}")
+    .replace("{n}", String(step))
+    .replace("{total}", String(total));
 
   return (
     <div className="w-full max-w-3xl">
       <div className="mb-8">
         <div className="mb-3 flex items-baseline justify-between">
           <p className="pp-caps text-[color:var(--pp-violet)]">{eyebrow}</p>
-          <p className="text-xs font-medium text-ink-tertiary tnum">Step {step} of {total}</p>
+          <p className="text-xs font-medium text-ink-tertiary tnum">{stepLabel}</p>
         </div>
-        <Progress value={pct} label={`Step ${step} of ${total}`} />
+        <Progress value={pct} label={stepLabel} />
       </div>
 
       <div className="animate-fade-up">
@@ -53,8 +58,8 @@ export function EntryFlow({
 
       {!hideNav && (
         <div className="sticky bottom-4 mt-8 flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface-2/95 p-3 shadow-float backdrop-blur md:static md:border-0 md:bg-transparent md:p-0 md:shadow-none">
-          <Button variant="secondary" onClick={() => (onBack ? onBack() : nav(backTo))}>← Back</Button>
-          {onNext && <Button onClick={onNext} disabled={nextDisabled}>{nextLabel}</Button>}
+          <Button variant="secondary" onClick={() => (onBack ? onBack() : nav(backTo))}>{tx("← Back")}</Button>
+          {onNext && <Button onClick={onNext} disabled={nextDisabled}>{nextLabel ?? tx("Continue")}</Button>}
         </div>
       )}
     </div>

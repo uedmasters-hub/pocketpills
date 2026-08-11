@@ -149,15 +149,15 @@
     --font-size-body-l: 1.25rem;
     --font-size-body-m: 1.125rem;
     --font-size-body-s: 1rem;
-    --font-size-body-xs: 0.875rem;
-    --font-size-body-xxs: 0.6875rem;
+    --font-size-body-xs: 0.9375rem;
+    --font-size-body-xxs: 0.75rem;
 
     /* Buttons (production) */
     --btn-padding-default: 1rem 2rem;
     --btn-padding-sm: 0.75rem 1.5rem;
     --btn-padding-lg: 0.625rem 1.5rem;
     --btn-font-size-default: 1.125rem;
-    --btn-font-size-sm: 0.875rem;
+    --btn-font-size-sm: 0.9375rem;
     --btn-font-size-lg: 1.125rem;
 
     /* ── Semantic app layer ──────────────────────────────── */
@@ -346,15 +346,15 @@
 
   /* Caps / eyebrow — production ds-caps-xxs / xs */
   .pp-caps {
-    font-size: 0.75rem;
-    line-height: 1.25;
+    font-size: 0.8125rem;
+    line-height: 1.35;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
   }
   .pp-caps-xs {
-    font-size: 0.875rem;
-    line-height: 1.25;
+    font-size: 0.9375rem;
+    line-height: 1.35;
     font-weight: 700;
     letter-spacing: 0.02em;
     text-transform: uppercase;

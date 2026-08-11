@@ -81,12 +81,12 @@ export default {
           strong: "var(--border-strong)",
         },
       },
-      // Production type scale (Satoshi)
+      // Production type scale (Satoshi) — body steps nudged up for UI chrome & Devanagari
       fontSize: {
-        "2xs": ["0.6875rem", { lineHeight: "1.5", letterSpacing: "0.02em" }],   // 11  body-xxs / meta
-        xs:    ["0.75rem",   { lineHeight: "1.25", letterSpacing: "0.04em" }],  // 12  caps-xxs
-        sm:    ["0.875rem",  { lineHeight: "1.5", letterSpacing: "0.02em" }],   // 14  body-xs
-        base:  ["1rem",      { lineHeight: "1.5", letterSpacing: "0.02em" }],   // 16  body-s
+        "2xs": ["0.75rem",   { lineHeight: "1.5", letterSpacing: "0.02em" }],   // 12  meta
+        xs:    ["0.8125rem", { lineHeight: "1.35", letterSpacing: "0.03em" }],  // 13  caps / dense
+        sm:    ["0.9375rem", { lineHeight: "1.5", letterSpacing: "0.02em" }],   // 15  body-xs
+        base:  ["1rem",      { lineHeight: "1.5", letterSpacing: "0.02em" }],   // 16  body-s (sidebar)
         md:    ["1.125rem",  { lineHeight: "1.5", letterSpacing: "0.02em" }],   // 18  body-m
         lg:    ["1.25rem",   { lineHeight: "1.2", letterSpacing: "0" }],        // 20  h6 / body-l
         xl:    ["1.4375rem", { lineHeight: "1.2", letterSpacing: "0.02em" }],   // 23  h5

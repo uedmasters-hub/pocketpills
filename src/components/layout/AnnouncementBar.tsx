@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "@/lib/i18n";
 
 const DISMISS_KEY = "pp.announce.dismissed";
 const ANNOUNCE_INTERVAL_MS = 8000;
@@ -83,6 +84,7 @@ function TrustIcon({ name }: { name: (typeof TRUST_ITEMS)[number]["icon"] }) {
 }
 
 function TrustMarquee() {
+  const { tx } = useI18n();
   const loop = [...TRUST_ITEMS, ...TRUST_ITEMS];
   return (
     <div className="w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
@@ -95,7 +97,7 @@ function TrustMarquee() {
             <span className="text-white">
               <TrustIcon name={item.icon} />
             </span>
-            {item.label}
+            {tx(item.label)}
           </span>
         ))}
       </div>
@@ -116,6 +118,7 @@ function readDismissed() {
  * Dismiss is session-scoped so it stays gone while browsing.
  */
 export function AnnouncementBar({ onGo }: { onGo?: () => void } = {}) {
+  const { tx } = useI18n();
   const nav = useNavigate();
   const [show, setShow] = useState(() => !readDismissed());
   const [mode, setMode] = useState<"offer" | "trust">("offer");
@@ -168,13 +171,13 @@ export function AnnouncementBar({ onGo }: { onGo?: () => void } = {}) {
             (isOffer ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-1 opacity-0")
           }
         >
-          <span className="text-2xs text-white/85 sm:text-xs">Ozempic® now at just $139</span>
+          <span className="text-2xs text-white/85 sm:text-xs">{tx("Ozempic® now at just $139")}</span>
           <button
             type="button"
             onClick={go}
             className="inline-flex items-center gap-1.5 text-2xs font-semibold text-white transition-opacity duration-200 hover:opacity-80 sm:text-xs"
           >
-            View offers <CircleArrow />
+            {tx("View offers")} <CircleArrow />
           </button>
         </div>
 
@@ -193,7 +196,7 @@ export function AnnouncementBar({ onGo }: { onGo?: () => void } = {}) {
                   <span className="text-white">
                     <TrustIcon name={item.icon} />
                   </span>
-                  {item.label}
+                  {tx(item.label)}
                 </span>
               ))}
             </div>
@@ -206,7 +209,7 @@ export function AnnouncementBar({ onGo }: { onGo?: () => void } = {}) {
           type="button"
           onClick={dismiss}
           className="absolute right-3 z-10 text-2xs text-white/55 transition-colors hover:text-white sm:right-5"
-          aria-label="Dismiss announcement"
+          aria-label={tx("Dismiss announcement")}
         >
           ✕
         </button>

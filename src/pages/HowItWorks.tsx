@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useUser } from "@/lib/user";
 import { SECTION_GAP } from "@/components/layout/Grid";
+import { useI18n } from "@/lib/i18n";
 
 const CDN = "https://static.pocketpills.com/acq-web/redesign/home";
 const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -142,14 +143,15 @@ function CheckIcon() {
 }
 
 function BulletList({ title, items }: { title: string; items: string[] }) {
+  const { tx } = useI18n();
   return (
     <div>
-      <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{title}</p>
+      <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{tx(title)}</p>
       <ul className="mt-3 space-y-2.5">
         {items.map((item) => (
           <li key={item} className="flex gap-2.5 text-sm leading-snug text-ink-secondary">
             <CheckIcon />
-            <span>{item}</span>
+            <span>{tx(item)}</span>
           </li>
         ))}
       </ul>
@@ -158,6 +160,7 @@ function BulletList({ title, items }: { title: string; items: string[] }) {
 }
 
 function StepCard({ step, flip }: { step: Step; flip?: boolean }) {
+  const { tx } = useI18n();
   return (
     <article className="overflow-hidden rounded-2xl border border-line bg-white lg:grid lg:grid-cols-2 lg:items-stretch">
       <div
@@ -183,10 +186,10 @@ function StepCard({ step, flip }: { step: Step; flip?: boolean }) {
           <p className="pp-caps text-[color:var(--pp-violet)]">Step {step.n}</p>
         </div>
         <h2 className="mt-3 font-display text-2xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-3xl">
-          {step.title}
+          {tx(step.title)}
         </h2>
-        <p className="mt-2 text-base font-medium text-[color:var(--pp-primary-800)]">{step.lead}</p>
-        <p className="mt-2 text-sm leading-relaxed text-ink-secondary sm:text-base">{step.body}</p>
+        <p className="mt-2 text-base font-medium text-[color:var(--pp-primary-800)]">{tx(step.lead)}</p>
+        <p className="mt-2 text-sm leading-relaxed text-ink-secondary sm:text-base">{tx(step.body)}</p>
 
         <div className={"mt-6 grid gap-6 " + (step.secondary ? "sm:grid-cols-2" : "")}>
           <BulletList title={step.listTitle} items={step.items} />
@@ -200,14 +203,15 @@ function StepCard({ step, flip }: { step: Step; flip?: boolean }) {
 }
 
 function Faq() {
+  const { tx } = useI18n();
   const [open, setOpen] = useState<number | null>(0);
 
   return (
     <section aria-labelledby="how-faq-heading" className="grid gap-8 lg:grid-cols-[minmax(220px,280px)_1fr] lg:gap-12">
       <div className="lg:sticky lg:top-28 lg:self-start">
-        <p className="pp-caps text-[color:var(--pp-violet)]">Frequently asked</p>
+        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Frequently Asked")}</p>
         <h2 id="how-faq-heading" className="mt-3 font-display text-2xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-3xl">
-          Your questions, answered.
+          {tx("Your questions, answered.")}
         </h2>
       </div>
 
@@ -234,7 +238,7 @@ function Faq() {
                 aria-controls={panelId}
               >
                 <span className="text-base font-medium leading-snug text-[color:var(--pp-primary-900)]">
-                  {q}
+                  {tx(q)}
                 </span>
                 <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center text-[color:var(--pp-primary-900)]" aria-hidden>
                   {isOpen ? (
@@ -265,9 +269,10 @@ function Faq() {
 }
 
 export function HowItWorks() {
+  const { tx, lang } = useI18n();
   const { signedIn } = useUser();
   const primaryTo = signedIn ? "/dashboard" : "/get-started";
-  const primaryLabel = signedIn ? "Go to dashboard" : "Get started";
+  const primaryLabel = signedIn ? tx("Go to dashboard") : tx("Get started");
 
   return (
     <div className={`flex flex-col ${SECTION_GAP}`}>
@@ -275,9 +280,15 @@ export function HowItWorks() {
           <header className="overflow-hidden rounded-2xl border border-line bg-white">
             <div className="grid lg:grid-cols-[1.1fr_0.9fr] lg:items-stretch">
               <div className="flex flex-col justify-center p-6 sm:p-8 md:p-10 lg:p-12">
-                <p className="pp-caps text-[color:var(--pp-violet)]">How it works</p>
+                <p className="pp-caps text-[color:var(--pp-violet)]">{tx("How it works")}</p>
                 <h1 className="mt-3 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-4xl lg:text-5xl">
-                  Do it <span className="text-[color:var(--pp-violet)]">all</span> without leaving home.
+                  {lang === "en" ? (
+                    <>
+                      Do it <span className="text-[color:var(--pp-violet)]">all</span> without leaving home.
+                    </>
+                  ) : (
+                    tx("Do it all without leaving home.")
+                  )}
                 </h1>
                 <p className="mt-3 max-w-lg text-base leading-relaxed text-ink-secondary">
                   From membership to delivery — doctor visits, renewals, and pharmacy care in four simple steps.
@@ -287,7 +298,7 @@ export function HowItWorks() {
                     {primaryLabel}
                   </Link>
                   <Link to="/find-care" className={CTA_SECONDARY}>
-                    Explore treatments
+                    {tx("Explore treatments")}
                   </Link>
                 </div>
               </div>
@@ -317,7 +328,7 @@ export function HowItWorks() {
                     {s.n}
                   </span>
                   <span className="text-sm font-medium leading-snug text-[color:var(--pp-primary-950)]">
-                    {s.title}
+                    {tx(s.title)}
                   </span>
                 </li>
               ))}
@@ -333,7 +344,7 @@ export function HowItWorks() {
 
           {/* Trust strip */}
           <aside className="rounded-2xl border border-line bg-white px-6 py-5 sm:px-8 sm:py-6">
-            <p className="pp-caps text-[color:var(--pp-violet)]">Why it works</p>
+            <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Why it works")}</p>
             <ul className="mt-4 grid gap-4 sm:grid-cols-3">
               {[
                 ["Licensed care", "Canadian doctors and pharmacists, online."],
@@ -341,8 +352,8 @@ export function HowItWorks() {
                 ["One account", "You and your family, managed together."],
               ].map(([t, d]) => (
                 <li key={t}>
-                  <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{t}</p>
-                  <p className="mt-1 text-sm text-ink-secondary">{d}</p>
+                  <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{tx(t)}</p>
+                  <p className="mt-1 text-sm text-ink-secondary">{tx(d)}</p>
                 </li>
               ))}
             </ul>
@@ -352,9 +363,9 @@ export function HowItWorks() {
 
           {/* Closing CTA */}
           <section className="rounded-2xl border border-line bg-white px-6 py-10 text-center sm:px-10 sm:py-12">
-            <p className="pp-caps text-[color:var(--pp-violet)]">Ready when you are</p>
+            <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Ready when you are")}</p>
             <h2 className="mx-auto mt-3 max-w-lg font-display text-2xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-3xl">
-              Stay in control of your health.
+              {tx("Stay in control of your health.")}
             </h2>
             <p className="mx-auto mt-3 max-w-md text-base text-ink-secondary">
               Join Pocketpills for doctor-led care, refills, and free prescription delivery.
@@ -364,7 +375,7 @@ export function HowItWorks() {
                 {primaryLabel}
               </Link>
               <Link to="/transfer" className={CTA_SECONDARY}>
-                Transfer a prescription
+                {tx("Transfer a prescription")}
               </Link>
             </div>
           </section>

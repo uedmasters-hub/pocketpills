@@ -1,3 +1,5 @@
+import { useI18n } from "@/lib/i18n";
+
 /** Storefront trust strip — ratings + Canadian care proof. */
 const STATS = [
   { title: "100% Canadian Care", sub: "Trusted by millions of Canadians" },
@@ -8,19 +10,20 @@ const STATS = [
 ] as const;
 
 export function TrustStrip({ className = "" }: { className?: string }) {
+  const { tx } = useI18n();
   return (
     <div
       className={
         "overflow-hidden rounded-2xl border border-line bg-white px-4 py-5 sm:px-5 sm:py-6 " +
         className
       }
-      aria-label="Trust and ratings"
+      aria-label={tx("Trust and ratings")}
     >
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5 lg:gap-0 lg:divide-x lg:divide-[color:var(--border-default)]">
         {STATS.map((s) => (
           <div key={s.sub} className="min-w-0 lg:px-5 first:lg:pl-1 last:lg:pr-1">
-            <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{s.title}</p>
-            <p className="mt-0.5 text-2xs leading-snug text-ink-tertiary">{s.sub}</p>
+            <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx(s.title)}</p>
+            <p className="mt-0.5 text-2xs leading-snug text-ink-tertiary">{tx(s.sub)}</p>
           </div>
         ))}
       </div>

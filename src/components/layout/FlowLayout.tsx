@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { JourneyStepper } from "@/components/JourneyStepper";
 import type { CareStepKey } from "@/lib/journey";
+import { useI18n } from "@/lib/i18n";
 
 interface FlowLayoutProps {
   step: CareStepKey;
@@ -23,11 +24,12 @@ export function FlowLayout({
   children,
   back,
   onContinue,
-  continueLabel = "Continue",
+  continueLabel,
   continueDisabled,
   hideFooter,
 }: FlowLayoutProps) {
   const nav = useNavigate();
+  const { tx } = useI18n();
   return (
     <div className="w-full max-w-3xl">
       <JourneyStepper current={step} />
@@ -40,12 +42,12 @@ export function FlowLayout({
       {!hideFooter && (
         <div className="sticky bottom-4 mt-8 flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface-2/95 p-3 shadow-float backdrop-blur md:static md:border-0 md:bg-transparent md:p-0 md:shadow-none">
           {back ? (
-            <Button variant="secondary" onClick={() => nav(back)}>← Back</Button>
+            <Button variant="secondary" onClick={() => nav(back)}>{tx("← Back")}</Button>
           ) : (
             <span />
           )}
           {onContinue && (
-            <Button onClick={onContinue} disabled={continueDisabled}>{continueLabel}</Button>
+            <Button onClick={onContinue} disabled={continueDisabled}>{continueLabel ?? tx("Continue")}</Button>
           )}
         </div>
       )}

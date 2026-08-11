@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useUser } from "@/lib/user";
 import { profileChecklist, pendingRows, type ChecklistId } from "@/lib/profile";
+import { useI18n } from "@/lib/i18n";
 
 /* ── icons ─────────────────────────────────────────────── */
 function RowIcon({ id }: { id: ChecklistId }) {
@@ -20,8 +21,9 @@ function RowIcon({ id }: { id: ChecklistId }) {
 }
 
 function NeedsAttention() {
+  const { tx } = useI18n();
   return (
-    <span className="text-[#B4541F]" aria-label="Needs attention">
+    <span className="text-[#B4541F]" aria-label={tx("Needs attention")}>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
         <circle cx="12" cy="12" r="9" /><path d="M12 8.2v.01M12 11v5" />
       </svg>
@@ -34,8 +36,9 @@ function NeedsAttention() {
 
 /* ── page ──────────────────────────────────────────────── */
 function Done() {
+  const { tx } = useI18n();
   return (
-    <span className="text-wellness" aria-label="Complete">
+    <span className="text-wellness" aria-label={tx("Complete")}>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
         <circle cx="12" cy="12" r="9" /><path d="m8.4 12.2 2.4 2.4 4.6-4.8" />
       </svg>
@@ -43,7 +46,22 @@ function Done() {
   );
 }
 
+function displayRowValue(value: string | undefined, tx: (english: string) => string): string {
+  if (!value) return tx("Added");
+  if (value === "None" || value === "Added" || value === "On file") return tx(value);
+  if (value.endsWith(" noted")) {
+    const count = value.slice(0, -" noted".length);
+    return `${count} ${tx("noted")}`;
+  }
+  if (value.endsWith(" plans")) {
+    const count = value.slice(0, -" plans".length);
+    return `${count} ${tx("plans")}`;
+  }
+  return value;
+}
+
 export function Profile() {
+  const { tx } = useI18n();
   const { user } = useUser();
   const rows = profileChecklist(user);
   const outstanding = pendingRows(user).length;
@@ -51,14 +69,18 @@ export function Profile() {
   return (
     <div>
       <header className="mb-8">
-        <p className="pp-caps text-[color:var(--pp-violet)]">Profile</p>
+        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Profile")}</p>
         <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          Your profile
+          {tx("Your profile")}
         </h1>
         <p className="mt-2 max-w-xl text-base text-ink-secondary">
           {outstanding > 0
-            ? `${outstanding} section${outstanding === 1 ? "" : "s"} still need attention. Completing them lets us bill your plans and deliver without delay.`
-            : "Everything's up to date. We'll let you know if anything needs a refresh."}
+            ? `${outstanding} ${tx(
+                outstanding === 1
+                  ? "section still need attention. Completing them lets us bill your plans and deliver without delay."
+                  : "sections still need attention. Completing them lets us bill your plans and deliver without delay.",
+              )}`
+            : tx("Everything's up to date. We'll let you know if anything needs a refresh.")}
         </p>
       </header>
 
@@ -73,10 +95,10 @@ export function Profile() {
             }
           >
             <span className="shrink-0 text-[color:var(--pp-primary-950)]"><RowIcon id={r.id} /></span>
-            <span className="min-w-0 flex-1 text-base text-[color:var(--pp-primary-950)]">{r.label}</span>
+            <span className="min-w-0 flex-1 text-base text-[color:var(--pp-primary-950)]">{tx(r.label)}</span>
             {r.done
               ? <span className="flex items-center gap-2">
-                  <span className="text-base text-ink-tertiary">{r.value ?? "Added"}</span>
+                  <span className="text-base text-ink-tertiary">{displayRowValue(r.value, tx)}</span>
                   {r.required && <Done />}
                 </span>
               : <NeedsAttention />}
@@ -86,9 +108,8 @@ export function Profile() {
       </div>
 
       <p className="mt-4 text-xs text-ink-tertiary">
-        Your information is encrypted and never shared without your permission.
+        {tx("Your information is encrypted and never shared without your permission.")}
       </p>
     </div>
   );
 }
-

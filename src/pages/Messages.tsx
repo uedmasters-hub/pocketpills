@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { useI18n } from "@/lib/i18n";
 
 type Role = "Clinician" | "Pharmacist" | "Support";
 
@@ -114,6 +115,7 @@ function resolveThreadId(withParam: string | null, orderParam: string | null) {
 }
 
 export function Messages() {
+  const { tx } = useI18n();
   const nav = useNavigate();
   const [params, setParams] = useSearchParams();
   const withParam = params.get("with");
@@ -166,20 +168,21 @@ export function Messages() {
     setCompose("");
   };
 
+  const unreadCount = Object.values(unread).filter(Boolean).length;
   const orderNote =
     orderParam && (activeId === "care" || activeId === "pharmacy")
-      ? `About order ${orderParam}`
+      ? `${tx("About order")} ${orderParam}`
       : null;
 
   return (
     <div className="flex min-h-[calc(100dvh-12rem)] flex-col">
       <header className="mb-5 shrink-0 lg:mb-6">
-        <p className="pp-caps text-[color:var(--pp-violet)]">Messages</p>
+        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Messages")}</p>
         <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-4xl">
-          Your care team
+          {tx("Your care team")}
         </h1>
         <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          Message a pharmacist or clinician any day of the week — usually replies within a few hours.
+          {tx("Message a pharmacist or clinician any day of the week — usually replies within a few hours.")}
         </p>
       </header>
 
@@ -192,9 +195,9 @@ export function Messages() {
           }
         >
           <div className="border-b border-line px-4 py-3.5">
-            <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">Inbox</p>
+            <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Inbox")}</p>
             <p className="mt-0.5 text-2xs text-ink-tertiary">
-              {Object.values(unread).filter(Boolean).length} unread
+              {unreadCount} {tx("unread")}
             </p>
           </div>
           <ul className="flex-1 overflow-y-auto p-2">
@@ -220,11 +223,11 @@ export function Messages() {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2">
                         <span className="truncate text-sm font-semibold text-[color:var(--pp-primary-950)]">
-                          {t.who}
+                          {t.who === "PocketPills Pharmacy" || t.who === "Care Support" ? tx(t.who) : t.who}
                         </span>
                         <span className="shrink-0 text-2xs text-ink-tertiary">{t.when}</span>
                       </span>
-                      <span className="mt-0.5 block text-2xs text-ink-tertiary">{t.role}</span>
+                      <span className="mt-0.5 block text-2xs text-ink-tertiary">{tx(t.role)}</span>
                       <span
                         className={
                           "mt-1 block truncate text-sm " +
@@ -233,13 +236,13 @@ export function Messages() {
                             : "text-ink-tertiary")
                         }
                       >
-                        {(drafts[t.id]?.at(-1)?.body ?? t.preview)}
+                        {tx(drafts[t.id]?.at(-1)?.body ?? t.preview)}
                       </span>
                     </span>
                     {unread[t.id] && (
                       <span
                         className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[color:var(--pp-violet)]"
-                        aria-label="Unread"
+                        aria-label={tx("Unread")}
                       />
                     )}
                   </button>
@@ -262,7 +265,7 @@ export function Messages() {
               className="text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)] lg:hidden"
               onClick={() => setMobileShowChat(false)}
             >
-              ← Inbox
+              ← {tx("Inbox")}
             </button>
             <span
               className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${active.tone}`}
@@ -270,10 +273,12 @@ export function Messages() {
               {initials(active.who)}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold text-[color:var(--pp-primary-950)]">{active.who}</p>
+              <p className="truncate font-semibold text-[color:var(--pp-primary-950)]">
+                {active.who === "PocketPills Pharmacy" || active.who === "Care Support" ? tx(active.who) : active.who}
+              </p>
               <p className="truncate text-2xs text-ink-tertiary">
-                {active.role}
-                {orderNote ? ` · ${orderNote}` : " · Typically replies in a few hours"}
+                {tx(active.role)}
+                {orderNote ? ` · ${orderNote}` : ` · ${tx("Typically replies in a few hours")}`}
               </p>
             </div>
             {orderParam && (
@@ -282,7 +287,7 @@ export function Messages() {
                 onClick={() => nav(`/orders/${orderParam}`)}
                 className="hidden shrink-0 rounded-full border border-line px-3 py-1.5 text-2xs font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)] sm:inline-flex"
               >
-                View order
+                {tx("View order")}
               </button>
             )}
           </div>
@@ -290,7 +295,8 @@ export function Messages() {
           <div className="flex-1 space-y-3 overflow-y-auto bg-[color:var(--pp-page)]/40 px-4 py-5 sm:px-5">
             {orderParam && (
               <div className="mx-auto max-w-md rounded-2xl border border-line bg-white px-4 py-3 text-center text-2xs text-ink-secondary">
-                Conversation linked to <span className="font-semibold text-[color:var(--pp-primary-950)]">{orderParam}</span>
+                {tx("Conversation linked to")}{" "}
+                <span className="font-semibold text-[color:var(--pp-primary-950)]">{orderParam}</span>
               </div>
             )}
             {messages.map((m) => (
@@ -306,13 +312,13 @@ export function Messages() {
                       : "rounded-bl-md border border-line bg-white text-[color:var(--pp-primary-950)]")
                   }
                 >
-                  <p>{m.body}</p>
+                  <p>{m.from === "you" && m.id.startsWith("local-") ? m.body : tx(m.body)}</p>
                   <p
                     className={
                       "mt-1.5 text-2xs " + (m.from === "you" ? "text-white/65" : "text-ink-tertiary")
                     }
                   >
-                    {m.at}
+                    {tx(m.at)}
                   </p>
                 </div>
               </div>
@@ -329,7 +335,7 @@ export function Messages() {
           >
             <div className="flex items-end gap-2 rounded-2xl border border-line bg-[color:var(--pp-primary-100)]/40 p-2 focus-within:border-[color:var(--pp-primary-800)]">
               <label className="sr-only" htmlFor="message-compose">
-                Write a message
+                {tx("Write a message")}
               </label>
               <textarea
                 id="message-compose"
@@ -342,15 +348,15 @@ export function Messages() {
                     send();
                   }
                 }}
-                placeholder={`Message ${active.who.split(" ")[0]}…`}
+                placeholder={`${tx("Message")} ${active.who.split(" ")[0]}…`}
                 className="max-h-28 min-h-[2.5rem] flex-1 resize-none bg-transparent px-2 py-2 text-sm text-ink placeholder:text-ink-tertiary"
               />
               <Button type="submit" size="sm" disabled={!compose.trim()}>
-                Send
+                {tx("Send")}
               </Button>
             </div>
             <p className="mt-2 px-1 text-2xs text-ink-tertiary">
-              Not for emergencies. If you need urgent care, call 911 or visit a clinic.
+              {tx("Not for emergencies. If you need urgent care, call 911 or visit a clinic.")}
             </p>
           </form>
         </section>

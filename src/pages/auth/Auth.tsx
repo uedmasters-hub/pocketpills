@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { useUser, newInsuranceId } from "@/lib/user";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
+import { useI18n } from "@/lib/i18n";
 
 /* ── Shared auth chrome ─────────────────────────────────── */
 function AuthShell({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
@@ -21,6 +22,7 @@ function AuthShell({ children, aside }: { children: ReactNode; aside?: ReactNode
 }
 
 function TrustAside() {
+  const { tx } = useI18n();
   const items: { label: string; icon: ReactNode }[] = [
     {
       label: "Licensed Canadian pharmacy, NABP accredited",
@@ -65,7 +67,7 @@ function TrustAside() {
   return (
     <div className="max-w-sm pt-14">
       <h2 className="font-display text-2xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-        Why join PocketPills
+        {tx("Why join PocketPills")}
       </h2>
       <ul className="mt-8 space-y-5">
         {items.map((it) => (
@@ -73,7 +75,7 @@ function TrustAside() {
             <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-white">
               {it.icon}
             </span>
-            <span className="pt-1.5">{it.label}</span>
+            <span className="pt-1.5">{tx(it.label)}</span>
           </li>
         ))}
       </ul>
@@ -81,7 +83,7 @@ function TrustAside() {
         <p className="font-display text-[2.75rem] font-medium leading-none tracking-tight text-[color:var(--pp-primary-400)]">
           800,000+
         </p>
-        <p className="mt-2 text-sm text-ink-secondary">Canadians never miss a dose</p>
+        <p className="mt-2 text-sm text-ink-secondary">{tx("Canadians never miss a dose")}</p>
       </div>
     </div>
   );
@@ -223,6 +225,7 @@ function OtpInput({ value, onChange }: { value: string; onChange: (v: string) =>
 type LoginPhase = "form" | "otp" | "magic";
 
 export function Login() {
+  const { tx } = useI18n();
   const { logIn, signedIn } = useUser();
   const nav = useNavigate();
   const loc = useLocation() as { state?: { from?: string } };
@@ -311,18 +314,22 @@ export function Login() {
             onClick={backToForm}
             className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-ink-secondary transition-colors hover:text-[color:var(--pp-primary-950)]"
           >
-            <span aria-hidden>←</span> Back
+            <span aria-hidden>←</span> {tx("Back")}
           </button>
         )}
         <h1 className="font-display text-[1.75rem] font-medium tracking-tight text-[color:var(--pp-primary-950)] sm:text-3xl">
-          {phase === "otp" ? "Enter your code" : phase === "magic" ? "Check your email" : "Welcome back"}
+          {phase === "otp"
+            ? tx("Enter your code")
+            : phase === "magic"
+              ? tx("Check your email")
+              : tx("Welcome back")}
         </h1>
         <p className="mt-1.5 text-sm text-ink-secondary sm:text-base">
           {phase === "otp"
             ? `We texted a 6-digit code to ${identifier.trim()}.`
             : phase === "magic"
               ? `A sign-in link is on its way to ${identifier.trim()}.`
-              : "Sign in to manage your prescriptions and orders."}
+              : tx("Sign in to manage your prescriptions and orders.")}
         </p>
       </div>
 
@@ -331,7 +338,7 @@ export function Login() {
           <>
             <div className="space-y-4">
               <label htmlFor={idField} className="block">
-                <span className="mb-1.5 block text-sm font-medium text-ink">Phone or Email</span>
+                <span className="mb-1.5 block text-sm font-medium text-ink">{tx("Phone or Email")}</span>
                 <input
                   id={idField}
                   value={identifier}
@@ -364,7 +371,7 @@ export function Login() {
               >
                 <div className="overflow-hidden">
                   <label htmlFor={pwField} className="block">
-                    <span className="mb-1.5 block text-sm font-medium text-ink">Password</span>
+                    <span className="mb-1.5 block text-sm font-medium text-ink">{tx("Password")}</span>
                     <span className="relative block">
                       <input
                         id={pwField}
@@ -397,7 +404,7 @@ export function Login() {
                       disabled={!isValidEmail(identifier)}
                       className="text-sm text-ink-secondary underline decoration-line underline-offset-2 transition-colors hover:text-[color:var(--pp-primary-950)] disabled:opacity-40"
                     >
-                      Forgot Password?
+                      {tx("Forgot Password?")}
                     </button>
                   </div>
                 </div>
@@ -410,7 +417,7 @@ export function Login() {
               disabled={!canPrimary || busy}
               className="mt-5 !rounded-2xl"
             >
-              {busy ? "Please wait…" : isPhone ? "Send code" : "Go to your account"}
+              {busy ? "Please wait…" : isPhone ? tx("Send code") : tx("Go to your account")}
             </Button>
 
             <button
@@ -419,7 +426,7 @@ export function Login() {
               disabled={!canCode || busy}
               className="mt-4 inline-flex w-full items-center justify-center gap-2 text-sm font-medium text-[color:var(--pp-primary-950)] transition-opacity hover:opacity-80 disabled:opacity-40"
             >
-              Log in with code <CodeArrow />
+              {tx("Log in with code")} <CodeArrow />
             </button>
 
             <div className="my-5 flex items-center gap-3" aria-hidden>
@@ -450,7 +457,7 @@ export function Login() {
                 to="/get-started"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-[color:var(--pp-primary-950)] hover:underline"
               >
-                New to Pocketpills? <span className="underline">Create account</span>
+                {tx("New to Pocketpills?")} <span className="underline">{tx("Create account")}</span>
                 <span aria-hidden>→</span>
               </Link>
               <p className="mt-3 text-2xs leading-relaxed text-ink-tertiary">
@@ -472,7 +479,7 @@ export function Login() {
           <div className="space-y-5">
             <OtpInput value={otp} onChange={setOtp} />
             <Button fullWidth onClick={verifyOtp} disabled={otp.length < 6 || busy} className="!rounded-2xl">
-              {busy ? "Verifying…" : "Verify & sign in"}
+              {busy ? "Verifying…" : tx("Verify & sign in")}
             </Button>
             <p className="text-center text-sm text-ink-secondary">
               Didn't get it?{" "}
@@ -484,7 +491,7 @@ export function Login() {
                   setOtp("");
                 }}
               >
-                {resent ? "Code resent" : "Resend code"}
+                {resent ? "Code resent" : tx("Resend code")}
               </button>
             </p>
             <p className="text-center text-xs text-ink-tertiary">Demo — any 6 digits work.</p>
@@ -494,7 +501,7 @@ export function Login() {
         {phase === "magic" && (
           <div className="space-y-5">
             <div className="rounded-2xl border border-line bg-[color:var(--pp-primary-200)] px-4 py-5 text-center">
-              <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">Link sent</p>
+              <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{tx("Link sent")}</p>
               <p className="mt-1 text-sm text-ink-secondary">
                 Open the email on this device to finish signing in.
               </p>
@@ -515,7 +522,7 @@ export function Login() {
               onClick={sendCode}
               className="mx-auto block text-sm font-medium text-[color:var(--pp-violet)] hover:underline"
             >
-              Resend link
+              {tx("Resend link")}
             </button>
           </div>
         )}
@@ -528,6 +535,7 @@ export function Login() {
 const STEPS = ["Account", "About you", "Coverage", "Delivery"] as const;
 
 export function SignUp() {
+  const { tx } = useI18n();
   const { signUp, update, user } = useUser();
   const nav = useNavigate();
   const [step, setStep] = useState(0);
@@ -562,51 +570,82 @@ export function SignUp() {
     nav("/app", { replace: true });
   };
 
+  const stepTitle =
+    step === 0
+      ? tx("Create your account")
+      : step === 1
+        ? f.firstName
+          ? tx("Nice to meet you, {name}").split("{name}").join(f.firstName)
+          : tx("Tell us about you")
+        : step === 2
+          ? tx("Your coverage")
+          : tx("Where should we deliver?");
+
   return (
     <AuthShell aside={<TrustAside />}>
       <div className="mb-6">
         <div className="mb-2 flex items-baseline justify-between">
-          <p className="pp-caps text-[color:var(--pp-violet)]">Join PocketPills</p>
-          <p className="text-xs text-ink-tertiary tnum">Step {step + 1} of {STEPS.length}</p>
+          <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Join Pocketpills")}</p>
+          <p className="text-xs text-ink-tertiary tnum">
+            {tx("Step {n} of {total}")
+              .replace("{n}", String(step + 1))
+              .replace("{total}", String(STEPS.length))}
+          </p>
         </div>
-        <Progress value={((step + 1) / STEPS.length) * 100} label={`Step ${step + 1} of ${STEPS.length}`} />
+        <Progress
+          value={((step + 1) / STEPS.length) * 100}
+          label={tx("Step {n} of {total}")
+            .replace("{n}", String(step + 1))
+            .replace("{total}", String(STEPS.length))}
+        />
       </div>
 
       <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-        {step === 0 ? "Create your account" : step === 1 ? (f.firstName ? `Nice to meet you, ${f.firstName}` : "Tell us about you") : step === 2 ? "Your coverage" : "Where should we deliver?"}
+        {stepTitle}
       </h1>
       <p className="mt-2 text-ink-secondary">
-        {step === 0 ? "Free to join. No membership fees, ever." :
-         step === 1 ? "This helps your pharmacist care for you safely." :
-         step === 2 ? "We'll bill your plan directly so you pay less." :
-         "Free delivery, anywhere in Canada."}
+        {step === 0
+          ? tx("Free to join. No membership fees, ever.")
+          : step === 1
+            ? tx("This helps your pharmacist care for you safely.")
+            : step === 2
+              ? tx("We'll bill your plan directly so you pay less.")
+              : tx("Free delivery, anywhere in Canada.")}
       </p>
 
       <Card className="mt-6 space-y-4 p-6">
         {step === 0 && (
           <>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="First name" placeholder="Alex" value={f.firstName} onChange={(e) => set("firstName", e.target.value)} />
-              <Field label="Last name" placeholder="Mandal" value={f.lastName} onChange={(e) => set("lastName", e.target.value)} />
+              <Field label={tx("First name")} placeholder="Alex" value={f.firstName} onChange={(e) => set("firstName", e.target.value)} />
+              <Field label={tx("Last name")} placeholder="Mandal" value={f.lastName} onChange={(e) => set("lastName", e.target.value)} />
             </div>
-            <Field label="Email" type="email" placeholder="you@example.com" value={f.email} onChange={(e) => set("email", e.target.value)} />
-            <Field label="Password" type="password" placeholder="At least 8 characters" value={f.password} onChange={(e) => set("password", e.target.value)} />
-            <p className="text-xs text-ink-tertiary">By continuing you agree to our Terms and Privacy Policy.</p>
+            <Field label={tx("Email")} type="email" placeholder="you@example.com" value={f.email} onChange={(e) => set("email", e.target.value)} />
+            <Field label={tx("Password")} type="password" placeholder={tx("At least 8 characters")} value={f.password} onChange={(e) => set("password", e.target.value)} />
+            <p className="text-xs text-ink-tertiary">{tx("By continuing you agree to our Terms and Privacy Policy.")}</p>
           </>
         )}
         {step === 1 && (
           <>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Date of birth" placeholder="YYYY-MM-DD" value={f.dob} onChange={(e) => set("dob", e.target.value)} />
-              <Field label="Phone" placeholder="(416) 555-0100" value={f.phone} onChange={(e) => set("phone", e.target.value)} />
+              <Field label={tx("Date of birth")} placeholder="YYYY-MM-DD" value={f.dob} onChange={(e) => set("dob", e.target.value)} />
+              <Field label={tx("Phone")} placeholder="(416) 555-0100" value={f.phone} onChange={(e) => set("phone", e.target.value)} />
             </div>
-            <Field label="Allergies (optional)" placeholder="e.g. penicillin, sulfa" value={f.allergies} onChange={(e) => set("allergies", e.target.value)} hint="Separate with commas." />
+            <Field
+              label={tx("Allergies (optional)")}
+              placeholder={tx("e.g. penicillin, sulfa")}
+              value={f.allergies}
+              onChange={(e) => set("allergies", e.target.value)}
+              hint={tx("Separate with commas.")}
+            />
           </>
         )}
         {step === 2 && (
           <>
             <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-ink-secondary" id="auth-province-label">Province</span>
+              <span className="mb-1.5 block text-sm font-medium text-ink-secondary" id="auth-province-label">
+                {tx("Province")}
+              </span>
               <select
                 value={f.province}
                 onChange={(e) => set("province", e.target.value)}
@@ -616,43 +655,61 @@ export function SignUp() {
                 {["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"].map((p) => <option key={p}>{p}</option>)}
               </select>
             </label>
-            <Field label="Health card number (optional)" value={f.healthCard} onChange={(e) => set("healthCard", e.target.value)} />
+            <Field label={tx("Health card number (optional)")} value={f.healthCard} onChange={(e) => set("healthCard", e.target.value)} />
             <div className="border-t border-line pt-4">
               <Switch
                 checked={f.hasInsurance}
                 onChange={(v) => set("hasInsurance", v)}
-                label="I have private insurance"
-                desc="We'll bill your plan directly."
+                label={tx("I have private insurance")}
+                desc={tx("We'll bill your plan directly.")}
               />
             </div>
             {f.hasInsurance && (
               <div className="grid gap-3 sm:grid-cols-3">
-                <Field label="Carrier" placeholder="Sun Life" value={f.carrier} onChange={(e) => set("carrier", e.target.value)} />
-                <Field label="Group #" value={f.group} onChange={(e) => set("group", e.target.value)} />
-                <Field label="Member ID" value={f.member} onChange={(e) => set("member", e.target.value)} />
+                <Field label={tx("Carrier")} placeholder="Sun Life" value={f.carrier} onChange={(e) => set("carrier", e.target.value)} />
+                <Field label={tx("Group #")} value={f.group} onChange={(e) => set("group", e.target.value)} />
+                <Field label={tx("Member ID")} value={f.member} onChange={(e) => set("member", e.target.value)} />
               </div>
             )}
           </>
         )}
         {step === 3 && (
           <>
-            <Field label="Delivery address" placeholder="Street, city, province, postal code" value={f.address} onChange={(e) => set("address", e.target.value)} />
+            <Field
+              label={tx("Delivery address")}
+              placeholder={tx("Street, city, province, postal code")}
+              value={f.address}
+              onChange={(e) => set("address", e.target.value)}
+            />
             <div className="rounded-xl bg-wellness-subtle p-4">
-              <Badge tone="wellness">Free delivery</Badge>
-              <p className="mt-2 text-sm text-ink-secondary">Standard delivery is always free, to every province and territory.</p>
+              <Badge tone="wellness">{tx("Free delivery")}</Badge>
+              <p className="mt-2 text-sm text-ink-secondary">
+                {tx("Standard delivery is always free, to every province and territory.")}
+              </p>
             </div>
           </>
         )}
       </Card>
 
       <div className="mt-5 flex items-center justify-between gap-3">
-        {step > 0 ? <Button variant="secondary" onClick={() => setStep(step - 1)}>← Back</Button> : <span />}
-        <Button onClick={next} disabled={!canNext}>{step === STEPS.length - 1 ? "Create account" : "Continue"}</Button>
+        {step > 0 ? (
+          <Button variant="secondary" onClick={() => setStep(step - 1)}>
+            ← {tx("Back")}
+          </Button>
+        ) : (
+          <span />
+        )}
+        <Button onClick={next} disabled={!canNext}>
+          {step === STEPS.length - 1 ? tx("Create account") : tx("Continue")}
+        </Button>
       </div>
 
       {step === 0 && (
         <p className="mt-5 text-center text-sm text-ink-secondary">
-          Already a member? <Link to="/login" className="font-semibold text-[color:var(--pp-violet)] hover:underline">Sign in</Link>
+          {tx("Already a member?")}{" "}
+          <Link to="/login" className="font-semibold text-[color:var(--pp-violet)] hover:underline">
+            {tx("Sign in")}
+          </Link>
         </p>
       )}
     </AuthShell>

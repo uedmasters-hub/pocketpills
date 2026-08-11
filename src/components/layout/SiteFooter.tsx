@@ -1,5 +1,9 @@
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/lib/user";
+import { useI18n } from "@/lib/i18n";
+import { useDismiss } from "@/lib/useDismiss";
+import { LANG_META, type LangCode } from "@/lib/accountPrefs";
 import { LogoMark } from "@/components/Logo";
 import { CONTAINER, FOOTER_GAP } from "@/components/layout/Grid";
 import { isAlwaysPublicPath, isDualBrowsePath } from "@/lib/marketingPaths";
@@ -9,11 +13,11 @@ const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTa
 
 /* ── 64px tile icons ──────────────────────────────────── */
 type TileId = "doctor" | "fill" | "transfer" | "how";
-const TILE: Record<TileId, { bg: string; label: string; to: string }> = {
-  doctor: { bg: "#54C7DA", label: "Doctor-led treatment", to: "/find-care" },
-  fill: { bg: "#4E2A84", label: "Fill your prescription", to: "/fill" },
-  transfer: { bg: "#8C60FF", label: "Transfer a prescription", to: "/transfer" },
-  how: { bg: "#AAA4FF", label: "How it works", to: "/how-it-works" },
+const TILE: Record<TileId, { bg: string; labelKey: "footer.doctorLed" | "footer.fillRx" | "footer.transferRx" | "footer.howItWorks"; to: string }> = {
+  doctor: { bg: "#54C7DA", labelKey: "footer.doctorLed", to: "/find-care" },
+  fill: { bg: "#4E2A84", labelKey: "footer.fillRx", to: "/fill" },
+  transfer: { bg: "#8C60FF", labelKey: "footer.transferRx", to: "/transfer" },
+  how: { bg: "#AAA4FF", labelKey: "footer.howItWorks", to: "/how-it-works" },
 };
 
 function TileIcon64({ id }: { id: TileId }) {
@@ -185,12 +189,68 @@ function useFooterVariant(): FooterVariant {
   return signedIn ? "compact" : "full";
 }
 
+function LanguageSwitcher() {
+  const { lang, setLang, short, t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useDismiss<HTMLDivElement>(open, () => setOpen(false));
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-label={t("footer.language")}
+        className="flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]"
+      >
+        {short}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-label={t("footer.language")}
+          className="absolute bottom-full left-0 z-30 mb-2 min-w-[11rem] overflow-hidden rounded-2xl border border-line bg-white py-1.5 shadow-float"
+        >
+          {(Object.keys(LANG_META) as LangCode[]).map((code) => {
+            const on = lang === code;
+            return (
+              <li key={code} role="option" aria-selected={on}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLang(code);
+                    setOpen(false);
+                  }}
+                  className={
+                    "flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm transition-colors " +
+                    (on
+                      ? "bg-[color:var(--state-hover)] font-semibold text-[color:var(--pp-primary-950)]"
+                      : "text-ink-secondary hover:bg-[color:var(--state-hover)]")
+                  }
+                >
+                  <span>{LANG_META[code].native}</span>
+                  <span className="text-2xs font-medium text-ink-tertiary">{LANG_META[code].short}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 /**
  * Footer is full-bleed white (edge-to-edge), contrasting the lavender body.
  * Inner content uses the same CONTAINER gutters as landing sections so edges align.
  */
 export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string) => void; variant?: FooterVariant } = {}) {
   const nav = useNavigate();
+  const { t, tx } = useI18n();
   const derived = useFooterVariant();
   const variant = forced ?? derived;
   const go = goProp ?? ((to?: string) => nav(to ?? "/app"));
@@ -214,7 +274,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
                 <div className="flex w-full flex-col gap-6">
                   <LogoMark className="h-11 w-11 text-white" />
                   <h2 className="font-display text-4xl font-medium leading-[1.12] tracking-tight text-white md:text-5xl">
-                    Stay in control<br />of your health.
+                    {tx("Stay in control of your health.")}
                   </h2>
                 </div>
                 <div className="hidden shrink-0 flex-col gap-2 sm:flex">
@@ -225,25 +285,34 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
 
               <div className="relative flex flex-col justify-between gap-10 rounded-2xl border border-line bg-white p-8 sm:flex-row sm:gap-6 md:p-10">
                 <div className="flex flex-col gap-4">
-                  <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">Our Care Team</h2>
-                  <p className="text-base leading-relaxed text-ink-secondary">Monday - Saturday<br />9:00 AM - 7:00 PM EST</p>
+                  <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">{tx("Our Care Team")}</h2>
+                  <p className="text-base leading-relaxed text-ink-secondary">
+                    {tx("Monday - Saturday")}
+                    <br />
+                    {tx("9:00 AM - 7:00 PM EST")}
+                  </p>
                   <span className="inline-flex w-max items-center gap-2 rounded-full bg-[#FDE8E8] px-3 py-1.5 text-sm font-medium text-[#D9534F]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#D9534F]" />Closed Now
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#D9534F]" />
+                    {tx("Closed Now")}
                   </span>
                 </div>
 
                 <div className="flex flex-col justify-between gap-8">
                   <div className="flex flex-col gap-3">
-                    {[["EMAIL", "care@pocketpills.com"], ["TEXT", "1-855-950-7225"], ["FAX", "1-855-950-7226"]].map(([k, v]) => (
+                    {([
+                      ["Email", "care@pocketpills.com"],
+                      ["Text", "1-855-950-7225"],
+                      ["Fax", "1-855-950-7226"],
+                    ] as const).map(([k, v]) => (
                       <div key={k} className="flex items-center gap-8">
-                        <p className="mb-0 w-12 text-2xs font-semibold tracking-[0.1em] text-ink-tertiary">{k}</p>
+                        <p className="mb-0 w-12 text-2xs font-semibold uppercase tracking-[0.1em] text-ink-tertiary">{tx(k)}</p>
                         <span className="text-base text-[color:var(--pp-primary-950)] hover:underline">{v}</span>
                       </div>
                     ))}
                   </div>
                   <button onClick={() => go("/messages")}
                     className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-[color:var(--pp-primary-950)] px-6 py-3 text-base font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]">
-                    Get In Touch <ArrowRight w={18} />
+                    {tx("Get In Touch")} <ArrowRight w={18} />
                   </button>
                 </div>
               </div>
@@ -256,7 +325,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
                   <button key={id} onClick={() => go(TILE[id].to)}
                     className="flex flex-col items-center justify-center gap-5 rounded-2xl p-4 text-center transition-colors hover:bg-white/70">
                     <TileIcon64 id={id} />
-                    <p className="text-base text-[color:var(--pp-primary-950)]">{TILE[id].label}</p>
+                    <p className="text-base text-[color:var(--pp-primary-950)]">{t(TILE[id].labelKey)}</p>
                   </button>
                 ))}
               </div>
@@ -268,16 +337,16 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
         <div className="grid items-start gap-8 border-t border-line pt-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12">
           <div>
             <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-              Pocketpills delivers to:
+              {tx("Pocketpills delivers to:")}
             </h2>
-            <ul className="mt-5 flex flex-wrap gap-2" aria-label="Delivery regions">
+            <ul className="mt-5 flex flex-wrap gap-2" aria-label={tx("Delivery regions")}>
               {PROVINCES.map((p) => (
                 <li key={p.code}>
                   <Link
                     to={`/pharmacies/${p.slug}`}
                     className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--primary-200)] px-3 py-1.5 text-sm text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-200)] active:bg-[color:var(--state-pressed)]"
                   >
-                    <span className="font-medium">{p.name}</span>
+                    <span className="font-medium">{tx(p.name)}</span>
                     <span className="text-2xs text-ink-tertiary">{p.code}</span>
                   </Link>
                 </li>
@@ -287,29 +356,29 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
               to="/pharmacies"
               className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-80"
             >
-              More… <ArrowRight w={14} />
+              {tx("More…")} <ArrowRight w={14} />
             </Link>
           </div>
 
           <aside className="rounded-2xl border border-line bg-[color:var(--primary-200)] p-5 sm:p-6">
-            <p className="pp-caps text-ink-tertiary">Your region</p>
+            <p className="pp-caps text-ink-tertiary">{tx("Your region")}</p>
             <h3 className="mt-2 font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-              Pocketpills East
+              {tx("Pocketpills East")}
             </h3>
             <p className="mt-1 text-sm leading-snug text-ink-secondary">
               Unit 6 - 6375 Dixie Rd, Mississauga, ON, L5T 2E7
             </p>
             <p className="mt-4 text-sm leading-snug text-[color:var(--pp-primary-950)]">
-              Licensed by{" "}
-              <span className="font-medium text-[color:var(--pp-violet)]">Ontario College of Pharmacists</span>
+              {tx("Licensed by")}{" "}
+              <span className="font-medium text-[color:var(--pp-violet)]">{tx("Ontario College of Pharmacists")}</span>
             </p>
             <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
               <div>
-                <dt className="text-2xs text-ink-tertiary">License No.</dt>
+                <dt className="text-2xs text-ink-tertiary">{tx("License No.")}</dt>
                 <dd className="mt-0.5 font-medium text-[color:var(--pp-primary-800)]">#307234</dd>
               </div>
               <div>
-                <dt className="text-2xs text-ink-tertiary">Pharmacy Manager</dt>
+                <dt className="text-2xs text-ink-tertiary">{tx("Pharmacy Manager")}</dt>
                 <dd className="mt-0.5 font-medium text-[color:var(--pp-primary-800)]">Aisha Abo Saada</dd>
               </div>
             </dl>
@@ -317,20 +386,20 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
         </div>
 
         {/* Link directories — clearer hierarchy, full usable width */}
-        <nav aria-label="Footer" className="grid grid-cols-2 gap-x-6 gap-y-8 border-t border-line pt-10 sm:grid-cols-4 sm:gap-8">
+        <nav aria-label={tx("Footer")} className="grid grid-cols-2 gap-x-6 gap-y-8 border-t border-line pt-10 sm:grid-cols-4 sm:gap-8">
           {COLUMNS.map((c) => (
             <div key={c.head} className="min-w-0">
-              <h3 className="pp-caps text-[color:var(--pp-violet)]">{c.head}</h3>
+              <h3 className="pp-caps text-[color:var(--pp-violet)]">{tx(c.head)}</h3>
               <ul className="mt-4 space-y-2.5">
                 {c.links.map(([l, to]) => (
                   <li key={l}>
                     {to.startsWith("#") || to.includes("/#") ? (
                       <a href={to.includes("#") ? to.slice(to.indexOf("#")) : to} className="text-sm text-ink-secondary transition-colors hover:text-[color:var(--pp-primary-950)]">
-                        {l}
+                        {tx(l)}
                       </a>
                     ) : (
                       <Link to={to} className="text-sm text-ink-secondary transition-colors hover:text-[color:var(--pp-primary-950)]">
-                        {l}
+                        {tx(l)}
                       </Link>
                     )}
                   </li>
@@ -341,7 +410,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
                     onClick={() => go(c.cta[1])}
                     className="inline-flex items-center gap-1.5 text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-80"
                   >
-                    {c.cta[0]} <ArrowRight w={14} />
+                    {tx(c.cta[0])} <ArrowRight w={14} />
                   </button>
                 </li>
               </ul>
@@ -354,16 +423,10 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-3">
               <Social />
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 text-sm text-ink-secondary transition-colors hover:bg-[color:var(--state-hover)]"
-              >
-                EN
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="m6 9 6 6 6-6" /></svg>
-              </button>
+              <LanguageSwitcher />
             </div>
             <div className="flex items-center gap-4">
-              <p className="pp-caps text-ink-tertiary">Certifications</p>
+              <p className="pp-caps text-ink-tertiary">{t("footer.certifications")}</p>
               <div className="flex items-center gap-3">
                 <img loading="lazy" onError={hideOnError} src={`${CDN}/images/landing/footer/legitScript_logo.png`} width={44} height={44} alt="LegitScript approved" className="h-11 w-11 object-contain" />
                 <img loading="lazy" onError={hideOnError} src="https://static.pocketpills.com/webapp/rebrand/landing/logo_soc2.webp" width={44} height={44} alt="SOC 2 certification" className="h-11 w-11 object-contain" />
@@ -373,13 +436,13 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
 
           <div className="flex flex-col justify-between gap-3 border-t border-line/70 pt-5 text-xs text-ink-tertiary sm:flex-row sm:items-center">
             <p>
-              ©2026 Pocketpills · Conceptual redesign, not affiliated with Pocketpills Inc.
-              <span className="mt-1 block text-[11px] sm:mt-0 sm:ml-2 sm:inline">Pocketpills is not a pharmacy or a drug manufacturer.</span>
+              {t("footer.copyright")}
+              <span className="mt-1 block text-[11px] sm:mt-0 sm:ml-2 sm:inline">{t("footer.disclaimer")}</span>
             </p>
-            <nav className="flex flex-wrap items-center gap-x-1" aria-label="Legal">
+            <nav className="flex flex-wrap items-center gap-x-1" aria-label={t("footer.legal")}>
               {["Security", "Terms of Use", "Privacy Policy", "Return Policy"].map((l, i, a) => (
                 <span key={l} className="flex items-center">
-                  <a href="#faq" className="hover:text-[color:var(--pp-violet)]">{l}</a>
+                  <a href="#faq" className="hover:text-[color:var(--pp-violet)]">{tx(l)}</a>
                   {i < a.length - 1 && <span className="px-2.5 text-ink-tertiary/50" aria-hidden>|</span>}
                 </span>
               ))}

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { useUser } from "@/lib/user";
+import { useI18n } from "@/lib/i18n";
 import {
   OFFERS,
   OFFER_FILTERS,
@@ -84,6 +85,7 @@ function OfferCard({
   onActivate: () => void;
   onCopy: (code: string) => void;
 }) {
+  const { tx } = useI18n();
   const nav = useNavigate();
 
   return (
@@ -101,46 +103,50 @@ function OfferCard({
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-[color:var(--pp-primary-200)] px-2.5 py-0.5 text-2xs font-semibold uppercase tracking-wide text-[color:var(--pp-primary-950)]">
-                {offer.badge}
+                {tx(offer.badge)}
               </span>
               {offer.expires && (
-                <span className="text-2xs text-ink-tertiary">{offer.expires}</span>
+                <span className="text-2xs text-ink-tertiary">{tx(offer.expires)}</span>
               )}
             </div>
             <p className="shrink-0 font-display text-xl font-medium leading-none text-[color:var(--pp-violet)] tnum">
-              {offer.savings}
+              {tx(offer.savings)}
             </p>
           </div>
           <div className="space-y-1.5">
             <h3 className="font-display text-lg font-medium leading-snug text-[color:var(--pp-primary-950)]">
-              {offer.title}
+              {tx(offer.title)}
             </h3>
-            <p className="text-sm leading-relaxed text-ink-secondary">{offer.summary}</p>
+            <p className="text-sm leading-relaxed text-ink-secondary">{tx(offer.summary)}</p>
           </div>
         </div>
       </div>
 
       {offer.code && (
         <div className="flex items-center gap-3 rounded-xl bg-[color:var(--pp-primary-200)] px-3.5 py-2.5">
-          <span className="shrink-0 text-xs text-ink-tertiary">Code</span>
+          <span className="shrink-0 text-xs text-ink-tertiary">{tx("Code")}</span>
           <code className="min-w-0 flex-1 truncate font-mono text-sm font-semibold tracking-wide text-[color:var(--pp-primary-950)]">
             {offer.code}
           </code>
           <button
             type="button"
             onClick={() => onCopy(offer.code!)}
-            aria-label={copied ? `${offer.code} copied` : `Copy code ${offer.code}`}
+            aria-label={
+              copied
+                ? `${offer.code} ${tx("copied")}`
+                : `${tx("Copy code")} ${offer.code}`
+            }
             className={
               "shrink-0 text-sm font-medium transition-opacity hover:opacity-70 " +
               (copied ? "text-[color:var(--pp-green)]" : "text-[color:var(--pp-violet)]")
             }
           >
-            {copied ? "Copied" : "Copy"}
+            {copied ? tx("Copied") : tx("Copy")}
           </button>
         </div>
       )}
 
-      <p className="text-2xs leading-relaxed text-ink-tertiary">{offer.terms}</p>
+      <p className="text-2xs leading-relaxed text-ink-tertiary">{tx(offer.terms)}</p>
 
       <div className="mt-auto flex flex-wrap gap-2 pt-1">
         <Button
@@ -149,7 +155,7 @@ function OfferCard({
           variant={claimed ? "secondary" : "primary"}
           onClick={onClaim}
         >
-          {claimed ? "Saved" : "Save offer"}
+          {claimed ? tx("Saved") : tx("Save offer")}
         </Button>
         {claimed && (
           <Button
@@ -159,7 +165,7 @@ function OfferCard({
             onClick={onActivate}
             aria-pressed={active}
           >
-            {active ? "Applied at checkout" : "Apply at checkout"}
+            {active ? tx("Applied at checkout") : tx("Apply at checkout")}
           </Button>
         )}
         {offer.href && (
@@ -169,7 +175,7 @@ function OfferCard({
             variant="ghost"
             onClick={() => nav(offer.href!)}
           >
-            {offer.cta ?? "View"}
+            {offer.cta ? tx(offer.cta) : tx("View")}
           </Button>
         )}
       </div>
@@ -178,6 +184,7 @@ function OfferCard({
 }
 
 export function Offers() {
+  const { tx } = useI18n();
   const { signedIn } = useUser();
   const nav = useNavigate();
   const [filter, setFilter] = useState<FilterId>("all");
@@ -261,12 +268,14 @@ export function Offers() {
   };
 
   const sectionTitle = (kind: OfferKind) =>
-    ({
-      featured: "Featured savings",
-      card: "Credit & debit cards",
-      bank: "Bank partners",
-      other: "Other discounts",
-    })[kind];
+    tx(
+      ({
+        featured: "Featured savings",
+        card: "Credit & debit cards",
+        bank: "Bank partners",
+        other: "Other discounts",
+      })[kind],
+    );
 
   const grouped =
     filter === "all" && !q.trim() && partner === "any"
@@ -281,18 +290,19 @@ export function Offers() {
   return (
     <div>
       <header className="mb-8">
-        <p className="pp-caps text-[color:var(--pp-violet)]">Savings</p>
+        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Savings")}</p>
         <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-4xl">
-          Offers & discounts
+          {tx("Offers & discounts")}
         </h1>
         <p className="mt-2 max-w-2xl text-base text-ink-secondary">
-          Medication specials, card cash-back, bank partners, and everyday codes — save what applies,
-          apply one at checkout.
+          {tx(
+            "Medication specials, card cash-back, bank partners, and everyday codes — save what applies, apply one at checkout.",
+          )}
         </p>
       </header>
 
       {/* Spotlight strip — not a card grid of marketing fluff; interactive CTAs */}
-      <section aria-label="Spotlight offers" className="mb-10">
+      <section aria-label={tx("Spotlight offers")} className="mb-10">
         <div className="grid gap-3 md:grid-cols-3">
           {spotlight.map((o) => (
             <button
@@ -304,12 +314,12 @@ export function Offers() {
                 "bg-[color:var(--pp-primary-100)] hover:bg-[color:var(--pp-primary-200)]"
               }
             >
-              <span className="pp-caps text-[color:var(--pp-violet)]">{o.badge}</span>
+              <span className="pp-caps text-[color:var(--pp-violet)]">{tx(o.badge)}</span>
               <span className="mt-2 block font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-                {o.title}
+                {tx(o.title)}
               </span>
               <span className="mt-3 flex items-center gap-2 text-sm font-medium text-[color:var(--pp-violet)]">
-                {o.savings}
+                {tx(o.savings)}
                 <span className="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden>
                   →
                 </span>
@@ -320,14 +330,15 @@ export function Offers() {
       </section>
 
       {claimedList.length > 0 && (
-        <section className={`${CARD} mb-8 p-5 sm:p-6`} aria-label="Your saved offers">
+        <section className={`${CARD} mb-8 p-5 sm:p-6`} aria-label={tx("Your saved offers")}>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-              Your saved offers
+              {tx("Your saved offers")}
             </h2>
             {activeId && (
               <p className="text-sm text-ink-secondary">
-                Applied: <span className="font-medium text-[color:var(--pp-primary-950)]">{getOffer(activeId)?.title}</span>
+                {tx("Applied:")}{" "}
+                <span className="font-medium text-[color:var(--pp-primary-950)]">{tx(getOffer(activeId)?.title ?? "")}</span>
               </p>
             )}
           </div>
@@ -345,7 +356,7 @@ export function Offers() {
                       : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-200)]")
                   }
                 >
-                  {o.badge}
+                  {tx(o.badge)}
                   {o.code ? ` · ${o.code}` : ""}
                 </button>
               </li>
@@ -354,16 +365,16 @@ export function Offers() {
           {!signedIn && (
             <p className="mt-3 text-xs text-ink-tertiary">
               <Link to="/login" className="font-medium text-[color:var(--pp-violet)] hover:underline">
-                Sign in
+                {tx("Sign in")}
               </Link>{" "}
-              to keep saved offers across devices. Codes still work as a guest on this browser.
+              {tx("to keep saved offers across devices. Codes still work as a guest on this browser.")}
             </p>
           )}
         </section>
       )}
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter offers">
+        <div className="flex flex-wrap gap-2" role="group" aria-label={tx("Filter offers")}>
           {OFFER_FILTERS.map((f) => (
             <button
               key={f.id}
@@ -380,13 +391,13 @@ export function Offers() {
                   : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-200)]")
               }
             >
-              {f.label}
+              {tx(f.label)}
             </button>
           ))}
         </div>
 
         <label className="relative min-w-[12rem] flex-1 sm:max-w-xs">
-          <span className="sr-only">Search offers</span>
+          <span className="sr-only">{tx("Search")}</span>
           <svg
             className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-tertiary"
             width="16"
@@ -403,7 +414,7 @@ export function Offers() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search code, bank, card…"
+            placeholder={tx("Search code, bank, card…")}
             className="h-11 w-full rounded-xl border border-line bg-white py-2.5 pl-10 pr-3.5 text-base text-ink placeholder:text-ink-tertiary focus:border-primary"
           />
         </label>
@@ -413,7 +424,11 @@ export function Offers() {
         <div className="mb-8">
           <label className="block max-w-xs">
             <span className="mb-1.5 block text-sm font-medium text-ink-secondary">
-              {filter === "card" ? "Card network" : filter === "bank" ? "Your bank" : "Partner"}
+              {filter === "card"
+                ? tx("Card network")
+                : filter === "bank"
+                  ? tx("Your bank")
+                  : tx("Partner")}
             </span>
             <select
               value={partner}
@@ -422,7 +437,7 @@ export function Offers() {
             >
               {partners.map((p) => (
                 <option key={p} value={p}>
-                  {p === "any" ? "Any partner" : p}
+                  {p === "any" ? tx("Any partner") : p}
                 </option>
               ))}
             </select>
@@ -431,13 +446,15 @@ export function Offers() {
       )}
 
       <p className="sr-only" aria-live="polite">
-        {copied ? `Copied ${copied}` : ""}
+        {copied ? `${tx("Copied")} ${copied}` : ""}
       </p>
 
       {filtered.length === 0 ? (
         <div className={`${CARD} px-6 py-14 text-center`}>
-          <p className="font-semibold text-[color:var(--pp-primary-950)]">No offers match</p>
-          <p className="mt-1 text-sm text-ink-tertiary">Try another filter or clear your search.</p>
+          <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx("No offers match")}</p>
+          <p className="mt-1 text-sm text-ink-tertiary">
+            {tx("Try another filter or clear your search.")}
+          </p>
           <Button
             type="button"
             size="sm"
@@ -449,13 +466,13 @@ export function Offers() {
               setPartner("any");
             }}
           >
-            Reset filters
+            {tx("Reset filters")}
           </Button>
         </div>
       ) : (
         <div className="space-y-10">
           {grouped.map((g) => (
-            <section key={g.kind ?? "results"} aria-label={g.kind ? sectionTitle(g.kind) : "Results"}>
+            <section key={g.kind ?? "results"} aria-label={g.kind ? sectionTitle(g.kind) : tx("Results")}>
               {g.kind && (
                 <h2 className="mb-4 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
                   {sectionTitle(g.kind)}
@@ -482,19 +499,29 @@ export function Offers() {
 
       <aside className={`${CARD} mt-12 bg-[color:var(--pp-primary-100)] p-6 sm:p-8`}>
         <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-          How checkout applies an offer
+          {tx("How checkout applies an offer")}
         </h2>
         <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-ink-secondary">
-          <li>Save the offers that match your card, bank, or situation.</li>
-          <li>Tap <strong className="font-medium text-[color:var(--pp-primary-950)]">Apply at checkout</strong> on one saved offer (only one active at a time).</li>
-          <li>When you fill or transfer, the active code is ready to paste — insurance still bills first.</li>
+          <li>{tx("Save the offers that match your card, bank, or situation.")}</li>
+          <li>
+            {tx("Tap")}{" "}
+            <strong className="font-medium text-[color:var(--pp-primary-950)]">
+              {tx("Apply at checkout")}
+            </strong>{" "}
+            {tx("on one saved offer (only one active at a time).")}
+          </li>
+          <li>
+            {tx(
+              "When you fill or transfer, the active code is ready to paste — insurance still bills first.",
+            )}
+          </li>
         </ol>
         <div className="mt-5 flex flex-wrap gap-2">
           <Button type="button" onClick={() => nav(signedIn ? "/fill" : "/get-started")}>
-            {signedIn ? "Fill a prescription" : "Get started"}
+            {signedIn ? tx("Fill a prescription") : tx("Get started")}
           </Button>
           <Button type="button" variant="secondary" onClick={() => nav("/drug")}>
-            Browse medications
+            {tx("Browse medications")}
           </Button>
         </div>
       </aside>

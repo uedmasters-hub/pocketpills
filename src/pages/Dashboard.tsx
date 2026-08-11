@@ -4,13 +4,15 @@ import { QRCodeSVG } from "qrcode.react";
 import { useUser } from "@/lib/user";
 import { treatments } from "@/lib/data";
 import { pendingRows } from "@/lib/profile";
+import { useI18n } from "@/lib/i18n";
 
 /* ── shared bits ───────────────────────────────────────── */
 function ArrowBtn({ dir, onClick }: { dir: "l" | "r"; onClick: () => void }) {
+  const { tx } = useI18n();
   return (
     <button
       onClick={onClick}
-      aria-label={dir === "l" ? "Previous" : "Next"}
+      aria-label={dir === "l" ? tx("Previous") : tx("Next")}
       className="rounded-full bg-[color:var(--pp-primary-100)] p-1 text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-200)]"
     >
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ transform: dir === "l" ? "rotate(180deg)" : undefined }} aria-hidden>
@@ -101,6 +103,7 @@ function RailHeader({ title, boxRef }: { title?: string; boxRef: React.RefObject
 }
 
 function PromoCard({ p, onClick }: { p: Promo; onClick: () => void }) {
+  const { tx } = useI18n();
   const ink = p.brand ? "text-[color:var(--pp-violet)]" : "text-[color:var(--pp-primary-950)]";
   const sub = p.brand ? "text-[color:var(--pp-violet)]/80" : "text-ink-secondary";
 
@@ -119,22 +122,22 @@ function PromoCard({ p, onClick }: { p: Promo; onClick: () => void }) {
               : "bg-[color:var(--pp-primary-200)] text-[color:var(--pp-primary-950)]")
           }
         >
-          {p.badge}
+          {tx(p.badge)}
         </span>
 
-        <p className={"font-display text-xl font-medium leading-snug " + ink}>{p.t}</p>
-        <p className={"text-sm leading-snug " + sub}>{p.d}</p>
+        <p className={"font-display text-xl font-medium leading-snug " + ink}>{tx(p.t)}</p>
+        <p className={"text-sm leading-snug " + sub}>{tx(p.d)}</p>
 
         <span className="mt-2 flex flex-wrap items-center gap-2">
           {p.offer && (
-            <span className={"text-base font-medium " + ink}>{p.offer}</span>
+            <span className={"text-base font-medium " + ink}>{tx(p.offer)}</span>
           )}
           <span className="transition-transform duration-200 group-hover:translate-x-0.5">
             <FilledArrow />
           </span>
         </span>
 
-        <p className="mt-1 text-2xs text-ink-tertiary">{p.persuasion}</p>
+        <p className="mt-1 text-2xs text-ink-tertiary">{tx(p.persuasion)}</p>
       </div>
 
       {/* Full-bleed portrait anchored to the far right edge */}
@@ -156,9 +159,10 @@ function PromoCard({ p, onClick }: { p: Promo; onClick: () => void }) {
 }
 
 /* ── action rows ───────────────────────────────────────── */
-type ActionId = "transfer" | "order" | "renew" | "treatments" | "prices" | "family";
+type ActionId = "appointment" | "transfer" | "order" | "renew" | "treatments" | "prices" | "family";
 
 const ACTION_ICON: Record<ActionId, { bg: string; fg: string }> = {
+  appointment: { bg: "#4E2A84", fg: "#fff" },
   transfer:   { bg: "#7040D9", fg: "#fff" },
   order:      { bg: "#8C60FF", fg: "#fff" },
   renew:      { bg: "#4E2A84", fg: "#fff" },
@@ -171,6 +175,8 @@ function ActionIcon({ id }: { id: ActionId }) {
   const { fg } = ACTION_ICON[id];
   const c = { width: 24, height: 24, viewBox: "0 0 24 24", fill: "none", stroke: fg, strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   switch (id) {
+    case "appointment":
+      return <svg {...c}><rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M8 3v4M16 3v4M3 10h18" /><circle cx="12" cy="15.5" r="1.3" fill={fg} stroke="none" /></svg>;
     case "transfer":
       return <svg {...c}><path d="M13.5 3.5H7.2A2.2 2.2 0 0 0 5 5.7v12.6a2.2 2.2 0 0 0 2.2 2.2h6.3" /><path d="M5 8h8.5M14.5 12h6M17.8 9l3 3-3 3" /></svg>;
     case "order":
@@ -206,6 +212,7 @@ function ActionRow({ id, title, sub, onClick }: { id: ActionId; title: string; s
 
 /* ── get-the-app ───────────────────────────────────────── */
 function AppCard() {
+  const { tx } = useI18n();
   const [mode, setMode] = useState<"phone" | "email">("phone");
   const [sent, setSent] = useState(false);
   const appUrl = "https://pocketpills.com/app";
@@ -220,10 +227,10 @@ function AppCard() {
 
       <div className="relative">
         <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
-          Stay updated, get the app
+          {tx("Stay updated, get the app")}
         </h2>
         <p className="mt-1 text-sm text-ink-secondary">
-          Scan the QR code or get the download link
+          {tx("Scan the QR code or get the download link")}
         </p>
 
         <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 sm:flex-row sm:items-stretch sm:gap-5 sm:p-5">
@@ -231,7 +238,7 @@ function AppCard() {
             <div
               className="flex gap-1"
               role="group"
-              aria-label="Link delivery method"
+              aria-label={tx("Link delivery method")}
             >
               {([
                 {
@@ -272,7 +279,7 @@ function AppCard() {
                     }
                   >
                     {tab.icon}
-                    {tab.label}
+                    {tx(tab.label)}
                   </button>
                 );
               })}
@@ -282,7 +289,7 @@ function AppCard() {
               <input
                 className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-tertiary"
                 placeholder={mode === "phone" ? "+1 953-800-0060" : "you@example.com"}
-                aria-label={mode === "phone" ? "Phone number" : "Email address"}
+                aria-label={mode === "phone" ? tx("Phone number") : tx("Email address")}
                 inputMode={mode === "phone" ? "tel" : "email"}
               />
               <button
@@ -290,11 +297,11 @@ function AppCard() {
                 onClick={() => setSent(true)}
                 className="shrink-0 text-sm font-medium text-[color:var(--pp-primary-950)] transition-opacity hover:opacity-70"
               >
-                {sent ? "Sent" : "Send link"}
+                {sent ? tx("Sent") : tx("Send link")}
               </button>
             </div>
             <p className="sr-only" aria-live="polite">
-              {sent ? "Download link sent" : ""}
+              {sent ? tx("Download link sent") : ""}
             </p>
           </div>
 
@@ -310,7 +317,7 @@ function AppCard() {
               marginSize={0}
               bgColor="#4E2A84"
               fgColor="#FFFFFF"
-              title="Download the PocketPills app"
+              title={tx("Download the PocketPills app")}
             />
           </div>
         </div>
@@ -321,6 +328,7 @@ function AppCard() {
 
 /* ── fax ───────────────────────────────────────────────── */
 function FaxCard() {
+  const { tx } = useI18n();
   const [copied, setCopied] = useState(false);
   const copy = () => {
     navigator.clipboard?.writeText("1-855-950-7226").then(() => {
@@ -333,12 +341,12 @@ function FaxCard() {
     <section className="relative overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-200)] p-6 sm:p-8">
       <div className="relative z-10 max-w-md pr-24 sm:pr-28">
         <h2 className="font-display text-lg font-medium leading-snug text-[color:var(--pp-primary-950)]">
-          Fax us your prescription for faster service
+          {tx("Fax us your prescription for faster service")}
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-secondary">
-          Ask your clinic to send it our way.
+          {tx("Ask your clinic to send it our way.")}
           <br />
-          We'll get it to you sooner.
+          {tx("We'll get it to you sooner.")}
         </p>
         <button
           type="button"
@@ -351,7 +359,7 @@ function FaxCard() {
             <rect x="9" y="9" width="11" height="11" rx="2" />
             <path d="M5 15V5a2 2 0 0 1 2-2h10" />
           </svg>
-          {copied && <span className="text-xs font-medium text-wellness" aria-hidden>Copied</span>}
+          {copied && <span className="text-xs font-medium text-wellness" aria-hidden>{tx("Copied")}</span>}
         </button>
         <span className="sr-only" aria-live="polite">
           {copied ? "Fax number copied to clipboard" : ""}
@@ -373,6 +381,7 @@ function FaxCard() {
 
 /* ── page ──────────────────────────────────────────────── */
 export function Dashboard() {
+  const { tx } = useI18n();
   const nav = useNavigate();
   const { user } = useUser();
   const promoRef = useRef<HTMLDivElement>(null);
@@ -391,14 +400,15 @@ export function Dashboard() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
             <circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.4h.01" />
           </svg>
-          {pending.length} Profile pending action{pending.length === 1 ? "" : "s"}
+          {pending.length}{" "}
+          {pending.length === 1 ? tx("Profile pending action") : tx("Profile pending actions")}
           <span aria-hidden>›</span>
         </button>
       )}
 
       {/* treatments */}
       <section>
-        <RailHeader title="Start a new treatment" boxRef={treatRef} />
+        <RailHeader title={tx("Start a new treatment")} boxRef={treatRef} />
         <div ref={treatRef} className="pp-scroll flex gap-4 overflow-x-auto pb-1">
           {treatments.map((t) => (
             <button
@@ -410,7 +420,7 @@ export function Dashboard() {
               style={{ backgroundImage: "linear-gradient(180deg,#FFFFFF 0%,#FAF9FE 42%,#E7E2F7 100%)" }}
             >
               <p className="relative z-10 px-5 pt-5 font-display text-xl font-normal leading-tight text-[color:var(--pp-primary-950)]">
-                {t.name}
+                {tx(t.name)}
               </p>
 
               {/* portrait: centred, contained, sitting on the card's lower edge */}
@@ -432,24 +442,30 @@ export function Dashboard() {
 
       {/* actions */}
       <section className="space-y-2">
-        <ActionRow id="transfer" title="Transfer my prescriptions" sub="Switch to PocketPills" onClick={() => nav("/transfer")} />
-        <ActionRow id="order" title="Start a new order" sub="Refill an active prescription" onClick={() => nav("/pharmacy")} />
-        <ActionRow id="renew" title="Renew my prescription" sub="Renew an expired prescription" onClick={() => nav("/fill")} />
-        <ActionRow id="treatments" title="Explore treatments" sub="Get care from healthcare practitioners" onClick={() => nav("/find-care")} />
-        <ActionRow id="prices" title="See drug prices" sub="Look up pricing details" onClick={() => nav("/drug")} />
+        <ActionRow
+          id="appointment"
+          title={tx("Book a doctor appointment")}
+          sub={tx("Virtual or in-clinic with a licensed clinician")}
+          onClick={() => nav("/appointments")}
+        />
+        <ActionRow id="transfer" title={tx("Transfer my prescriptions")} sub={tx("Switch to PocketPills")} onClick={() => nav("/transfer")} />
+        <ActionRow id="order" title={tx("Start a new order")} sub={tx("Refill an active prescription")} onClick={() => nav("/pharmacy")} />
+        <ActionRow id="renew" title={tx("Renew my prescription")} sub={tx("Renew an expired prescription")} onClick={() => nav("/fill")} />
+        <ActionRow id="treatments" title={tx("Explore treatments")} sub={tx("Get care from healthcare practitioners")} onClick={() => nav("/find-care")} />
+        <ActionRow id="prices" title={tx("See drug prices")} sub={tx("Look up pricing details")} onClick={() => nav("/drug")} />
       </section>
 
       {/* Offers sit directly above the get-the-app / QR block */}
       <section aria-label="Promotions">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">Offers for you</h2>
+          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{tx("Offers for you")}</h2>
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => nav("/offers")}
               className="text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
             >
-              See all
+              {tx("See all")}
             </button>
             <div className="flex gap-2">
               <ArrowBtn dir="l" onClick={() => promoRef.current?.scrollBy({ left: -320, behavior: "smooth" })} />
@@ -464,7 +480,7 @@ export function Dashboard() {
 
       <AppCard />
 
-      <ActionRow id="family" title="Add family member" sub="Manage your loved ones' meds" onClick={() => nav("/account/family")} />
+      <ActionRow id="family" title={tx("Add family member")} sub={tx("Manage your loved ones' meds")} onClick={() => nav("/account/family")} />
 
       <FaxCard />
     </div>

@@ -86,14 +86,35 @@ export const drugs: Drug[] = [
   { slug: "zoloft", name: "Zoloft", generic: "Sertraline", cls: "Nervous system", forms: ["Tablet"], dosages: ["25mg","50mg","100mg"], manufacturer: "Pfizer", coverage: 60, price: 19, rx: true },
 ];
 
-/* Educational, generic monograph text (NOT medical advice). */
-export function drugMonograph(name: string): { section: string; body: string }[] {
+/**
+ * Educational, generic monograph text (NOT medical advice).
+ * Bodies use `{name}` so callers can translate via tx() then interpolate.
+ */
+export function drugMonograph(): { section: string; body: string }[] {
   return [
-    { section: "Dosage", body: `Your dose of ${name} is set by your prescriber based on your condition, body weight, and response to treatment. Take ${name} exactly as prescribed, ideally at the same time each day. If you miss a dose, take it when you remember unless it's almost time for the next one—never double up. Do not change your dose without speaking to your care team.` },
-    { section: "Side Effects", body: `Most people tolerate ${name} well. Mild effects such as stomach upset, headache, or drowsiness may occur and often settle over time. Contact your pharmacist if side effects are bothersome, and seek urgent care for signs of a serious allergic reaction such as rash, swelling, or trouble breathing.` },
-    { section: "Available Form", body: `${name} is dispensed in the strengths and formats shown in the "Available forms" panel. Your prescriber selects the strength that's right for you; your pharmacist can explain how to take or store it.` },
-    { section: "Contraindications", body: `Do not take ${name} if you are allergic to it or any of its ingredients. Tell your provider if you are pregnant, planning a pregnancy, or breastfeeding, and about any kidney or liver conditions before starting ${name}.` },
-    { section: "Precautions", body: `${name} may interact with other prescription drugs, over-the-counter products, and supplements. Share a full list of everything you take with your pharmacist so any interactions can be reviewed and managed.` },
-    { section: "Warnings", body: `Before starting ${name}, inform your provider of any medical conditions, allergies, and current medications. Follow any monitoring your prescriber recommends and report unusual symptoms promptly.` },
+    {
+      section: "Dosage",
+      body: 'Your dose of {name} is set by your prescriber based on your condition, body weight, and response to treatment. Take {name} exactly as prescribed, ideally at the same time each day. If you miss a dose, take it when you remember unless it\'s almost time for the next one—never double up. Do not change your dose without speaking to your care team.',
+    },
+    {
+      section: "Side Effects",
+      body: "Most people tolerate {name} well. Mild effects such as stomach upset, headache, or drowsiness may occur and often settle over time. Contact your pharmacist if side effects are bothersome, and seek urgent care for signs of a serious allergic reaction such as rash, swelling, or trouble breathing.",
+    },
+    {
+      section: "Available Form",
+      body: '{name} is dispensed in the strengths and formats shown in the "Available forms" panel. Your prescriber selects the strength that\'s right for you; your pharmacist can explain how to take or store it.',
+    },
+    {
+      section: "Contraindications",
+      body: "Do not take {name} if you are allergic to it or any of its ingredients. Tell your provider if you are pregnant, planning a pregnancy, or breastfeeding, and about any kidney or liver conditions before starting {name}.",
+    },
+    {
+      section: "Precautions",
+      body: "{name} may interact with other prescription drugs, over-the-counter products, and supplements. Share a full list of everything you take with your pharmacist so any interactions can be reviewed and managed.",
+    },
+    {
+      section: "Warnings",
+      body: "Before starting {name}, inform your provider of any medical conditions, allergies, and current medications. Follow any monitoring your prescriber recommends and report unusual symptoms promptly.",
+    },
   ];
 }

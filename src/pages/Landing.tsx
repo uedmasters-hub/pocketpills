@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { entryPoints, type EntryIconKey } from "@/lib/data";
 import { useUser } from "@/lib/user";
+import { useI18n } from "@/lib/i18n";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
@@ -65,6 +66,7 @@ function ArrowCircle({ size = 24, circleFill = "var(--pp-primary-950)", arrowFil
 
 /** 2×2 entry tiles — simple icon + label on the lavender well (no card chrome). */
 function Tiles({ onPick, last }: { onPick: (to: string) => void; last?: { title: string; to: string } }) {
+  const { tx } = useI18n();
   const items = last ? [...entryPoints.slice(0, 3), { ...entryPoints[3], title: last.title, to: last.to }] : entryPoints;
   return (
     <div className="grid h-full w-full grid-cols-2 grid-rows-2">
@@ -78,7 +80,7 @@ function Tiles({ onPick, last }: { onPick: (to: string) => void; last?: { title:
           <span className="grid h-14 w-14 place-items-center rounded-2xl sm:h-16 sm:w-16" style={{ backgroundColor: e.tile }}>
             <TileIcon id={e.id} />
           </span>
-          <span className="text-sm font-medium leading-snug text-[color:var(--pp-headline)] sm:text-base">{e.title}</span>
+          <span className="text-sm font-medium leading-snug text-[color:var(--pp-headline)] sm:text-base">{tx(e.title)}</span>
         </button>
       ))}
     </div>
@@ -112,6 +114,7 @@ const HERO = {
 };
 
 function Hero() {
+  const { tx } = useI18n();
   const [playing, setPlaying] = useState(true);
   const [reduced, setReduced] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -232,10 +235,10 @@ function Hero() {
       <div className={`pointer-events-none absolute inset-x-0 bottom-14 z-30 md:bottom-16 ${FRAME}`}>
         <div className={`${SURFACE} flex flex-wrap items-center justify-between gap-3`}>
           <span className="flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-[color:var(--pp-navy)] shadow-sm backdrop-blur-sm">
-            <span aria-hidden>🇨🇦</span>Complete care, without leaving home
+            <span aria-hidden>🇨🇦</span>{tx("Complete care, without leaving home")}
           </span>
           <span className="rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-[color:var(--pp-navy)] shadow-sm backdrop-blur-sm">
-            Trusted by 800,000+ Canadians · 4.8★ rated
+            {tx("Trusted by 800,000+ Canadians · 4.8★ rated")}
           </span>
         </div>
       </div>
@@ -317,13 +320,14 @@ function TrustStatIcon({ name }: { name: TrustStat["icon"] }) {
 }
 
 function Welcome({ onStart }: { onStart: () => void }) {
+  const { tx } = useI18n();
   return (
     <>
       {/* First-fold peek: label + title + small gap. Video height keeps the CTA below. */}
       <header className={`${SHELL_X} pt-5 text-center sm:pt-6`}>
-        <p className="text-base font-semibold text-[color:var(--pp-violet)]">Welcome to Pocketpills</p>
+        <p className="text-base font-semibold text-[color:var(--pp-violet)]">{tx("Welcome to Pocketpills")}</p>
         <h1 className="mx-auto mt-2 max-w-3xl font-display text-[clamp(2.25rem,4vw,2.875rem)] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-headline)]">
-          Your health, handled.
+          {tx("Your health, handled.")}
         </h1>
       </header>
 
@@ -334,7 +338,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
           onClick={onStart}
           className="inline-flex min-w-[12.5rem] items-center justify-center gap-2 rounded-full bg-cta px-12 py-4 text-md font-medium text-white transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed"
         >
-          get start <CircleArrow size={16} />
+          {tx("get start")} <CircleArrow size={16} />
         </button>
 
         <div
@@ -348,8 +352,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
                   <TrustStatIcon name={s.icon} />
                 </span>
                 <span className="min-w-0 pt-0.5">
-                  <span className="block text-sm font-semibold text-[color:var(--pp-primary-950)]">{s.title}</span>
-                  <span className="mt-0.5 block text-2xs leading-snug text-ink-tertiary">{s.sub}</span>
+                  <span className="block text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx(s.title)}</span>
+                  <span className="mt-0.5 block text-2xs leading-snug text-ink-tertiary">{tx(s.sub)}</span>
                 </span>
               </div>
             ))}
@@ -362,15 +366,16 @@ function Welcome({ onStart }: { onStart: () => void }) {
 
 /* ═══ 5. Buy again + tiles ════════════════════ */
 function SectionHeads({ title, onLink }: { title: string; onLink: () => void }) {
+  const { tx } = useI18n();
   return (
     <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-      <h2 className="text-md font-semibold text-[color:var(--pp-primary-950)]">{title}</h2>
+      <h2 className="text-md font-semibold text-[color:var(--pp-primary-950)]">{tx(title)}</h2>
       <button
         type="button"
         onClick={onLink}
         className="inline-flex items-center gap-1.5 text-base text-[color:var(--pp-primary-950)] transition-opacity duration-200 hover:opacity-70"
       >
-        Talk to a licensed clinician <span className="text-lg leading-none" aria-hidden>›</span>
+        {tx("Talk to a licensed clinician")} <span className="text-lg leading-none" aria-hidden>›</span>
       </button>
     </div>
   );
@@ -387,6 +392,7 @@ function RingArrow({ size = 20, color = "#4E2A84" }: { size?: number; color?: st
 }
 
 function BuyAgain({ go }: { go: (to?: string) => void }) {
+  const { tx } = useI18n();
   return (
     <section className={SHELL_BLOCK} aria-label="Shop and get care">
       <div className="grid gap-6 lg:min-h-[430px] lg:grid-cols-2 lg:gap-8">
@@ -399,14 +405,14 @@ function BuyAgain({ go }: { go: (to?: string) => void }) {
             <div className="grid h-full w-full grid-cols-2 overflow-hidden">
               <div className="relative z-10 flex flex-col justify-center gap-6 p-7 sm:gap-8 sm:p-10">
                 <h3 className="font-display text-2xl font-light leading-[1.2] text-white sm:text-3xl sm:leading-[1.14]">
-                  Ozempic<sup className="align-super text-[0.42em] font-normal">®</sup> now<br />at just $139
+                  {tx("Ozempic® now at just $139")}
                 </h3>
                 <button
                   type="button"
                   onClick={() => go("/drug/ozempic")}
                   className="inline-flex w-max items-center gap-2.5 rounded-full bg-white px-6 py-3 text-base font-medium text-[color:var(--pp-primary-950)] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  Get started <RingArrow />
+                  {tx("Get started")} <RingArrow />
                 </button>
               </div>
 
@@ -470,6 +476,7 @@ function FeatureCard({
 }
 
 function FeatureCards({ go }: { go: (to?: string) => void }) {
+  const { tx } = useI18n();
   return (
     <section className={SHELL_BLOCK} aria-label="Featured treatments">
       <div className="flex flex-col gap-4 md:flex-row md:gap-5">
@@ -479,11 +486,11 @@ function FeatureCards({ go }: { go: (to?: string) => void }) {
           img={IMG.ozempicCard}
           alt="Doctor-prescribed weight-loss treatments, now available through PocketPills."
           textClass="text-[color:var(--pp-primary-950)]"
-          cta="Learn more"
+          cta={tx("Learn more")}
           circleFill="#4E2A84"
           arrowFill="#ffffff"
         >
-          Is Ozempic right for you?
+          {tx("Is Ozempic right for you?")}
         </FeatureCard>
 
         <FeatureCard
@@ -492,11 +499,11 @@ function FeatureCards({ go }: { go: (to?: string) => void }) {
           img={IMG.sildenafilCard}
           alt="Get a Sildenafil prescription online through PocketPills."
           textClass="text-white"
-          cta="Learn more"
+          cta={tx("Learn more")}
           circleFill="#F5F4FA"
           arrowFill="#4E2A84"
         >
-          Get a Sildenafil prescription.
+          {tx("Get a Sildenafil prescription.")}
         </FeatureCard>
 
         <FeatureCard
@@ -505,11 +512,11 @@ function FeatureCards({ go }: { go: (to?: string) => void }) {
           img={IMG.novoCard}
           alt="PocketPills and Novo Nordisk, changing care for Canadians."
           textClass="text-[color:var(--pp-primary-950)]"
-          cta="Our mission"
+          cta={tx("Our mission")}
           circleFill="#F5F4FA"
           arrowFill="#4E2A84"
         >
-          Pocketpills × Novo Nordisk Changing care for Canadians.
+          {tx("Pocketpills × Novo Nordisk Changing care for Canadians.")}
         </FeatureCard>
       </div>
     </section>
@@ -547,6 +554,7 @@ function PartnerLogo({ file, name, alt, w, h }: (typeof PARTNERS)[number]) {
 }
 
 function Partners() {
+  const { tx } = useI18n();
   const group = (key: string) => (
     <div key={key} className="flex shrink-0 gap-28 pr-28">
       {PARTNERS.map((p) => <PartnerLogo key={key + p.file} {...p} />)}
@@ -555,7 +563,7 @@ function Partners() {
   return (
     <section className={`${SHELL_X} pb-14 pt-2 md:pb-16`} aria-label="Enterprise partners">
       <div className="flex flex-col items-center">
-        <h2 className="text-md font-medium text-[color:var(--pp-primary-950)]">Proud pharmacy of:</h2>
+        <h2 className="text-md font-medium text-[color:var(--pp-primary-950)]">{tx("Proud pharmacy of:")}</h2>
         <div className="mt-8 w-full">
           <div className="w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
             <div className="pp-marquee flex w-fit" style={{ animationDuration: "47.2667s" }}>
@@ -599,6 +607,7 @@ const HOW_STEPS = [
 ] as const;
 
 function HowItWorks() {
+  const { tx } = useI18n();
   const [active, setActive] = useState(0);
   const [revealed, setRevealed] = useState<boolean[]>(() => HOW_STEPS.map(() => false));
   const [inView, setInView] = useState(false);
@@ -703,15 +712,15 @@ function HowItWorks() {
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col justify-center px-5 py-6 sm:px-6 lg:pl-2 lg:pr-8">
-          <p className="pp-caps text-[color:var(--pp-violet)]">How it works</p>
+          <p className="pp-caps text-[color:var(--pp-violet)]">{tx("How it works")}</p>
           <h2 id="how-heading" className={`mt-2 max-w-xl ${SECTION_TITLE}`}>
-            Do it <span className="text-[color:var(--pp-violet)]">all</span> without leaving home.
+            {tx("Do it all without leaving home.")}
           </h2>
           <Link
             to="/how-it-works"
             className="mt-3 inline-flex text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-80"
           >
-            See the full guide →
+            {tx("See the full guide →")}
           </Link>
 
           <ol className="mt-6 grid grid-cols-1 gap-x-3 gap-y-7 sm:mt-7 sm:grid-cols-3 sm:gap-x-3">
@@ -777,7 +786,7 @@ function HowItWorks() {
                             : "text-[color:var(--pp-primary-400)]")
                       }
                     >
-                      {s.title}
+                      {tx(s.title)}
                     </span>
                   </button>
                 </li>
@@ -863,6 +872,7 @@ const REVIEWS: { name: string; text: string; mark: "capsule" | "multi" | "plus" 
 ];
 
 function Testimonials() {
+  const { tx } = useI18n();
   const box = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
@@ -896,9 +906,9 @@ function Testimonials() {
     <section className={ISLAND} aria-labelledby="reviews-heading">
       <div className={`flex flex-col gap-8 ${ISLAND_PAD} md:gap-10`}>
         <div className="mx-auto flex max-w-2xl flex-col gap-3 text-center text-[color:var(--pp-primary-950)]">
-          <h2 id="reviews-heading" className={SECTION_TITLE}>Our members love us</h2>
+          <h2 id="reviews-heading" className={SECTION_TITLE}>{tx("Our members love us")}</h2>
           <p className="text-base leading-relaxed text-ink-secondary">
-            See why thousands across Canada choose <span className="font-medium text-[color:var(--pp-primary-950)]">Pocketpills</span>.
+            {tx("See why thousands across Canada choose Pocketpills.")}
           </p>
         </div>
 
@@ -911,7 +921,7 @@ function Testimonials() {
             className="pp-scroll flex w-full min-w-0 flex-1 gap-6 overflow-x-scroll scroll-smooth"
             tabIndex={0}
             role="region"
-            aria-label="Member reviews"
+            aria-label={tx("Member reviews")}
           >
             {REVIEWS.map((r) => (
               <article
@@ -921,7 +931,7 @@ function Testimonials() {
                 <div className="mb-3 flex gap-0.5" aria-label="5 out of 5 stars">
                   {Array.from({ length: 5 }).map((_, i) => <FullStar key={i} />)}
                 </div>
-                <p className="text-base leading-relaxed text-[color:var(--pp-primary-800)]">{r.text}</p>
+                <p className="text-base leading-relaxed text-[color:var(--pp-primary-800)]">{tx(r.text)}</p>
                 <div className="mt-auto flex w-full items-center justify-between pt-5">
                   <p className="text-base font-semibold text-[color:var(--pp-primary-950)]">{r.name}</p>
                   <ReviewMark id={r.mark} />
@@ -965,6 +975,7 @@ function SmallStar() {
 }
 
 function TestimonialCard({ m }: { m: Member }) {
+  const { tx } = useI18n();
   return (
     <article
       className="flex h-[300px] min-w-[17rem] shrink-0 snap-center flex-col-reverse overflow-hidden rounded-2xl md:h-[330px] md:min-w-[38rem] md:flex-row"
@@ -989,17 +1000,18 @@ function TestimonialCard({ m }: { m: Member }) {
         <div className="flex gap-1 text-[color:var(--pp-primary-400)]" aria-label="5 out of 5 stars">
           {Array.from({ length: 5 }).map((_, i) => <SmallStar key={i} />)}
         </div>
-        <p className={"text-sm leading-relaxed " + (m.dark ? "text-[color:var(--pp-primary-200)]" : "text-[color:var(--pp-primary-800)]")}>{m.t}</p>
+        <p className={"text-sm leading-relaxed " + (m.dark ? "text-[color:var(--pp-primary-200)]" : "text-[color:var(--pp-primary-800)]")}>{tx(m.t)}</p>
       </div>
     </article>
   );
 }
 
 function TrustpilotBadge() {
+  const { tx } = useI18n();
   return (
     <div className="mx-auto mt-10 hidden max-w-md items-center justify-center gap-4 rounded-xl bg-[color:var(--pp-primary-200)] px-5 py-2 md:flex">
-      <p className="pp-caps text-ink-secondary">Excellent</p>
-      <span className="rounded-full bg-white px-4 py-1.5 text-sm font-medium text-[color:var(--pp-primary-800)]">4.8 out of 5</span>
+      <p className="pp-caps text-ink-secondary">{tx("Excellent")}</p>
+      <span className="rounded-full bg-white px-4 py-1.5 text-sm font-medium text-[color:var(--pp-primary-800)]">{tx("4.8 out of 5")}</span>
       <svg width="88" height="32" viewBox="0 0 88 32" fill="none" aria-label="Trustpilot">
         <path d="M8.61539 20.2816L12.359 19.3329L13.9231 24.1534L8.61539 20.2816ZM17.2308 14.0508H10.641L8.61539 7.8457L6.58975 14.0508H0L5.33334 17.897L3.30769 24.1021L8.64103 20.256L11.9231 17.897L17.2308 14.0508Z" fill="#219653" />
         <path d="M27.7865 10.5V21H25.6303V10.5H27.7865ZM31.0173 10.5V12.1947H22.45V10.5H31.0173ZM33.6928 14.899V21H31.6158V13.1971H33.5702L33.6928 14.899ZM36.0437 13.1466L36.0077 15.0721C35.9067 15.0577 35.7841 15.0457 35.6399 15.0361C35.5005 15.0216 35.373 15.0144 35.2577 15.0144C34.9644 15.0144 34.7096 15.0529 34.4932 15.1298C34.2817 15.2019 34.1038 15.3101 33.9596 15.4543C33.8202 15.5986 33.7144 15.774 33.6423 15.9808C33.575 16.1875 33.5365 16.4231 33.5269 16.6875L33.1086 16.5577C33.1086 16.0529 33.1591 15.5889 33.2601 15.1659C33.361 14.738 33.5077 14.3654 33.7 14.0481C33.8971 13.7308 34.1375 13.4856 34.4211 13.3125C34.7048 13.1394 35.0293 13.0529 35.3947 13.0529C35.5101 13.0529 35.6279 13.0625 35.748 13.0817C35.8682 13.0962 35.9668 13.1178 36.0437 13.1466ZM41.6399 19.1322V13.1971H43.7168V21H41.7625L41.6399 19.1322ZM41.8706 17.5312L42.4836 17.5168C42.4836 18.0361 42.4235 18.5192 42.3033 18.9663C42.1831 19.4087 42.0029 19.7933 41.7625 20.1202C41.5221 20.4423 41.2192 20.6947 40.8538 20.8774C40.4884 21.0553 40.0581 21.1442 39.563 21.1442C39.1831 21.1442 38.8322 21.0913 38.5101 20.9856C38.1928 20.875 37.9187 20.7043 37.688 20.4736C37.462 20.238 37.2841 19.9375 37.1543 19.5721C37.0293 19.2019 36.9668 18.7572 36.9668 18.238V13.1971H39.0437V18.2524C39.0437 18.4832 39.0702 18.6779 39.123 18.8365C39.1807 18.9952 39.2601 19.125 39.361 19.226C39.462 19.3269 39.5798 19.399 39.7144 19.4423C39.8538 19.4856 40.0077 19.5072 40.1759 19.5072C40.6038 19.5072 40.9404 19.4207 41.1855 19.2476C41.4355 19.0745 41.611 18.8389 41.712 18.5409C41.8178 18.238 41.8706 17.9014 41.8706 17.5312ZM49.5221 18.8437C49.5221 18.6947 49.4788 18.5601 49.3923 18.4399C49.3057 18.3197 49.1447 18.2091 48.9091 18.1082C48.6783 18.0024 48.3442 17.9062 47.9067 17.8197C47.5125 17.7332 47.1447 17.625 46.8033 17.4952C46.4668 17.3606 46.1735 17.1995 45.9235 17.012C45.6783 16.8245 45.486 16.6034 45.3466 16.3486C45.2072 16.0889 45.1375 15.7933 45.1375 15.4615C45.1375 15.1346 45.2072 14.8269 45.3466 14.5385C45.4908 14.25 45.6952 13.9952 45.9596 13.774C46.2288 13.5481 46.5557 13.3726 46.9404 13.2476C47.3298 13.1178 47.7673 13.0529 48.2529 13.0529C48.9307 13.0529 49.5125 13.1611 49.998 13.3774C50.4884 13.5937 50.8634 13.8918 51.123 14.2716C51.3875 14.6466 51.5197 15.0745 51.5197 15.5553H49.4428C49.4428 15.3534 49.3995 15.1731 49.313 15.0144C49.2312 14.851 49.1014 14.7236 48.9235 14.6322C48.7505 14.5361 48.5245 14.488 48.2456 14.488C48.0149 14.488 47.8154 14.5288 47.6471 14.6106C47.4788 14.6875 47.349 14.7933 47.2577 14.9279C47.1711 15.0577 47.1279 15.2019 47.1279 15.3606C47.1279 15.4808 47.1519 15.5889 47.2 15.6851C47.2529 15.7764 47.337 15.8606 47.4524 15.9375C47.5678 16.0144 47.7168 16.0865 47.8995 16.1538C48.087 16.2163 48.3178 16.274 48.5918 16.3269C49.1543 16.4423 49.6567 16.5937 50.099 16.7812C50.5413 16.9639 50.8923 17.2139 51.1519 17.5312C51.4115 17.8437 51.5413 18.2548 51.5413 18.7644C51.5413 19.1106 51.4644 19.4279 51.3105 19.7163C51.1567 20.0048 50.9355 20.2572 50.6471 20.4736C50.3586 20.6851 50.0125 20.851 49.6086 20.9712C49.2096 21.0865 48.7601 21.1442 48.2601 21.1442C47.5341 21.1442 46.9187 21.0144 46.4139 20.7548C45.9139 20.4952 45.5341 20.1659 45.2745 19.7668C45.0197 19.363 44.8923 18.9495 44.8923 18.5264H46.861C46.8706 18.8101 46.9428 19.0385 47.0774 19.2115C47.2168 19.3846 47.3923 19.5096 47.6038 19.5865C47.8202 19.6635 48.0533 19.7019 48.3033 19.7019C48.5726 19.7019 48.7961 19.6659 48.974 19.5937C49.1519 19.5168 49.2865 19.4159 49.3779 19.2909C49.474 19.1611 49.5221 19.012 49.5221 18.8437ZM56.712 13.1971V14.6683H52.1687V13.1971H56.712ZM53.2937 11.2716H55.3706V18.649C55.3706 18.875 55.3995 19.0481 55.4572 19.1683C55.5197 19.2885 55.611 19.3726 55.7312 19.4207C55.8514 19.4639 56.0029 19.4856 56.1855 19.4856C56.3154 19.4856 56.4307 19.4808 56.5317 19.4712C56.6375 19.4567 56.7264 19.4423 56.7985 19.4279L56.8057 20.9567C56.6279 21.0144 56.4355 21.0601 56.2288 21.0938C56.0221 21.1274 55.7937 21.1442 55.5437 21.1442C55.087 21.1442 54.688 21.0697 54.3466 20.9207C54.0101 20.7668 53.7505 20.5216 53.5678 20.1851C53.3851 19.8486 53.2937 19.4062 53.2937 18.8582V11.2716ZM59.9716 14.6971V24H57.8947V13.1971H59.8202L59.9716 14.6971ZM64.9115 17.012V17.1635C64.9115 17.7308 64.8442 18.2572 64.7096 18.7428C64.5798 19.2284 64.3875 19.6514 64.1327 20.012C63.8779 20.3678 63.5605 20.6466 63.1807 20.8486C62.8057 21.0457 62.373 21.1442 61.8827 21.1442C61.4067 21.1442 60.9932 21.0481 60.6423 20.8558C60.2913 20.6635 59.9956 20.3942 59.7553 20.0481C59.5197 19.6971 59.3298 19.2909 59.1855 18.8293C59.0413 18.3678 58.9307 17.8726 58.8538 17.3437V16.9471C58.9307 16.3798 59.0413 15.8606 59.1855 15.3894C59.3298 14.9135 59.5197 14.5024 59.7553 14.1562C59.9956 13.8053 60.2889 13.5337 60.6351 13.3413C60.986 13.149 61.3971 13.0529 61.8682 13.0529C62.3634 13.0529 62.7985 13.1466 63.1735 13.3341C63.5533 13.5216 63.8706 13.7909 64.1255 14.1418C64.3851 14.4928 64.5798 14.9111 64.7096 15.3966C64.8442 15.8822 64.9115 16.4207 64.9115 17.012ZM62.8274 17.1635V17.012C62.8274 16.6803 62.7985 16.375 62.7408 16.0962C62.688 15.8125 62.6014 15.5649 62.4812 15.3534C62.3658 15.1418 62.212 14.9784 62.0197 14.863C61.8322 14.7428 61.6038 14.6827 61.3346 14.6827C61.0509 14.6827 60.8081 14.7284 60.6062 14.8197C60.4091 14.9111 60.248 15.0433 60.123 15.2163C59.998 15.3894 59.9043 15.5962 59.8418 15.8365C59.7793 16.0769 59.7408 16.3486 59.7264 16.6514V17.6538C59.7505 18.0096 59.8178 18.3293 59.9283 18.613C60.0389 18.8918 60.2096 19.113 60.4404 19.2764C60.6711 19.4399 60.974 19.5216 61.349 19.5216C61.623 19.5216 61.8538 19.4615 62.0413 19.3413C62.2288 19.2163 62.3803 19.0457 62.4956 18.8293C62.6158 18.613 62.7 18.363 62.748 18.0793C62.8009 17.7957 62.8274 17.4904 62.8274 17.1635ZM68.3947 13.1971V21H66.3105V13.1971H68.3947ZM66.1807 11.1635C66.1807 10.8606 66.2865 10.6106 66.498 10.4135C66.7096 10.2163 66.9932 10.1178 67.349 10.1178C67.7 10.1178 67.9812 10.2163 68.1928 10.4135C68.4091 10.6106 68.5173 10.8606 68.5173 11.1635C68.5173 11.4663 68.4091 11.7163 68.1928 11.9135C67.9812 12.1106 67.7 12.2091 67.349 12.2091C66.9932 12.2091 66.7096 12.1106 66.498 11.9135C66.2865 11.7163 66.1807 11.4663 66.1807 11.1635ZM72.3033 9.92308V21H70.2192V9.92308H72.3033ZM73.688 17.1779V17.0264C73.688 16.4543 73.7697 15.9279 73.9331 15.4471C74.0966 14.9615 74.3346 14.5409 74.6471 14.1851C74.9596 13.8293 75.3442 13.5529 75.8009 13.3558C76.2577 13.1538 76.7817 13.0529 77.373 13.0529C77.9644 13.0529 78.4908 13.1538 78.9524 13.3558C79.4139 13.5529 79.8009 13.8293 80.1134 14.1851C80.4307 14.5409 80.6711 14.9615 80.8346 15.4471C80.998 15.9279 81.0798 16.4543 81.0798 17.0264V17.1779C81.0798 17.7452 80.998 18.2716 80.8346 18.7572C80.6711 19.238 80.4307 19.6587 80.1134 20.0192C79.8009 20.375 79.4163 20.6514 78.9596 20.8486C78.5029 21.0457 77.9788 21.1442 77.3875 21.1442C76.7961 21.1442 76.2697 21.0457 75.8081 20.8486C75.3514 20.6514 74.9644 20.375 74.6471 20.0192C74.3346 19.6587 74.0966 19.238 73.9331 18.7572C73.7697 18.2716 73.688 17.7452 73.688 17.1779ZM75.7649 17.0264V17.1779C75.7649 17.5048 75.7937 17.8101 75.8514 18.0937C75.9091 18.3774 76.0005 18.6274 76.1255 18.8437C76.2553 19.0553 76.4235 19.2212 76.6303 19.3413C76.837 19.4615 77.0894 19.5216 77.3875 19.5216C77.6759 19.5216 77.9235 19.4615 78.1303 19.3413C78.337 19.2212 78.5029 19.0553 78.6279 18.8437C78.7529 18.6274 78.8442 18.3774 78.9019 18.0937C78.9644 17.8101 78.9956 17.5048 78.9956 17.1779V17.0264C78.9956 16.7091 78.9644 16.4111 78.9019 16.1322C78.8442 15.8486 78.7505 15.5986 78.6206 15.3822C78.4956 15.1611 78.3298 14.988 78.123 14.863C77.9163 14.738 77.6663 14.6755 77.373 14.6755C77.0798 14.6755 76.8298 14.738 76.623 14.863C76.4211 14.988 76.2553 15.1611 76.1255 15.3822C76.0005 15.5986 75.9091 15.8486 75.8514 16.1322C75.7937 16.4111 75.7649 16.7091 75.7649 17.0264ZM86.1783 13.1971V14.6683H81.6351V13.1971H86.1783ZM82.7601 11.2716H84.837V18.649C84.837 18.875 84.8658 19.0481 84.9235 19.1683C84.986 19.2885 85.0774 19.3726 85.1976 19.4207C85.3178 19.4639 85.4692 19.4856 85.6519 19.4856C85.7817 19.4856 85.8971 19.4808 85.9981 19.4712C86.1038 19.4567 86.1928 19.4423 86.2649 19.4279L86.2721 20.9567C86.0942 21.0144 85.9019 21.0601 85.6952 21.0938C85.4884 21.1274 85.2601 21.1442 85.0101 21.1442C84.5533 21.1442 84.1543 21.0697 83.813 20.9207C83.4764 20.7668 83.2168 20.5216 83.0341 20.1851C82.8514 19.8486 82.7601 19.4062 82.7601 18.8582V11.2716Z" fill="#37325D" />
@@ -1009,6 +1021,7 @@ function TrustpilotBadge() {
 }
 
 function JoinBand({ go }: { go: (to?: string) => void }) {
+  const { tx } = useI18n();
   const group = (key: string) => (
     <div key={key} className="flex w-fit shrink-0 gap-6 pr-6">
       {MEMBERS.map((m) => <TestimonialCard key={key + m.n} m={m} />)}
@@ -1018,14 +1031,14 @@ function JoinBand({ go }: { go: (to?: string) => void }) {
     <section className={`${ISLAND} ${ISLAND_PAD}`} aria-labelledby="join-heading">
       <div className="mb-10 flex flex-col items-center gap-6 md:mb-12">
         <h2 id="join-heading" className={`mx-auto max-w-xl text-center ${SECTION_TITLE}`}>
-          Join <span className="text-[color:var(--pp-violet)]">800,000+</span> Canadians who never miss a dose.
+          {tx("Join 800,000+ Canadians who never miss a dose.")}
         </h2>
         <button
           type="button"
           onClick={() => go()}
           className="w-max rounded-full bg-cta px-8 py-4 text-md font-medium text-white transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed"
         >
-          Join Pocketpills
+          {tx("Join Pocketpills")}
         </button>
       </div>
 
@@ -1051,6 +1064,7 @@ function JoinBand({ go }: { go: (to?: string) => void }) {
 
 /* ═══ 10. NABP band ═════════════════════════════════════ */
 function NabpBand() {
+  const { tx } = useI18n();
   return (
     <section
       className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(16rem,0.85fr)_minmax(0,1.35fr)] lg:items-stretch"
@@ -1072,7 +1086,7 @@ function NabpBand() {
         className={`flex flex-col gap-6 ${ISLAND_RADIUS} border border-white/15 bg-[color:var(--pp-green)] p-8 text-white sm:flex-row sm:items-center sm:gap-8 sm:p-10 md:gap-10 md:px-12 md:py-11`}
       >
         <div className="flex shrink-0 flex-col items-center gap-3 sm:min-w-[7.5rem]">
-          <p className="text-2xs uppercase tracking-[0.2em] text-white/60">Accredited by</p>
+          <p className="text-2xs uppercase tracking-[0.2em] text-white/60">{tx("Accredited by")}</p>
           <img
             src="https://static.pocketpills.com/acq-web/redesign/home/nabp.svg"
             alt="Pocketpills Online Pharmacy is an accredited member with NABP National Association of Boards of Pharmacy"
@@ -1086,11 +1100,10 @@ function NabpBand() {
         <div className="hidden w-px self-stretch bg-white/20 sm:block" aria-hidden />
         <div className="min-w-0 flex-1">
           <h2 id="nabp-heading" className="font-display text-2xl font-medium leading-snug text-white md:text-3xl">
-            Putting you first, every time.
+            {tx("Putting you first, every time.")}
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">
-            Our licensed healthcare providers carefully assess each concern and provide expert medical guidance.
-            Whether it's a diagnosis, treatment plan, or prescription, you can trust you're in good hands.
+            {tx("Our licensed healthcare providers carefully assess each concern and provide expert medical guidance. Whether it's a diagnosis, treatment plan, or prescription, you can trust you're in good hands.")}
           </p>
         </div>
       </div>
@@ -1100,6 +1113,7 @@ function NabpBand() {
 
 /* ═══ 11. FAQ ═══════════════════════════════════════════ */
 function Faq({ go }: { go: (to?: string) => void }) {
+  const { tx } = useI18n();
   const faqs: [string, string][] = [
     [
       "What is Pocketpills?",
@@ -1119,16 +1133,16 @@ function Faq({ go }: { go: (to?: string) => void }) {
   return (
     <section id="faq" className="grid gap-8 lg:grid-cols-[minmax(240px,300px)_1fr] lg:gap-14" aria-labelledby="faq-heading">
       <div className="lg:sticky lg:top-28 lg:self-start">
-        <p className="pp-caps text-[color:var(--pp-violet)]">Frequently Asked</p>
+        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Frequently Asked")}</p>
         <h2 id="faq-heading" className={`mt-3 ${SECTION_TITLE}`}>
-          Your questions,<br className="hidden lg:block" /> answered.
+          {tx("Your questions, answered.")}
         </h2>
         <button
           type="button"
           onClick={() => go()}
           className="mt-6 rounded-full bg-cta px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed"
         >
-          More FAQs
+          {tx("More FAQ's")}
         </button>
       </div>
 
@@ -1156,7 +1170,7 @@ function Faq({ go }: { go: (to?: string) => void }) {
                 aria-expanded={isOpen}
                 aria-controls={panelId}
               >
-                <span className="text-base font-medium leading-snug text-[color:var(--pp-primary-900)] sm:text-md">{q}</span>
+                <span className="text-base font-medium leading-snug text-[color:var(--pp-primary-900)] sm:text-md">{tx(q)}</span>
                 <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center text-[color:var(--pp-primary-900)]" aria-hidden>
                   {isOpen ? (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -1173,7 +1187,7 @@ function Faq({ go }: { go: (to?: string) => void }) {
               <div id={panelId} role="region" aria-labelledby={btnId} hidden={!isOpen}>
                 {isOpen && (
                   <p className="mt-4 pr-8 text-sm leading-relaxed text-[color:var(--pp-primary-800)] sm:text-base">
-                    {a}
+                    {tx(a)}
                   </p>
                 )}
               </div>

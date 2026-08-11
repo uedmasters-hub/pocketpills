@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { entryPoints, type EntryIconKey } from "@/lib/data";
+import { useI18n } from "@/lib/i18n";
 
 export function EntryIcon({ id }: { id: EntryIconKey }) {
   const p = { fill: "white", fillRule: "evenodd" as const, clipRule: "evenodd" as const };
@@ -36,6 +37,7 @@ export function EntryIcon({ id }: { id: EntryIconKey }) {
 /** Homepage entry tiles — same system as the landing page. */
 export function EntryPoints() {
   const nav = useNavigate();
+  const { tx } = useI18n();
   return (
     <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       {entryPoints.map((e, i) => (
@@ -48,7 +50,7 @@ export function EntryPoints() {
           <span className="grid h-14 w-14 place-items-center rounded-xl" style={{ backgroundColor: e.tile }}>
             <EntryIcon id={e.id} />
           </span>
-          <span className="text-sm font-medium leading-snug text-[color:var(--pp-primary-950)] sm:text-base">{e.title}</span>
+          <span className="text-sm font-medium leading-snug text-[color:var(--pp-primary-950)] sm:text-base">{tx(e.title)}</span>
         </button>
       ))}
     </div>

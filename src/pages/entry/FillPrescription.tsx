@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { drugs } from "@/lib/data";
 import { ActiveOfferBanner } from "@/components/offers/ActiveOfferBanner";
 import { getActiveOffer } from "@/lib/offers";
+import { useI18n } from "@/lib/i18n";
 
 const DISPENSING_FEE = 11.99;
 const STEPS = ["method", "capture", "meds", "patient", "packaging", "insurance", "delivery", "review", "payment"] as const;
@@ -67,6 +68,7 @@ function RadioCards<T extends string>({ options, value, onChange }: {
 }
 
 function Chips({ items, onAdd, onRemove, placeholder, label }: { items: string[]; onAdd: (v: string) => void; onRemove: (i: number) => void; placeholder: string; label: string }) {
+  const { tx } = useI18n();
   const [v, setV] = useState("");
   const add = () => { if (v.trim()) { onAdd(v.trim()); setV(""); } };
   const inputId = `chips-${label.toLowerCase().replace(/\s+/g, "-")}`;
@@ -84,14 +86,14 @@ function Chips({ items, onAdd, onRemove, placeholder, label }: { items: string[]
             className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-ink placeholder:text-ink-tertiary focus:border-primary"
           />
         </label>
-        <Button variant="secondary" size="sm" onClick={add}>Add</Button>
+        <Button variant="secondary" size="sm" onClick={add}>{tx("Add")}</Button>
       </div>
       {items.length > 0 && (
         <ul className="mt-3 flex flex-wrap gap-2" aria-label={label}>
           {items.map((it, i) => (
             <li key={i} className="inline-flex items-center gap-1.5 rounded-full bg-primary-subtle px-3 py-1 text-sm font-medium text-primary">
               {it}
-              <button type="button" onClick={() => onRemove(i)} aria-label={`Remove ${it}`}>✕</button>
+              <button type="button" onClick={() => onRemove(i)} aria-label={tx("Remove {name}").replace("{name}", it)}>✕</button>
             </li>
           ))}
         </ul>
@@ -101,6 +103,7 @@ function Chips({ items, onAdd, onRemove, placeholder, label }: { items: string[]
 }
 
 function MedPicker({ onAdd }: { onAdd: (m: Med) => void }) {
+  const { tx } = useI18n();
   const [q, setQ] = useState("");
   const matches = q.trim()
     ? drugs.filter((d) => d.name.toLowerCase().includes(q.toLowerCase()) || (d.generic ?? "").toLowerCase().includes(q.toLowerCase())).slice(0, 6)
@@ -114,24 +117,26 @@ function MedPicker({ onAdd }: { onAdd: (m: Med) => void }) {
   return (
     <div>
       <label className="block">
-        <span className="sr-only">Search medications</span>
+        <span className="sr-only">{tx("Search medications")}</span>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search a medication (e.g. Ramipril)…"
+          placeholder={tx("Search a medication (e.g. Ramipril)…")}
           aria-autocomplete="list"
           aria-controls={q.trim() ? "med-picker-results" : undefined}
           className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-ink placeholder:text-ink-tertiary focus:border-primary"
         />
       </label>
       {q.trim() && (
-        <div id="med-picker-results" role="listbox" aria-label="Medication matches" className="mt-2 overflow-hidden rounded-xl border border-line">
+        <div id="med-picker-results" role="listbox" aria-label={tx("Medication matches")} className="mt-2 overflow-hidden rounded-xl border border-line">
           {matches.map((d) => (
             <button key={d.slug} type="button" role="option" onClick={() => addFromDrug(d.slug)} className="flex w-full items-center gap-3 border-b border-line bg-surface-2 p-3 text-left last:border-0 hover:bg-[color:var(--state-hover)]">
-              <span aria-hidden>💊</span><span className="flex-1"><span className="block font-semibold text-ink">{d.name}</span>{d.generic && <span className="block text-xs text-ink-tertiary">{d.generic}</span>}</span><span className="text-primary">+ Add</span>
+              <span aria-hidden>💊</span><span className="flex-1"><span className="block font-semibold text-ink">{d.name}</span>{d.generic && <span className="block text-xs text-ink-tertiary">{d.generic}</span>}</span><span className="text-primary">{tx("+ Add")}</span>
             </button>
           ))}
-          <button type="button" onClick={addManual} className="flex w-full items-center gap-2 bg-surface-1 transition-colors hover:bg-[color:var(--state-hover)] p-3 text-left text-sm font-semibold text-primary">＋ Add “{q.trim()}” manually</button>
+          <button type="button" onClick={addManual} className="flex w-full items-center gap-2 bg-surface-1 transition-colors hover:bg-[color:var(--state-hover)] p-3 text-left text-sm font-semibold text-primary">
+            {tx("＋ Add “{name}” manually").replace("{name}", q.trim())}
+          </button>
         </div>
       )}
     </div>
@@ -141,6 +146,7 @@ function MedPicker({ onAdd }: { onAdd: (m: Med) => void }) {
 /* ── Flow ───────────────────────────────────────────────── */
 export function FillPrescription() {
   const nav = useNavigate();
+  const { tx } = useI18n();
   const [step, setStep] = useState<Step>("method");
   const [s, setS] = useState<State>(initial);
   const set = (p: Partial<State>) => setS((prev) => ({ ...prev, ...p }));
@@ -165,19 +171,20 @@ export function FillPrescription() {
   const covered = Math.round(withFee * rate * 100) / 100;
   const total$ = Math.max(0, Math.round((withFee - covered) * 100) / 100);
 
-  const common = { step: idx + 1, total, onBack: goBack };
+  const eyebrow = tx("Fill your prescription");
+  const common = { step: idx + 1, total, onBack: goBack, eyebrow };
 
   /* 1. Method */
   if (step === "method")
     return (
-      <EntryFlow {...common} eyebrow="Fill your prescription" title="How would you like to fill it?"
-        subtitle="Choose whichever is easiest—you can always change this later." onNext={goNext} nextDisabled={!s.method}>
+      <EntryFlow {...common} title={tx("How would you like to fill it?")}
+        subtitle={tx("Choose whichever is easiest—you can always change this later.")} onNext={goNext} nextDisabled={!s.method}>
         <RadioCards<Method> value={s.method} onChange={(v) => set({ method: v })}
           options={[
-            { id: "upload", icon: "📷", title: "Upload a photo", desc: "Snap your prescription or medication label" },
-            { id: "fax", icon: "🏥", title: "My clinic will fax it", desc: "We'll receive it at 1-855-950-7226" },
-            { id: "mail", icon: "📮", title: "Mail it in", desc: "We'll send you a free prepaid mailing kit" },
-            { id: "transfer", icon: "📦", title: "Transfer from a pharmacy", desc: "We'll contact your current pharmacy" },
+            { id: "upload", icon: "📷", title: tx("Upload a photo"), desc: tx("Snap your prescription or medication label") },
+            { id: "fax", icon: "🏥", title: tx("My clinic will fax it"), desc: tx("We'll receive it at 1-855-950-7226") },
+            { id: "mail", icon: "📮", title: tx("Mail it in"), desc: tx("We'll send you a free prepaid mailing kit") },
+            { id: "transfer", icon: "📦", title: tx("Transfer from a pharmacy"), desc: tx("We'll contact your current pharmacy") },
           ]} />
       </EntryFlow>
     );
@@ -185,9 +192,14 @@ export function FillPrescription() {
   /* 2. Capture (method-specific) */
   if (step === "capture") {
     const m = s.method;
+    const captureTitle =
+      m === "upload" ? tx("Upload your prescription") :
+      m === "fax" ? tx("Clinic details") :
+      m === "mail" ? tx("Where should we send the kit?") :
+      tx("Your current pharmacy");
     return (
-      <EntryFlow {...common} eyebrow="Fill your prescription"
-        title={m === "upload" ? "Upload your prescription" : m === "fax" ? "Clinic details" : m === "mail" ? "Where should we send the kit?" : "Your current pharmacy"}
+      <EntryFlow {...common}
+        title={captureTitle}
         onNext={goNext}
         nextDisabled={
           m === "upload" ? s.files.length === 0 :
@@ -199,38 +211,38 @@ export function FillPrescription() {
           <div className="space-y-4">
             <Card className="flex flex-col items-center gap-2 border-dashed p-8 text-center">
               <span className="text-3xl">📄</span>
-              <p className="font-semibold text-ink">Drag & drop or tap to upload</p>
-              <p className="text-sm text-ink-tertiary">Clear photos of the front (and back) of your prescription</p>
-              <Button variant="secondary" size="sm" className="mt-2" onClick={() => set({ files: [...s.files, `prescription-${s.files.length + 1}.jpg`] })}>Add a photo</Button>
+              <p className="font-semibold text-ink">{tx("Drag & drop or tap to upload")}</p>
+              <p className="text-sm text-ink-tertiary">{tx("Clear photos of the front (and back) of your prescription")}</p>
+              <Button variant="secondary" size="sm" className="mt-2" onClick={() => set({ files: [...s.files, `prescription-${s.files.length + 1}.jpg`] })}>{tx("Add a photo")}</Button>
             </Card>
             {s.files.map((f, i) => (
               <Card key={f} className="flex items-center gap-3 p-3">
                 <span className="grid h-10 w-10 place-items-center rounded-lg bg-primary-subtle">🖼️</span>
                 <span className="flex-1 text-sm font-medium text-ink">{f}</span>
-                <Badge tone="wellness">Uploaded</Badge>
-                <button onClick={() => set({ files: s.files.filter((_, idx) => idx !== i) })} className="text-ink-tertiary hover:text-danger" aria-label="Remove">✕</button>
+                <Badge tone="wellness">{tx("Uploaded")}</Badge>
+                <button onClick={() => set({ files: s.files.filter((_, idx) => idx !== i) })} className="text-ink-tertiary hover:text-danger" aria-label={tx("Remove")}>✕</button>
               </Card>
             ))}
           </div>
         )}
         {m === "fax" && (
           <div className="space-y-4">
-            <Card className="border-info/30 bg-info-subtle p-4"><p className="text-sm text-ink-secondary">Ask your clinic to fax your prescription to <span className="font-semibold text-ink">1-855-950-7226</span>. Add their details so we can match it to your account.</p></Card>
-            <Card className="p-5"><Field label="Clinic name" placeholder="e.g. Downtown Family Health" value={s.clinic} onChange={(e) => set({ clinic: e.target.value })} /></Card>
-            <Card className="p-5"><Field label="Prescriber name" placeholder="e.g. Dr. Smith" value={s.prescriber} onChange={(e) => set({ prescriber: e.target.value })} /></Card>
+            <Card className="border-info/30 bg-info-subtle p-4"><p className="text-sm text-ink-secondary">{tx("Ask your clinic to fax your prescription to")} <span className="font-semibold text-ink">1-855-950-7226</span>. {tx("Add their details so we can match it to your account.")}</p></Card>
+            <Card className="p-5"><Field label={tx("Clinic name")} placeholder={tx("e.g. Downtown Family Health")} value={s.clinic} onChange={(e) => set({ clinic: e.target.value })} /></Card>
+            <Card className="p-5"><Field label={tx("Prescriber name")} placeholder={tx("e.g. Dr. Smith")} value={s.prescriber} onChange={(e) => set({ prescriber: e.target.value })} /></Card>
           </div>
         )}
         {m === "mail" && (
           <div className="space-y-4">
-            <Card className="border-info/30 bg-info-subtle p-4"><p className="text-sm text-ink-secondary">We'll mail you a prepaid, pre-addressed kit. Pop your prescription in and drop it in any mailbox—postage is on us.</p></Card>
-            <Card className="p-5"><Field label="Mailing address" placeholder="Street, city, province, postal code" value={s.mailAddress} onChange={(e) => set({ mailAddress: e.target.value })} /></Card>
+            <Card className="border-info/30 bg-info-subtle p-4"><p className="text-sm text-ink-secondary">{tx("We'll mail you a prepaid, pre-addressed kit. Pop your prescription in and drop it in any mailbox—postage is on us.")}</p></Card>
+            <Card className="p-5"><Field label={tx("Mailing address")} placeholder={tx("Street, city, province, postal code")} value={s.mailAddress} onChange={(e) => set({ mailAddress: e.target.value })} /></Card>
           </div>
         )}
         {m === "transfer" && (
           <div className="space-y-4">
-            <Card className="p-5"><Field label="Current pharmacy" placeholder="e.g. Shoppers Drug Mart, Queen St" value={s.transferPharmacy} onChange={(e) => set({ transferPharmacy: e.target.value })} /></Card>
-            <Card className="p-5"><Field label="Pharmacy phone" placeholder="(416) 555-0100" value={s.transferPhone} onChange={(e) => set({ transferPhone: e.target.value })} /></Card>
-            <p className="text-sm text-ink-tertiary">We'll contact them and move your prescriptions—no need to call yourself.</p>
+            <Card className="p-5"><Field label={tx("Current pharmacy")} placeholder={tx("e.g. Shoppers Drug Mart, Queen St")} value={s.transferPharmacy} onChange={(e) => set({ transferPharmacy: e.target.value })} /></Card>
+            <Card className="p-5"><Field label={tx("Pharmacy phone")} placeholder="(416) 555-0100" value={s.transferPhone} onChange={(e) => set({ transferPhone: e.target.value })} /></Card>
+            <p className="text-sm text-ink-tertiary">{tx("We'll contact them and move your prescriptions—no need to call yourself.")}</p>
           </div>
         )}
       </EntryFlow>
@@ -240,8 +252,8 @@ export function FillPrescription() {
   /* 3. Medications */
   if (step === "meds")
     return (
-      <EntryFlow {...common} eyebrow="Fill your prescription" title="What are we filling?"
-        subtitle="Add each medication. Not sure of the exact details? A pharmacist will confirm from your prescription."
+      <EntryFlow {...common} title={tx("What are we filling?")}
+        subtitle={tx("Add each medication. Not sure of the exact details? A pharmacist will confirm from your prescription.")}
         onNext={goNext} nextDisabled={s.meds.length === 0}>
         <div className="space-y-4">
           <Card className="p-4"><MedPicker onAdd={addMed} /></Card>
@@ -249,31 +261,31 @@ export function FillPrescription() {
             <Card key={m.id} className="p-4">
               <div className="flex items-center justify-between">
                 <p className="font-semibold text-ink">💊 {m.name}</p>
-                <button onClick={() => rmMed(m.id)} className="text-ink-tertiary hover:text-danger" aria-label="Remove">✕</button>
+                <button onClick={() => rmMed(m.id)} className="text-ink-tertiary hover:text-danger" aria-label={tx("Remove")}>✕</button>
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 <label className="block text-sm">
-                  <span className="mb-1 block text-ink-secondary">Strength</span>
+                  <span className="mb-1 block text-ink-secondary">{tx("Strength")}</span>
                   {m.dosages.length ? (
                     <select value={m.strength} onChange={(e) => updMed(m.id, { strength: e.target.value })} className="h-10 w-full rounded-lg border border-line bg-surface-2 px-2 text-ink focus:border-primary">
                       {m.dosages.map((d) => <option key={d}>{d}</option>)}
                     </select>
                   ) : (
-                    <input value={m.strength} onChange={(e) => updMed(m.id, { strength: e.target.value })} placeholder="e.g. 5mg" className="h-10 w-full rounded-lg border border-line bg-surface-2 px-2 text-ink focus:border-primary" />
+                    <input value={m.strength} onChange={(e) => updMed(m.id, { strength: e.target.value })} placeholder={tx("e.g. 5mg")} className="h-10 w-full rounded-lg border border-line bg-surface-2 px-2 text-ink focus:border-primary" />
                   )}
                 </label>
                 <label className="block text-sm">
-                  <span className="mb-1 block text-ink-secondary">Quantity</span>
+                  <span className="mb-1 block text-ink-secondary">{tx("Quantity")}</span>
                   <select value={m.qty} onChange={(e) => updMed(m.id, { qty: Number(e.target.value) })} className="h-10 w-full rounded-lg border border-line bg-surface-2 px-2 text-ink focus:border-primary">
                     {[30, 60, 90].map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </label>
                 <label className="block text-sm">
-                  <span className="mb-1 block text-ink-secondary">Directions</span>
-                  <input value={m.directions} onChange={(e) => updMed(m.id, { directions: e.target.value })} placeholder="e.g. 1 daily" className="h-10 w-full rounded-lg border border-line bg-surface-2 px-2 text-ink focus:border-primary" />
+                  <span className="mb-1 block text-ink-secondary">{tx("Directions")}</span>
+                  <input value={m.directions} onChange={(e) => updMed(m.id, { directions: e.target.value })} placeholder={tx("e.g. 1 daily")} className="h-10 w-full rounded-lg border border-line bg-surface-2 px-2 text-ink focus:border-primary" />
                 </label>
               </div>
-              <div className="mt-3"><Switch checked={m.asNeeded} onChange={(v) => updMed(m.id, { asNeeded: v })} label="Take as needed" desc="As-needed meds ship in a regular bottle, not a dose pack." /></div>
+              <div className="mt-3"><Switch checked={m.asNeeded} onChange={(v) => updMed(m.id, { asNeeded: v })} label={tx("Take as needed")} desc={tx("As-needed meds ship in a regular bottle, not a dose pack.")} /></div>
             </Card>
           ))}
         </div>
@@ -283,43 +295,43 @@ export function FillPrescription() {
   /* 4. Patient */
   if (step === "patient")
     return (
-      <EntryFlow {...common} eyebrow="Fill your prescription" title="Who is this for?" onNext={goNext}
+      <EntryFlow {...common} title={tx("Who is this for?")} onNext={goNext}
         nextDisabled={s.who === "other" && (!s.otherName || !s.otherDob)}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             {(["self", "other"] as const).map((w) => (
               <button key={w} onClick={() => set({ who: w })}
                 className={"h-12 rounded-xl border text-sm font-semibold transition-colors " + (s.who === w ? "border-primary bg-primary-subtle text-primary" : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--state-hover)]")}>
-                {w === "self" ? "Myself" : "A family member"}
+                {w === "self" ? tx("Myself") : tx("A family member")}
               </button>
             ))}
           </div>
           {s.who === "other" && (
             <Card className="space-y-3 p-5">
-              <Field label="Full name" placeholder="e.g. Jordan Chen" value={s.otherName} onChange={(e) => set({ otherName: e.target.value })} />
+              <Field label={tx("Full name")} placeholder={tx("e.g. Jordan Chen")} value={s.otherName} onChange={(e) => set({ otherName: e.target.value })} />
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Date of birth" placeholder="YYYY-MM-DD" value={s.otherDob} onChange={(e) => set({ otherDob: e.target.value })} />
-                <Field label="Relationship" placeholder="e.g. Parent, child" value={s.otherRel} onChange={(e) => set({ otherRel: e.target.value })} />
+                <Field label={tx("Date of birth")} placeholder="YYYY-MM-DD" value={s.otherDob} onChange={(e) => set({ otherDob: e.target.value })} />
+                <Field label={tx("Relationship")} placeholder={tx("e.g. Parent, child")} value={s.otherRel} onChange={(e) => set({ otherRel: e.target.value })} />
               </div>
             </Card>
           )}
           <Card className="p-5">
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block text-sm"><span className="mb-1.5 block font-medium text-ink-secondary">Province</span>
+              <label className="block text-sm"><span className="mb-1.5 block font-medium text-ink-secondary">{tx("Province")}</span>
                 <select value={s.province} onChange={(e) => set({ province: e.target.value })} className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3 text-ink focus:border-primary">
                   {["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"].map((p) => <option key={p}>{p}</option>)}
                 </select>
               </label>
-              <Field label="Health card number" placeholder="Optional" value={s.healthNumber} onChange={(e) => set({ healthNumber: e.target.value })} />
+              <Field label={tx("Health card number")} placeholder={tx("Optional")} value={s.healthNumber} onChange={(e) => set({ healthNumber: e.target.value })} />
             </div>
           </Card>
-          <Card className="p-5"><p className="mb-2 text-sm font-medium text-ink-secondary">Allergies</p><Chips label="Allergies" items={s.allergies} placeholder="e.g. penicillin" onAdd={(v) => set({ allergies: [...s.allergies, v] })} onRemove={(i) => set({ allergies: s.allergies.filter((_, idx) => idx !== i) })} /></Card>
-          <Card className="p-5"><p className="mb-2 text-sm font-medium text-ink-secondary">Other medications you take</p><Chips label="Other medications" items={s.currentMeds} placeholder="e.g. vitamin D" onAdd={(v) => set({ currentMeds: [...s.currentMeds, v] })} onRemove={(i) => set({ currentMeds: s.currentMeds.filter((_, idx) => idx !== i) })} /></Card>
+          <Card className="p-5"><p className="mb-2 text-sm font-medium text-ink-secondary">{tx("Allergies")}</p><Chips label={tx("Allergies")} items={s.allergies} placeholder={tx("e.g. penicillin")} onAdd={(v) => set({ allergies: [...s.allergies, v] })} onRemove={(i) => set({ allergies: s.allergies.filter((_, idx) => idx !== i) })} /></Card>
+          <Card className="p-5"><p className="mb-2 text-sm font-medium text-ink-secondary">{tx("Other medications you take")}</p><Chips label={tx("Other medications")} items={s.currentMeds} placeholder={tx("e.g. vitamin D")} onAdd={(v) => set({ currentMeds: [...s.currentMeds, v] })} onRemove={(i) => set({ currentMeds: s.currentMeds.filter((_, idx) => idx !== i) })} /></Card>
           <Card className="p-5">
-            <p className="mb-2.5 text-sm font-medium text-ink-secondary">Pregnant or breastfeeding?</p>
+            <p className="mb-2.5 text-sm font-medium text-ink-secondary">{tx("Pregnant or breastfeeding?")}</p>
             <div className="grid grid-cols-3 gap-2">
-              {["No", "Yes", "N/A"].map((o) => (
-                <button key={o} onClick={() => set({ pregnant: o })} className={"h-10 rounded-xl border text-sm font-semibold " + (s.pregnant === o ? "border-primary bg-primary-subtle text-primary" : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--state-hover)]")}>{o}</button>
+              {(["No", "Yes", "N/A"] as const).map((o) => (
+                <button key={o} onClick={() => set({ pregnant: o })} className={"h-10 rounded-xl border text-sm font-semibold " + (s.pregnant === o ? "border-primary bg-primary-subtle text-primary" : "border-line bg-surface-2 text-ink-secondary hover:bg-[color:var(--state-hover)]")}>{tx(o)}</button>
               ))}
             </div>
           </Card>
@@ -330,12 +342,12 @@ export function FillPrescription() {
   /* 5. Packaging */
   if (step === "packaging")
     return (
-      <EntryFlow {...common} eyebrow="Fill your prescription" title="How should we pack it?" onNext={goNext}>
-        <div className="space-y-4" role="radiogroup" aria-label="Packaging">
+      <EntryFlow {...common} title={tx("How should we pack it?")} onNext={goNext}>
+        <div className="space-y-4" role="radiogroup" aria-label={tx("Packaging")}>
           {([
-            { id: "pocketpacks", icon: "🗓️", title: "PocketPacks (recommended)", desc: "Pouches sorted by date & time—ideal when taking multiple meds." },
-            { id: "vials", icon: "💊", title: "Traditional vials", desc: "Standard prescription bottles." },
-          ] as const).map((o) => (
+            { id: "pocketpacks" as const, icon: "🗓️", title: tx("PocketPacks (recommended)"), desc: tx("Pouches sorted by date & time—ideal when taking multiple meds.") },
+            { id: "vials" as const, icon: "💊", title: tx("Traditional vials"), desc: tx("Standard prescription bottles.") },
+          ]).map((o) => (
             <Card
               key={o.id}
               interactive
@@ -350,9 +362,9 @@ export function FillPrescription() {
             </Card>
           ))}
           <Card className="space-y-4 p-5">
-            <Switch checked={s.autoRefill} onChange={(v) => set({ autoRefill: v })} label="Auto-refill" desc="We'll prepare refills and remind you before you run out." />
+            <Switch checked={s.autoRefill} onChange={(v) => set({ autoRefill: v })} label={tx("Auto-refill")} desc={tx("We'll prepare refills and remind you before you run out.")} />
             <div className="border-t border-line" />
-            <Switch checked={s.genericOk} onChange={(v) => set({ genericOk: v })} label="Allow generic substitution" desc="Save more with equivalent generics when available." />
+            <Switch checked={s.genericOk} onChange={(v) => set({ genericOk: v })} label={tx("Allow generic substitution")} desc={tx("Save more with equivalent generics when available.")} />
           </Card>
         </div>
       </EntryFlow>
@@ -361,26 +373,30 @@ export function FillPrescription() {
   /* 6. Insurance */
   if (step === "insurance")
     return (
-      <EntryFlow {...common} eyebrow="Fill your prescription" title="Insurance & coverage" onNext={goNext}>
+      <EntryFlow {...common} title={tx("Insurance & coverage")} onNext={goNext}>
         <div className="space-y-4">
-          <Card className="p-5"><Switch checked={s.useProvincial} onChange={(v) => set({ useProvincial: v, payOOP: false })} label={`Provincial plan (${s.province})`} desc="Apply your provincial drug benefit where eligible." /></Card>
+          <Card className="p-5"><Switch checked={s.useProvincial} onChange={(v) => set({ useProvincial: v, payOOP: false })} label={tx("Provincial plan ({province})").replace("{province}", s.province)} desc={tx("Apply your provincial drug benefit where eligible.")} /></Card>
           <Card className="p-5">
-            <Switch checked={s.hasPrivate} onChange={(v) => set({ hasPrivate: v, payOOP: false })} label="Private / group insurance" desc="Bill your workplace or private plan directly." />
+            <Switch checked={s.hasPrivate} onChange={(v) => set({ hasPrivate: v, payOOP: false })} label={tx("Private / group insurance")} desc={tx("Bill your workplace or private plan directly.")} />
             {s.hasPrivate && (
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <Field label="Carrier" value={s.carrier} onChange={(e) => set({ carrier: e.target.value })} />
-                <Field label="Group #" value={s.group} onChange={(e) => set({ group: e.target.value })} />
-                <Field label="Member ID" placeholder="Optional" value={s.member} onChange={(e) => set({ member: e.target.value })} />
+                <Field label={tx("Carrier")} value={s.carrier} onChange={(e) => set({ carrier: e.target.value })} />
+                <Field label={tx("Group #")} value={s.group} onChange={(e) => set({ group: e.target.value })} />
+                <Field label={tx("Member ID")} placeholder={tx("Optional")} value={s.member} onChange={(e) => set({ member: e.target.value })} />
               </div>
             )}
           </Card>
-          <Card className="p-5"><Switch checked={s.payOOP} onChange={(v) => set({ payOOP: v, useProvincial: !v && s.useProvincial, hasPrivate: !v && s.hasPrivate })} label="Pay out of pocket" desc="Skip insurance for this order." /></Card>
+          <Card className="p-5"><Switch checked={s.payOOP} onChange={(v) => set({ payOOP: v, useProvincial: !v && s.useProvincial, hasPrivate: !v && s.hasPrivate })} label={tx("Pay out of pocket")} desc={tx("Skip insurance for this order.")} /></Card>
           <Card className="p-5">
-            <p className="mb-2 font-semibold text-ink">Estimated coverage</p>
-            <Row k="Medications" v={`$${subtotal.toFixed(2)}`} />
-            <Row k="Dispensing fee" v={`$${(s.meds.length ? DISPENSING_FEE : 0).toFixed(2)}`} />
-            <Row k={hasInsurance ? `Insurance (~${Math.round(rate * 100)}%)` : "Insurance"} v={hasInsurance ? `−$${covered.toFixed(2)}` : "—"} tone={hasInsurance ? "wellness" : undefined} />
-            <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">Estimated total</span><span className="font-display text-lg font-medium text-ink tnum">${total$.toFixed(2)}</span></div>
+            <p className="mb-2 font-semibold text-ink">{tx("Estimated coverage")}</p>
+            <Row k={tx("Medications")} v={`$${subtotal.toFixed(2)}`} />
+            <Row k={tx("Dispensing fee")} v={`$${(s.meds.length ? DISPENSING_FEE : 0).toFixed(2)}`} />
+            <Row
+              k={hasInsurance ? tx("Insurance (~{pct}%)").replace("{pct}", String(Math.round(rate * 100))) : tx("Insurance")}
+              v={hasInsurance ? `−$${covered.toFixed(2)}` : "—"}
+              tone={hasInsurance ? "wellness" : undefined}
+            />
+            <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">{tx("Estimated total")}</span><span className="font-display text-lg font-medium text-ink tnum">${total$.toFixed(2)}</span></div>
           </Card>
         </div>
       </EntryFlow>
@@ -389,14 +405,14 @@ export function FillPrescription() {
   /* 7. Delivery */
   if (step === "delivery")
     return (
-      <EntryFlow {...common} eyebrow="Fill your prescription" title="Delivery" onNext={goNext} nextDisabled={!s.address}>
+      <EntryFlow {...common} title={tx("Delivery")} onNext={goNext} nextDisabled={!s.address}>
         <div className="space-y-4">
-          <Card className="p-5"><Field label="Delivery address" value={s.address} onChange={(e) => set({ address: e.target.value })} /></Card>
-          <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Delivery speed">
+          <Card className="p-5"><Field label={tx("Delivery address")} value={s.address} onChange={(e) => set({ address: e.target.value })} /></Card>
+          <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={tx("Delivery speed")}>
             {([
-              { id: "standard", t: "Standard", d: "Free · 1–3 business days" },
-              { id: "sameday", t: "Same-day", d: "Select locations · free" },
-            ] as const).map((o) => (
+              { id: "standard" as const, t: tx("Standard"), d: tx("Free · 1–3 business days") },
+              { id: "sameday" as const, t: tx("Same-day"), d: tx("Select locations · free") },
+            ]).map((o) => (
               <button
                 key={o.id}
                 type="button"
@@ -409,41 +425,52 @@ export function FillPrescription() {
               </button>
             ))}
           </div>
-          <Card className="p-5"><Switch checked={s.leaveAtDoor} onChange={(v) => set({ leaveAtDoor: v })} label="Leave at my door" desc="Discreet packaging, with photo confirmation." /></Card>
-          <Card className="p-5"><Field label="Delivery notes (optional)" placeholder="Buzzer code, instructions…" value={s.notes} onChange={(e) => set({ notes: e.target.value })} /></Card>
+          <Card className="p-5"><Switch checked={s.leaveAtDoor} onChange={(v) => set({ leaveAtDoor: v })} label={tx("Leave at my door")} desc={tx("Discreet packaging, with photo confirmation.")} /></Card>
+          <Card className="p-5"><Field label={tx("Delivery notes (optional)")} placeholder={tx("Buzzer code, instructions…")} value={s.notes} onChange={(e) => set({ notes: e.target.value })} /></Card>
         </div>
       </EntryFlow>
     );
 
   /* 8. Review */
   if (step === "review") {
-    const methodLabel = { upload: "Photo upload", fax: "Clinic fax", mail: "Mail-in kit", transfer: "Pharmacy transfer" }[s.method ?? "upload"];
+    const methodLabel = {
+      upload: tx("Photo upload"),
+      fax: tx("Clinic fax"),
+      mail: tx("Mail-in kit"),
+      transfer: tx("Pharmacy transfer"),
+    }[s.method ?? "upload"];
+    const forValue = s.who === "self"
+      ? tx("Myself")
+      : `${s.otherName || tx("Family member")}${s.otherRel ? ` (${s.otherRel})` : ""}`;
+    const insuranceValue = s.payOOP
+      ? tx("Pay out of pocket")
+      : [s.useProvincial && tx("Provincial ({province})").replace("{province}", s.province), s.hasPrivate && s.carrier].filter(Boolean).join(" + ") || tx("None");
     const rows: [string, string, Step][] = [
-      ["Method", methodLabel, "method"],
-      ["Medications", s.meds.map((m) => `${m.name} ${m.strength}`).join(", ") || "—", "meds"],
-      ["For", s.who === "self" ? "Myself" : `${s.otherName || "Family member"}${s.otherRel ? ` (${s.otherRel})` : ""}`, "patient"],
-      ["Allergies", s.allergies.join(", ") || "None", "patient"],
-      ["Packaging", s.packaging === "pocketpacks" ? "PocketPacks" : "Vials", "packaging"],
-      ["Auto-refill", s.autoRefill ? "On" : "Off", "packaging"],
-      ["Insurance", s.payOOP ? "Pay out of pocket" : [s.useProvincial && `Provincial (${s.province})`, s.hasPrivate && s.carrier].filter(Boolean).join(" + ") || "None", "insurance"],
-      ["Delivery", `${s.speed === "standard" ? "Standard" : "Same-day"} · ${s.address}`, "delivery"],
+      [tx("Method"), methodLabel, "method"],
+      [tx("Medications"), s.meds.map((m) => `${m.name} ${m.strength}`).join(", ") || "—", "meds"],
+      [tx("For"), forValue, "patient"],
+      [tx("Allergies"), s.allergies.join(", ") || tx("None"), "patient"],
+      [tx("Packaging"), s.packaging === "pocketpacks" ? tx("PocketPacks") : tx("Vials"), "packaging"],
+      [tx("Auto-refill"), s.autoRefill ? tx("On") : tx("Off"), "packaging"],
+      [tx("Insurance"), insuranceValue, "insurance"],
+      [tx("Delivery"), `${s.speed === "standard" ? tx("Standard") : tx("Same-day")} · ${s.address}`, "delivery"],
     ];
     return (
-      <EntryFlow {...common} eyebrow="Fill your prescription" title="Review your order" onNext={goNext} nextLabel="Continue to payment">
+      <EntryFlow {...common} title={tx("Review your order")} onNext={goNext} nextLabel={tx("Continue to payment")}>
         <Card className="divide-y divide-line p-0">
           {rows.map(([k, v, to]) => (
             <div key={k} className="flex items-center justify-between gap-4 px-5 py-3.5">
               <div className="min-w-0"><p className="text-xs text-ink-tertiary">{k}</p><p className="truncate text-sm font-semibold text-ink">{v}</p></div>
-              <button onClick={() => setStep(to)} className="shrink-0 text-sm font-semibold text-primary hover:underline">Edit</button>
+              <button onClick={() => setStep(to)} className="shrink-0 text-sm font-semibold text-primary hover:underline">{tx("Edit")}</button>
             </div>
           ))}
         </Card>
         <Card className="mt-4 p-5">
-          <Row k="Medications" v={`$${subtotal.toFixed(2)}`} />
-          <Row k="Dispensing fee" v={`$${(s.meds.length ? DISPENSING_FEE : 0).toFixed(2)}`} />
-          <Row k="Delivery" v="FREE" tone="wellness" />
-          {hasInsurance && <Row k={`Insurance (~${Math.round(rate * 100)}%)`} v={`−$${covered.toFixed(2)}`} tone="wellness" />}
-          <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">Due today</span><span className="font-display text-xl font-medium text-ink tnum">${total$.toFixed(2)}</span></div>
+          <Row k={tx("Medications")} v={`$${subtotal.toFixed(2)}`} />
+          <Row k={tx("Dispensing fee")} v={`$${(s.meds.length ? DISPENSING_FEE : 0).toFixed(2)}`} />
+          <Row k={tx("Delivery")} v={tx("FREE")} tone="wellness" />
+          {hasInsurance && <Row k={tx("Insurance (~{pct}%)").replace("{pct}", String(Math.round(rate * 100)))} v={`−$${covered.toFixed(2)}`} tone="wellness" />}
+          <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">{tx("Due today")}</span><span className="font-display text-xl font-medium text-ink tnum">${total$.toFixed(2)}</span></div>
         </Card>
         <div className="mt-4">
           <ActiveOfferBanner />
@@ -464,35 +491,36 @@ export function FillPrescription() {
     return (
       <EntryFlow
         {...common}
-        eyebrow="Fill your prescription"
-        title="Payment"
+        title={tx("Payment")}
         onNext={goNext}
-        nextLabel={due > 0 ? `Place order · $${due.toFixed(2)}` : "Place order"}
+        nextLabel={due > 0 ? tx("Place order · {amount}").replace("{amount}", `$${due.toFixed(2)}`) : tx("Place order")}
       >
         <ActiveOfferBanner />
         {due <= 0 ? (
           <Card className="p-6 text-center">
             <span className="text-3xl" aria-hidden>✅</span>
-            <p className="mt-2 font-semibold text-ink">Nothing due today</p>
+            <p className="mt-2 font-semibold text-ink">{tx("Nothing due today")}</p>
             <p className="mt-1 text-sm text-ink-tertiary">
               {offerCredit > 0
-                ? "Your offer covers what’s left after insurance."
-                : "Your plan covers this order. We'll bill your insurance directly."}
+                ? tx("Your offer covers what’s left after insurance.")
+                : tx("Your plan covers this order. We'll bill your insurance directly.")}
             </p>
           </Card>
         ) : (
           <Card className="p-5">
             {offerCredit > 0 && (
               <div className="mb-4 rounded-xl bg-wellness-subtle px-3.5 py-2.5 text-sm text-wellness">
-                Offer credit −${offerCredit.toFixed(2)} applied · due ${due.toFixed(2)}
+                {tx("Offer credit −{credit} applied · due {due}")
+                  .replace("{credit}", `$${offerCredit.toFixed(2)}`)
+                  .replace("{due}", `$${due.toFixed(2)}`)}
               </div>
             )}
-            <Field label="Card number" placeholder="4242 4242 4242 4242" value={s.card} onChange={(e) => set({ card: e.target.value })} inputMode="numeric" />
+            <Field label={tx("Card number")} placeholder="4242 4242 4242 4242" value={s.card} onChange={(e) => set({ card: e.target.value })} inputMode="numeric" />
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <Field label="Expiry" placeholder="12 / 27" value={s.exp} onChange={(e) => set({ exp: e.target.value })} />
-              <Field label="CVC" placeholder="123" value={s.cvc} onChange={(e) => set({ cvc: e.target.value })} inputMode="numeric" />
+              <Field label={tx("Expiry")} placeholder="12 / 27" value={s.exp} onChange={(e) => set({ exp: e.target.value })} />
+              <Field label={tx("CVC")} placeholder="123" value={s.cvc} onChange={(e) => set({ cvc: e.target.value })} inputMode="numeric" />
             </div>
-            <p className="mt-3 text-xs text-ink-tertiary">🔒 Demo checkout — no real payment is processed.</p>
+            <p className="mt-3 text-xs text-ink-tertiary">{tx("🔒 Demo checkout — no real payment is processed.")}</p>
           </Card>
         )}
       </EntryFlow>
@@ -504,28 +532,43 @@ export function FillPrescription() {
 }
 
 function Confirmation({ state, total, onHome, onTrack }: { state: State; total: number; onHome: () => void; onTrack: () => void }) {
+  const { tx } = useI18n();
   const [verifying, setVerifying] = useState(true);
   useEffect(() => { const t = setTimeout(() => setVerifying(false), 2000); return () => clearTimeout(t); }, []);
+
+  const countPart = state.meds.length === 1
+    ? tx("{n} medication").replace("{n}", String(state.meds.length))
+    : tx("{n} medications").replace("{n}", String(state.meds.length));
+  const packPart = state.packaging === "pocketpacks" ? tx("PocketPacks") : tx("vials");
+  const payPart = total > 0
+    ? tx("{amount} charged").replace("{amount}", `$${total.toFixed(2)}`)
+    : tx("covered by your plan");
+  const summary = `${countPart} · ${packPart} · ${payPart}.`;
+
+  const timeline: [string, string, string][] = [
+    [tx("Order placed"), tx("Just now"), "done"],
+    [tx("Pharmacist verifying"), tx("Within 1 hour"), "active"],
+    [tx("Filled & packed"), tx("Tomorrow"), "todo"],
+    [tx("Delivered"), state.speed === "sameday" ? tx("Today (select areas)") : tx("1–3 days"), "todo"],
+  ];
+
   return (
-    <EntryFlow eyebrow="Fill your prescription" title="" step={9} total={9} hideNav>
+    <EntryFlow eyebrow={tx("Fill your prescription")} title="" step={9} total={9} hideNav>
       {verifying ? (
         <Card className="flex flex-col items-center gap-3 p-10 text-center">
           <span className="grid h-14 w-14 place-items-center rounded-full bg-primary-subtle text-2xl">🧑‍⚕️</span>
-          <p className="font-semibold text-ink">A pharmacist is reviewing your prescription…</p>
-          <p className="text-sm text-ink-tertiary">Every order is verified before it's filled.</p>
+          <p className="font-semibold text-ink">{tx("A pharmacist is reviewing your prescription…")}</p>
+          <p className="text-sm text-ink-tertiary">{tx("Every order is verified before it's filled.")}</p>
         </Card>
       ) : (
         <div className="animate-fade-up text-center">
           <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-wellness-subtle text-3xl">🎉</span>
-          <h1 className="mt-5 text-3xl font-medium text-ink">Order placed</h1>
-          <p className="mt-2 text-ink-secondary">
-            {state.meds.length} medication{state.meds.length === 1 ? "" : "s"} · {state.packaging === "pocketpacks" ? "PocketPacks" : "vials"}
-            {total > 0 ? ` · $${total.toFixed(2)} charged` : " · covered by your plan"}.
-          </p>
+          <h1 className="mt-5 text-3xl font-medium text-ink">{tx("Order placed")}</h1>
+          <p className="mt-2 text-ink-secondary">{summary}</p>
           <Card className="mt-6 p-5 text-left">
-            <div className="flex items-center justify-between text-sm"><span className="text-ink-tertiary">Order</span><span className="font-semibold text-ink tnum">#PP-RX-3391</span></div>
+            <div className="flex items-center justify-between text-sm"><span className="text-ink-tertiary">{tx("Order")}</span><span className="font-semibold text-ink tnum">#PP-RX-3391</span></div>
             <ol className="mt-4 space-y-0">
-              {[["Order placed", "Just now", "done"], ["Pharmacist verifying", "Within 1 hour", "active"], ["Filled & packed", "Tomorrow", "todo"], ["Delivered", state.speed === "sameday" ? "Today (select areas)" : "1–3 days", "todo"]].map(([label, meta, st], i, arr) => (
+              {timeline.map(([label, meta, st], i, arr) => (
                 <li key={label} className="flex gap-3.5">
                   <div className="flex flex-col items-center">
                     <span className={"grid h-6 w-6 place-items-center rounded-full text-2xs font-bold " + (st === "done" ? "bg-wellness text-white" : st === "active" ? "bg-primary text-[color:var(--color-primary-fg)]" : "border-2 border-line bg-surface-2 text-ink-tertiary")}>{st === "done" ? "✓" : i + 1}</span>
@@ -538,13 +581,13 @@ function Confirmation({ state, total, onHome, onTrack }: { state: State; total: 
           </Card>
           {state.autoRefill && (
             <div className="mt-4 rounded-2xl border border-line bg-surface-1 p-4 text-left">
-              <Badge tone="accent">Auto-refill on</Badge>
-              <p className="mt-2 text-sm text-ink-secondary">We'll prepare your next refill and remind you before you run out—no action needed.</p>
+              <Badge tone="accent">{tx("Auto-refill on")}</Badge>
+              <p className="mt-2 text-sm text-ink-secondary">{tx("We'll prepare your next refill and remind you before you run out—no action needed.")}</p>
             </div>
           )}
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <Button variant="wellness" onClick={onTrack}>Track order</Button>
-            <Button variant="secondary" onClick={onHome}>Back to home</Button>
+            <Button variant="wellness" onClick={onTrack}>{tx("Track order")}</Button>
+            <Button variant="secondary" onClick={onHome}>{tx("Back to home")}</Button>
           </div>
         </div>
       )}
@@ -555,4 +598,3 @@ function Confirmation({ state, total, onHome, onTrack }: { state: State; total: 
 function Row({ k, v, tone }: { k: string; v: string; tone?: "wellness" }) {
   return <div className="flex items-center justify-between text-sm"><span className="text-ink-secondary">{k}</span><span className={tone === "wellness" ? "font-medium text-wellness tnum" : "text-ink tnum"}>{v}</span></div>;
 }
-

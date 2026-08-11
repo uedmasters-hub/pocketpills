@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-r
 import { Button } from "@/components/ui/Button";
 import { MapEmbed } from "@/components/MapEmbed";
 import { useUser } from "@/lib/user";
+import { useI18n } from "@/lib/i18n";
 import {
   REGIONS,
   getPharmacy,
@@ -16,8 +17,9 @@ import {
 const CARD = "rounded-2xl border border-line bg-white";
 
 function RegionPills({ active }: { active?: string }) {
+  const { tx } = useI18n();
   return (
-    <ul className="flex flex-wrap gap-2" aria-label="Delivery regions">
+    <ul className="flex flex-wrap gap-2" aria-label={tx("Delivery regions")}>
       {REGIONS.map((r) => {
         const on = active?.toUpperCase() === r.code;
         return (
@@ -32,7 +34,7 @@ function RegionPills({ active }: { active?: string }) {
                   : "bg-[color:var(--primary-200)] text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-200)]")
               }
             >
-              <span className="font-medium">{r.name}</span>
+              <span className="font-medium">{tx(r.name)}</span>
               <span className={"text-2xs " + (on ? "text-white/70" : "text-ink-tertiary")}>{r.code}</span>
             </Link>
           </li>
@@ -51,6 +53,7 @@ function PharmacyRow({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const { tx } = useI18n();
   return (
     <button
       type="button"
@@ -82,12 +85,12 @@ function PharmacyRow({
           <span>{p.distance}</span>
           <span>{p.hours}</span>
           {p.sameDayHub && (
-            <span className="font-medium text-[color:var(--pp-violet)]">Same-day hub nearby</span>
+            <span className="font-medium text-[color:var(--pp-violet)]">{tx("Same-day hub nearby")}</span>
           )}
         </span>
       </span>
       <span className="shrink-0 text-sm font-medium text-[color:var(--pp-violet)]">
-        {selected ? "Selected" : "Select"}
+        {selected ? tx("Selected") : tx("Select")}
       </span>
     </button>
   );
@@ -100,6 +103,7 @@ function DetailPanel({
   region: Region;
   pharmacy: AreaPharmacy;
 }) {
+  const { tx } = useI18n();
   const nav = useNavigate();
   const { signedIn } = useUser();
   const mapSrc =
@@ -113,7 +117,7 @@ function DetailPanel({
   return (
     <aside className="hidden w-[20rem] shrink-0 lg:sticky lg:top-28 lg:block lg:self-start xl:w-[22rem]">
       <div className={`${CARD} overflow-hidden`}>
-        <MapEmbed title={`Map near ${pharmacy.name}`} src={mapSrc} className="aspect-[4/3]" />
+        <MapEmbed title={`${tx("Map near")} ${pharmacy.name}`} src={mapSrc} className="aspect-[4/3]" />
         <div className="p-5">
           <p className="pp-caps text-[color:var(--pp-violet)]">
             {pharmacy.city}, {pharmacy.province}
@@ -127,7 +131,7 @@ function DetailPanel({
 
           <dl className="mt-4 space-y-3 text-sm">
             <div>
-              <dt className="text-2xs text-ink-tertiary">Phone</dt>
+              <dt className="text-2xs text-ink-tertiary">{tx("Phone")}</dt>
               <dd className="mt-0.5 font-medium text-[color:var(--pp-primary-950)]">
                 <a href={`tel:${pharmacy.phone.replace(/\D/g, "")}`} className="hover:underline">
                   {pharmacy.phone}
@@ -135,23 +139,23 @@ function DetailPanel({
               </dd>
             </div>
             <div>
-              <dt className="text-2xs text-ink-tertiary">Hours</dt>
+              <dt className="text-2xs text-ink-tertiary">{tx("Hours")}</dt>
               <dd className="mt-0.5 font-medium text-[color:var(--pp-primary-950)]">{pharmacy.hours}</dd>
             </div>
           </dl>
 
           <div className="mt-5 rounded-xl bg-[color:var(--pp-primary-100)] p-4">
-            <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">Filled by</p>
+            <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">{tx("Filled by")}</p>
             <p className="mt-1 font-medium text-[color:var(--pp-primary-950)]">{region.hub.name}</p>
             <p className="mt-0.5 text-sm text-ink-secondary">{region.hub.address}</p>
             <p className="mt-2 text-xs text-ink-tertiary">
-              Licensed {region.hub.license} · {region.hub.college}
+              {tx("Licensed")} {region.hub.license} · {region.hub.college}
             </p>
           </div>
 
           <div className="mt-5 flex flex-col gap-2">
             <Button type="button" fullWidth onClick={startTransfer}>
-              Transfer from this pharmacy
+              {tx("Transfer from this pharmacy")}
             </Button>
             <Button
               type="button"
@@ -159,7 +163,7 @@ function DetailPanel({
               fullWidth
               onClick={() => nav(`/delivery-check?province=${region.slug}`)}
             >
-              Check delivery in {region.name}
+              {tx("Check delivery in")} {tx(region.name)}
             </Button>
             <Button
               type="button"
@@ -167,7 +171,7 @@ function DetailPanel({
               fullWidth
               onClick={() => nav(signedIn ? "/fill" : "/get-started")}
             >
-              Fill a prescription instead
+              {tx("Fill a prescription instead")}
             </Button>
           </div>
         </div>
@@ -184,6 +188,7 @@ function MobileDetail({
   region: Region;
   pharmacy: AreaPharmacy;
 }) {
+  const { tx } = useI18n();
   const nav = useNavigate();
   const { signedIn } = useUser();
   const mapSrc =
@@ -191,7 +196,7 @@ function MobileDetail({
 
   return (
     <div className={`${CARD} overflow-hidden lg:hidden`}>
-      <MapEmbed title={`Map near ${pharmacy.name}`} src={mapSrc} className="aspect-[16/10]" />
+      <MapEmbed title={`${tx("Map near")} ${pharmacy.name}`} src={mapSrc} className="aspect-[16/10]" />
       <div className="space-y-3 p-5">
         <p className="font-semibold text-[color:var(--pp-primary-950)]">{pharmacy.name}</p>
         <p className="text-sm text-ink-secondary">
@@ -206,7 +211,7 @@ function MobileDetail({
             nav(signedIn ? `/transfer?pharmacy=${encodeURIComponent(pharmacy.id)}` : "/get-started");
           }}
         >
-          Transfer from this pharmacy
+          {tx("Transfer from this pharmacy")}
         </Button>
         <Button
           type="button"
@@ -215,7 +220,7 @@ function MobileDetail({
           size="sm"
           onClick={() => nav(`/delivery-check?province=${region.slug}`)}
         >
-          Check delivery
+          {tx("Check delivery")}
         </Button>
       </div>
     </div>
@@ -223,30 +228,32 @@ function MobileDetail({
 }
 
 function CanadaMapPanel() {
+  const { tx } = useI18n();
   return (
     <aside className="hidden w-[20rem] shrink-0 lg:sticky lg:top-28 lg:block lg:self-start xl:w-[22rem]">
       <div className={`${CARD} overflow-hidden`}>
         <MapEmbed
-          title="Canada coverage map"
+          title={tx("Canada coverage map")}
           src="https://www.openstreetmap.org/export/embed.html?bbox=-141%2C41.5%2C-52%2C70&layer=mapnik"
           className="aspect-[4/3]"
         />
         <div className="p-5">
-          <p className="pp-caps text-[color:var(--pp-violet)]">Nationwide</p>
+          <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Nationwide")}</p>
           <h2 className="mt-1 font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-            Every province & territory
+            {tx("Every province & territory")}
           </h2>
           <p className="mt-2 text-sm text-ink-secondary">
-            Free standard delivery coast to coast. Pick a region to see local pharmacies we can
-            transfer from.
+            {tx(
+              "Free standard delivery coast to coast. Pick a region to see local pharmacies we can transfer from.",
+            )}
           </p>
           <div className="mt-4 space-y-3 text-sm">
             <div className="rounded-xl bg-[color:var(--pp-primary-100)] p-3.5">
-              <p className="font-medium text-[color:var(--pp-primary-950)]">Pocketpills East</p>
+              <p className="font-medium text-[color:var(--pp-primary-950)]">{tx("Pocketpills East")}</p>
               <p className="mt-0.5 text-xs text-ink-secondary">Mississauga, ON · #307234</p>
             </div>
             <div className="rounded-xl bg-[color:var(--pp-primary-100)] p-3.5">
-              <p className="font-medium text-[color:var(--pp-primary-950)]">Pocketpills West</p>
+              <p className="font-medium text-[color:var(--pp-primary-950)]">{tx("Pocketpills West")}</p>
               <p className="mt-0.5 text-xs text-ink-secondary">Burnaby, BC · #30291</p>
             </div>
           </div>
@@ -258,6 +265,7 @@ function CanadaMapPanel() {
 
 /** Index — pick a province (also destination when footer links without code). */
 export function PharmaciesIndex() {
+  const { tx } = useI18n();
   return (
     <div>
       {/*
@@ -267,18 +275,19 @@ export function PharmaciesIndex() {
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
         <div className="min-w-0 flex-1">
           <header className="mb-8">
-            <p className="pp-caps text-[color:var(--pp-violet)]">Coverage</p>
+            <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Coverage")}</p>
             <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-4xl">
-              Pharmacies we deliver from
+              {tx("Pharmacies we deliver from")}
             </h1>
             <p className="mt-2 max-w-2xl text-base text-ink-secondary">
-              PocketPills ships free to every province and territory. Choose your area to see community
-              pharmacies we can transfer from — then start a transfer or check delivery.
+              {tx(
+                "PocketPills ships free to every province and territory. Choose your area to see community pharmacies we can transfer from — then start a transfer or check delivery.",
+              )}
             </p>
           </header>
 
           <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-            Pocketpills delivers to:
+            {tx("Pocketpills delivers to:")}
           </h2>
           <div className="mt-4">
             <RegionPills />
@@ -294,13 +303,14 @@ export function PharmaciesIndex() {
                   className={`${CARD} p-5 transition-colors hover:bg-[color:var(--state-hover)]`}
                 >
                   <p className="font-semibold text-[color:var(--pp-primary-950)]">
-                    {r.name}{" "}
+                    {tx(r.name)}{" "}
                     <span className="text-sm font-medium text-ink-tertiary">{r.code}</span>
                   </p>
                   <p className="mt-1 text-sm text-ink-secondary">
-                    {count} pharmac{count === 1 ? "y" : "ies"} · Served by {r.hub.name}
+                    {count} {count === 1 ? tx("pharmacy") : tx("pharmacies")} · {tx("Served by")}{" "}
+                    {r.hub.name}
                   </p>
-                  <p className="mt-3 text-sm font-medium text-[color:var(--pp-violet)]">View list →</p>
+                  <p className="mt-3 text-sm font-medium text-[color:var(--pp-violet)]">{tx("View list →")}</p>
                 </Link>
               );
             })}
@@ -315,6 +325,7 @@ export function PharmaciesIndex() {
 
 /** Province / territory pharmacy list + select → transfer flow. */
 export function PharmaciesByRegion() {
+  const { tx } = useI18n();
   const { region: regionParam } = useParams();
   const [params] = useSearchParams();
   const region = getRegion(regionParam);
@@ -353,7 +364,7 @@ export function PharmaciesByRegion() {
         to="/pharmacies"
         className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-[color:var(--pp-primary-950)] transition-opacity hover:opacity-70"
       >
-        <span aria-hidden>←</span> All regions
+        <span aria-hidden>←</span> {tx("All regions")}
       </Link>
 
       {/*
@@ -363,14 +374,17 @@ export function PharmaciesByRegion() {
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
         <div className="min-w-0 flex-1">
           <header className="mb-6">
-            <p className="pp-caps text-[color:var(--pp-violet)]">Coverage · {region.code}</p>
+            <p className="pp-caps text-[color:var(--pp-violet)]">
+              {tx("Coverage")} · {region.code}
+            </p>
             <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-              Pharmacies in {region.name}
+              {tx("Pharmacies in")} {tx(region.name)}
             </h1>
             <p className="mt-2 max-w-2xl text-base text-ink-secondary">
-              Select a pharmacy to transfer from. Orders for {region.name} are filled by{" "}
-              <span className="font-medium text-[color:var(--pp-primary-950)]">{region.hub.name}</span> and
-              delivered free to your door.
+              {tx("Select a pharmacy to transfer from. Orders for")} {tx(region.name)}{" "}
+              {tx("are filled by")}{" "}
+              <span className="font-medium text-[color:var(--pp-primary-950)]">{region.hub.name}</span>{" "}
+              {tx("and delivered free to your door.")}
             </p>
           </header>
 
@@ -379,7 +393,9 @@ export function PharmaciesByRegion() {
           </div>
 
           <label className="relative mb-6 block max-w-md">
-            <span className="sr-only">Search pharmacies in {region.name}</span>
+            <span className="sr-only">
+              {tx("Search pharmacies in")} {tx(region.name)}
+            </span>
             <svg
               className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-tertiary"
               width="16"
@@ -396,21 +412,25 @@ export function PharmaciesByRegion() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by name, city, or street…"
+              placeholder={tx("Search by name, city, or street…")}
               className="h-11 w-full rounded-xl border border-line bg-white py-2.5 pl-10 pr-3.5 text-base text-ink placeholder:text-ink-tertiary focus:border-primary"
             />
           </label>
 
           <p className="mb-3 text-sm text-ink-tertiary tnum">
-            {list.length} pharmac{list.length === 1 ? "y" : "ies"}
+            {list.length} {list.length === 1 ? tx("pharmacy") : tx("pharmacies")}
           </p>
 
           {list.length === 0 ? (
             <div className={`${CARD} px-6 py-12 text-center`}>
-              <p className="font-semibold text-[color:var(--pp-primary-950)]">No matches in {region.name}</p>
-              <p className="mt-1 text-sm text-ink-tertiary">Try another city name, or clear the search.</p>
+              <p className="font-semibold text-[color:var(--pp-primary-950)]">
+                {tx("No matches in")} {tx(region.name)}
+              </p>
+              <p className="mt-1 text-sm text-ink-tertiary">
+                {tx("Try another city name, or clear the search.")}
+              </p>
               <Button type="button" size="sm" variant="secondary" className="mt-4" onClick={() => setQ("")}>
-                Clear search
+                {tx("Clear search")}
               </Button>
             </div>
           ) : (

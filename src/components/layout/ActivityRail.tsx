@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "@/lib/user";
 import { pendingRows, profileChecklist } from "@/lib/profile";
 import { useRightRail } from "@/lib/rightRail";
+import { useI18n } from "@/lib/i18n";
 import {
   getOrders,
   statusMeta,
@@ -59,12 +60,13 @@ function TrackSegments({
 }
 
 function LiveOrderCard({ o, onClick }: { o: Order; onClick: () => void }) {
+  const { tx } = useI18n();
   const isTransfer = o.type === "transfer";
   const accent = orderAccent(o);
   const steps = isTransfer ? TRANSFER_TRACK_STEPS : FILL_TRACK_STEPS;
   const step = isTransfer ? transferStepIndex(o.status) : fillStepIndex(o.status);
   const cue = isTransfer ? transferStatusLabel(o.status) : statusMeta[o.status].label;
-  const title = o.items[0]?.name ?? (isTransfer ? "Prescription transfer" : typeMeta[o.type].label);
+  const title = o.items[0]?.name ?? (isTransfer ? tx("Prescription transfer") : tx(typeMeta[o.type].label));
 
   return (
     <button
@@ -82,13 +84,14 @@ function LiveOrderCard({ o, onClick }: { o: Order; onClick: () => void }) {
       <TrackSegments steps={steps} step={step} accent={accent} />
 
       <span className="mt-2 block text-xs font-medium" style={{ color: accent }}>
-        {cue}
+        {tx(cue)}
       </span>
     </button>
   );
 }
 
 function ActivityBody() {
+  const { tx } = useI18n();
   const nav = useNavigate();
   const { user } = useUser();
   const pending = pendingRows(user);
@@ -102,8 +105,8 @@ function ActivityBody() {
   if (empty) {
     return (
       <div className="rounded-2xl border border-line bg-white px-5 py-6">
-        <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">You’re all caught up</p>
-        <p className="mt-1 text-xs text-ink-tertiary">No pending tasks or live orders.</p>
+        <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{tx("You’re all caught up")}</p>
+        <p className="mt-1 text-xs text-ink-tertiary">{tx("No pending tasks or live orders.")}</p>
       </div>
     );
   }
@@ -116,10 +119,10 @@ function ActivityBody() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">
-                  Complete your profile
+                  {tx("Complete your profile")}
                 </p>
                 <p className="mt-0.5 text-xs text-ink-tertiary">
-                  {profileDone} of {profileTotal} done · {pending.length} left
+                  {profileDone} {tx("of")} {profileTotal} {tx("done")} · {pending.length} {tx("left")}
                 </p>
               </div>
               <span
@@ -155,7 +158,7 @@ function ActivityBody() {
                     aria-hidden
                   />
                   <span className="min-w-0 flex-1 text-sm font-medium text-[color:var(--pp-primary-950)]">
-                    {r.label}
+                    {tx(r.label)}
                   </span>
                   <span className="text-ink-tertiary" aria-hidden>
                     ›
@@ -169,7 +172,7 @@ function ActivityBody() {
 
       {active.length > 0 && (
         <section>
-          <p className="pp-caps mb-3 text-[color:var(--pp-violet)]">Live orders</p>
+          <p className="pp-caps mb-3 text-[color:var(--pp-violet)]">{tx("Live orders")}</p>
           <div className="space-y-3">
             {active.map((o) => (
               <LiveOrderCard key={o.id} o={o} onClick={() => nav(`/orders/${o.id}`)} />
@@ -183,6 +186,7 @@ function ActivityBody() {
 
 /** Compact summary used on small screens — expands in place. */
 export function MobileActivity() {
+  const { tx } = useI18n();
   const { user } = useUser();
   const pending = pendingRows(user).length;
   const live = getOrders().filter(isActiveOrder).length;
@@ -200,11 +204,11 @@ export function MobileActivity() {
         aria-controls="mobile-activity-panel"
       >
         <span>
-          <span className="block text-sm font-medium text-[color:var(--pp-primary-950)]">Activity</span>
+          <span className="block text-sm font-medium text-[color:var(--pp-primary-950)]">{tx("Activity")}</span>
           <span className="mt-0.5 block text-xs text-ink-tertiary">
             {total === 0
-              ? "You’re all caught up"
-              : `${pending ? `${pending} pending` : ""}${pending && live ? " · " : ""}${live ? `${live} live` : ""}`}
+              ? tx("You’re all caught up")
+              : `${pending ? `${pending} ${tx("pending")}` : ""}${pending && live ? " · " : ""}${live ? `${live} ${tx("live")}` : ""}`}
           </span>
         </span>
         <span className="text-ink-tertiary" aria-hidden>
@@ -222,11 +226,12 @@ export function MobileActivity() {
 
 /** Sticky right rail — always mounted in AppShell so layout stays consistent. */
 export function ActivityRail() {
+  const { tx } = useI18n();
   return (
-    <aside className="hidden w-72 shrink-0 lg:block xl:w-80" aria-label="Activity">
+    <aside className="hidden w-72 shrink-0 lg:block xl:w-80" aria-label={tx("Activity")}>
       <div className="sticky top-28">
-        <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">Activity</h2>
-        <p className="mt-1 text-sm text-ink-tertiary">What needs you next</p>
+        <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{tx("Activity")}</h2>
+        <p className="mt-1 text-sm text-ink-tertiary">{tx("What needs you next")}</p>
         <div className="mt-5">
           <ActivityBody />
         </div>
@@ -236,6 +241,7 @@ export function ActivityRail() {
 }
 
 function ReviewBody() {
+  const { tx } = useI18n();
   const { review, clearReview } = useRightRail();
   if (!review) return null;
 
@@ -243,15 +249,16 @@ function ReviewBody() {
     <div className="space-y-5">
       <section className="overflow-hidden rounded-2xl border border-line bg-white">
         <div className="border-b border-line px-4 py-4">
-          <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{review.title}</p>
+          <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{tx(review.title)}</p>
           <p className="mt-0.5 text-xs text-ink-tertiary">
-            {review.changes.length} change{review.changes.length === 1 ? "" : "s"} to review
+            {review.changes.length}{" "}
+            {review.changes.length === 1 ? tx("change to review") : tx("changes to review")}
           </p>
         </div>
         <ul>
           {review.changes.map((c, i) => (
             <li key={`${c.label}-${i}`} className={"px-4 py-3.5 " + (i > 0 ? "border-t border-line" : "")}>
-              <p className="text-xs font-medium text-ink-tertiary">{c.label}</p>
+              <p className="text-xs font-medium text-ink-tertiary">{tx(c.label)}</p>
               {c.from != null && c.from !== "" ? (
                 <p className="mt-1 text-sm text-[color:var(--pp-primary-950)]">
                   <span className="text-ink-tertiary line-through">{c.from}</span>
@@ -275,7 +282,7 @@ function ReviewBody() {
           }}
           className="flex w-full items-center justify-center rounded-full bg-cta px-5 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed"
         >
-          {review.ctaLabel ?? "Save changes"}
+          {tx(review.ctaLabel ?? "Save changes")}
         </button>
         <button
           type="button"
@@ -285,7 +292,7 @@ function ReviewBody() {
           }}
           className="flex w-full items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium text-ink-secondary transition-colors hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
         >
-          Discard
+          {tx("Discard")}
         </button>
       </div>
     </div>
@@ -293,6 +300,7 @@ function ReviewBody() {
 }
 
 export function MobileReview() {
+  const { tx } = useI18n();
   const { review } = useRightRail();
   const [open, setOpen] = useState(true);
   if (!review) return null;
@@ -308,9 +316,10 @@ export function MobileReview() {
         aria-controls="mobile-review-panel"
       >
         <span>
-          <span className="block text-sm font-medium text-[color:var(--pp-primary-950)]">Review changes</span>
+          <span className="block text-sm font-medium text-[color:var(--pp-primary-950)]">{tx("Review changes")}</span>
           <span className="mt-0.5 block text-xs text-ink-tertiary">
-            {review.changes.length} update{review.changes.length === 1 ? "" : "s"} ready to save
+            {review.changes.length}{" "}
+            {review.changes.length === 1 ? tx("update ready to save") : tx("updates ready to save")}
           </span>
         </span>
         <span className="text-ink-tertiary" aria-hidden>
@@ -327,14 +336,15 @@ export function MobileReview() {
 }
 
 export function ReviewRail() {
+  const { tx } = useI18n();
   const { review } = useRightRail();
   if (!review) return null;
 
   return (
-    <aside className="hidden w-72 shrink-0 lg:block xl:w-80" aria-label="Review changes">
+    <aside className="hidden w-72 shrink-0 lg:block xl:w-80" aria-label={tx("Review changes")}>
       <div className="sticky top-28">
-        <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">Review</h2>
-        <p className="mt-1 text-sm text-ink-tertiary">Confirm before updating</p>
+        <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{tx("Review")}</h2>
+        <p className="mt-1 text-sm text-ink-tertiary">{tx("Confirm before updating")}</p>
         <div className="mt-5">
           <ReviewBody />
         </div>

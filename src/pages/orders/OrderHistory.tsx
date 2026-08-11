@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { useI18n } from "@/lib/i18n";
 import {
   getOrders,
   getOrder,
@@ -40,6 +41,7 @@ const TYPE_SECTIONS: { type: OrderType; title: string }[] = [
 ];
 
 function StatusPill({ status }: { status: OrderStatus }) {
+  const { tx } = useI18n();
   const style: Record<OrderStatus, string> = {
     verifying: "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]",
     processing: "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]",
@@ -47,19 +49,20 @@ function StatusPill({ status }: { status: OrderStatus }) {
     delivered: "bg-wellness-subtle text-wellness",
     cancelled: "bg-danger-subtle text-danger",
   };
-  return <span className={`${PILL} ${style[status]}`}>{statusMeta[status].label}</span>;
+  return <span className={`${PILL} ${style[status]}`}>{tx(statusMeta[status].label)}</span>;
 }
 
-function orderTitle(o: Order) {
-  if (o.type === "transfer") return o.fromPharmacy ? `From ${o.fromPharmacy}` : "Prescription transfer";
+function orderTitle(o: Order, tx: (s: string) => string) {
+  if (o.type === "transfer") return o.fromPharmacy ? `${tx("From")} ${o.fromPharmacy}` : tx("Prescription transfer");
   const names = o.items.map((i) => i.name);
-  if (names.length === 0) return typeMeta[o.type].label;
+  if (names.length === 0) return tx(typeMeta[o.type].label);
   if (names.length === 1) return names[0];
   if (names.length === 2) return names.join(" & ");
-  return `${names[0]} +${names.length - 1} more`;
+  return `${names[0]} +${names.length - 1} ${tx("more")}`;
 }
 
 function OrderCard({ o }: { o: Order }) {
+  const { tx } = useI18n();
   const nav = useNavigate();
   const total = orderTotals(o).total;
   const cancelled = o.status === "cancelled";
@@ -91,7 +94,7 @@ function OrderCard({ o }: { o: Order }) {
 
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
-          <span className="truncate font-semibold text-[color:var(--pp-primary-950)]">{orderTitle(o)}</span>
+          <span className="truncate font-semibold text-[color:var(--pp-primary-950)]">{orderTitle(o, tx)}</span>
           <StatusPill status={o.status} />
         </span>
         <span className="mt-1 block truncate text-sm text-ink-tertiary">
@@ -112,7 +115,7 @@ function OrderCard({ o }: { o: Order }) {
             }}
             className="text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
           >
-            View receipt
+            {tx("View receipt")}
           </button>
           <button
             type="button"
@@ -122,18 +125,18 @@ function OrderCard({ o }: { o: Order }) {
             }}
             className="text-2xs font-medium text-ink-tertiary transition-colors hover:text-[color:var(--pp-primary-950)]"
           >
-            Invoice
+            {tx("Invoice")}
           </button>
         </span>
       ) : (
         <span className="shrink-0 text-right">
           <span className="block font-display text-lg font-medium text-[color:var(--pp-primary-950)] tnum">
-            {o.type === "transfer" && total === 0 ? "Free" : money(total)}
+            {o.type === "transfer" && total === 0 ? tx("Free") : money(total)}
           </span>
           <span className="mt-0.5 block text-2xs text-ink-tertiary">
             {o.type === "transfer"
-              ? "No charge yet"
-              : `${o.items.length} item${o.items.length === 1 ? "" : "s"}`}
+              ? tx("No charge yet")
+              : `${o.items.length} ${o.items.length === 1 ? tx("item") : tx("items")}`}
           </span>
         </span>
       )}
@@ -143,6 +146,7 @@ function OrderCard({ o }: { o: Order }) {
 
 /* ── History ───────────────────────────────────────────── */
 export function OrderHistory() {
+  const { tx } = useI18n();
   const [tab, setTab] = useState<"all" | "progress" | "delivered" | "cancelled">("all");
   const orders = getOrders();
 
@@ -177,12 +181,12 @@ export function OrderHistory() {
   return (
     <div>
       <header className="mb-6">
-        <p className="pp-caps text-[color:var(--pp-violet)]">Orders</p>
+        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Orders")}</p>
         <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-4xl">
-          Order history
+          {tx("Order history")}
         </h1>
         <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          Track deliveries, reopen receipts, and reorder medications in one place.
+          {tx("Track deliveries, reopen receipts, and reorder medications in one place.")}
         </p>
       </header>
 
@@ -197,18 +201,18 @@ export function OrderHistory() {
         >
           <span>
             <span className="block text-sm font-semibold text-[color:var(--pp-primary-950)]">
-              {counts.progress} order{counts.progress === 1 ? "" : "s"} on the way
+              {counts.progress} {counts.progress === 1 ? tx("order on the way") : tx("orders on the way")}
             </span>
             <span className="mt-0.5 block text-xs text-ink-secondary">
-              Tap to see what’s in progress — free delivery across Canada.
+              {tx("Tap to see what’s in progress — free delivery across Canada.")}
             </span>
           </span>
-          <span className="shrink-0 text-sm font-medium text-[color:var(--pp-violet)]">View →</span>
+          <span className="shrink-0 text-sm font-medium text-[color:var(--pp-violet)]">{tx("View →")}</span>
         </button>
       )}
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter orders">
+        <div className="flex flex-wrap gap-2" role="group" aria-label={tx("Filter orders")}>
           {tabs.map(([id, label, count]) => (
             <button
               key={id}
@@ -222,7 +226,7 @@ export function OrderHistory() {
                   : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-200)]")
               }
             >
-              {label}
+              {tx(label)}
               <span
                 className={
                   "tnum rounded-full px-1.5 py-0.5 text-2xs font-semibold " +
@@ -238,7 +242,7 @@ export function OrderHistory() {
           to="/fill"
           className="text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
         >
-          New fill →
+          {tx("New fill →")}
         </Link>
       </div>
 
@@ -246,23 +250,23 @@ export function OrderHistory() {
         <div className={`${CARD} px-6 py-14 text-center`}>
           <p className="font-semibold text-[color:var(--pp-primary-950)]">
             {tab === "all"
-              ? "No orders yet"
+              ? tx("No orders yet")
               : tab === "progress"
-                ? "No in-progress orders"
+                ? tx("No in-progress orders")
                 : tab === "delivered"
-                  ? "No delivered orders"
-                  : "No cancelled orders"}
+                  ? tx("No delivered orders")
+                  : tx("No cancelled orders")}
           </p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-ink-tertiary">
             {tab === "all"
-              ? "When you fill, refill, or transfer a prescription, it will show up here."
-              : "Try another filter, or place a new fill."}
+              ? tx("When you fill, refill, or transfer a prescription, it will show up here.")
+              : tx("Try another filter, or place a new fill.")}
           </p>
           <Link
             to="/fill"
             className="mt-5 inline-flex rounded-full bg-cta px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-cta-hover"
           >
-            Fill a prescription
+            {tx("Fill a prescription")}
           </Link>
         </div>
       ) : (
@@ -279,7 +283,7 @@ export function OrderHistory() {
                   id={`orders-${section.type}`}
                   className="text-sm font-semibold text-[color:var(--pp-primary-950)]"
                 >
-                  {section.title}
+                  {tx(section.title)}
                 </h2>
                 <span className="text-2xs text-ink-tertiary tnum">{section.items.length}</span>
               </div>
@@ -306,6 +310,7 @@ function SummaryPanel({
   totals: ReturnType<typeof orderTotals>;
   isTransfer: boolean;
 }) {
+  const { tx } = useI18n();
   const nav = useNavigate();
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-[0_16px_48px_rgba(24,7,48,0.07)]">
@@ -314,7 +319,7 @@ function SummaryPanel({
         style={{ background: TYPE_RAIL[o.type] }}
       >
         <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-white/75">
-          {o.status === "cancelled" ? "Order total" : isTransfer ? "Due now" : "Total paid"}
+          {o.status === "cancelled" ? tx("Order total") : isTransfer ? tx("Due now") : tx("Total paid")}
         </p>
         <p className="mt-1 font-display text-3xl font-medium leading-none text-white tnum">
           {isTransfer ? "$0.00" : money(totals.total)}
@@ -324,14 +329,14 @@ function SummaryPanel({
       <div className="space-y-2 px-5 py-4 text-sm">
         {isTransfer ? (
           <>
-            <Row k="Transfer fee" v="FREE" tone />
-            <Row k="Delivery" v="FREE" tone />
+            <Row k="Transfer fee" v={tx("FREE")} tone />
+            <Row k="Delivery" v={tx("FREE")} tone />
           </>
         ) : (
           <>
             <Row k="Subtotal" v={money(totals.subtotal)} />
             <Row k="Dispensing fee" v={money(totals.dispensing)} />
-            <Row k="Delivery" v="FREE" tone />
+            <Row k="Delivery" v={tx("FREE")} tone />
             {totals.insurance > 0 && <Row k="Insurance" v={`−${money(totals.insurance)}`} tone />}
           </>
         )}
@@ -340,21 +345,21 @@ function SummaryPanel({
       <div className="border-t border-line px-5 py-4">
         <p className="text-2xs text-ink-tertiary">
           {isTransfer
-            ? `Card on file ····${o.payment.cardLast4} — charged only after you approve a fill.`
+            ? `${tx("Card on file")} ····${o.payment.cardLast4} — ${tx("charged only after you approve a fill.")}`
             : o.payment.method === "insurance"
-              ? "Billed to insurance"
+              ? tx("Billed to insurance")
               : o.payment.method === "mixed"
-                ? `Insurance + Visa ····${o.payment.cardLast4}`
-                : `Visa ····${o.payment.cardLast4}`}
+                ? `${tx("Insurance + Visa")} ····${o.payment.cardLast4}`
+                : `${tx("Visa")} ····${o.payment.cardLast4}`}
         </p>
 
         {!isTransfer && o.status !== "cancelled" && (
           <div className="mt-4 flex flex-col gap-2">
             <Button size="sm" variant="secondary" fullWidth onClick={() => nav(`/orders/${o.id}/receipt`)}>
-              View receipt
+              {tx("View receipt")}
             </Button>
             <Button size="sm" variant="ghost" fullWidth onClick={() => nav(`/orders/${o.id}/invoice`)}>
-              Download invoice
+              {tx("Download invoice")}
             </Button>
           </div>
         )}
@@ -364,6 +369,7 @@ function SummaryPanel({
 }
 
 export function OrderDetail() {
+  const { tx } = useI18n();
   const { id } = useParams();
   const nav = useNavigate();
   const [o, setO] = useState(() => getOrder(id));
@@ -389,9 +395,9 @@ export function OrderDetail() {
   if (!o) {
     return (
       <div className={`${CARD} p-12 text-center`}>
-        <p className="font-semibold text-[color:var(--pp-primary-950)]">Order not found</p>
+        <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx("Order not found")}</p>
         <Link to="/orders" className="mt-2 inline-block text-sm font-semibold text-[color:var(--pp-violet)] hover:underline">
-          Back to order history
+          {tx("Back to order history")}
         </Link>
       </div>
     );
@@ -427,7 +433,7 @@ export function OrderDetail() {
         to={isTransfer ? "/pharmacy" : "/orders"}
         className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
       >
-        ← {isTransfer ? "Pharmacy" : "Order history"}
+        ← {isTransfer ? tx("Pharmacy") : tx("Order history")}
       </Link>
 
       {/*
@@ -445,11 +451,11 @@ export function OrderDetail() {
             />
             <div className="px-5 py-6 pl-6 sm:px-7 sm:py-7 sm:pl-8">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="pp-caps text-[color:var(--pp-violet)]">{typeMeta[o.type].label}</p>
+                <p className="pp-caps text-[color:var(--pp-violet)]">{tx(typeMeta[o.type].label)}</p>
                 <StatusPill status={o.status} />
               </div>
               <h1 className="mt-3 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] sm:text-4xl">
-                {orderTitle(o)}
+                {orderTitle(o, tx)}
               </h1>
               <p className="mt-2 text-sm text-ink-secondary">
                 {o.id}
@@ -458,7 +464,7 @@ export function OrderDetail() {
                 {o.fromPharmacy ? (
                   <>
                     <span className="mx-2 text-ink-tertiary/50">·</span>
-                    From {o.fromPharmacy}
+                    {tx("From")} {o.fromPharmacy}
                   </>
                 ) : null}
               </p>
@@ -466,7 +472,7 @@ export function OrderDetail() {
               <div className="mt-5 flex flex-wrap items-center gap-2">
                 {!isTransfer && (
                   <Button size="sm" onClick={() => nav("/fill")}>
-                    Reorder
+                    {tx("Reorder")}
                   </Button>
                 )}
                 {isTransfer && o.status !== "cancelled" && (
@@ -476,12 +482,12 @@ export function OrderDetail() {
                     variant="secondary"
                     onClick={() => nav(`/messages?with=care&order=${encodeURIComponent(o.id)}`)}
                   >
-                    Message care team
+                    {tx("Message care team")}
                   </Button>
                 )}
                 {cancellable && !confirmCancel && (
                   <Button size="sm" variant="outline" onClick={() => setConfirmCancel(true)}>
-                    Cancel order
+                    {tx("Cancel order")}
                   </Button>
                 )}
               </div>
@@ -502,16 +508,16 @@ export function OrderDetail() {
               aria-describedby="cancel-order-desc"
             >
               <p id="cancel-order-title" className="font-semibold text-[color:var(--pp-primary-950)]">
-                Cancel this order?
+                {tx("Cancel this order?")}
               </p>
               <p id="cancel-order-desc" className="mt-1 text-sm text-ink-secondary">
                 {isTransfer
-                  ? "We’ll stop contacting your pharmacy. You can start a new transfer anytime."
-                  : "We’ll stop processing this fill. You won’t be charged if payment hasn’t settled."}
+                  ? tx("We’ll stop contacting your pharmacy. You can start a new transfer anytime.")
+                  : tx("We’ll stop processing this fill. You won’t be charged if payment hasn’t settled.")}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={onCancel}>
-                  Yes, cancel order
+                  {tx("Yes, cancel order")}
                 </Button>
                 <Button
                   ref={keepOrderRef}
@@ -519,7 +525,7 @@ export function OrderDetail() {
                   variant="secondary"
                   onClick={() => setConfirmCancel(false)}
                 >
-                  Keep order
+                  {tx("Keep order")}
                 </Button>
               </div>
             </div>
@@ -527,12 +533,12 @@ export function OrderDetail() {
 
           {o.status === "cancelled" && (
             <div className={`${CARD} bg-[color:var(--pp-primary-100)] p-5`}>
-              <p className="font-semibold text-[color:var(--pp-primary-950)]">This order was cancelled</p>
+              <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx("This order was cancelled")}</p>
               <p className="mt-1 text-sm text-ink-secondary">
-                Nothing further will ship. Start a new fill whenever you’re ready.
+                {tx("Nothing further will ship. Start a new fill whenever you’re ready.")}
               </p>
               <Button size="sm" className="mt-4" onClick={() => nav(isTransfer ? "/transfer" : "/fill")}>
-                {isTransfer ? "Start a transfer" : "Fill a prescription"}
+                {isTransfer ? tx("Start a transfer") : tx("Fill a prescription")}
               </Button>
             </div>
           )}
@@ -542,9 +548,9 @@ export function OrderDetail() {
             <section className={`${CARD} p-5 sm:p-6`}>
               <div className="flex items-baseline justify-between gap-3">
                 <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-                  Tracking
+                  {tx("Tracking")}
                 </h2>
-                <p className="text-sm font-medium text-[color:var(--pp-violet)]">{statusLabel}</p>
+                <p className="text-sm font-medium text-[color:var(--pp-violet)]">{tx(statusLabel)}</p>
               </div>
               <ol className="mt-5 space-y-0">
                 {steps.map((label, i) => {
@@ -581,15 +587,15 @@ export function OrderDetail() {
                             (i > cur ? "text-ink-tertiary" : "text-[color:var(--pp-primary-950)]")
                           }
                         >
-                          {label}
+                          {tx(label)}
                         </p>
                         {active && (
                           <p className="mt-0.5 text-xs text-ink-secondary">
                             {isTransfer
-                              ? "We’re working on this step now."
+                              ? tx("We’re working on this step now.")
                               : i === 2
-                                ? "Your package is on its way."
-                                : "In progress with our pharmacy team."}
+                                ? tx("Your package is on its way.")
+                                : tx("In progress with our pharmacy team.")}
                           </p>
                         )}
                       </div>
@@ -603,9 +609,9 @@ export function OrderDetail() {
           {isTransfer && o.status !== "cancelled" && (
             <section className={`${CARD} p-5 sm:p-6`}>
               <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-                What happens next
+                {tx("What happens next")}
               </h2>
-              <p className="mt-1 text-sm text-ink-tertiary">While we complete your transfer.</p>
+              <p className="mt-1 text-sm text-ink-tertiary">{tx("While we complete your transfer.")}</p>
               <div className="mt-4 space-y-0">
                 {TRANSFER_HINTS.map((h, i) => {
                   const done = i < cur;
@@ -633,10 +639,10 @@ export function OrderDetail() {
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
-                          <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{h.title}</p>
-                          <span className="text-2xs text-ink-tertiary">{h.when}</span>
+                          <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{tx(h.title)}</p>
+                          <span className="text-2xs text-ink-tertiary">{tx(h.when)}</span>
                         </div>
-                        <p className="mt-0.5 text-sm text-ink-secondary">{h.detail}</p>
+                        <p className="mt-0.5 text-sm text-ink-secondary">{tx(h.detail)}</p>
                       </div>
                     </div>
                   );
@@ -648,11 +654,11 @@ export function OrderDetail() {
           <section className={`${CARD} overflow-hidden`}>
             <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
               <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-                {isTransfer ? "Transfer details" : "Items"}
+                {isTransfer ? tx("Transfer details") : tx("Items")}
               </h2>
               {!isTransfer && (
                 <span className="text-2xs text-ink-tertiary tnum">
-                  {o.items.length} item{o.items.length === 1 ? "" : "s"}
+                  {o.items.length} {o.items.length === 1 ? tx("item") : tx("items")}
                 </span>
               )}
             </div>
@@ -660,17 +666,16 @@ export function OrderDetail() {
               <div className="space-y-4 px-5 py-5 text-sm">
                 <div>
                   <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
-                    From pharmacy
+                    {tx("From pharmacy")}
                   </p>
                   <p className="mt-1 font-medium text-[color:var(--pp-primary-950)]">
                     {o.fromPharmacy ?? "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">Note</p>
+                  <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">{tx("Note")}</p>
                   <p className="mt-1 text-ink-secondary">
-                    Transfers are free. Your card is not charged until you approve a fill after the
-                    transfer completes.
+                    {tx("Transfers are free. Your card is not charged until you approve a fill after the transfer completes.")}
                   </p>
                 </div>
               </div>
@@ -691,7 +696,7 @@ export function OrderDetail() {
                       {it.name}{" "}
                       <span className="font-medium text-ink-secondary">{it.strength}</span>
                     </p>
-                    <p className="mt-0.5 text-sm text-ink-tertiary">Qty {it.qty}</p>
+                    <p className="mt-0.5 text-sm text-ink-tertiary">{tx("Qty")} {it.qty}</p>
                   </div>
                   <span className="shrink-0 font-display text-base font-medium text-[color:var(--pp-primary-950)] tnum">
                     {money(it.qty * it.unitPrice)}
@@ -704,16 +709,16 @@ export function OrderDetail() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className={`${CARD} p-5`}>
               <p className="pp-caps text-ink-tertiary">
-                {isTransfer ? "Deliver to" : o.status === "delivered" ? "Delivered to" : "Ship to"}
+                {isTransfer ? tx("Deliver to") : o.status === "delivered" ? tx("Delivered to") : tx("Ship to")}
               </p>
               <p className="mt-2 font-semibold text-[color:var(--pp-primary-950)]">{o.patient}</p>
               <p className="mt-0.5 text-sm leading-relaxed text-ink-secondary">{o.address}</p>
             </div>
             <div className={`${CARD} p-5`}>
-              <p className="pp-caps text-ink-tertiary">Care team</p>
+              <p className="pp-caps text-ink-tertiary">{tx("Care team")}</p>
               {o.prescriber && (
                 <p className="mt-2 text-sm text-ink-secondary">
-                  <span className="text-ink-tertiary">Prescriber</span>
+                  <span className="text-ink-tertiary">{tx("Prescriber")}</span>
                   <span className="mt-0.5 block font-medium text-[color:var(--pp-primary-950)]">
                     {o.prescriber}
                   </span>
@@ -721,14 +726,14 @@ export function OrderDetail() {
               )}
               {o.pharmacist && (
                 <p className={`${o.prescriber ? "mt-3" : "mt-2"} text-sm text-ink-secondary`}>
-                  <span className="text-ink-tertiary">Pharmacist</span>
+                  <span className="text-ink-tertiary">{tx("Pharmacist")}</span>
                   <span className="mt-0.5 block font-medium text-[color:var(--pp-primary-950)]">
                     {o.pharmacist}
                   </span>
                 </p>
               )}
               {!o.prescriber && !o.pharmacist && (
-                <p className="mt-2 text-sm text-ink-secondary">Your PocketPills care team is on it.</p>
+                <p className="mt-2 text-sm text-ink-secondary">{tx("Your PocketPills care team is on it.")}</p>
               )}
             </div>
           </div>
@@ -743,9 +748,10 @@ export function OrderDetail() {
 }
 
 function Row({ k, v, tone }: { k: string; v: string; tone?: boolean }) {
+  const { tx } = useI18n();
   return (
     <div className="flex items-center justify-between">
-      <span className="text-ink-secondary">{k}</span>
+      <span className="text-ink-secondary">{tx(k)}</span>
       <span className={tone ? "font-medium text-wellness tnum" : "text-ink tnum"}>{v}</span>
     </div>
   );

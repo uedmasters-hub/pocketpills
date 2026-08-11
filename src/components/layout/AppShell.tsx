@@ -12,9 +12,11 @@ import {
 import { useRightRail } from "@/lib/rightRail";
 import { useDismiss } from "@/lib/useDismiss";
 import { useChromeVisibility } from "@/lib/useChromeVisibility";
+import { useI18n } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n";
 
 /* ── sidebar icons ─────────────────────────────────────── */
-type NavId = "dashboard" | "treatments" | "medications" | "orders" | "more";
+type NavId = "dashboard" | "treatments" | "appointments" | "medications" | "orders" | "more";
 
 function NavIcon({ id }: { id: NavId }) {
   const c = {
@@ -27,6 +29,8 @@ function NavIcon({ id }: { id: NavId }) {
       return <svg {...c}><rect x="3" y="3" width="7" height="9" rx="2" /><rect x="14" y="3" width="7" height="5" rx="2" /><rect x="14" y="12" width="7" height="9" rx="2" /><rect x="3" y="16" width="7" height="5" rx="2" /></svg>;
     case "treatments":
       return <svg {...c}><rect x="3" y="7" width="18" height="13" rx="3" /><path d="M8.5 7V5.6A1.6 1.6 0 0 1 10.1 4h3.8a1.6 1.6 0 0 1 1.6 1.6V7" /><path d="M12 11.2v4.6M9.7 13.5h4.6" /></svg>;
+    case "appointments":
+      return <svg {...c}><rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M8 3v4M16 3v4M3 10h18" /><circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none" /></svg>;
     case "medications":
       return <svg {...c}><path d="M20.6 3.4a5.5 5.5 0 0 0-7.8 0l-9.4 9.4a5.5 5.5 0 0 0 7.8 7.8l9.4-9.4a5.5 5.5 0 0 0 0-7.8Z" /><path d="m8.1 8.1 7.8 7.8" /></svg>;
     case "orders":
@@ -36,22 +40,23 @@ function NavIcon({ id }: { id: NavId }) {
   }
 }
 
-const NAV: { id: NavId; label: string; to: string }[] = [
-  { id: "dashboard", label: "Dashboard", to: "/dashboard" },
-  { id: "treatments", label: "Treatments", to: "/find-care" },
-  { id: "medications", label: "Medications", to: "/drug" },
-  { id: "orders", label: "Orders", to: "/orders" },
+const NAV: { id: NavId; labelKey: MessageKey; to: string }[] = [
+  { id: "dashboard", labelKey: "app.dashboard", to: "/dashboard" },
+  { id: "treatments", labelKey: "app.treatments", to: "/find-care" },
+  { id: "appointments", labelKey: "app.bookAppointment", to: "/appointments" },
+  { id: "medications", labelKey: "app.medications", to: "/drug" },
+  { id: "orders", labelKey: "app.orders", to: "/orders" },
 ];
 
-const MORE: [string, string][] = [
-  ["Profile", "/profile"],
-  ["Pharmacy", "/pharmacy"],
-  ["Messages", "/messages"],
-  ["Offers", "/offers"],
-  ["Pharmacies by region", "/pharmacies"],
-  ["Edit profile", "/account"],
-  ["Family", "/account/family"],
-  ["Notifications", "/account/notifications"],
+const MORE: [MessageKey, string][] = [
+  ["app.profile", "/profile"],
+  ["app.pharmacy", "/pharmacy"],
+  ["app.messages", "/messages"],
+  ["app.offers", "/offers"],
+  ["app.pharmaciesRegion", "/pharmacies"],
+  ["app.editProfile", "/account"],
+  ["app.family", "/account/family"],
+  ["app.notifications", "/account/notifications"],
 ];
 
 /** Exact for leaf paths; prefix only when the path has real nested segments. */
@@ -82,6 +87,8 @@ function navIsActive(id: NavId, pathname: string) {
       );
     case "medications":
       return pathname.startsWith("/drug") || pathname.startsWith("/medications");
+    case "appointments":
+      return pathname.startsWith("/appointments");
     case "orders":
       /* Pharmacy is the orders & refills surface */
       return pathname.startsWith("/orders") || pathname.startsWith("/pharmacy");
@@ -95,12 +102,13 @@ function Sidebar() {
   const [openMore, setOpenMore] = useState(false);
   const { pathname } = useLocation();
   const nav = useNavigate();
+  const { t } = useI18n();
   const moreRef = useDismiss<HTMLDivElement>(openMore, () => setOpenMore(false));
   const moreActive = MORE.some(([, to]) => moreLinkActive(to, pathname)) && !navIsActive("orders", pathname);
 
   return (
-    <aside className="hidden w-60 shrink-0 lg:block">
-      <nav aria-label="Main" className="sticky top-28 flex flex-col gap-1">
+    <aside className="hidden w-64 shrink-0 lg:block">
+      <nav aria-label={t("nav.main")} className="sticky top-28 flex flex-col gap-1">
         {NAV.map((n) => {
           const active = navIsActive(n.id, pathname);
           return (
@@ -111,7 +119,7 @@ function Sidebar() {
               className={`${BASE} ${active ? ACTIVE : IDLE}`}
             >
               <NavIcon id={n.id} />
-              {n.label}
+              {t(n.labelKey)}
             </NavLink>
           );
         })}
@@ -128,7 +136,7 @@ function Sidebar() {
             aria-current={moreActive ? "page" : undefined}
           >
             <NavIcon id="more" />
-            More
+            {t("app.more")}
           </button>
           {openMore && (
             <div
@@ -137,7 +145,7 @@ function Sidebar() {
               aria-labelledby="nav-more-trigger"
               className="absolute left-2 right-0 z-20 mt-1 overflow-hidden rounded-2xl border border-line bg-white shadow-float"
             >
-              {MORE.map(([label, to]) => {
+              {MORE.map(([labelKey, to]) => {
                 const on = moreLinkActive(to, pathname);
                 return (
                   <button
@@ -149,13 +157,13 @@ function Sidebar() {
                       nav(to);
                     }}
                     className={
-                      "block w-full px-4 py-2.5 text-left text-sm font-medium transition-colors " +
+                      "block w-full px-4 py-2.5 text-left text-base font-medium transition-colors " +
                       (on
                         ? "bg-[color:var(--state-hover)] text-[color:var(--pp-primary-950)]"
                         : "text-ink-secondary hover:bg-[color:var(--state-hover)]")
                     }
                   >
-                    {label}
+                    {t(labelKey)}
                   </button>
                 );
               })}
@@ -170,16 +178,17 @@ function Sidebar() {
 /* ── mobile bottom nav ─────────────────────────────────── */
 function MobileNav({ hidden }: { hidden: boolean }) {
   const { pathname } = useLocation();
+  const { t } = useI18n();
   return (
     <nav
-      aria-label="Main"
+      aria-label={t("nav.main")}
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 backdrop-blur will-change-transform lg:hidden"
       style={{
         transform: hidden ? "translateY(100%)" : "translateY(0)",
         transition: "transform 380ms cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
-      <div className="mx-auto grid max-w-md grid-cols-4">
+      <div className="mx-auto grid max-w-lg grid-cols-5">
         {NAV.map((n) => {
           const active = navIsActive(n.id, pathname);
           return (
@@ -188,7 +197,7 @@ function MobileNav({ hidden }: { hidden: boolean }) {
               to={n.to}
               aria-current={active ? "page" : undefined}
               className={
-                "flex flex-col items-center gap-1 py-2.5 text-2xs transition-colors hover:bg-[color:var(--state-hover)] " +
+                "flex flex-col items-center gap-1 px-0.5 py-2.5 text-[0.65rem] leading-tight transition-colors hover:bg-[color:var(--state-hover)] sm:text-xs " +
                 (active
                   ? "font-medium text-[color:var(--pp-primary-950)]"
                   : "font-normal text-ink-tertiary")
@@ -202,7 +211,7 @@ function MobileNav({ hidden }: { hidden: boolean }) {
               >
                 <NavIcon id={n.id} />
               </span>
-              {n.label}
+              <span className="max-w-[4.5rem] truncate text-center">{t(n.labelKey)}</span>
             </NavLink>
           );
         })}
@@ -214,23 +223,28 @@ function MobileNav({ hidden }: { hidden: boolean }) {
 /* ── shell ─────────────────────────────────────────────── */
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  const { tx } = useI18n();
   const chromeHidden = useChromeVisibility();
   const { review } = useRightRail();
   const focusedFlow =
     pathname.startsWith("/care/") ||
     pathname === "/fill" ||
     pathname === "/transfer" ||
-    pathname === "/delivery-check";
+    pathname === "/delivery-check" ||
+    pathname === "/appointments/book" ||
+    pathname.startsWith("/appointments/book");
   /* PDP / focused browse pages own a sticky right column — Activity would collide. */
   const isDrugDetail = /^\/drug\/[^/]+$/.test(pathname);
   const isTreatmentDetail = /^\/treatment\/[^/]+$/.test(pathname);
   const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname);
   const isPharmacies = pathname === "/pharmacies" || pathname.startsWith("/pharmacies/");
+  const isAppointments = pathname.startsWith("/appointments");
   const hideActivityRail =
     isDrugDetail ||
     isTreatmentDetail ||
     isOrderDetail ||
     isPharmacies ||
+    isAppointments ||
     pathname === "/messages";
   const showActivity = !focusedFlow && !hideActivityRail;
 
@@ -238,12 +252,13 @@ export function AppShell({ children }: { children: ReactNode }) {
    * One layout for every screen. Left nav + right rail are usually reserved on
    * large screens so the middle column never shifts. The right rail swaps
    * Activity ↔ Review when a page has unsaved edits. Drug / treatment / order /
-   * pharmacies pages drop the rail so their sticky map or summary owns the third column.
+   * pharmacies / appointments pages drop the rail so their sticky summary owns
+   * the third column.
    */
   return (
     <div className="min-h-screen bg-surface-0">
       <a href="#main" className="pp-skip rounded-full bg-[color:var(--pp-primary-950)] px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 active:opacity-80">
-        Skip to content
+        {tx("Skip to content")}
       </a>
       <AnnouncementBar />
       <SiteHeader />
@@ -257,9 +272,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </main>
         </div>
 
-        {focusedFlow ? (
+        {hideActivityRail ? null : focusedFlow ? (
           <ActivityRailSpacer />
-        ) : hideActivityRail ? null : review ? (
+        ) : review ? (
           <ReviewRail />
         ) : (
           <ActivityRail />

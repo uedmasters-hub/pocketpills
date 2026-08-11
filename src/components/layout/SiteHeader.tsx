@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useUser } from "@/lib/user";
+import { useI18n } from "@/lib/i18n";
 import { LogoLink } from "@/components/Logo";
 import { useChromeVisibility } from "@/lib/useChromeVisibility";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
+import { isAlwaysPublicPath, isDualBrowsePath } from "@/lib/marketingPaths";
 
 const NAVCDN = "https://static.pocketpills.com/acq-web/redesign/navbar";
 
@@ -120,28 +122,32 @@ function DropTile({ to, icon, label, chip, hover }: { to: string; icon: string; 
     </Link>
   );
 }
-function FaqList({ items, to }: { items: string[]; to: string }) {
+function FaqList({ items }: { items: { label: string; slug: string }[] }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col gap-2.5">
-      <h2 className="text-2xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">Frequently Asked</h2>
+      <h2 className="text-2xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">{t("mega.frequentlyAsked")}</h2>
       <ul className="flex list-none flex-col gap-2">
-        {items.map((q) => (
-          <li key={q}>
-            <Link to={to} className="text-sm text-ink-secondary transition-colors hover:text-[color:var(--pp-violet)]">
-              {q}
+        {items.map(({ label, slug }) => (
+          <li key={slug}>
+            <Link
+              to={`/questions#${slug}`}
+              className="text-sm text-ink-secondary transition-colors hover:text-[color:var(--pp-violet)]"
+            >
+              {label}
             </Link>
           </li>
         ))}
       </ul>
-      <UnderlineLink to={to}>See all FAQs</UnderlineLink>
+      <UnderlineLink to="/questions">{t("mega.seeAllFaqs")}</UnderlineLink>
     </div>
   );
 }
 
 /* ── dropdown panels ──────────────────────────────────── */
-function MegaPanel({ bg, eyebrow, tiles, cta, ctaLabel, asideTitle, tags, faqs, faqTo, browseTo, browseLabel }: {
+function MegaPanel({ bg, eyebrow, tiles, cta, ctaLabel, asideTitle, tags, faqs, browseTo, browseLabel }: {
   bg: string; eyebrow: string; tiles: ReactNode; cta: string; ctaLabel: string;
-  asideTitle: string; tags: [string, string][]; faqs: string[]; faqTo: string; browseTo: string; browseLabel: string;
+  asideTitle: string; tags: [string, string][]; faqs: { label: string; slug: string }[]; browseTo: string; browseLabel: string;
 }) {
   return (
     <div className="absolute left-1/2 top-full z-50 w-[min(64rem,94vw)] -translate-x-1/2 pt-2.5">
@@ -166,7 +172,7 @@ function MegaPanel({ bg, eyebrow, tiles, cta, ctaLabel, asideTitle, tags, faqs, 
             <UnderlineLink to={browseTo}>{browseLabel}</UnderlineLink>
           </div>
           <div role="separator" className="h-px w-full bg-line" />
-          <FaqList items={faqs} to={faqTo} />
+          <FaqList items={faqs} />
         </aside>
       </div>
     </div>
@@ -183,7 +189,7 @@ function UserMenu() {
           type="button"
           id="user-menu-trigger"
           onClick={toggle}
-          className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]"
+          className="flex items-center gap-2 rounded-full border border-line bg-white py-1.5 pl-1.5 pr-3.5 text-base font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]"
           aria-expanded={open}
           aria-haspopup="menu"
           aria-controls={open ? menuId : undefined}
@@ -209,7 +215,7 @@ function MarketingProfile() {
         <button
           type="button"
           onClick={toggle}
-          className="inline-flex h-10 items-center gap-1.5 rounded-full px-2.5 text-[color:var(--pp-nav-ink)] transition-colors duration-200 hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
+          className="inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 text-base text-[color:var(--pp-nav-ink)] transition-colors duration-200 hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
           aria-expanded={open}
           aria-haspopup="menu"
           aria-controls={open ? menuId : undefined}
@@ -273,8 +279,6 @@ function Brand({ to }: { to: string }) {
   );
 }
 
-import { isAlwaysPublicPath, isDualBrowsePath } from "@/lib/marketingPaths";
-
 /* ── header ────────────────────────────────────────────── */
 export type HeaderVariant = "marketing" | "app" | "focused" | "minimal";
 
@@ -292,12 +296,12 @@ function useVariant(): HeaderVariant {
 }
 
 const ITEM =
-  "group flex items-center gap-1 rounded-full px-3 py-2 text-[13px] font-medium tracking-[0.01em] " +
+  "group flex items-center gap-1 rounded-full px-3 py-2 text-base font-medium tracking-[0.01em] " +
   "text-[color:var(--pp-nav-ink)] transition-colors duration-200 " +
   "hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]";
 
 const CTA =
-  "inline-flex h-10 items-center rounded-full bg-cta px-5 text-[13px] font-medium text-white " +
+  "inline-flex h-11 items-center rounded-full bg-cta px-5 text-base font-medium text-white " +
   "transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed";
 
 const SEC = "#3FBFB5";
@@ -318,8 +322,12 @@ function TreatmentMenu() {
       asideTitle="Virtual Care"
       tags={[["Acne (Mild)", "/consult/acne"], ["Birth Control", "/treatment/birth-control"], ["Erectile Dysfunction", "/find-care"], ["Hair Loss", "/find-care"], ["Urinary Tract Infection", "/treatment/uti"], ["Weight Loss", "/find-care"], ["Minor ailments", "/consult/minor-ailments"]]}
       browseTo="/find-care" browseLabel="See all treatments"
-      faqs={["Can I get a prescription online?", "How do I qualify for a prescription?", "How fast is the application process?", "Is delivery free across Canada?"]}
-      faqTo="/find-care"
+      faqs={[
+        { label: "Can I get a prescription online?", slug: "online-prescription" },
+        { label: "How do I qualify for a prescription?", slug: "qualify-prescription" },
+        { label: "How fast is the application process?", slug: "application-speed" },
+        { label: "Is delivery free across Canada?", slug: "delivery-free" },
+      ]}
     />
   );
 }
@@ -340,8 +348,12 @@ function PharmacyMenu() {
       asideTitle="Explore Medications"
       tags={[["Ozempic", "/drug/ozempic"], ["Finasteride", "/drug/finasteride"], ["Minoxidil", "/drug/loniten"], ["Lantus", "/drug/lantus"], ["Wegovy", "/drug/wegovy"], ["Escitalopram", "/drug/escitalopram"], ["Jardiance", "/drug/jardiance"], ["Alysena", "/drug/alysena"]]}
       browseTo="/drug" browseLabel="Browse all medications"
-      faqs={["I already have a prescription. How do I fill it with Pocketpills?", "Can I get a prescription without consulting a doctor?", "How much does it cost?", "How do I transfer my prescriptions from a different pharmacy?"]}
-      faqTo="/drug"
+      faqs={[
+        { label: "I already have a prescription. How do I fill it with Pocketpills?", slug: "fill-existing-rx" },
+        { label: "Can I get a prescription without consulting a doctor?", slug: "prescription-without-doctor" },
+        { label: "How much does it cost?", slug: "how-much-cost" },
+        { label: "How do I transfer my prescriptions from a different pharmacy?", slug: "transfer-prescription" },
+      ]}
     />
   );
 }
@@ -385,6 +397,7 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
   const variant = forced ?? derived;
   const { pathname } = useLocation();
   const { signedIn } = useUser();
+  const { t } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
   // Focused flows keep chrome pinned — losing "Save & exit" mid-checkout is hostile.
   const scrolledAway = useChromeVisibility();
@@ -396,7 +409,7 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
       <Shell hidden={hidden}>
         <Brand to="/app" />
         <Link to="/app" className="text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]">
-          Save &amp; exit
+          {t("nav.saveExit")}
         </Link>
       </Shell>
     );
@@ -407,7 +420,7 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
       <Shell hidden={hidden}>
         <Brand to="/" />
         <a href="tel:18559507226" className="text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]">
-          Need help? 1-855-950-7226
+          {t("nav.needHelp")}
         </a>
       </Shell>
     );
@@ -423,12 +436,12 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
             href="https://apps.apple.com/ca/app/pocketpills-doctor-pharmacy/id1367442074"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden items-center gap-2 text-[13px] font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:text-[color:var(--pp-primary-950)] lg:inline-flex"
+            className="hidden items-center gap-2 text-base font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:text-[color:var(--pp-primary-950)] lg:inline-flex"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><rect x="7" y="2" width="10" height="20" rx="2.5" /><path d="M11 18h2" /></svg>
-            Get app
+            {t("nav.getApp")}
           </a>
-          <Link to="/" className="hidden items-center gap-2 text-[13px] font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
+          <Link to="/" className="hidden items-center gap-2 text-base font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" /></svg>
             Pocketpills.com
           </Link>
@@ -445,26 +458,26 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
       </div>
 
       <nav
-        aria-label="Primary"
+        aria-label={t("nav.primary")}
         className="hidden items-center justify-center gap-0.5 md:flex"
         onMouseLeave={() => setOpen(null)}
       >
         <div className="relative" onMouseEnter={() => setOpen("t")}>
-          <span className={ITEM}><Link to="/find-care">Treatment</Link><Chevron /></span>
+          <span className={ITEM}><Link to="/find-care">{t("nav.treatment")}</Link><Chevron /></span>
           {open === "t" && <TreatmentMenu />}
         </div>
         <div className="relative" onMouseEnter={() => setOpen("p")}>
-          <span className={ITEM}><Link to="/drug">Online Pharmacy</Link><Chevron /></span>
+          <span className={ITEM}><Link to="/drug">{t("nav.pharmacy")}</Link><Chevron /></span>
           {open === "p" && <PharmacyMenu />}
         </div>
         <Link
           to="/how-it-works"
           className={ITEM + (pathname === "/how-it-works" ? " bg-[color:var(--state-hover)] text-[color:var(--pp-primary-950)]" : "")}
         >
-          How it works
+          {t("nav.howItWorks")}
         </Link>
         <div className="relative" onMouseEnter={() => setOpen("s")}>
-          <span className={ITEM}><a href="#care">Support</a><Chevron /></span>
+          <span className={ITEM}><a href="#care">{t("nav.support")}</a><Chevron /></span>
           {open === "s" && <SupportMenu />}
         </div>
       </nav>
@@ -474,20 +487,20 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
           <>
             <MarketingProfile />
             <Link to="/dashboard" className={CTA}>
-              My Dashboard
+              {t("nav.dashboardCta")}
             </Link>
           </>
         ) : (
           <>
             <Link
               to="/login"
-              className="hidden h-10 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)] sm:inline-flex"
+              className="hidden h-11 items-center gap-1.5 rounded-full px-3 text-base font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)] sm:inline-flex"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><circle cx="12" cy="8" r="3.6" /><path d="M4.5 20c0-3.8 3.4-5.8 7.5-5.8s7.5 2 7.5 5.8" /></svg>
-              Log in
+              {t("nav.logIn")}
             </Link>
             <Link to="/get-started" className={CTA}>
-              Join Pocketpills
+              {t("nav.join")}
             </Link>
           </>
         )}

@@ -2,6 +2,8 @@ import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/lib/user";
 import { useDismiss } from "@/lib/useDismiss";
+import { useI18n } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n";
 
 type IconId =
   | "profile"
@@ -81,20 +83,21 @@ function MenuIcon({ id }: { id: IconId }) {
   }
 }
 
-const PRIMARY: { id: IconId; label: string; to: string }[] = [
-  { id: "profile", label: "Edit profile", to: "/account" },
-  { id: "bell", label: "Notification settings", to: "/account/notifications" },
-  { id: "book", label: "Language preference", to: "/account/language" },
-  { id: "family", label: "Manage family", to: "/account/family" },
-  { id: "benefits", label: "Pocketpills benefits", to: "/account/benefits" },
+const PRIMARY: { id: IconId; labelKey: MessageKey; to: string }[] = [
+  { id: "profile", labelKey: "menu.editProfile", to: "/account" },
+  { id: "bell", labelKey: "menu.notifications", to: "/account/notifications" },
+  { id: "book", labelKey: "menu.language", to: "/account/language" },
+  { id: "family", labelKey: "menu.family", to: "/account/family" },
+  { id: "benefits", labelKey: "menu.benefits", to: "/account/benefits" },
 ];
 
 const ITEM =
-  "flex w-full items-center gap-3 px-4 py-3 text-left text-[15px] font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]";
+  "flex w-full items-center gap-3 px-4 py-3.5 text-left text-base font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]";
 
 export function ProfileMenuPanel({ onClose }: { onClose: () => void }) {
   const nav = useNavigate();
   const { logOut } = useUser();
+  const { t } = useI18n();
 
   const go = (to: string) => {
     onClose();
@@ -102,14 +105,14 @@ export function ProfileMenuPanel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div role="menu" aria-label="Account" className="overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-100)] shadow-float">
+    <div role="menu" aria-label={t("menu.account")} className="overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-100)] shadow-float">
       <div className="py-1.5">
         {PRIMARY.map((item) => (
           <button key={item.to} type="button" role="menuitem" onClick={() => go(item.to)} className={ITEM}>
             <span className="shrink-0 text-[color:var(--pp-primary-950)]">
               <MenuIcon id={item.id} />
             </span>
-            {item.label}
+            {t(item.labelKey)}
           </button>
         ))}
       </div>
@@ -121,7 +124,7 @@ export function ProfileMenuPanel({ onClose }: { onClose: () => void }) {
           <span className="shrink-0 text-[color:var(--pp-primary-950)]">
             <MenuIcon id="switch" />
           </span>
-          Switch account
+          {t("menu.switch")}
         </button>
         <button
           type="button"
@@ -136,7 +139,7 @@ export function ProfileMenuPanel({ onClose }: { onClose: () => void }) {
           <span className="shrink-0 text-[color:var(--pp-primary-950)]">
             <MenuIcon id="logout" />
           </span>
-          Log out
+          {t("menu.logout")}
         </button>
       </div>
     </div>
@@ -166,7 +169,7 @@ export function ProfileMenu({
       {open && (
         <div
           id={menuId}
-          className={"absolute z-30 mt-2 w-[17.5rem] " + (align === "right" ? "right-0" : "left-0")}
+          className={"absolute z-30 mt-2 w-[19rem] " + (align === "right" ? "right-0" : "left-0")}
         >
           <ProfileMenuPanel onClose={() => setOpen(false)} />
         </div>

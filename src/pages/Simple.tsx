@@ -13,6 +13,7 @@ import {
   TRANSFER_HINTS,
 } from "@/lib/orders";
 import { useUser, newInsuranceId, fmtInsuranceList, fmtInsurancePlan, type InsurancePlan } from "@/lib/user";
+import { useI18n } from "@/lib/i18n";
 import { useReviewDraft, type ReviewChange } from "@/lib/rightRail";
 
 /* ── shared page furniture ─────────────────────────────── */
@@ -37,11 +38,13 @@ function StatusPill({ status }: { status: keyof typeof statusMeta }) {
     danger: "bg-danger-subtle text-danger",
     neutral: "bg-surface-1 text-ink-secondary",
   };
-  return <span className={`${PILL} ${tone[statusMeta[status].tone]}`}>{statusMeta[status].label}</span>;
+  const { tx } = useI18n();
+  return <span className={`${PILL} ${tone[statusMeta[status].tone]}`}>{tx(statusMeta[status].label)}</span>;
 }
 
 /* ── Pharmacy ──────────────────────────────────────────── */
 export function Pharmacy() {
+  const { tx } = useI18n();
   const nav = useNavigate();
   const all = getOrders();
   const transfers = all.filter((o) => o.type === "transfer" && o.status !== "delivered" && o.status !== "cancelled");
@@ -50,13 +53,17 @@ export function Pharmacy() {
 
   return (
     <div>
-      <PageHead eyebrow="Pharmacy" title="Orders & refills" sub="Track deliveries, transfers, manage refills, and view receipts." />
+      <PageHead
+        eyebrow={tx("Pharmacy")}
+        title={tx("Orders & refills")}
+        sub={tx("Track deliveries, transfers, manage refills, and view receipts.")}
+      />
 
       {transfers.length > 0 && (
         <section className="mb-10">
           <div className="mb-3 flex items-end justify-between gap-3">
-            <h2 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">Transfers to track</h2>
-            <p className="text-xs text-ink-tertiary">Tap a card for full detail</p>
+            <h2 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">{tx("Transfers to track")}</h2>
+            <p className="text-xs text-ink-tertiary">{tx("Tap a card for full detail")}</p>
           </div>
           <div className="space-y-3">
             {transfers.map((o) => {
@@ -74,17 +81,17 @@ export function Pharmacy() {
                     <div className="min-w-0">
                       <p className="font-semibold text-[color:var(--pp-primary-950)]">{o.id}</p>
                       <p className="mt-0.5 text-sm text-ink-tertiary">
-                        From {o.fromPharmacy ?? "your pharmacy"} · {fmtDate(o.date)}
+                        {tx("From")} {o.fromPharmacy ?? tx("your pharmacy")} · {fmtDate(o.date)}
                       </p>
                     </div>
                     <span className={`${PILL} bg-[color:var(--pp-primary-200)] text-[color:var(--pp-primary-950)]`}>
-                      {transferStatusLabel(o.status)}
+                      {tx(transferStatusLabel(o.status))}
                     </span>
                   </div>
 
-                  <ol className="mt-4 flex gap-1.5" aria-label="Transfer progress">
+                  <ol className="mt-4 flex gap-1.5" aria-label={tx("Transfer progress")}>
                     {TRANSFER_TRACK_STEPS.map((label, i) => (
-                      <li key={label} className="min-w-0 flex-1" title={label}>
+                      <li key={label} className="min-w-0 flex-1" title={tx(label)}>
                         <span
                           className={
                             "block h-1.5 rounded-full " +
@@ -95,17 +102,17 @@ export function Pharmacy() {
                     ))}
                   </ol>
                   <div className="mt-2 flex items-center justify-between gap-2 text-xs text-ink-tertiary">
-                    <span>{TRANSFER_TRACK_STEPS[step]}</span>
+                    <span>{tx(TRANSFER_TRACK_STEPS[step])}</span>
                     <span className="tnum">{Math.round(pct)}%</span>
                   </div>
 
                   <div className="mt-4 rounded-xl bg-[color:var(--pp-primary-200)] px-3.5 py-3">
-                    <p className="text-2xs font-semibold uppercase tracking-wide text-[color:var(--pp-violet)]">Next cue</p>
-                    <p className="mt-1 text-sm font-medium text-[color:var(--pp-primary-950)]">{nextHint.title}</p>
-                    <p className="mt-0.5 text-sm text-ink-secondary">{nextHint.detail}</p>
+                    <p className="text-2xs font-semibold uppercase tracking-wide text-[color:var(--pp-violet)]">{tx("Next cue")}</p>
+                    <p className="mt-1 text-sm font-medium text-[color:var(--pp-primary-950)]">{tx(nextHint.title)}</p>
+                    <p className="mt-0.5 text-sm text-ink-secondary">{tx(nextHint.detail)}</p>
                   </div>
 
-                  <p className="mt-3 text-sm font-medium text-[color:var(--pp-violet)]">View transfer details →</p>
+                  <p className="mt-3 text-sm font-medium text-[color:var(--pp-violet)]">{tx("View transfer details →")}</p>
                 </button>
               );
             })}
@@ -115,7 +122,7 @@ export function Pharmacy() {
 
       {active.length > 0 && (
         <section className="mb-10">
-          <h2 className="mb-3 font-display text-md font-medium text-[color:var(--pp-primary-950)]">In progress</h2>
+          <h2 className="mb-3 font-display text-md font-medium text-[color:var(--pp-primary-950)]">{tx("In progress")}</h2>
           <div className="space-y-3">
             {active.map((o) => {
               const t = orderTotals(o);
@@ -125,7 +132,7 @@ export function Pharmacy() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold text-[color:var(--pp-primary-950)]">{o.id}</p>
-                      <p className="text-sm text-ink-tertiary">{fmtDate(o.date)} · {o.items.length} item{o.items.length === 1 ? "" : "s"} · {money(t.total)}</p>
+                      <p className="text-sm text-ink-tertiary">{fmtDate(o.date)} · {o.items.length} {o.items.length === 1 ? tx("item") : tx("items")} · {money(t.total)}</p>
                     </div>
                     <StatusPill status={o.status} />
                   </div>
@@ -148,8 +155,8 @@ export function Pharmacy() {
 
       <section className="mb-10">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">Recent orders</h2>
-          <Link to="/orders" className="text-sm font-semibold text-[color:var(--pp-violet)] hover:underline">View all</Link>
+          <h2 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">{tx("Recent orders")}</h2>
+          <Link to="/orders" className="text-sm font-semibold text-[color:var(--pp-violet)] hover:underline">{tx("View all")}</Link>
         </div>
         <div className="space-y-2">
           {recent.map((o) => (
@@ -177,8 +184,8 @@ export function Pharmacy() {
           </svg>
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block font-semibold text-[color:var(--pp-primary-950)]">Transfer my prescriptions</span>
-          <span className="block text-sm text-ink-tertiary">Switch to PocketPills</span>
+          <span className="block font-semibold text-[color:var(--pp-primary-950)]">{tx("Transfer my prescriptions")}</span>
+          <span className="block text-sm text-ink-tertiary">{tx("Switch to PocketPills")}</span>
         </span>
         <span className="shrink-0 text-ink-tertiary" aria-hidden>›</span>
       </button>
@@ -206,6 +213,7 @@ function plansEqual(a: InsDraft[], b: InsDraft[]) {
 
 export function Account() {
   const { user, displayName, update, logOut } = useUser();
+  const { t, tx } = useI18n();
   const nav = useNavigate();
 
   const baselineName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || displayName;
@@ -230,26 +238,28 @@ export function Account() {
   const changes = useMemo(() => {
     const rows: ReviewChange[] = [];
     if (name.trim() !== baselineName.trim()) {
-      rows.push({ label: "Full name", from: baselineName || "—", to: name.trim() || "—" });
+      rows.push({ label: tx("Full name"), from: baselineName || "—", to: name.trim() || "—" });
     }
     if (email.trim() !== (user?.email ?? "").trim()) {
-      rows.push({ label: "Email", from: user?.email || "—", to: email.trim() || "—" });
+      rows.push({ label: tx("Email"), from: user?.email || "—", to: email.trim() || "—" });
     }
     if (phone.trim() !== (user?.phone ?? "").trim()) {
-      rows.push({ label: "Phone", from: user?.phone || "—", to: phone.trim() || "—" });
+      rows.push({ label: tx("Phone"), from: user?.phone || "—", to: phone.trim() || "—" });
     }
     if (dob.trim() !== (user?.dob ?? "").trim()) {
-      rows.push({ label: "Date of birth", from: user?.dob || "—", to: dob.trim() || "—" });
+      rows.push({ label: tx("Date of birth"), from: user?.dob || "—", to: dob.trim() || "—" });
     }
     if (!plansEqual(baselinePlans, plans)) {
+      const from = fmtInsuranceList(baselinePlans);
+      const to = fmtInsuranceList(plans);
       rows.push({
-        label: "Insurance",
-        from: fmtInsuranceList(baselinePlans),
-        to: fmtInsuranceList(plans),
+        label: tx("Insurance"),
+        from: from === "None" ? tx("None") : from,
+        to: to === "None" ? tx("None") : to,
       });
     }
     return rows;
-  }, [name, email, phone, dob, baselineName, user?.email, user?.phone, user?.dob, baselinePlans, plans]);
+  }, [name, email, phone, dob, baselineName, user?.email, user?.phone, user?.dob, baselinePlans, plans, tx]);
 
   const resetForm = () => {
     setName([user?.firstName, user?.lastName].filter(Boolean).join(" ") || displayName);
@@ -263,9 +273,9 @@ export function Account() {
 
   useReviewDraft({
     active: changes.length > 0,
-    title: "Edit profile",
+    title: tx("Edit profile"),
     changes,
-    ctaLabel: "Save changes",
+    ctaLabel: tx("Save changes"),
     onConfirm: () => {
       const parts = name.trim().split(/\s+/);
       update({
@@ -334,29 +344,29 @@ export function Account() {
   return (
     <div>
       <PageHead
-        eyebrow="Account"
-        title="Edit profile"
-        sub="Update your personal details, insurance, and account shortcuts."
+        eyebrow={tx("Account")}
+        title={tx("Edit profile")}
+        sub={tx("Update your personal details, insurance, and account shortcuts.")}
       />
 
       <div className="space-y-4">
         <section className={`${CARD} p-6`}>
-          <h2 className="mb-4 font-display text-md font-medium text-[color:var(--pp-primary-950)]">Personal information</h2>
+          <h2 className="mb-4 font-display text-md font-medium text-[color:var(--pp-primary-950)]">{tx("Personal information")}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className={labelCls}>Full name</span>
+              <span className={labelCls}>{tx("Full name")}</span>
               <input className={field} value={name} onChange={(e) => setName(e.target.value)} />
             </label>
             <label className="block">
-              <span className={labelCls}>Email</span>
+              <span className={labelCls}>{tx("Email")}</span>
               <input className={field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             </label>
             <label className="block">
-              <span className={labelCls}>Phone</span>
+              <span className={labelCls}>{tx("Phone")}</span>
               <input className={field} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(416) 555-0100" />
             </label>
             <label className="block">
-              <span className={labelCls}>Date of birth</span>
+              <span className={labelCls}>{tx("Date of birth")}</span>
               <input className={field} value={dob} onChange={(e) => setDob(e.target.value)} placeholder="YYYY-MM-DD" />
             </label>
           </div>
@@ -365,9 +375,9 @@ export function Account() {
         <section className={`${CARD} p-6`}>
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h2 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">Insurance</h2>
+              <h2 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">{tx("Insurance")}</h2>
               <p className="mt-0.5 text-sm text-ink-tertiary">
-                Primary plan is billed first; additional plans cover what’s left.
+                {tx("Primary plan is billed first; additional plans cover what’s left.")}
               </p>
             </div>
             <span
@@ -375,16 +385,20 @@ export function Account() {
                 plans.length > 0 ? "bg-wellness-subtle text-wellness" : "bg-surface-1 text-ink-secondary"
               }`}
             >
-              {plans.length === 0 ? "None" : plans.length === 1 ? "1 plan" : `${plans.length} plans`}
+              {plans.length === 0
+                ? tx("None")
+                : plans.length === 1
+                  ? tx("1 plan")
+                  : `${plans.length} ${tx("plans")}`}
             </span>
           </div>
 
           {plans.length === 0 && !editing && (
             <div className="rounded-xl border border-line bg-surface-1 p-4">
-              <p className="font-semibold text-[color:var(--pp-primary-950)]">No plan on file</p>
-              <p className="mt-1 text-sm text-ink-tertiary">Add a plan to lower your costs at checkout.</p>
+              <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx("No plan on file")}</p>
+              <p className="mt-1 text-sm text-ink-tertiary">{tx("Add a plan to lower your costs at checkout.")}</p>
               <Button type="button" className="mt-4" size="sm" onClick={openAdd}>
-                Add insurance
+                {tx("Add insurance")}
               </Button>
             </div>
           )}
@@ -398,23 +412,23 @@ export function Account() {
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold text-[color:var(--pp-primary-950)]">{p.carrier}</p>
                         <span className={`${PILL} bg-[color:var(--pp-primary-200)] text-[color:var(--pp-primary-950)]`}>
-                          {i === 0 ? "Primary" : `Plan ${i + 1}`}
+                          {i === 0 ? tx("Primary") : `${tx("Plan")} ${i + 1}`}
                         </span>
                       </div>
-                      <p className="mt-1 text-sm text-ink-tertiary">{fmtInsurancePlan(p).replace(`${p.carrier} · `, "") || "Direct bill"}</p>
+                      <p className="mt-1 text-sm text-ink-tertiary">{fmtInsurancePlan(p).replace(`${p.carrier} · `, "") || tx("Direct bill")}</p>
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button type="button" variant="secondary" size="sm" onClick={() => openEdit(p)}>
-                      Edit
+                      {tx("Edit")}
                     </Button>
                     {i > 0 && (
                       <Button type="button" variant="ghost" size="sm" onClick={() => makePrimary(p.id)}>
-                        Make primary
+                        {tx("Make primary")}
                       </Button>
                     )}
                     <Button type="button" variant="ghost" size="sm" onClick={() => removePlan(p.id)}>
-                      Remove
+                      {tx("Remove")}
                     </Button>
                   </div>
                 </div>
@@ -425,10 +439,10 @@ export function Account() {
           {editing && (
             <div className={`space-y-4 ${plans.length > 0 || editingId === "new" ? "mt-4 border-t border-line pt-4" : ""}`}>
               <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">
-                {editingId === "new" ? "Add a plan" : "Edit plan"}
+                {editingId === "new" ? tx("Add a plan") : tx("Edit plan")}
               </p>
               <label className="block">
-                <span className={labelCls}>Carrier</span>
+                <span className={labelCls}>{tx("Carrier")}</span>
                 <select
                   className={field}
                   value={carrierSelect}
@@ -438,55 +452,55 @@ export function Account() {
                   }}
                 >
                   <option value="" disabled>
-                    Select carrier
+                    {tx("Select carrier")}
                   </option>
                   {INSURANCE_CARRIERS.map((c) => (
                     <option key={c} value={c}>
-                      {c}
+                      {c === "Other" ? tx("Other") : c}
                     </option>
                   ))}
                 </select>
               </label>
               {carrierSelect === "Other" && (
                 <label className="block">
-                  <span className={labelCls}>Carrier name</span>
+                  <span className={labelCls}>{tx("Carrier name")}</span>
                   <input
                     className={field}
                     value={form.carrier}
                     onChange={(e) => setForm((f) => ({ ...f, carrier: e.target.value }))}
-                    placeholder="Your insurance provider"
+                    placeholder={tx("Your insurance provider")}
                   />
                 </label>
               )}
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
-                  <span className={labelCls}>Group number</span>
+                  <span className={labelCls}>{tx("Group number")}</span>
                   <input
                     className={field}
                     value={form.group}
                     onChange={(e) => setForm((f) => ({ ...f, group: e.target.value }))}
-                    placeholder="e.g. 4402"
+                    placeholder={tx("e.g. 4402")}
                   />
                 </label>
                 <label className="block">
-                  <span className={labelCls}>Member ID</span>
+                  <span className={labelCls}>{tx("Member ID")}</span>
                   <input
                     className={field}
                     value={form.member}
                     onChange={(e) => setForm((f) => ({ ...f, member: e.target.value }))}
-                    placeholder="On your card"
+                    placeholder={tx("On your card")}
                   />
                 </label>
               </div>
               <p className="text-xs text-ink-tertiary">
-                Nothing is charged until you approve an order. We bill primary first, then secondary plans.
+                {tx("Nothing is charged until you approve an order. We bill primary first, then secondary plans.")}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button type="button" size="sm" onClick={applyForm} disabled={!form.carrier.trim()}>
-                  {editingId === "new" ? "Add to list" : "Update plan"}
+                  {editingId === "new" ? tx("Add to list") : tx("Update plan")}
                 </Button>
                 <Button type="button" variant="ghost" size="sm" onClick={cancelEdit}>
-                  Cancel
+                  {tx("Cancel")}
                 </Button>
               </div>
             </div>
@@ -494,22 +508,22 @@ export function Account() {
 
           {!editing && plans.length > 0 && (
             <Button type="button" variant="secondary" size="sm" className="mt-4" onClick={openAdd}>
-              Add another plan
+              {tx("Add another plan")}
             </Button>
           )}
         </section>
 
         <section className={`${CARD} overflow-hidden`}>
           <h2 className="border-b border-line px-6 py-4 font-display text-md font-medium text-[color:var(--pp-primary-950)]">
-            Account settings
+            {tx("Account settings")}
           </h2>
           {(
             [
-              ["Notification settings", "Reminders, delivery, and care messages", "/account/notifications"],
-              ["Language preference", "English or Français for emails and care", "/account/language"],
-              ["Manage family", "People you manage medications for", "/account/family"],
-              ["Pocketpills benefits", "What’s included with your account", "/account/benefits"],
-              ["Switch account", "Use another profile on this device", "/account/switch"],
+              [tx("Notification settings"), tx("Reminders, delivery, and care messages"), "/account/notifications"],
+              [t("menu.language"), t("account.languageDesc"), "/account/language"],
+              [t("menu.family"), tx("People you manage medications for"), "/account/family"],
+              [t("menu.benefits"), tx("What’s included with your account"), "/account/benefits"],
+              [t("menu.switch"), tx("Use another profile on this device"), "/account/switch"],
             ] as const
           ).map(([title, sub, to], i, arr) => (
             <Link
@@ -531,18 +545,18 @@ export function Account() {
 
         <section className={`${CARD} flex flex-wrap items-center gap-4 p-5`}>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-[color:var(--pp-primary-950)]">Orders & receipts</p>
-            <p className="text-sm text-ink-tertiary">View past orders, receipts, and invoices.</p>
+            <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx("Orders & receipts")}</p>
+            <p className="text-sm text-ink-tertiary">{tx("View past orders, receipts, and invoices.")}</p>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => nav("/orders")}>View</Button>
+          <Button variant="secondary" size="sm" onClick={() => nav("/orders")}>{tx("View")}</Button>
         </section>
 
         <section className={`${CARD} flex flex-wrap items-center gap-4 p-5`}>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-[color:var(--pp-primary-950)]">Log out</p>
-            <p className="text-sm text-ink-tertiary">You'll need to sign in again to view your orders.</p>
+            <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx("Log out")}</p>
+            <p className="text-sm text-ink-tertiary">{tx("You'll need to sign in again to view your orders.")}</p>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => { logOut(); nav("/"); }}>Log out</Button>
+          <Button variant="secondary" size="sm" onClick={() => { logOut(); nav("/"); }}>{tx("Log out")}</Button>
         </section>
       </div>
     </div>

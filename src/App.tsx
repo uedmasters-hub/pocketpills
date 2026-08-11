@@ -4,9 +4,11 @@ import { AppShell } from "@/components/layout/AppShell";
 import { PublicMarketingLayout, DualBrowseLayout } from "@/components/layout/MarketingLayout";
 import { JourneyProvider } from "@/lib/journey";
 import { UserProvider } from "@/lib/user";
+import { I18nProvider } from "@/lib/i18n";
 import { RightRailProvider } from "@/lib/rightRail";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ScrollToTopFab } from "@/components/ScrollToTopFab";
+import { SiteAccessGate } from "@/components/SiteAccessGate";
 import { SignUp, Login, RequireAuth } from "@/pages/auth/Auth";
 
 import { Landing } from "@/pages/Landing";
@@ -43,6 +45,9 @@ import { PharmaciesIndex, PharmaciesByRegion } from "@/pages/PharmaciesByRegion"
 
 import { OrderHistory, OrderDetail } from "@/pages/orders/OrderHistory";
 import { Receipt, Invoice } from "@/pages/orders/Documents";
+import { Appointments } from "@/pages/appointments/Appointments";
+import { BookAppointment } from "@/pages/appointments/BookAppointment";
+import { ProviderDetail } from "@/pages/appointments/ProviderDetail";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -69,13 +74,15 @@ function ConsultRedirect() {
 export default function App() {
   return (
     <ErrorBoundary>
+      <SiteAccessGate>
       <BrowserRouter>
+      <I18nProvider>
       <UserProvider>
         <RightRailProvider>
         <JourneyProvider>
-        <ScrollToTop />
-        <ScrollToTopFab />
-        <Routes>
+          <ScrollToTop />
+          <ScrollToTopFab />
+          <Routes>
           {/* Marketing homepage — own chrome */}
           <Route path="/" element={<Landing />} />
 
@@ -125,6 +132,9 @@ export default function App() {
             <Route path="/account/switch" element={<SwitchAccount />} />
             <Route path="/orders" element={<OrderHistory />} />
             <Route path="/orders/:id" element={<OrderDetail />} />
+            <Route path="/appointments" element={<Appointments />} />
+            <Route path="/appointments/provider/:id" element={<ProviderDetail />} />
+            <Route path="/appointments/book" element={<BookAppointment />} />
 
             <Route path="/fill" element={<FillPrescription />} />
             <Route path="/transfer" element={<TransferPrescription />} />
@@ -143,7 +153,9 @@ export default function App() {
         </JourneyProvider>
         </RightRailProvider>
       </UserProvider>
+      </I18nProvider>
       </BrowserRouter>
+      </SiteAccessGate>
     </ErrorBoundary>
   );
 }

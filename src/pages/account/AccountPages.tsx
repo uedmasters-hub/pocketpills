@@ -7,11 +7,9 @@ import {
   ensureDemoAccounts,
   LANG_META,
   loadFamily,
-  loadLanguage,
   loadNotifs,
   newFamilyId,
   saveFamily,
-  saveLanguage,
   saveNotifs,
   upsertSavedAccount,
   type FamilyMember,
@@ -21,6 +19,7 @@ import {
   type NotifTopic,
   type SavedAccount,
 } from "@/lib/accountPrefs";
+import { useI18n } from "@/lib/i18n";
 
 const CARD = "rounded-2xl border border-line bg-white";
 const FIELD =
@@ -28,7 +27,7 @@ const FIELD =
 const LABEL = "mb-1.5 block text-sm font-medium text-ink-secondary";
 
 function PageHead({
-  eyebrow = "Account",
+  eyebrow,
   title,
   sub,
 }: {
@@ -36,9 +35,10 @@ function PageHead({
   title: string;
   sub?: string;
 }) {
+  const { tx } = useI18n();
   return (
     <header className="mb-8">
-      <p className="pp-caps text-[color:var(--pp-violet)]">{eyebrow}</p>
+      <p className="pp-caps text-[color:var(--pp-violet)]">{eyebrow ?? tx("Account")}</p>
       <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
         {title}
       </h1>
@@ -48,20 +48,22 @@ function PageHead({
 }
 
 function BackLink() {
+  const { t } = useI18n();
   return (
     <Link
       to="/account"
       className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-[color:var(--pp-primary-950)] transition-opacity hover:opacity-70"
     >
-      <span aria-hidden>←</span> Edit profile
+      <span aria-hidden>←</span> {t("lang.back")}
     </Link>
   );
 }
 
-function SavedToast({ show, label = "Saved" }: { show: boolean; label?: string }) {
+function SavedToast({ show, label }: { show: boolean; label?: string }) {
+  const { tx } = useI18n();
   return (
     <p className="sr-only" aria-live="polite">
-      {show ? label : ""}
+      {show ? (label ?? tx("Saved")) : ""}
     </p>
   );
 }
@@ -103,6 +105,7 @@ const CHANNEL_ON_DEFAULTS: Record<NotifTopic, boolean> = {
 };
 
 export function NotificationSettings() {
+  const { tx } = useI18n();
   const [prefs, setPrefs] = useState(() => loadNotifs());
   const [saved, setSaved] = useState(false);
 
@@ -138,13 +141,13 @@ export function NotificationSettings() {
     <div>
       <BackLink />
       <PageHead
-        title="Notification settings"
-        sub="Turn a channel on or off. Optionally refine topics when it’s on. Changes save automatically."
+        title={tx("Notification settings")}
+        sub={tx("Turn a channel on or off. Optionally refine topics when it’s on. Changes save automatically.")}
       />
       <SavedToast show={saved} />
 
       <h2 className="mb-4 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        How should we keep you updated?
+        {tx("How should we keep you updated?")}
       </h2>
 
       <div className="space-y-4">
@@ -156,8 +159,8 @@ export function NotificationSettings() {
                 <Switch
                   checked={on}
                   onChange={(v) => setChannelEnabled(channel.key, v)}
-                  label={channel.title}
-                  desc={channel.desc}
+                  label={tx(channel.title)}
+                  desc={tx(channel.desc)}
                   id={`notif-channel-${channel.key}`}
                 />
               </div>
@@ -165,7 +168,7 @@ export function NotificationSettings() {
               {on && (
                 <fieldset className="space-y-1 border-t border-line px-5 py-4 sm:px-6">
                   <legend className="mb-2 px-2 text-xs font-medium text-ink-tertiary">
-                    Include (optional)
+                    {tx("Include (optional)")}
                   </legend>
                   {NOTIF_TOPICS.map((topic) => {
                     const id = `notif-${channel.key}-${topic.key}`;
@@ -183,7 +186,7 @@ export function NotificationSettings() {
                           className="h-4 w-4 shrink-0 rounded border-line accent-[color:var(--pp-primary-950)]"
                         />
                         <span className="text-sm font-medium text-[color:var(--pp-primary-950)]">
-                          {topic.label}
+                          {tx(topic.label)}
                         </span>
                       </label>
                     );
@@ -196,7 +199,7 @@ export function NotificationSettings() {
       </div>
 
       <p className="mt-4 text-xs text-ink-tertiary">
-        Transactional emails (receipts, security) always send. Carrier rates may apply for SMS.
+        {tx("Transactional emails (receipts, security) always send. Carrier rates may apply for SMS.")}
       </p>
     </div>
   );
@@ -204,16 +207,11 @@ export function NotificationSettings() {
 
 /* ── Language ──────────────────────────────────────────── */
 export function LanguagePreference() {
-  const [lang, setLang] = useState<LangCode>(() => loadLanguage());
+  const { lang, setLang, t } = useI18n();
   const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    saveLanguage(lang);
-  }, []);
 
   const choose = (code: LangCode) => {
     setLang(code);
-    saveLanguage(code);
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1200);
   };
@@ -222,15 +220,18 @@ export function LanguagePreference() {
     <div>
       <BackLink />
       <PageHead
-        title="Language preference"
-        sub="Sets the language for emails and in-app copy. Care visits stay in your preferred language when available."
+        eyebrow={t("lang.eyebrow")}
+        title={t("lang.title")}
+        sub={t("lang.sub")}
       />
-      <SavedToast show={saved} label="Language updated" />
+      <SavedToast show={saved} label={t("lang.updated")} />
 
-      <div className="space-y-3" role="radiogroup" aria-label="Language">
+      <div className="space-y-3" role="radiogroup" aria-label={t("lang.group")}>
         {(Object.keys(LANG_META) as LangCode[]).map((code) => {
           const meta = LANG_META[code];
           const on = lang === code;
+          const hintKey =
+            code === "en" ? "lang.hint.en" : code === "fr" ? "lang.hint.fr" : "lang.hint.ne";
           return (
             <button
               key={code}
@@ -258,16 +259,14 @@ export function LanguagePreference() {
               </span>
               <span className="min-w-0">
                 <span className="block font-semibold text-[color:var(--pp-primary-950)]">{meta.native}</span>
-                <span className="mt-0.5 block text-sm text-ink-secondary">{meta.hint}</span>
+                <span className="mt-0.5 block text-sm text-ink-secondary">{t(hintKey)}</span>
               </span>
             </button>
           );
         })}
       </div>
 
-      <p className="mt-5 text-sm text-ink-tertiary">
-        Demo note: UI strings stay in English; your preference is stored for when localization ships.
-      </p>
+      <p className="mt-5 text-sm text-ink-tertiary">{t("lang.live")}</p>
     </div>
   );
 }
@@ -276,6 +275,7 @@ export function LanguagePreference() {
 const RELATIONS = ["Spouse / partner", "Child", "Parent", "Sibling", "Other"];
 
 export function ManageFamily() {
+  const { tx } = useI18n();
   const [members, setMembers] = useState<FamilyMember[]>(() => loadFamily());
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ name: "", relationship: RELATIONS[0], dob: "" });
@@ -313,19 +313,19 @@ export function ManageFamily() {
     <div>
       <BackLink />
       <PageHead
-        title="Manage family"
-        sub="Add people you manage medications for. Each person gets their own profile once they accept an invite."
+        title={tx("Manage family")}
+        sub={tx("Add people you manage medications for. Each person gets their own profile once they accept an invite.")}
       />
       <SavedToast show={saved} />
 
       {members.length === 0 && !adding && (
         <div className={`${CARD} px-6 py-12 text-center`}>
-          <p className="font-semibold text-[color:var(--pp-primary-950)]">No family members yet</p>
+          <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx("No family members yet")}</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-ink-secondary">
-            Add a spouse, child, or parent so refills and deliveries stay organized in one place.
+            {tx("Add a spouse, child, or parent so refills and deliveries stay organized in one place.")}
           </p>
           <Button type="button" size="sm" className="mt-5" onClick={() => setAdding(true)}>
-            Add family member
+            {tx("Add family member")}
           </Button>
         </div>
       )}
@@ -348,8 +348,8 @@ export function ManageFamily() {
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-[color:var(--pp-primary-950)]">{m.name}</p>
                 <p className="text-sm text-ink-tertiary">
-                  {m.relationship}
-                  {m.dob ? ` · Born ${m.dob}` : ""}
+                  {tx(m.relationship)}
+                  {m.dob ? ` · ${tx("Born")} ${m.dob}` : ""}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -364,10 +364,10 @@ export function ManageFamily() {
                       : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]")
                   }
                 >
-                  {m.linked ? "Linked" : "Paused"}
+                  {m.linked ? tx("Linked") : tx("Paused")}
                 </button>
                 <Button type="button" variant="ghost" size="sm" onClick={() => remove(m.id)}>
-                  Remove
+                  {tx("Remove")}
                 </Button>
               </div>
             </li>
@@ -378,10 +378,10 @@ export function ManageFamily() {
       {adding && (
         <section className={`${CARD} mt-4 space-y-4 p-5 sm:p-6`}>
           <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-            Add family member
+            {tx("Add family member")}
           </h2>
           <label className="block">
-            <span className={LABEL}>Full name</span>
+            <span className={LABEL}>{tx("Full name")}</span>
             <input
               className={FIELD}
               value={form.name}
@@ -390,19 +390,21 @@ export function ManageFamily() {
             />
           </label>
           <label className="block">
-            <span className={LABEL}>Relationship</span>
+            <span className={LABEL}>{tx("Relationship")}</span>
             <select
               className={FIELD}
               value={form.relationship}
               onChange={(e) => setForm((f) => ({ ...f, relationship: e.target.value }))}
             >
               {RELATIONS.map((r) => (
-                <option key={r}>{r}</option>
+                <option key={r} value={r}>
+                  {tx(r)}
+                </option>
               ))}
             </select>
           </label>
           <label className="block">
-            <span className={LABEL}>Date of birth (optional)</span>
+            <span className={LABEL}>{tx("Date of birth (optional)")}</span>
             <input
               className={FIELD}
               value={form.dob}
@@ -412,10 +414,10 @@ export function ManageFamily() {
           </label>
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" onClick={add} disabled={!form.name.trim()}>
-              Save member
+              {tx("Save member")}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>
-              Cancel
+              {tx("Cancel")}
             </Button>
           </div>
         </section>
@@ -423,7 +425,7 @@ export function ManageFamily() {
 
       {members.length > 0 && !adding && (
         <Button type="button" variant="secondary" size="sm" className="mt-4" onClick={() => setAdding(true)}>
-          Add another
+          {tx("Add another")}
         </Button>
       )}
     </div>
@@ -517,22 +519,23 @@ const BENEFITS: { icon: BenefitIconId; title: string; body: string }[] = [
 ];
 
 export function PocketpillsBenefits() {
+  const { tx } = useI18n();
   const nav = useNavigate();
   return (
     <div>
       <BackLink />
       <PageHead
-        title="Pocketpills benefits"
-        sub="What’s included with your account — no paid tier required."
+        title={tx("Pocketpills benefits")}
+        sub={tx("What’s included with your account — no paid tier required.")}
       />
 
       <div className="relative overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-100)] p-6 sm:p-8">
-        <p className="pp-caps text-[color:var(--pp-violet)]">Included</p>
+        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Included")}</p>
         <h2 className="mt-2 font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
-          Care that comes with the account
+          {tx("Care that comes with the account")}
         </h2>
         <p className="mt-2 max-w-lg text-sm text-ink-secondary">
-          PocketPills is built around free delivery and pharmacist oversight — not upsells.
+          {tx("PocketPills is built around free delivery and pharmacist oversight — not upsells.")}
         </p>
       </div>
 
@@ -543,8 +546,8 @@ export function PocketpillsBenefits() {
               <BenefitIcon id={b.icon} />
             </span>
             <div className="min-w-0">
-              <p className="font-semibold text-[color:var(--pp-primary-950)]">{b.title}</p>
-              <p className="mt-1 text-sm leading-relaxed text-ink-secondary">{b.body}</p>
+              <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx(b.title)}</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-secondary">{tx(b.body)}</p>
             </div>
           </li>
         ))}
@@ -552,10 +555,10 @@ export function PocketpillsBenefits() {
 
       <div className="mt-6 flex flex-wrap gap-2">
         <Button type="button" onClick={() => nav("/fill")}>
-          Fill a prescription
+          {tx("Fill a prescription")}
         </Button>
         <Button type="button" variant="secondary" onClick={() => nav("/find-care")}>
-          Explore treatments
+          {tx("Explore treatments")}
         </Button>
       </div>
     </div>
@@ -570,6 +573,7 @@ function initialsOf(a: { firstName: string; lastName: string; email: string }) {
 }
 
 export function SwitchAccount() {
+  const { tx } = useI18n();
   const nav = useNavigate();
   const { user, replace, displayName, logOut } = useUser();
   const [accounts, setAccounts] = useState<SavedAccount[]>([]);
@@ -636,10 +640,10 @@ export function SwitchAccount() {
     <div>
       <BackLink />
       <PageHead
-        title="Switch account"
-        sub={`Signed in as ${displayName}. Pick another profile on this device, or add one.`}
+        title={tx("Switch account")}
+        sub={`${tx("Signed in as")} ${displayName}. ${tx("Pick another profile on this device, or add one.")}`}
       />
-      <SavedToast show={switched} label="Account switched" />
+      <SavedToast show={switched} label={tx("Account switched")} />
 
       <ul className="space-y-3" role="list">
         {sorted.map((a) => {
@@ -667,9 +671,9 @@ export function SwitchAccount() {
                   <span className="block truncate text-sm text-ink-tertiary">{a.email}</span>
                 </span>
                 {active ? (
-                  <span className="text-xs font-semibold text-[color:var(--pp-violet)]">Current</span>
+                  <span className="text-xs font-semibold text-[color:var(--pp-violet)]">{tx("Current")}</span>
                 ) : (
-                  <span className="text-sm font-medium text-[color:var(--pp-violet)]">Switch</span>
+                  <span className="text-sm font-medium text-[color:var(--pp-violet)]">{tx("Switch")}</span>
                 )}
               </button>
             </li>
@@ -679,8 +683,8 @@ export function SwitchAccount() {
 
       <div className={`${CARD} mt-6 flex flex-wrap items-center gap-4 p-5`}>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-[color:var(--pp-primary-950)]">Add another account</p>
-          <p className="text-sm text-ink-tertiary">Sign in with a different email on this device.</p>
+          <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx("Add another account")}</p>
+          <p className="text-sm text-ink-tertiary">{tx("Sign in with a different email on this device.")}</p>
         </div>
         <Button
           type="button"
@@ -700,7 +704,7 @@ export function SwitchAccount() {
             nav("/login");
           }}
         >
-          Sign in
+          {tx("Sign in")}
         </Button>
       </div>
     </div>

@@ -1,6 +1,6 @@
 /** Persisted account preferences (notifications, language, family, switchable accounts). */
 
-export type LangCode = "en" | "fr";
+export type LangCode = "en" | "fr" | "ne";
 
 export type NotifChannel = "sms" | "email" | "app";
 
@@ -96,15 +96,22 @@ export function saveNotifs(p: NotifPrefs) {
   write(NOTIF_KEY, p);
 }
 
+const LANG_HTML: Record<LangCode, string> = {
+  en: "en-CA",
+  fr: "fr-CA",
+  ne: "ne",
+};
+
 export function loadLanguage(): LangCode {
   const v = read<string>(LANG_KEY, "en");
-  return v === "fr" ? "fr" : "en";
+  if (v === "fr" || v === "ne") return v;
+  return "en";
 }
 
 export function saveLanguage(code: LangCode) {
   write(LANG_KEY, code);
   try {
-    document.documentElement.lang = code === "fr" ? "fr-CA" : "en-CA";
+    document.documentElement.lang = LANG_HTML[code];
   } catch {
     /* ignore */
   }
@@ -177,15 +184,23 @@ export function upsertSavedAccount(account: SavedAccount) {
   return list;
 }
 
-export const LANG_META: Record<LangCode, { label: string; native: string; hint: string }> = {
+export const LANG_META: Record<LangCode, { label: string; native: string; short: string; hint: string }> = {
   en: {
     label: "English",
     native: "English (Canada)",
+    short: "EN",
     hint: "Emails, app, and care messages in English.",
   },
   fr: {
     label: "Français",
     native: "Français (Canada)",
+    short: "FR",
     hint: "Courriels, application et messages de soins en français.",
+  },
+  ne: {
+    label: "Nepali",
+    native: "नेपाली",
+    short: "NE",
+    hint: "इमेल, एप र हेरचाह सन्देशहरू नेपालीमा।",
   },
 };

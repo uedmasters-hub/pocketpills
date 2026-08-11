@@ -3,10 +3,12 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { TrustStrip } from "@/components/pharmacy/TrustStrip";
 import { drugs, drugMonograph } from "@/lib/data";
+import { useI18n } from "@/lib/i18n";
 
 const DISPENSING_FEE = 11.99;
 
 export function DrugDetail() {
+  const { tx } = useI18n();
   const { slug } = useParams();
   const nav = useNavigate();
   const drug = drugs.find((d) => d.slug === slug);
@@ -15,7 +17,7 @@ export function DrugDetail() {
   const [qty, setQty] = useState(30);
   const [tab, setTab] = useState(0);
 
-  const monograph = useMemo(() => (drug ? drugMonograph(drug.name) : []), [drug]);
+  const monograph = useMemo(() => (drug ? drugMonograph() : []), [drug]);
   const similar = useMemo(
     () => (drug ? drugs.filter((d) => d.cls === drug.cls && d.slug !== drug.slug).slice(0, 4) : []),
     [drug],
@@ -24,9 +26,9 @@ export function DrugDetail() {
   if (!drug) {
     return (
       <div className="rounded-2xl border border-line bg-white p-12 text-center">
-        <p className="font-semibold text-[color:var(--pp-primary-950)]">Medication not found</p>
+        <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx("Medication not found")}</p>
         <Link to="/drug" className="mt-2 inline-block text-sm font-semibold text-[color:var(--pp-violet)] hover:underline">
-          Back to Medications Index
+          {tx("Back to Medications Index")}
         </Link>
       </div>
     );
@@ -43,7 +45,7 @@ export function DrugDetail() {
         to="/drug"
         className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
       >
-        ← Medications Index
+        ← {tx("Medications Index")}
       </Link>
 
       {/*
@@ -60,19 +62,20 @@ export function DrugDetail() {
             <p className="mt-1 text-base text-ink-tertiary">{drug.generic}</p>
           )}
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-secondary">
-            Order your {drug.name} prescription online through PocketPills with free delivery
-            anywhere in Canada. {drug.rx ? "Prescription required." : "Available over the counter."}
+            {tx("Order your")} {drug.name}{" "}
+            {tx("prescription online through PocketPills with free delivery anywhere in Canada.")}{" "}
+            {drug.rx ? tx("Prescription required.") : tx("Available over the counter.")}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="rounded-full bg-wellness-subtle px-3 py-1 text-xs font-semibold text-wellness">
-              Free delivery
+              {tx("Free delivery")}
             </span>
             <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-              {drug.cls}
+              {tx(drug.cls)}
             </span>
             {drug.rx && (
               <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-                Rx
+                {tx("Rx")}
               </span>
             )}
           </div>
@@ -82,17 +85,17 @@ export function DrugDetail() {
           <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">Price lookup</p>
-                <p className="mt-0.5 text-2xs text-ink-tertiary">Estimate with typical insurance</p>
+                <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Price lookup")}</p>
+                <p className="mt-0.5 text-2xs text-ink-tertiary">{tx("Estimate with typical insurance")}</p>
               </div>
               <span className="shrink-0 rounded-full bg-wellness-subtle px-2.5 py-1 text-2xs font-semibold text-wellness">
-                Free delivery
+                {tx("Free delivery")}
               </span>
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="mb-1.5 block text-xs text-ink-secondary">Dosage</span>
+                <span className="mb-1.5 block text-xs text-ink-secondary">{tx("Dosage")}</span>
                 <select
                   value={dosage}
                   onChange={(e) => setDosage(e.target.value)}
@@ -104,7 +107,7 @@ export function DrugDetail() {
                 </select>
               </label>
               <label className="block">
-                <span className="mb-1.5 block text-xs text-ink-secondary">Quantity</span>
+                <span className="mb-1.5 block text-xs text-ink-secondary">{tx("Quantity")}</span>
                 <select
                   value={qty}
                   onChange={(e) => setQty(Number(e.target.value))}
@@ -120,41 +123,41 @@ export function DrugDetail() {
             </div>
 
             <div className="mt-4 space-y-1.5 border-t border-line pt-4 text-sm">
-              <Row k="Drug cost" v={`$${drugCost.toFixed(2)}`} />
-              <Row k="Dispensing fee" v={`$${DISPENSING_FEE.toFixed(2)}`} />
-              <Row k="Delivery" v="FREE" tone />
-              <Row k={`Insurance (${drug.coverage}%)`} v={`−$${covered.toFixed(2)}`} tone />
+              <Row k={tx("Drug cost")} v={`$${drugCost.toFixed(2)}`} />
+              <Row k={tx("Dispensing fee")} v={`$${DISPENSING_FEE.toFixed(2)}`} />
+              <Row k={tx("Delivery")} v={tx("FREE")} tone />
+              <Row k={`${tx("Insurance")} (${drug.coverage}%)`} v={`−$${covered.toFixed(2)}`} tone />
               <div className="flex items-end justify-between border-t border-line pt-3">
-                <span className="font-semibold text-[color:var(--pp-primary-950)]">You pay</span>
+                <span className="font-semibold text-[color:var(--pp-primary-950)]">{tx("You pay")}</span>
                 <span className="font-display text-3xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
                   ${total.toFixed(2)}
                 </span>
               </div>
             </div>
             <p className="mt-3 text-2xs leading-relaxed text-ink-tertiary">
-              Estimate. Final price depends on your prescription and plan.
+              {tx("Estimate. Final price depends on your prescription and plan.")}
             </p>
 
             <div className="mt-5 space-y-2">
               <Button fullWidth onClick={() => nav("/find-care")}>
-                Request via consultation
+                {tx("Request via consultation")}
               </Button>
               <Button fullWidth variant="secondary" onClick={() => nav("/fill")}>
-                I have a prescription
+                {tx("I have a prescription")}
               </Button>
             </div>
           </div>
 
           <p className="px-1 text-center text-2xs leading-relaxed text-ink-tertiary">
-            Licensed Canadian pharmacists review every order before it ships.
+            {tx("Licensed Canadian pharmacists review every order before it ships.")}
           </p>
         </aside>
 
         <dl className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3 lg:col-start-1 lg:row-start-2">
           {[
-            ["Available form", drug.forms.join(", ")],
-            ["Dosage", drug.dosages.join(", ")],
-            ["Manufacturer", drug.manufacturer],
+            [tx("Available form"), drug.forms.map((f) => tx(f)).join(", ")],
+            [tx("Dosage"), drug.dosages.join(", ")],
+            [tx("Manufacturer"), drug.manufacturer],
           ].map(([k, v]) => (
             <div key={k} className="bg-white p-4">
               <dt className="text-2xs font-semibold uppercase tracking-[0.1em] text-ink-tertiary">{k}</dt>
@@ -167,10 +170,14 @@ export function DrugDetail() {
 
         <section className="min-w-0 lg:col-start-1 lg:row-start-4">
           <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-            Drug information
+            {tx("Drug information")}
           </h2>
 
-          <div className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Drug information sections">
+          <div
+            className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1"
+            role="tablist"
+            aria-label={tx("Drug information sections")}
+          >
             {monograph.map((m, i) => (
               <button
                 key={m.section}
@@ -188,7 +195,7 @@ export function DrugDetail() {
                     : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-200)]")
                 }
               >
-                {m.section}
+                {tx(m.section)}
               </button>
             ))}
           </div>
@@ -200,16 +207,16 @@ export function DrugDetail() {
             className="mt-5 rounded-2xl border border-line bg-white p-6"
           >
             <h3 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">
-              {monograph[tab].section}
+              {tx(monograph[tab].section)}
             </h3>
             <p className="mt-2 max-w-[62ch] text-base leading-relaxed text-ink-secondary">
-              {monograph[tab].body}
+              {tx(monograph[tab].body).split("{name}").join(drug.name)}
             </p>
           </div>
 
           <p className="mt-4 text-xs leading-relaxed text-ink-tertiary">
-            <span className="font-semibold text-ink-secondary">Educational summary — not medical advice.</span>{" "}
-            Full monographs are reviewed by our pharmacists and cross-referenced with Health Canada.
+            <span className="font-semibold text-ink-secondary">{tx("Educational summary — not medical advice.")}</span>{" "}
+            {tx("Full monographs are reviewed by our pharmacists and cross-referenced with Health Canada.")}
           </p>
         </section>
       </div>
@@ -219,12 +226,14 @@ export function DrugDetail() {
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
               <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-                Similar medications
+                {tx("Similar medications")}
               </h2>
-              <p className="text-sm text-ink-tertiary">Others in {drug.cls}.</p>
+              <p className="text-sm text-ink-tertiary">
+                {tx("Others in")} {tx(drug.cls)}.
+              </p>
             </div>
             <Link to="/drug" className="text-sm font-medium text-[color:var(--pp-violet)] hover:underline">
-              Browse all
+              {tx("Browse all")}
             </Link>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -241,7 +250,7 @@ export function DrugDetail() {
                     <span className="mt-0.5 truncate text-sm text-ink-tertiary">{d.generic}</span>
                   )}
                   <span className="mt-3 flex items-baseline justify-between gap-2 border-t border-line pt-3">
-                    <span className="text-2xs text-ink-tertiary">From</span>
+                    <span className="text-2xs text-ink-tertiary">{tx("From")}</span>
                     <span className="font-display text-lg font-medium text-[color:var(--pp-primary-950)] tnum">
                       ${est.toFixed(2)}
                     </span>

@@ -4,6 +4,7 @@ import { useUser, newInsuranceId, primaryInsurance, fmtInsuranceList, fmtInsuran
 import { profileChecklist, isChecklistId, type ChecklistId } from "@/lib/profile";
 import { useReviewDraft, type ReviewChange } from "@/lib/rightRail";
 import { Switch } from "@/components/ui";
+import { useI18n } from "@/lib/i18n";
 
 const FIELD = "h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-base text-ink outline-none focus:border-primary";
 const LABEL = "mb-1.5 block text-sm font-medium text-ink-secondary";
@@ -19,6 +20,7 @@ function Text({ label, value, onChange, placeholder }: { label: string; value: s
 }
 
 function Tags({ label, items, onChange, placeholder }: { label: string; items: string[]; onChange: (v: string[]) => void; placeholder: string }) {
+  const { tx } = useI18n();
   const [draft, setDraft] = useState("");
   const add = () => { const v = draft.trim(); if (v && !items.includes(v)) onChange([...items, v]); setDraft(""); };
   const inputId = `tags-${label.toLowerCase().replace(/\s+/g, "-")}`;
@@ -34,14 +36,14 @@ function Tags({ label, items, onChange, placeholder }: { label: string; items: s
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
         />
-        <button type="button" onClick={add} className="shrink-0 rounded-xl border border-line px-4 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]">Add</button>
+        <button type="button" onClick={add} className="shrink-0 rounded-xl border border-line px-4 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]">{tx("Add")}</button>
       </div>
       {items.length > 0 && (
         <ul className="mt-2.5 flex flex-wrap gap-2" aria-label={label}>
           {items.map((it) => (
             <li key={it} className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--pp-primary-100)] px-3 py-1 text-sm font-medium text-[color:var(--pp-primary-950)]">
               {it}
-              <button type="button" onClick={() => onChange(items.filter((x) => x !== it))} aria-label={`Remove ${it}`}>✕</button>
+              <button type="button" onClick={() => onChange(items.filter((x) => x !== it))} aria-label={`${tx("Remove")} ${it}`}>✕</button>
             </li>
           ))}
         </ul>
@@ -70,6 +72,7 @@ const Ico = {
 
 /** Yes/No question card — the split-button pattern from the reference. */
 function QuestionCard({ q, sub, value, onAnswer }: { q: string; sub: string; value: boolean | null | undefined; onAnswer: (v: boolean) => void }) {
+  const { tx } = useI18n();
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
       <div className="relative p-6">
@@ -93,7 +96,7 @@ function QuestionCard({ q, sub, value, onAnswer }: { q: string; sub: string; val
                 (label === "No" ? " border-r border-line" : "")
               }
             >
-              {label}
+              {tx(label)}
             </button>
           );
         })}
@@ -114,6 +117,7 @@ const META: Record<ChecklistId, { title: string; blurb: string }> = {
 };
 
 function SectionSkeleton() {
+  const { tx } = useI18n();
   return (
     <div aria-busy="true" aria-live="polite">
       <div className="pp-skeleton h-4 w-16" />
@@ -126,12 +130,13 @@ function SectionSkeleton() {
         <div className="pp-skeleton h-32 w-full rounded-2xl" />
         <div className="pp-skeleton h-56 w-full rounded-2xl" />
       </div>
-      <span className="sr-only">Loading section…</span>
+      <span className="sr-only">{tx("Loading section…")}</span>
     </div>
   );
 }
 
 export function ProfileSection() {
+  const { tx } = useI18n();
   const { section } = useParams();
   const nav = useNavigate();
   const { user, update } = useUser();
@@ -190,46 +195,59 @@ export function ProfileSection() {
 
   const changes = useMemo(() => {
     const rows: ReviewChange[] = [];
+    const none = tx("None");
     if (id === "personal") {
-      if (f.firstName !== (user?.firstName ?? "")) rows.push({ label: "First name", from: user?.firstName || "—", to: f.firstName || "—" });
-      if (f.lastName !== (user?.lastName ?? "")) rows.push({ label: "Last name", from: user?.lastName || "—", to: f.lastName || "—" });
-      if (f.dob !== (user?.dob ?? "")) rows.push({ label: "Date of birth", from: user?.dob || "—", to: f.dob || "—" });
-      if (f.phone !== (user?.phone ?? "")) rows.push({ label: "Phone", from: user?.phone || "—", to: f.phone || "—" });
-      if (f.email !== (user?.email ?? "")) rows.push({ label: "Email", from: user?.email || "—", to: f.email || "—" });
-      if (f.gender !== (user?.gender ?? "")) rows.push({ label: "Gender", from: user?.gender || "—", to: f.gender || "—" });
+      if (f.firstName !== (user?.firstName ?? "")) rows.push({ label: tx("First name"), from: user?.firstName || "—", to: f.firstName || "—" });
+      if (f.lastName !== (user?.lastName ?? "")) rows.push({ label: tx("Last name"), from: user?.lastName || "—", to: f.lastName || "—" });
+      if (f.dob !== (user?.dob ?? "")) rows.push({ label: tx("Date of birth"), from: user?.dob || "—", to: f.dob || "—" });
+      if (f.phone !== (user?.phone ?? "")) rows.push({ label: tx("Phone"), from: user?.phone || "—", to: f.phone || "—" });
+      if (f.email !== (user?.email ?? "")) rows.push({ label: tx("Email"), from: user?.email || "—", to: f.email || "—" });
+      if (f.gender !== (user?.gender ?? "")) {
+        rows.push({
+          label: tx("Gender"),
+          from: user?.gender ? tx(user.gender) : "—",
+          to: f.gender ? tx(f.gender) : "—",
+        });
+      }
     }
     if (id === "health") {
-      const a0 = (user?.allergies ?? []).join(", ") || "None";
-      const a1 = f.allergies.join(", ") || "None";
-      if (a0 !== a1) rows.push({ label: "Allergies", from: a0, to: a1 });
-      const c0 = (user?.conditions ?? []).join(", ") || "None";
-      const c1 = f.conditions.join(", ") || "None";
-      if (c0 !== c1) rows.push({ label: "Conditions", from: c0, to: c1 });
+      const a0 = (user?.allergies ?? []).join(", ") || none;
+      const a1 = f.allergies.join(", ") || none;
+      if (a0 !== a1) rows.push({ label: tx("Allergies"), from: a0, to: a1 });
+      const c0 = (user?.conditions ?? []).join(", ") || none;
+      const c1 = f.conditions.join(", ") || none;
+      if (c0 !== c1) rows.push({ label: tx("Conditions"), from: c0, to: c1 });
     }
     if (id === "card") {
-      if (f.province !== (user?.province ?? "ON")) rows.push({ label: "Province", from: user?.province || "—", to: f.province });
-      if (f.healthCard !== (user?.healthCard ?? "")) rows.push({ label: "Health card", from: user?.healthCard || "—", to: f.healthCard || "—" });
+      if (f.province !== (user?.province ?? "ON")) rows.push({ label: tx("Province"), from: user?.province || "—", to: f.province });
+      if (f.healthCard !== (user?.healthCard ?? "")) rows.push({ label: tx("Health card"), from: user?.healthCard || "—", to: f.healthCard || "—" });
     }
     if (id === "insurance") {
-      const prev = fmtInsuranceList(user?.insurances ?? []);
-      const next = f.hasInsurance
+      const prevRaw = fmtInsuranceList(user?.insurances ?? []);
+      const nextRaw = f.hasInsurance
         ? fmtInsuranceList([
             { id: "draft", carrier: f.carrier || "Sun Life", group: f.group, member: f.member },
             ...(user?.insurances ?? []).slice(1),
           ])
         : "None";
-      if (prev !== next) rows.push({ label: "Insurance", from: prev, to: next });
+      if (prevRaw !== nextRaw) {
+        rows.push({
+          label: tx("Insurance"),
+          from: prevRaw === "None" ? none : prevRaw,
+          to: nextRaw === "None" ? none : nextRaw,
+        });
+      }
     }
     if (id === "shipping" && f.address !== (user?.address ?? "")) {
-      rows.push({ label: "Address", from: user?.address || "—", to: f.address || "—" });
+      rows.push({ label: tx("Address"), from: user?.address || "—", to: f.address || "—" });
     }
     if (id === "payment" && f.card.replace(/\s/g, "").length >= 4) {
       const next = `····${f.card.replace(/\s/g, "").slice(-4)}`;
-      const prev = user?.cardLast4 ? `····${user.cardLast4}` : "None";
-      if (next !== prev) rows.push({ label: "Card", from: prev, to: next });
+      const prev = user?.cardLast4 ? `····${user.cardLast4}` : none;
+      if (next !== prev) rows.push({ label: tx("Card"), from: prev, to: next });
     }
     return rows;
-  }, [id, f, user]);
+  }, [id, f, user, tx]);
 
   const resetForm = () => {
     setF({
@@ -245,9 +263,9 @@ export function ProfileSection() {
 
   useReviewDraft({
     active: ready && changes.length > 0,
-    title: META[id].title,
+    title: tx(META[id].title),
     changes,
-    ctaLabel: saved ? "Saved" : "Save changes",
+    ctaLabel: saved ? tx("Saved") : tx("Save changes"),
     onConfirm: save,
     onDiscard: resetForm,
   });
@@ -260,21 +278,21 @@ export function ProfileSection() {
   return (
     <div className="animate-fade-up">
       <Link to="/profile" className="inline-flex items-center gap-1.5 text-base font-medium text-[color:var(--pp-primary-950)] hover:opacity-70">
-        <span aria-hidden>‹</span> Back
+        <span aria-hidden>‹</span> {tx("Back")}
       </Link>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {META[id].title}
+          {tx(META[id].title)}
         </h1>
         <span className={
           "rounded-full px-3 py-1 text-xs font-semibold " +
           (row.required ? "bg-[#FBF1E9] text-[#B4541F]" : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]")
         }>
-          {row.required ? "Required" : "Optional"}
+          {row.required ? tx("Required") : tx("Optional")}
         </span>
       </div>
-      <p className="mt-2 text-base text-ink-secondary">{META[id].blurb}</p>
+      <p className="mt-2 text-base text-ink-secondary">{tx(META[id].blurb)}</p>
 
       {/* what's on file */}
       {row.done && (
@@ -282,104 +300,106 @@ export function ProfileSection() {
           {id === "personal" && (<>
             <p className="text-lg font-semibold text-[color:var(--pp-primary-950)]">{fullName || "—"}</p>
             <p className="mt-1 text-base text-ink-secondary">
-              {[user?.gender, user?.dob && `DOB ${user.dob}`].filter(Boolean).join(" / ") || "—"}
+              {[user?.gender ? tx(user.gender) : null, user?.dob && `${tx("DOB")} ${user.dob}`].filter(Boolean).join(" / ") || "—"}
             </p>
             {user?.phone && <SummaryLine icon={Ico.phone}>{user.phone}</SummaryLine>}
             {user?.email && <SummaryLine icon={Ico.mail}>{user.email}</SummaryLine>}
           </>)}
           {id === "health" && (<>
-            <p className="text-base font-semibold text-[color:var(--pp-primary-950)]">On file</p>
-            <SummaryLine icon={Ico.heart}>Allergies: {user?.allergies?.join(", ") || "None"}</SummaryLine>
-            {user?.conditions?.length ? <SummaryLine icon={Ico.heart}>Conditions: {user.conditions.join(", ")}</SummaryLine> : null}
+            <p className="text-base font-semibold text-[color:var(--pp-primary-950)]">{tx("On file")}</p>
+            <SummaryLine icon={Ico.heart}>{tx("Allergies")}: {user?.allergies?.join(", ") || tx("None")}</SummaryLine>
+            {user?.conditions?.length ? <SummaryLine icon={Ico.heart}>{tx("Conditions")}: {user.conditions.join(", ")}</SummaryLine> : null}
           </>)}
           {id === "card" && <SummaryLine icon={Ico.card}>{user?.province} · {user?.healthCard}</SummaryLine>}
           {id === "insurance" && (
             <SummaryLine icon={Ico.shield}>
               {(user?.insurances?.length ?? 0) > 0
-                ? user!.insurances.map((p, i) => `${i === 0 ? "Primary" : `Plan ${i + 1}`}: ${fmtInsurancePlan(p)}`).join(" · ")
-                : "No plan on file"}
+                ? user!.insurances.map((p, i) => `${i === 0 ? tx("Primary") : `${tx("Plan")} ${i + 1}`}: ${fmtInsurancePlan(p)}`).join(" · ")
+                : tx("No plan on file")}
             </SummaryLine>
           )}
           {id === "shipping" && <SummaryLine icon={Ico.pin}>{user?.address}</SummaryLine>}
-          {id === "payment" && <SummaryLine icon={Ico.card}>{user?.cardLast4 ? `Visa ····${user.cardLast4}` : "On file"}</SummaryLine>}
+          {id === "payment" && <SummaryLine icon={Ico.card}>{user?.cardLast4 ? `Visa ····${user.cardLast4}` : tx("On file")}</SummaryLine>}
         </div>
       )}
 
       {/* editor */}
       <div className={`${CARD} mt-4 space-y-4`}>
         <p className="text-base font-semibold text-[color:var(--pp-primary-950)]">
-          {row.done ? "Update your details" : "Add your details"}
+          {row.done ? tx("Update your details") : tx("Add your details")}
         </p>
 
         {id === "personal" && (
           <div className="grid gap-4 sm:grid-cols-2">
-            <Text label="First name" value={f.firstName} onChange={(v) => set("firstName", v)} />
-            <Text label="Last name" value={f.lastName} onChange={(v) => set("lastName", v)} />
-            <Text label="Date of birth" value={f.dob} onChange={(v) => set("dob", v)} placeholder="YYYY-MM-DD" />
+            <Text label={tx("First name")} value={f.firstName} onChange={(v) => set("firstName", v)} />
+            <Text label={tx("Last name")} value={f.lastName} onChange={(v) => set("lastName", v)} />
+            <Text label={tx("Date of birth")} value={f.dob} onChange={(v) => set("dob", v)} placeholder="YYYY-MM-DD" />
             <label className="block">
-              <span className={LABEL}>Sex assigned at birth</span>
+              <span className={LABEL}>{tx("Sex assigned at birth")}</span>
               <select className={FIELD} value={f.gender} onChange={(e) => set("gender", e.target.value)}>
-                <option value="">Prefer not to say</option>
-                <option>Female</option><option>Male</option><option>Intersex</option>
+                <option value="">{tx("Prefer not to say")}</option>
+                <option value="Female">{tx("Female")}</option>
+                <option value="Male">{tx("Male")}</option>
+                <option value="Intersex">{tx("Intersex")}</option>
               </select>
             </label>
-            <Text label="Phone" value={f.phone} onChange={(v) => set("phone", v)} placeholder="+1 953-800-0060" />
-            <Text label="Email" value={f.email} onChange={(v) => set("email", v)} />
+            <Text label={tx("Phone")} value={f.phone} onChange={(v) => set("phone", v)} placeholder="+1 953-800-0060" />
+            <Text label={tx("Email")} value={f.email} onChange={(v) => set("email", v)} />
           </div>
         )}
         {id === "health" && (<>
-          <Tags label="Allergies" items={f.allergies} onChange={(v) => set("allergies", v)} placeholder="e.g. penicillin" />
-          <Tags label="Conditions (optional)" items={f.conditions} onChange={(v) => set("conditions", v)} placeholder="e.g. asthma" />
-          <p className="text-xs text-ink-tertiary">If you have none, add “None” so we know it's been checked.</p>
+          <Tags label={tx("Allergies")} items={f.allergies} onChange={(v) => set("allergies", v)} placeholder={tx("e.g. penicillin")} />
+          <Tags label={tx("Conditions (optional)")} items={f.conditions} onChange={(v) => set("conditions", v)} placeholder={tx("e.g. asthma")} />
+          <p className="text-xs text-ink-tertiary">{tx("If you have none, add “None” so we know it's been checked.")}</p>
         </>)}
         {id === "card" && (
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className={LABEL}>Province</span>
+              <span className={LABEL}>{tx("Province")}</span>
               <select className={FIELD} value={f.province} onChange={(e) => set("province", e.target.value)}>
                 {PROVINCES.map((p) => <option key={p}>{p}</option>)}
               </select>
             </label>
-            <Text label="Health card number" value={f.healthCard} onChange={(v) => set("healthCard", v)} />
+            <Text label={tx("Health card number")} value={f.healthCard} onChange={(v) => set("healthCard", v)} />
           </div>
         )}
         {id === "insurance" && (<>
           <Switch
             checked={f.hasInsurance}
             onChange={(v) => set("hasInsurance", v)}
-            label="I have private insurance"
+            label={tx("I have private insurance")}
           />
           {f.hasInsurance && (
             <div className="grid gap-4 sm:grid-cols-3">
-              <Text label="Primary carrier" value={f.carrier} onChange={(v) => set("carrier", v)} placeholder="Sun Life" />
-              <Text label="Group #" value={f.group} onChange={(v) => set("group", v)} />
-              <Text label="Member ID" value={f.member} onChange={(v) => set("member", v)} />
+              <Text label={tx("Primary carrier")} value={f.carrier} onChange={(v) => set("carrier", v)} placeholder="Sun Life" />
+              <Text label={tx("Group #")} value={f.group} onChange={(v) => set("group", v)} />
+              <Text label={tx("Member ID")} value={f.member} onChange={(v) => set("member", v)} />
             </div>
           )}
           <p className="text-xs text-ink-tertiary">
-            Edits your primary plan. Manage multiple plans in Edit profile.
+            {tx("Edits your primary plan. Manage multiple plans in Edit profile.")}
           </p>
         </>)}
-        {id === "shipping" && <Text label="Delivery address" value={f.address} onChange={(v) => set("address", v)} placeholder="Street, city, province, postal code" />}
+        {id === "shipping" && <Text label={tx("Delivery address")} value={f.address} onChange={(v) => set("address", v)} placeholder={tx("Street, city, province, postal code")} />}
         {id === "payment" && (<>
-          <Text label="Card number" value={f.card} onChange={(v) => set("card", v)} placeholder="4242 4242 4242 4242" />
+          <Text label={tx("Card number")} value={f.card} onChange={(v) => set("card", v)} placeholder="4242 4242 4242 4242" />
           <div className="grid grid-cols-2 gap-4">
-            <Text label="Expiry" value={f.exp} onChange={(v) => set("exp", v)} placeholder="12 / 27" />
-            <Text label="CVC" value={f.cvc} onChange={(v) => set("cvc", v)} />
+            <Text label={tx("Expiry")} value={f.exp} onChange={(v) => set("exp", v)} placeholder="12 / 27" />
+            <Text label={tx("CVC")} value={f.cvc} onChange={(v) => set("cvc", v)} />
           </div>
-          <p className="text-xs text-ink-tertiary">Demo only — no card is stored or charged.</p>
+          <p className="text-xs text-ink-tertiary">{tx("Demo only — no card is stored or charged.")}</p>
         </>)}
 
         {changes.length === 0 && (
           <div className="flex items-center gap-3 pt-1">
             <Link to="/profile" className="rounded-full px-4 py-2.5 text-sm font-medium text-ink-secondary hover:text-[color:var(--pp-primary-950)]">
-              Back to profile
+              {tx("Back to profile")}
             </Link>
           </div>
         )}
         {changes.length > 0 && (
           <p className="pt-1 text-sm text-ink-tertiary">
-            Review your updates in the panel, then save.
+            {tx("Review your updates in the panel, then save.")}
           </p>
         )}
       </div>
@@ -388,8 +408,8 @@ export function ProfileSection() {
       {id === "personal" && (
         <div className="mt-4">
           <QuestionCard
-            q="Do you have a family doctor?"
-            sub="Get faster medication renewals"
+            q={tx("Do you have a family doctor?")}
+            sub={tx("Get faster medication renewals")}
             value={user?.familyDoctor}
             onAnswer={(v) => update({ familyDoctor: v })}
           />
@@ -398,4 +418,3 @@ export function ProfileSection() {
     </div>
   );
 }
-
