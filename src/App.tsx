@@ -74,8 +74,8 @@ function ConsultRedirect() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <SiteAccessGate>
       <BrowserRouter>
+      <SiteAccessGate>
       <I18nProvider>
       <UserProvider>
         <RightRailProvider>
@@ -154,8 +154,8 @@ export default function App() {
         </RightRailProvider>
       </UserProvider>
       </I18nProvider>
-      </BrowserRouter>
       </SiteAccessGate>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }
