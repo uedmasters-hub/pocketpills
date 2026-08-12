@@ -1,9 +1,8 @@
 import {
   SITE_PASSWORD,
-  createSession,
   ensureSchema,
-  getValidSession,
 } from "./db.js";
+import { issueSession, verifySession } from "./statelessSession.js";
 
 export type AccessRequest = {
   method?: string;
@@ -24,15 +23,6 @@ function header(req: AccessRequest, name: string): string {
   return typeof raw === "string" ? raw : "";
 }
 
-function clientMeta(req: AccessRequest) {
-  const forwarded = header(req, "x-forwarded-for");
-  const ip = forwarded
-    ? forwarded.split(",")[0]?.trim()
-    : req.socketRemoteAddress || null;
-  const userAgent = header(req, "user-agent") || null;
-  return { ip, userAgent };
-}
-
 export async function handleAccess(
   route: "password" | "magic-link" | "verify" | "session" | "health",
   req: AccessRequest,
@@ -48,11 +38,15 @@ export async function handleAccess(
     };
   }
 
-  try {
-    await ensureSchema();
-  } catch (err) {
-    console.error("[access] schema error", err);
-    return { status: 500, body: { error: "Database unavailable" } };
+  /* The gate no longer requires Postgres. If a database is configured we still
+     initialise it (so visits can be recorded), but a failure here must not lock
+     anyone out — sessions are signed tokens, not rows. */
+  if (process.env.DATABASE_URL) {
+    try {
+      await ensureSchema();
+    } catch (err) {
+      console.warn("[access] database unavailable, continuing stateless", err);
+    }
   }
 
   if (route === "password") {
@@ -65,13 +59,7 @@ export async function handleAccess(
       if (password !== SITE_PASSWORD) {
         return { status: 401, body: { error: "Incorrect password" } };
       }
-      const meta = clientMeta(req);
-      const { sessionToken, expiresAt } = await createSession({
-        method: "password",
-        email: null,
-        userId: null,
-        ...meta,
-      });
+      const { sessionToken, expiresAt } = issueSession("password");
       return {
         status: 200,
         body: {
@@ -99,7 +87,7 @@ export async function handleAccess(
     if (!token) {
       return { status: 401, body: { valid: false } };
     }
-    const session = await getValidSession(token);
+    const session = verifySession(token);
     if (!session) {
       return { status: 401, body: { valid: false } };
     }
@@ -107,9 +95,9 @@ export async function handleAccess(
       status: 200,
       body: {
         valid: true,
-        expiresAt: session.expires_at,
+        expiresAt: session.expiresAt.toISOString(),
         method: session.method,
-        email: session.email,
+        email: null,
       },
     };
   } catch (err) {
@@ -117,3 +105,4 @@ export async function handleAccess(
     return { status: 500, body: { valid: false, error: "Session check failed" } };
   }
 }
+
