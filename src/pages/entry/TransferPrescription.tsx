@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, type ReactNode } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { Field, Badge } from "@/components/ui";
+import { Field, Badge, Caret } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { MapEmbed } from "@/components/MapEmbed";
 import { createTransferOrder, TRANSFER_HINTS, type Order } from "@/lib/orders";
@@ -469,8 +469,9 @@ export function TransferPrescription() {
             className="h-48 sm:h-56"
           />
           <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)] shadow-sm">
-              {tx("Show all ▾")}
+            <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)] shadow-sm">
+              {tx("Show all")}
+              <Caret size={14} />
             </span>
           </div>
         </div>

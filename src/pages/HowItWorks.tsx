@@ -297,7 +297,7 @@ export function HowItWorks() {
                   <Link to={primaryTo} className={CTA}>
                     {primaryLabel}
                   </Link>
-                  <Link to="/find-care" className={CTA_SECONDARY}>
+                  <Link to="/appointments" className={CTA_SECONDARY}>
                     {tx("Explore treatments")}
                   </Link>
                 </div>

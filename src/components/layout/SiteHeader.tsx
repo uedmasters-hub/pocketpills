@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { LogoLink } from "@/components/Logo";
 import { useChromeVisibility } from "@/lib/useChromeVisibility";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
+import { Caret } from "@/components/ui";
 import { isAlwaysPublicPath, isDualBrowsePath } from "@/lib/marketingPaths";
 
 const NAVCDN = "https://static.pocketpills.com/acq-web/redesign/navbar";
@@ -85,11 +86,7 @@ function Icon({ id }: { id: string }) {
 
 /* ── small building blocks ────────────────────────────── */
 function Chevron() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-55" aria-hidden>
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
+  return <Caret size={16} className="opacity-70" />;
 }
 function ArrowRight() {
   return (
@@ -199,7 +196,7 @@ function UserMenu() {
             {initials}
           </span>
           <span className="hidden sm:inline">{displayName}</span>
-          <span className="text-2xs opacity-60" aria-hidden>▼</span>
+          <Caret size={16} className="opacity-70" />
         </button>
       )}
     />
@@ -288,6 +285,7 @@ function useVariant(): HeaderVariant {
   const { signedIn } = useUser();
   if (pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer" || pathname === "/delivery-check") return "focused";
   if (pathname === "/login" || pathname === "/get-started") return "minimal";
+  if (pathname.startsWith("/provider")) return "minimal";
   /* Homepage + How it works / Support — always marketing nav. */
   if (pathname === "/" || isAlwaysPublicPath(pathname)) return "marketing";
   /* Treatment / Pharmacy — marketing when logged out, app when logged in. */
@@ -313,15 +311,15 @@ function TreatmentMenu() {
       bg={`${NAVCDN}/nav_bg_green.png`}
       eyebrow="Get Prescribed Online"
       tiles={<>
-        <DropTile to="/find-care" icon="weight" label="Lose weight" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
-        <DropTile to="/find-care" icon="hair" label="Reverse hair loss" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
-        <DropTile to="/find-care" icon="ed" label="Male sexual health" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
-        <DropTile to="/treatment/birth-control" icon="birth" label="Prevent pregnancy" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/appointments/treatments/weight-loss" icon="weight" label="Lose weight" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/appointments/treatments/hair-loss" icon="hair" label="Reverse hair loss" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/appointments/treatments/erectile-dysfunction" icon="ed" label="Male sexual health" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/appointments/treatments/birth-control" icon="birth" label="Prevent pregnancy" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
       </>}
-      cta="/find-care" ctaLabel="Get a prescription"
+      cta="/appointments" ctaLabel="Get a prescription"
       asideTitle="Virtual Care"
-      tags={[["Acne (Mild)", "/consult/acne"], ["Birth Control", "/treatment/birth-control"], ["Erectile Dysfunction", "/find-care"], ["Hair Loss", "/find-care"], ["Urinary Tract Infection", "/treatment/uti"], ["Weight Loss", "/find-care"], ["Minor ailments", "/consult/minor-ailments"]]}
-      browseTo="/find-care" browseLabel="See all treatments"
+      tags={[["Acne (Mild)", "/appointments/treatments/acne"], ["Birth Control", "/appointments/treatments/birth-control"], ["Erectile Dysfunction", "/appointments/treatments/erectile-dysfunction"], ["Hair Loss", "/appointments/treatments/hair-loss"], ["Urinary Tract Infection", "/appointments/treatments/uti"], ["Weight Loss", "/appointments/treatments/weight-loss"], ["Minor ailments", "/appointments"]]}
+      browseTo="/appointments" browseLabel="See all treatments"
       faqs={[
         { label: "Can I get a prescription online?", slug: "online-prescription" },
         { label: "How do I qualify for a prescription?", slug: "qualify-prescription" },
@@ -338,7 +336,7 @@ function PharmacyMenu() {
       bg={`${NAVCDN}/nav_bg_lilac.png`}
       eyebrow="Get Started"
       tiles={<>
-        <DropTile to="/find-care" icon="plus" label="Get a new prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/appointments" icon="plus" label="Get a new prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
         <DropTile to="/fill" icon="searchprices" label="Fill a prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
         <DropTile to="/transfer" icon="transfer" label="Transfer a prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
         <DropTile to="/drug" icon="circle" label="Search prices" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
@@ -463,7 +461,7 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
         onMouseLeave={() => setOpen(null)}
       >
         <div className="relative" onMouseEnter={() => setOpen("t")}>
-          <span className={ITEM}><Link to="/find-care">{t("nav.treatment")}</Link><Chevron /></span>
+          <span className={ITEM}><Link to="/appointments">{t("nav.treatment")}</Link><Chevron /></span>
           {open === "t" && <TreatmentMenu />}
         </div>
         <div className="relative" onMouseEnter={() => setOpen("p")}>

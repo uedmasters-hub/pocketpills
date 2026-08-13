@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { PageSearchField } from "@/components/PageSearchField";
 import { TrustStrip } from "@/components/pharmacy/TrustStrip";
 import { drugs, therapeuticClasses } from "@/lib/data";
+import { searchDrugs } from "@/lib/drugSearch";
 import { useI18n } from "@/lib/i18n";
 
 /** Compact class label — the full ATC names are too long for chips. */
@@ -34,12 +36,8 @@ export function MedicationsIndex() {
 
   const filtered = useMemo(
     () =>
-      drugs
+      searchDrugs(q)
         .filter((d) => cls === "All" || d.cls === cls)
-        .filter((d) => {
-          const t = q.trim().toLowerCase();
-          return !t || d.name.toLowerCase().includes(t) || (d.generic ?? "").toLowerCase().includes(t);
-        })
         .sort((a, b) => a.name.localeCompare(b.name)),
     [q, cls],
   );
@@ -81,28 +79,12 @@ export function MedicationsIndex() {
 
       <TrustStrip className="mb-8" />
 
-      <div className="relative">
-        <svg
-          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-tertiary"
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden
-        >
-          <circle cx="11" cy="11" r="7" />
-          <path d="m20 20-3.5-3.5" />
-        </svg>
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={tx("Search brand or generic name…")}
-          aria-label={tx("Search medications")}
-          className="h-13 w-full rounded-2xl border border-line bg-white py-3.5 pl-11 pr-4 text-base text-ink placeholder:text-ink-tertiary focus:border-primary"
-        />
-      </div>
+      <PageSearchField
+        scope="medications"
+        value={q}
+        onChange={setQ}
+        className="mb-1"
+      />
 
       <div
         className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1"

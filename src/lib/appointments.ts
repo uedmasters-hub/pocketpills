@@ -1,18 +1,31 @@
 /** Demo care booking — specialty → nearest providers → book. localStorage-backed. */
 
+import { getPublishedCareProvider } from "@/lib/businessProfile";
+
 export type VisitType = "virtual" | "clinic";
 export type AppointmentStatus = "upcoming" | "completed" | "cancelled";
 export type ProviderKind = "doctor" | "clinic" | "hospital";
 
 export type SpecialtyId =
-  | "gynae"
-  | "sexual"
   | "general"
-  | "skin"
-  | "mental"
-  | "digestive"
-  | "chronic"
-  | "urgent";
+  | "dermatologist"
+  | "gynecologist"
+  | "pediatrician"
+  | "cardiologist"
+  | "neurologist"
+  | "orthopedist"
+  | "ophthalmologist"
+  | "ent"
+  | "gastroenterologist"
+  | "endocrinologist"
+  | "pulmonologist"
+  | "urologist"
+  | "psychiatrist"
+  | "dentist"
+  | "immunologist"
+  | "sexologist"
+  | "nutritionist"
+  | "physiotherapist";
 
 export interface Specialty {
   id: SpecialtyId;
@@ -20,8 +33,10 @@ export interface Specialty {
   blurb: string;
   /** Starting consultation fee in CAD */
   feeFrom: number;
-  /** Pastel circle accent for specialty icon */
+  /** Pastel circle accent (fallback) */
   accent: string;
+  /** Local illustration under /img */
+  imageUrl: string;
 }
 
 export type FacilityServiceKind =
@@ -112,62 +127,160 @@ export interface Appointment {
   createdAt: string;
 }
 
+const specialtyImg = (file: string) => `/img/${encodeURIComponent(file)}`;
+
 export const SPECIALTIES: Specialty[] = [
   {
-    id: "gynae",
-    label: "Gynaecology",
+    id: "general",
+    label: "General Physician",
+    blurb: "Check-ups, new concerns, and everyday care.",
+    feeFrom: 89,
+    accent: "#E0F2FE",
+    imageUrl: specialtyImg("General Physician.png"),
+  },
+  {
+    id: "dermatologist",
+    label: "Dermatologist",
+    blurb: "Acne, rashes, eczema, and other skin concerns.",
+    feeFrom: 89,
+    accent: "#FFEDD5",
+    imageUrl: specialtyImg("Dermatologist.png"),
+  },
+  {
+    id: "gynecologist",
+    label: "Gynecologist",
     blurb: "Pregnancy, menstrual health, and women’s care.",
     feeFrom: 89,
     accent: "#F3E8FF",
+    imageUrl: specialtyImg("Gynecologist.png"),
   },
   {
-    id: "sexual",
-    label: "Sexology",
+    id: "pediatrician",
+    label: "Pediatrician",
+    blurb: "Care for infants, children, and teens.",
+    feeFrom: 89,
+    accent: "#FCE7F3",
+    imageUrl: specialtyImg("Pediatrician.png"),
+  },
+  {
+    id: "cardiologist",
+    label: "Cardiologist",
+    blurb: "Heart health, blood pressure, and related care.",
+    feeFrom: 89,
+    accent: "#FEE2E2",
+    imageUrl: specialtyImg("Cardiologist.png"),
+  },
+  {
+    id: "neurologist",
+    label: "Neurologist",
+    blurb: "Headache, nerve, and neurological concerns.",
+    feeFrom: 89,
+    accent: "#EDE9FE",
+    imageUrl: specialtyImg("Neurologist.png"),
+  },
+  {
+    id: "orthopedist",
+    label: "Orthopedist",
+    blurb: "Bones, joints, and musculoskeletal care.",
+    feeFrom: 89,
+    accent: "#EEF2FF",
+    imageUrl: specialtyImg("Orthopedist.png"),
+  },
+  {
+    id: "ophthalmologist",
+    label: "Ophthalmologist",
+    blurb: "Eye exams and vision-related concerns.",
+    feeFrom: 89,
+    accent: "#E0F2FE",
+    imageUrl: specialtyImg("Ophthalmologist.png"),
+  },
+  {
+    id: "ent",
+    label: "ENT Specialist",
+    blurb: "Ear, nose, and throat care.",
+    feeFrom: 89,
+    accent: "#FEF3C7",
+    imageUrl: specialtyImg("ENT Specialist.png"),
+  },
+  {
+    id: "gastroenterologist",
+    label: "Gastroenterologist",
+    blurb: "Acid reflux, IBS, and digestive concerns.",
+    feeFrom: 89,
+    accent: "#ECFDF5",
+    imageUrl: specialtyImg("Gastroenterologist.png"),
+  },
+  {
+    id: "endocrinologist",
+    label: "Endocrinologist",
+    blurb: "Diabetes, thyroid, and hormone-related care.",
+    feeFrom: 89,
+    accent: "#EEF2FF",
+    imageUrl: specialtyImg("Endocrinologist.png"),
+  },
+  {
+    id: "pulmonologist",
+    label: "Pulmonologist",
+    blurb: "Asthma, breathing, and lung-related care.",
+    feeFrom: 89,
+    accent: "#E0F2FE",
+    imageUrl: specialtyImg("Pulmonologist.png"),
+  },
+  {
+    id: "urologist",
+    label: "Urologist",
+    blurb: "Urinary and men’s urological health.",
+    feeFrom: 89,
+    accent: "#E0F2FE",
+    imageUrl: specialtyImg("Urologist.png"),
+  },
+  {
+    id: "psychiatrist",
+    label: "Psychiatrist",
+    blurb: "Anxiety, mood, sleep, and related support.",
+    feeFrom: 89,
+    accent: "#EDE9FE",
+    imageUrl: specialtyImg("Psychiatrist.png"),
+  },
+  {
+    id: "dentist",
+    label: "Dentist",
+    blurb: "Dental check-ups and oral health.",
+    feeFrom: 89,
+    accent: "#F0FDF4",
+    imageUrl: specialtyImg("Dentist.png"),
+  },
+  {
+    id: "immunologist",
+    label: "Immunologist",
+    blurb: "Allergies, immunity, and related concerns.",
+    feeFrom: 89,
+    accent: "#F3E8FF",
+    imageUrl: specialtyImg("Immunologist.png"),
+  },
+  {
+    id: "sexologist",
+    label: "Sexologist",
     blurb: "Sexual health, contraception, and related concerns.",
     feeFrom: 89,
     accent: "#FCE7F3",
+    imageUrl: specialtyImg("Sexologist.png"),
   },
   {
-    id: "general",
-    label: "General physician",
-    blurb: "Check-ups, new concerns, and everyday care.",
-    feeFrom: 79,
-    accent: "#E0F2FE",
-  },
-  {
-    id: "skin",
-    label: "Dermatology",
-    blurb: "Acne, rashes, eczema, and other skin concerns.",
-    feeFrom: 79,
-    accent: "#FFEDD5",
-  },
-  {
-    id: "mental",
-    label: "Psychiatry",
-    blurb: "Anxiety, mood, sleep, and related support.",
-    feeFrom: 79,
-    accent: "#EDE9FE",
-  },
-  {
-    id: "digestive",
-    label: "Stomach and digestion",
-    blurb: "Acid reflux, IBS, and digestive concerns.",
-    feeFrom: 69,
+    id: "nutritionist",
+    label: "Nutritionist",
+    blurb: "Diet plans, weight, and nutrition coaching.",
+    feeFrom: 89,
     accent: "#ECFDF5",
+    imageUrl: specialtyImg("Nutritionist.png"),
   },
   {
-    id: "chronic",
-    label: "Chronic care",
-    blurb: "Blood pressure, diabetes, weight, and long-term plans.",
-    feeFrom: 79,
+    id: "physiotherapist",
+    label: "Physiotherapist",
+    blurb: "Injury recovery and movement therapy.",
+    feeFrom: 89,
     accent: "#EEF2FF",
-  },
-  {
-    id: "urgent",
-    label: "Urgent care",
-    blurb: "Same-day concerns that aren’t an emergency.",
-    feeFrom: 99,
-    accent: "#FEF3C7",
+    imageUrl: specialtyImg("Physiotherapist.png"),
   },
 ];
 
@@ -210,7 +323,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Dr. Amrita Shah",
     subtitle: "MD, CCFP · Family medicine",
     imageUrl: img.doctorF1,
-    specialties: ["general", "chronic", "gynae"],
+    specialties: ["general", "endocrinologist", "gynecologist", "cardiologist", "orthopedist"],
     languages: ["English", "Hindi"],
     rating: 4.9,
     reviewCount: 312,
@@ -229,7 +342,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Dr. Jordan Chen",
     subtitle: "MD, FRCPC · Psychiatry",
     imageUrl: img.doctorM1,
-    specialties: ["mental", "general"],
+    specialties: ["psychiatrist", "general", "neurologist"],
     languages: ["English", "Mandarin"],
     rating: 4.8,
     reviewCount: 188,
@@ -248,7 +361,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Dr. R. Okafor",
     subtitle: "MD, CCFP · Dermatology focus",
     imageUrl: img.doctorF2,
-    specialties: ["skin", "general", "sexual"],
+    specialties: ["dermatologist", "general", "sexologist", "ophthalmologist"],
     languages: ["English", "French"],
     rating: 4.7,
     reviewCount: 241,
@@ -267,7 +380,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Dr. J. Nguyen",
     subtitle: "NP · Digestive & therapy",
     imageUrl: img.doctorM2,
-    specialties: ["digestive", "chronic", "sexual"],
+    specialties: ["gastroenterologist", "endocrinologist", "sexologist", "nutritionist", "dentist"],
     languages: ["English", "Vietnamese"],
     rating: 4.9,
     reviewCount: 420,
@@ -286,7 +399,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Dr. Priya Patel",
     subtitle: "MD, CCFP · Gynaecology",
     imageUrl: img.doctorF3,
-    specialties: ["gynae", "sexual", "general"],
+    specialties: ["gynecologist", "sexologist", "general"],
     languages: ["English", "Gujarati"],
     rating: 4.8,
     reviewCount: 156,
@@ -305,7 +418,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Dr. Michelle Lee",
     subtitle: "MD · Internal medicine",
     imageUrl: img.doctorF1,
-    specialties: ["chronic", "digestive", "general", "urgent"],
+    specialties: ["endocrinologist", "cardiologist", "gastroenterologist", "general", "pulmonologist", "physiotherapist"],
     languages: ["English", "Korean"],
     rating: 4.6,
     reviewCount: 98,
@@ -324,7 +437,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Dr. Amar Singh",
     subtitle: "MD · Gastroenterology",
     imageUrl: img.doctorM3,
-    specialties: ["digestive", "general"],
+    specialties: ["gastroenterologist", "general", "nutritionist"],
     languages: ["English", "Punjabi"],
     rating: 4.7,
     reviewCount: 203,
@@ -343,7 +456,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Dr. Elise Martin",
     subtitle: "MD, FRCPC · Psychiatry",
     imageUrl: img.doctorF2,
-    specialties: ["mental"],
+    specialties: ["psychiatrist", "neurologist"],
     languages: ["English", "French"],
     rating: 4.9,
     reviewCount: 267,
@@ -364,7 +477,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "PocketPills Care Clinic",
     subtitle: "Walk-in & booked visits",
     imageUrl: img.clinic1,
-    specialties: ["general", "urgent", "skin", "gynae"],
+    specialties: ["general", "dermatologist", "gynecologist", "pediatrician", "ent"],
     languages: ["English", "French"],
     rating: 4.8,
     reviewCount: 890,
@@ -382,7 +495,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Greenwood Family Clinic",
     subtitle: "Family practice · Extended hours",
     imageUrl: img.clinic2,
-    specialties: ["general", "chronic", "digestive"],
+    specialties: ["general", "endocrinologist", "gastroenterologist", "nutritionist"],
     languages: ["English"],
     rating: 4.5,
     reviewCount: 412,
@@ -400,7 +513,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Harbourfront Walk-In",
     subtitle: "Urgent care clinic",
     imageUrl: img.clinic3,
-    specialties: ["urgent", "general", "skin"],
+    specialties: ["general", "dermatologist", "ent", "pediatrician", "orthopedist", "physiotherapist"],
     languages: ["English", "Mandarin"],
     rating: 4.4,
     reviewCount: 640,
@@ -418,7 +531,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Bayview Women’s Wellness",
     subtitle: "Gynaecology & sexual health",
     imageUrl: img.clinic4,
-    specialties: ["gynae", "sexual"],
+    specialties: ["gynecologist", "sexologist", "urologist"],
     languages: ["English", "French"],
     rating: 4.8,
     reviewCount: 318,
@@ -438,7 +551,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Sunnybrook Health Sciences",
     subtitle: "Outpatient specialty clinics",
     imageUrl: img.hospital1,
-    specialties: ["skin", "chronic", "digestive", "mental"],
+    specialties: ["dermatologist", "endocrinologist", "gastroenterologist", "psychiatrist", "immunologist", "ophthalmologist", "dentist"],
     languages: ["English", "French"],
     rating: 4.6,
     reviewCount: 1204,
@@ -456,7 +569,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Mount Sinai Hospital",
     subtitle: "Women’s & ambulatory care",
     imageUrl: img.hospital2,
-    specialties: ["gynae", "sexual", "general", "urgent"],
+    specialties: ["gynecologist", "sexologist", "general", "pediatrician"],
     languages: ["English"],
     rating: 4.7,
     reviewCount: 980,
@@ -474,7 +587,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "Toronto General Hospital",
     subtitle: "Outpatient & diagnostics",
     imageUrl: img.hospital3,
-    specialties: ["digestive", "chronic", "general"],
+    specialties: ["gastroenterologist", "endocrinologist", "general", "nutritionist"],
     languages: ["English"],
     rating: 4.5,
     reviewCount: 1102,
@@ -492,7 +605,7 @@ export const PROVIDERS: CareProvider[] = [
     name: "CAMH",
     subtitle: "Mental health campus",
     imageUrl: img.hospital4,
-    specialties: ["mental"],
+    specialties: ["psychiatrist", "neurologist"],
     languages: ["English", "French"],
     rating: 4.4,
     reviewCount: 756,
@@ -767,7 +880,16 @@ export function getAppointments(): Appointment[] {
 }
 
 export function getProvider(id: string): CareProvider | undefined {
+  const published = getPublishedCareProvider();
+  if (published && published.id === id) return published;
   return PROVIDERS.find((p) => p.id === id);
+}
+
+/** Seed + published business overlay (published first). */
+export function listProviders(): CareProvider[] {
+  const published = getPublishedCareProvider();
+  if (!published) return PROVIDERS;
+  return [published, ...PROVIDERS.filter((p) => p.id !== published.id)];
 }
 
 export function getClinician(id: string): CareProvider | undefined {
@@ -800,19 +922,32 @@ export function filterProviders(opts: {
 }): CareProvider[] {
   const q = opts.query?.trim().toLowerCase() ?? "";
   const kind = opts.kind && opts.kind !== "all" ? opts.kind : undefined;
-  const list = PROVIDERS.filter((p) => {
+  const list = listProviders().filter((p) => {
     if (kind && p.kind !== kind) return false;
     if (opts.specialtyId && !p.specialties.includes(opts.specialtyId)) return false;
     if (opts.visitType && !p.visitTypes.includes(opts.visitType)) return false;
     if (opts.city && !p.city.toLowerCase().includes(opts.city.toLowerCase())) return false;
     if (!q) return true;
-    return (
-      p.name.toLowerCase().includes(q) ||
-      p.subtitle.toLowerCase().includes(q) ||
-      p.city.toLowerCase().includes(q) ||
-      p.bio.toLowerCase().includes(q) ||
-      p.languages.some((l) => l.toLowerCase().includes(q))
-    );
+
+    const specialtyLabels = p.specialties
+      .map((id) => specialtyById(id)?.label || id)
+      .join(" ");
+    const haystack = [
+      p.name,
+      p.subtitle,
+      p.city,
+      p.bio,
+      p.address || "",
+      p.kind,
+      kindLabel(p.kind),
+      specialtyLabels,
+      ...p.languages,
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    if (haystack.includes(q)) return true;
+    return q.split(/\s+/).every((w) => w.length > 0 && haystack.includes(w));
   });
   if (opts.sortByDistance === false) return list;
   return [...list].sort((a, b) => a.distanceKm - b.distanceKm);

@@ -7,21 +7,21 @@ export function isAlwaysPublicPath(pathname: string) {
   );
 }
 
-/** Treatment + Pharmacy browse: marketing when logged out, AppShell when logged in. */
+/** Pharmacy / drug / offers browse: marketing when logged out, AppShell when logged in. */
 export function isDualBrowsePath(pathname: string) {
   if (
     pathname === "/drug" ||
-    pathname === "/find-care" ||
     pathname === "/delivery-check" ||
     pathname === "/offers" ||
-    pathname === "/pharmacies"
+    pathname === "/pharmacies" ||
+    pathname === "/find-care"
   ) {
     return true;
   }
   if (pathname.startsWith("/drug/")) return true;
-  if (pathname.startsWith("/treatment/")) return true;
   if (pathname.startsWith("/consult/")) return true;
   if (pathname.startsWith("/pharmacies/")) return true;
+  if (pathname.startsWith("/treatment/")) return true;
   return false;
 }
 

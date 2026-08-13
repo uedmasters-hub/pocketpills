@@ -1,18 +1,28 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/lib/user";
 import { pendingRows, profileChecklist } from "@/lib/profile";
 import { useRightRail } from "@/lib/rightRail";
 import { useI18n } from "@/lib/i18n";
+import { Caret } from "@/components/ui";
 import {
   getOrders,
   statusMeta,
   transferStatusLabel,
   transferStepIndex,
   TRANSFER_TRACK_STEPS,
+  labStatusLabel,
+  labStepIndex,
+  LAB_TRACK_STEPS,
   typeMeta,
   type Order,
 } from "@/lib/orders";
+import {
+  getLabBookings,
+  labBookingIsPast,
+  type LabBooking,
+} from "@/lib/labs";
+import { formatFee } from "@/lib/appointments";
 
 function isActiveOrder(o: Order) {
   return o.status !== "delivered" && o.status !== "cancelled";
@@ -31,6 +41,7 @@ function fillStepIndex(status: Order["status"]) {
 function orderAccent(o: Order) {
   if (o.status === "out_for_delivery") return "var(--secondary-800)";
   if (o.type === "transfer") return "var(--pp-violet)";
+  if (o.type === "lab") return "var(--pp-green)";
   return "var(--pp-primary-950)";
 }
 
@@ -62,11 +73,22 @@ function TrackSegments({
 function LiveOrderCard({ o, onClick }: { o: Order; onClick: () => void }) {
   const { tx } = useI18n();
   const isTransfer = o.type === "transfer";
+  const isLab = o.type === "lab";
   const accent = orderAccent(o);
-  const steps = isTransfer ? TRANSFER_TRACK_STEPS : FILL_TRACK_STEPS;
-  const step = isTransfer ? transferStepIndex(o.status) : fillStepIndex(o.status);
-  const cue = isTransfer ? transferStatusLabel(o.status) : statusMeta[o.status].label;
-  const title = o.items[0]?.name ?? (isTransfer ? tx("Prescription transfer") : tx(typeMeta[o.type].label));
+  const steps = isTransfer ? TRANSFER_TRACK_STEPS : isLab ? LAB_TRACK_STEPS : FILL_TRACK_STEPS;
+  const step = isTransfer
+    ? transferStepIndex(o.status)
+    : isLab
+      ? labStepIndex(o.status)
+      : fillStepIndex(o.status);
+  const cue = isTransfer
+    ? transferStatusLabel(o.status)
+    : isLab
+      ? labStatusLabel(o.status)
+      : statusMeta[o.status].label;
+  const title = isLab
+    ? (o.labName ?? tx("Lab visit"))
+    : (o.items[0]?.name ?? (isTransfer ? tx("Prescription transfer") : tx(typeMeta[o.type].label)));
 
   return (
     <button
@@ -81,10 +103,38 @@ function LiveOrderCard({ o, onClick }: { o: Order; onClick: () => void }) {
         </span>
       </span>
 
+      {isLab && o.visitSlot ? (
+        <span className="mt-1 block truncate text-xs text-ink-tertiary">{o.visitSlot}</span>
+      ) : null}
+
       <TrackSegments steps={steps} step={step} accent={accent} />
 
       <span className="mt-2 block text-xs font-medium" style={{ color: accent }}>
         {tx(cue)}
+      </span>
+    </button>
+  );
+}
+
+function UpcomingLabCard({ b, onClick }: { b: LabBooking; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full rounded-2xl border border-line bg-white px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
+    >
+      <span className="flex items-center justify-between gap-2">
+        <span className="truncate text-sm font-medium text-[color:var(--pp-primary-950)]">{b.labName}</span>
+        <span className="shrink-0 text-ink-tertiary" aria-hidden>
+          ›
+        </span>
+      </span>
+      <span className="mt-1 block truncate text-xs text-ink-tertiary">{b.itemNames}</span>
+      <span className="mt-2 flex items-center justify-between gap-2 text-xs">
+        <span className="font-medium text-[color:var(--pp-green)]">
+          {b.date} · {b.time}
+        </span>
+        <span className="text-ink-tertiary tnum">{formatFee(b.fee)}</span>
       </span>
     </button>
   );
@@ -99,7 +149,11 @@ function ActivityBody() {
   const profileDone = required.filter((r) => r.done).length;
   const profileTotal = required.length;
   const active = getOrders().filter(isActiveOrder);
-  const empty = pending.length === 0 && active.length === 0;
+  /** Prefer order-backed labs in Live orders; show hub bookings without an order here too. */
+  const upcomingLabs = getLabBookings().filter(
+    (b) => b.status === "upcoming" && !labBookingIsPast(b) && !b.orderId,
+  );
+  const empty = pending.length === 0 && active.length === 0 && upcomingLabs.length === 0;
   const progress = profileTotal > 0 ? profileDone / profileTotal : 1;
 
   if (empty) {
@@ -170,12 +224,23 @@ function ActivityBody() {
         </section>
       )}
 
-      {active.length > 0 && (
+      {(active.length > 0 || upcomingLabs.length > 0) && (
         <section>
           <p className="pp-caps mb-3 text-[color:var(--pp-violet)]">{tx("Live orders")}</p>
           <div className="space-y-3">
             {active.map((o) => (
-              <LiveOrderCard key={o.id} o={o} onClick={() => nav(`/orders/${o.id}`)} />
+              <LiveOrderCard
+                key={o.id}
+                o={o}
+                onClick={() => nav(o.type === "lab" ? `/orders/${o.id}` : `/orders/${o.id}`)}
+              />
+            ))}
+            {upcomingLabs.map((b) => (
+              <UpcomingLabCard
+                key={b.id}
+                b={b}
+                onClick={() => nav("/appointments")}
+              />
             ))}
           </div>
         </section>
@@ -189,7 +254,9 @@ export function MobileActivity() {
   const { tx } = useI18n();
   const { user } = useUser();
   const pending = pendingRows(user).length;
-  const live = getOrders().filter(isActiveOrder).length;
+  const live =
+    getOrders().filter(isActiveOrder).length +
+    getLabBookings().filter((b) => b.status === "upcoming" && !labBookingIsPast(b) && !b.orderId).length;
   const total = pending + live;
   const [open, setOpen] = useState(false);
 
@@ -211,8 +278,8 @@ export function MobileActivity() {
               : `${pending ? `${pending} ${tx("pending")}` : ""}${pending && live ? " · " : ""}${live ? `${live} ${tx("live")}` : ""}`}
           </span>
         </span>
-        <span className="text-ink-tertiary" aria-hidden>
-          {open ? "▴" : "▾"}
+        <span className="text-ink-tertiary">
+          <Caret open={open} />
         </span>
       </button>
       {open && (
@@ -227,13 +294,14 @@ export function MobileActivity() {
 /** Sticky right rail — always mounted in AppShell so layout stays consistent. */
 export function ActivityRail() {
   const { tx } = useI18n();
+  const { pathname } = useLocation();
   return (
     <aside className="hidden w-72 shrink-0 lg:block xl:w-80" aria-label={tx("Activity")}>
       <div className="sticky top-28">
         <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{tx("Activity")}</h2>
         <p className="mt-1 text-sm text-ink-tertiary">{tx("What needs you next")}</p>
         <div className="mt-5">
-          <ActivityBody />
+          <ActivityBody key={pathname} />
         </div>
       </div>
     </aside>
@@ -322,8 +390,8 @@ export function MobileReview() {
             {review.changes.length === 1 ? tx("update ready to save") : tx("updates ready to save")}
           </span>
         </span>
-        <span className="text-ink-tertiary" aria-hidden>
-          {open ? "▴" : "▾"}
+        <span className="text-ink-tertiary">
+          <Caret open={open} />
         </span>
       </button>
       {open && (

@@ -1,0 +1,270 @@
+import { SPECIALTIES, type Specialty, type SpecialtyId } from "@/lib/appointments";
+
+/**
+ * Symptom / alias keywords for specialty search (English + Nepali).
+ * Voice and typed queries match labels, blurbs, and these terms.
+ */
+export const SPECIALTY_SEARCH_TERMS: Record<SpecialtyId, string[]> = {
+  general: [
+    "fever",
+    "cough",
+    "cold",
+    "flu",
+    "check up",
+    "checkup",
+    "infection",
+    "fatigue",
+    "family doctor",
+    "gp",
+    "physician",
+    "ज्वरो",
+    "खोकी",
+    "रुघा",
+    "सामान्य चिकित्सक",
+    "डाक्टर",
+  ],
+  dermatologist: [
+    "acne",
+    "rash",
+    "eczema",
+    "skin",
+    "itch",
+    "psoriasis",
+    "hair",
+    "दाद",
+    "छाला",
+    "मुँहासे",
+    "खटिरा",
+    "छाला रोग",
+  ],
+  gynecologist: [
+    "pregnancy",
+    "period",
+    "menstrual",
+    "pcos",
+    "women",
+    "obgyn",
+    "gynae",
+    "गर्भावस्था",
+    "महिनावारी",
+    "स्त्री रोग",
+    "गाइनेकोलोजिस्ट",
+  ],
+  pediatrician: [
+    "child",
+    "baby",
+    "infant",
+    "kid",
+    "toddler",
+    "teen",
+    "vaccination",
+    "बच्चा",
+    "शिशु",
+    "बाल रोग",
+    "खोप",
+  ],
+  cardiologist: [
+    "heart",
+    "chest pain",
+    "blood pressure",
+    "bp",
+    "hypertension",
+    "palpitation",
+    "मुटु",
+    "छाती दुखाइ",
+    "रक्तचाप",
+    "हृदय",
+  ],
+  neurologist: [
+    "headache",
+    "migraine",
+    "seizure",
+    "nerve",
+    "dizziness",
+    "stroke",
+    "टाउको दुखाइ",
+    "माइग्रेन",
+    "नसा",
+    "स्नायु",
+  ],
+  orthopedist: [
+    "bone",
+    "joint",
+    "knee",
+    "back pain",
+    "fracture",
+    "arthritis",
+    "sprain",
+    "हड्डी",
+    "जोर्नी",
+    "घुँडा",
+    "ढाड दुखाइ",
+  ],
+  ophthalmologist: [
+    "eye",
+    "vision",
+    "glasses",
+    "blurry",
+    "cataract",
+    "red eye",
+    "आँखा",
+    "दृष्टि",
+    "चस्मा",
+  ],
+  ent: [
+    "ear",
+    "nose",
+    "throat",
+    "sinus",
+    "hearing",
+    "tonsil",
+    "कान",
+    "नाक",
+    "घाँटी",
+    "साइनस",
+  ],
+  gastroenterologist: [
+    "stomach",
+    "digestion",
+    "acid",
+    "reflux",
+    "ibs",
+    "constipation",
+    "diarrhea",
+    "पेट",
+    "अपच",
+    "एसिडिटी",
+    "पाचन",
+  ],
+  endocrinologist: [
+    "diabetes",
+    "thyroid",
+    "hormone",
+    "sugar",
+    "weight",
+    "insulin",
+    "मधुमेह",
+    "थाइराइड",
+    "हर्मोन",
+    "चिनी",
+  ],
+  pulmonologist: [
+    "asthma",
+    "breathing",
+    "lung",
+    "shortness of breath",
+    "wheeze",
+    "COPD",
+    "दम",
+    "सास",
+    "फोक्सो",
+  ],
+  urologist: [
+    "urine",
+    "kidney",
+    "bladder",
+    "prostate",
+    "uti",
+    "पिसाब",
+    "मिर्गौला",
+    "मूत्राशय",
+  ],
+  psychiatrist: [
+    "anxiety",
+    "depression",
+    "stress",
+    "sleep",
+    "mental",
+    "mood",
+    "panic",
+    "चिन्ता",
+    "डिप्रेसन",
+    "मानसिक",
+    "निन्द्रा",
+  ],
+  dentist: [
+    "tooth",
+    "teeth",
+    "gum",
+    "cavity",
+    "dental",
+    "toothache",
+    "दाँत",
+    "मसूरा",
+    "दन्त",
+  ],
+  immunologist: [
+    "allergy",
+    "immune",
+    "asthma allergy",
+    "hives",
+    "अल्र्जी",
+    "प्रतिरक्षा",
+  ],
+  sexologist: [
+    "sexual",
+    "contraception",
+    "std",
+    "sti",
+    "erectile",
+    "libido",
+    "यौन",
+    "गर्भनिरोधक",
+  ],
+  nutritionist: [
+    "diet",
+    "nutrition",
+    "weight loss",
+    "obesity",
+    "meal plan",
+    "आहार",
+    "पोषण",
+    "तौल",
+  ],
+  physiotherapist: [
+    "physio",
+    "rehab",
+    "injury",
+    "muscle",
+    "mobility",
+    "therapy",
+    "फिजियो",
+    "चोट",
+    "मांसपेशी",
+  ],
+};
+
+function normalize(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/\s+/g, " ");
+}
+
+/** True when query matches specialty label, blurb, or symptom aliases (EN/NE). */
+export function specialtyMatchesQuery(specialty: Specialty, query: string): boolean {
+  const needle = normalize(query);
+  if (!needle) return true;
+
+  const haystacks = [
+    specialty.label,
+    specialty.blurb,
+    specialty.id,
+    ...(SPECIALTY_SEARCH_TERMS[specialty.id] || []),
+  ].map(normalize);
+
+  return haystacks.some((h) => h.includes(needle) || needle.split(" ").every((w) => w && h.includes(w)));
+}
+
+export function searchSpecialties(query: string): Specialty[] {
+  const needle = normalize(query);
+  if (!needle) return SPECIALTIES;
+  return SPECIALTIES.filter((s) => specialtyMatchesQuery(s, needle));
+}
+
+export type VoiceSearchLang = "en-US" | "ne-NP";
+
+export function voiceLangFromSiteLang(siteLang: string): VoiceSearchLang {
+  return siteLang === "ne" ? "ne-NP" : "en-US";
+}

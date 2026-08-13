@@ -1,22 +1,48 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useParams } from "react-router-dom";
 import { useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import { ProviderShell } from "@/components/layout/ProviderShell";
 import { PublicMarketingLayout, DualBrowseLayout } from "@/components/layout/MarketingLayout";
 import { JourneyProvider } from "@/lib/journey";
 import { UserProvider } from "@/lib/user";
+import { ProviderAuthProvider } from "@/lib/providerAuth";
 import { I18nProvider } from "@/lib/i18n";
 import { RightRailProvider } from "@/lib/rightRail";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ScrollToTopFab } from "@/components/ScrollToTopFab";
 import { SiteAccessGate } from "@/components/SiteAccessGate";
 import { SignUp, Login, RequireAuth } from "@/pages/auth/Auth";
+import { ProviderLogin, ProviderSignUp, RequireProvider } from "@/pages/provider/ProviderAuth";
+import { ProviderDashboard } from "@/pages/provider/ProviderDashboard";
+import { ProviderRequests } from "@/pages/provider/ProviderRequests";
+import { ProviderCustomers } from "@/pages/provider/ProviderCustomers";
+import { ProviderRevenue } from "@/pages/provider/ProviderRevenue";
+import { ProviderFinance } from "@/pages/provider/ProviderFinance";
+import { ProviderSupport } from "@/pages/provider/ProviderSupport";
+import { ProviderChat } from "@/pages/provider/ProviderChat";
+import { ProviderDelegates } from "@/pages/provider/ProviderDelegates";
+import { ProviderDoctors } from "@/pages/provider/ProviderDoctors";
+import { ProviderServices } from "@/pages/provider/ProviderServices";
+import { ProviderMonitor } from "@/pages/provider/ProviderMonitor";
+import { ProviderPrescriptions } from "@/pages/provider/ProviderPrescriptions";
+import { ProviderInventory } from "@/pages/provider/ProviderInventory";
+import { ProviderInventoryAdd } from "@/pages/provider/ProviderInventoryAdd";
+import { ProviderFleet } from "@/pages/provider/ProviderFleet";
+import { ProviderDispatch } from "@/pages/provider/ProviderDispatch";
+import { ProviderShifts } from "@/pages/provider/ProviderShifts";
+import { ProviderRuns } from "@/pages/provider/ProviderRuns";
+import { ProviderSchedule } from "@/pages/provider/ProviderSchedule";
+import { ProviderPatients } from "@/pages/provider/ProviderPatients";
+import { ProviderTests } from "@/pages/provider/ProviderTests";
+import { ProviderCollections } from "@/pages/provider/ProviderCollections";
+import { ProviderAvailability } from "@/pages/provider/ProviderAvailability";
+import { ProviderOffers } from "@/pages/provider/ProviderOffers";
+import { BusinessProfile } from "@/pages/business/BusinessProfile";
 
 import { Landing } from "@/pages/Landing";
 import { HowItWorks } from "@/pages/HowItWorks";
 import { AboutUs } from "@/pages/AboutUs";
 import { Questions } from "@/pages/Questions";
-import { FindCare } from "@/pages/FindCare";
-import { TreatmentDetail } from "@/pages/TreatmentDetail";
 import { Dashboard } from "@/pages/Dashboard";
 import { Profile } from "@/pages/Profile";
 import { ProfileSection } from "@/pages/profile/ProfileSection";
@@ -48,6 +74,12 @@ import { Receipt, Invoice } from "@/pages/orders/Documents";
 import { Appointments } from "@/pages/appointments/Appointments";
 import { BookAppointment } from "@/pages/appointments/BookAppointment";
 import { ProviderDetail } from "@/pages/appointments/ProviderDetail";
+import { LabDetail } from "@/pages/appointments/LabDetail";
+import { BookLab } from "@/pages/appointments/BookLab";
+import { AssistantDetail } from "@/pages/appointments/AssistantDetail";
+import { BookAssistant } from "@/pages/appointments/BookAssistant";
+import { ServiceDetail } from "@/pages/appointments/ServiceDetail";
+import { TreatmentHubDetail } from "@/pages/appointments/TreatmentHubDetail";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -65,10 +97,24 @@ function ShellLayout() {
   );
 }
 
-/** Production `/consult/:slug` → treatment detail. */
+function ProviderLayout() {
+  return (
+    <ProviderShell>
+      <Outlet />
+    </ProviderShell>
+  );
+}
+
+/** Legacy `/consult/:slug` → hub treatment detail. */
 function ConsultRedirect() {
   const { slug } = useParams();
-  return <Navigate to={`/treatment/${slug ?? ""}`} replace />;
+  return <Navigate to={`/appointments/treatments/${slug ?? ""}`} replace />;
+}
+
+/** Legacy `/treatment/:slug` → hub treatment detail. */
+function TreatmentRedirect() {
+  const { slug } = useParams();
+  return <Navigate to={`/appointments/treatments/${slug ?? ""}`} replace />;
 }
 
 export default function App() {
@@ -78,6 +124,7 @@ export default function App() {
       <SiteAccessGate>
       <I18nProvider>
       <UserProvider>
+      <ProviderAuthProvider>
         <RightRailProvider>
         <JourneyProvider>
           <ScrollToTop />
@@ -97,26 +144,66 @@ export default function App() {
           <Route element={<DualBrowseLayout />}>
             <Route path="/drug" element={<MedicationsIndex />} />
             <Route path="/drug/:slug" element={<DrugDetail />} />
-            <Route path="/find-care" element={<FindCare />} />
-            <Route path="/treatment/:slug" element={<TreatmentDetail />} />
+            <Route path="/find-care" element={<Navigate to="/appointments" replace />} />
+            <Route path="/treatment/:slug" element={<TreatmentRedirect />} />
             <Route path="/offers" element={<Offers />} />
             <Route path="/pharmacies" element={<PharmaciesIndex />} />
             <Route path="/pharmacies/:region" element={<PharmaciesByRegion />} />
             <Route path="/medications" element={<Navigate to="/drug" replace />} />
-            <Route path="/consult/minor-ailments" element={<Navigate to="/find-care" replace />} />
+            <Route path="/consult/minor-ailments" element={<Navigate to="/appointments" replace />} />
             <Route path="/consult/:slug" element={<ConsultRedirect />} />
             <Route path="/delivery-check" element={<DeliveryCheck />} />
           </Route>
 
-          {/* Auth */}
+          {/* Patient auth */}
           <Route path="/get-started" element={<SignUp />} />
           <Route path="/login" element={<Login />} />
+
+          {/* Provider auth — separate product cycle */}
+          <Route path="/provider/login" element={<ProviderLogin />} />
+          <Route path="/provider/get-started" element={<ProviderSignUp />} />
 
           {/* Print-friendly documents (outside app shell) */}
           <Route path="/orders/:id/receipt" element={<RequireAuth><Receipt /></RequireAuth>} />
           <Route path="/orders/:id/invoice" element={<RequireAuth><Invoice /></RequireAuth>} />
 
-          {/* Personal — requires an account + AppShell */}
+          {/* Provider app */}
+          <Route
+            element={
+              <RequireProvider>
+                <ProviderLayout />
+              </RequireProvider>
+            }
+          >
+            <Route path="/provider" element={<ProviderDashboard />} />
+            <Route path="/provider/requests" element={<ProviderRequests />} />
+            <Route path="/provider/customers" element={<ProviderCustomers />} />
+            <Route path="/provider/patients" element={<ProviderPatients />} />
+            <Route path="/provider/finance" element={<ProviderFinance />} />
+            <Route path="/provider/revenue" element={<ProviderRevenue />} />
+            <Route path="/provider/chat" element={<ProviderChat />} />
+            <Route path="/provider/delegates" element={<ProviderDelegates />} />
+            <Route path="/provider/support" element={<ProviderSupport />} />
+            <Route path="/provider/listing" element={<BusinessProfile />} />
+            <Route path="/provider/offers" element={<ProviderOffers />} />
+            <Route path="/provider/doctors" element={<ProviderDoctors />} />
+            <Route path="/provider/team" element={<ProviderDoctors />} />
+            <Route path="/provider/services" element={<ProviderServices />} />
+            <Route path="/provider/monitor" element={<ProviderMonitor />} />
+            <Route path="/provider/schedule" element={<ProviderSchedule />} />
+            <Route path="/provider/tests" element={<ProviderTests />} />
+            <Route path="/provider/collections" element={<ProviderCollections />} />
+            <Route path="/provider/prescriptions" element={<ProviderPrescriptions />} />
+            <Route path="/provider/inventory" element={<ProviderInventory />} />
+            <Route path="/provider/inventory/new" element={<ProviderInventoryAdd />} />
+            <Route path="/provider/fleet" element={<ProviderFleet />} />
+            <Route path="/provider/dispatch" element={<ProviderDispatch />} />
+            <Route path="/provider/shifts" element={<ProviderShifts />} />
+            <Route path="/provider/runs" element={<ProviderRuns />} />
+            <Route path="/provider/availability" element={<ProviderAvailability />} />
+          </Route>
+
+          {/* Patient app — requires an account + AppShell */}
           <Route element={<RequireAuth><ShellLayout /></RequireAuth>}>
             <Route path="/app" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -130,11 +217,18 @@ export default function App() {
             <Route path="/account/family" element={<ManageFamily />} />
             <Route path="/account/benefits" element={<PocketpillsBenefits />} />
             <Route path="/account/switch" element={<SwitchAccount />} />
+            <Route path="/business" element={<Navigate to="/provider/listing" replace />} />
             <Route path="/orders" element={<OrderHistory />} />
             <Route path="/orders/:id" element={<OrderDetail />} />
             <Route path="/appointments" element={<Appointments />} />
             <Route path="/appointments/provider/:id" element={<ProviderDetail />} />
             <Route path="/appointments/book" element={<BookAppointment />} />
+            <Route path="/appointments/treatments/:slug" element={<TreatmentHubDetail />} />
+            <Route path="/appointments/labs/:id" element={<LabDetail />} />
+            <Route path="/appointments/labs/:id/book" element={<BookLab />} />
+            <Route path="/appointments/assistants/:id" element={<AssistantDetail />} />
+            <Route path="/appointments/assistants/:id/book" element={<BookAssistant />} />
+            <Route path="/appointments/services/:id" element={<ServiceDetail />} />
 
             <Route path="/fill" element={<FillPrescription />} />
             <Route path="/transfer" element={<TransferPrescription />} />
@@ -152,6 +246,7 @@ export default function App() {
         </Routes>
         </JourneyProvider>
         </RightRailProvider>
+      </ProviderAuthProvider>
       </UserProvider>
       </I18nProvider>
       </SiteAccessGate>

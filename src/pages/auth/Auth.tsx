@@ -460,6 +460,12 @@ export function Login() {
                 {tx("New to Pocketpills?")} <span className="underline">{tx("Create account")}</span>
                 <span aria-hidden>→</span>
               </Link>
+              <p className="mt-4 text-sm text-ink-secondary">
+                {tx("Are you a care provider?")}{" "}
+                <Link to="/provider/login" className="font-semibold text-[color:var(--pp-violet)] hover:underline">
+                  {tx("Provider sign in")}
+                </Link>
+              </p>
               <p className="mt-3 text-2xs leading-relaxed text-ink-tertiary">
                 By proceeding, you agree to our{" "}
                 <a href="#terms" className="underline underline-offset-2 hover:text-ink-secondary">

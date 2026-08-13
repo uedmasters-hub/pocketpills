@@ -26,11 +26,11 @@ export function Home() {
         <div className="flex items-end justify-between">
           <SectionHead eyebrow="Popular treatments" title="Start a treatment plan"
             sub="Assessed online by Canadian clinicians. Free delivery, no membership fees." />
-          <Link to="/find-care" className="hidden shrink-0 text-sm font-semibold text-primary hover:underline sm:block">See all →</Link>
+          <Link to="/appointments" className="hidden shrink-0 text-sm font-semibold text-primary hover:underline sm:block">See all →</Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {treatments.slice(0, 3).map((t) => (
-            <Card key={t.slug} interactive onClick={() => nav(`/treatment/${t.slug}`)} className="p-5">
+            <Card key={t.slug} interactive onClick={() => nav(`/appointments/treatments/${t.slug}`)} className="p-5">
               <span className="text-3xl">{t.emoji}</span>
               <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-primary">{t.category}</p>
               <h3 className="mt-1 text-lg font-bold text-ink">{t.name}</h3>

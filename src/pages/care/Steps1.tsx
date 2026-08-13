@@ -6,15 +6,18 @@ import { useJourney } from "@/lib/journey";
 /* ── Eligibility ────────────────────────────────────────── */
 export function Eligibility() {
   const nav = useNavigate();
-  const { answers, setAnswer } = useJourney();
+  const { answers, setAnswer, treatmentSlug } = useJourney();
   const ready = Boolean(answers.age && answers.pregnant);
+  const back = treatmentSlug
+    ? `/appointments/treatments/${treatmentSlug}`
+    : "/appointments";
 
   return (
     <FlowLayout
       step="eligibility"
       title="Let's check you're eligible"
       subtitle="A couple of quick questions so we can care for you safely online."
-      back="/find-care"
+      back={back}
       onContinue={() => nav("/care/questionnaire")}
       continueDisabled={!ready}
     >

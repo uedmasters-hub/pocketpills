@@ -1,9 +1,9 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 
-/* The flagship flow chains docs User Flows 01 -> 02 -> 04:
-   Find Care -> Consultation -> Prescription decision -> Pharmacy checkout -> Delivery. */
+/* The flagship flow chains from the Book appointment hub:
+   Treatment detail -> Consultation -> Prescription decision -> Pharmacy checkout -> Delivery. */
 export const CARE_STEPS = [
-  { key: "care", label: "Find care", path: "/find-care" },
+  { key: "care", label: "Book appointment", path: "/appointments" },
   { key: "eligibility", label: "Eligibility", path: "/care/eligibility" },
   { key: "questionnaire", label: "Questionnaire", path: "/care/questionnaire" },
   { key: "review", label: "Review", path: "/care/review" },

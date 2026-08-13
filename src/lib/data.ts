@@ -19,7 +19,7 @@ export const treatments: Treatment[] = [
 export type EntryIconKey = "treatment" | "fill" | "transfer" | "explore";
 export interface EntryPoint { id: EntryIconKey; title: string; desc: string; to: string; tile: string; fg: string; bg: string; }
 export const entryPoints: EntryPoint[] = [
-  { id: "treatment", title: "Doctor-led treatment", desc: "Get assessed online and prescribed by a Canadian clinician.", to: "/find-care", tile: "#3FBFB5", fg: "#ffffff", bg: "#FFFFFF" },
+  { id: "treatment", title: "Doctor-led treatment", desc: "Get assessed online and prescribed by a Canadian clinician.", to: "/appointments", tile: "#3FBFB5", fg: "#ffffff", bg: "#FFFFFF" },
   { id: "fill", title: "Fill your prescription", desc: "Already have a prescription? We'll fill and deliver it free.", to: "/fill", tile: "#4E2A84", fg: "#ffffff", bg: "#FFFFFF" },
   { id: "transfer", title: "Transfer a prescription", desc: "Move your medications from another pharmacy—we handle it.", to: "/transfer", tile: "#7040D9", fg: "#ffffff", bg: "#FFFFFF" },
   { id: "explore", title: "Explore medications", desc: "Search prices, coverage, and info on 5,000+ medications.", to: "/drug", tile: "#B0A1E8", fg: "#ffffff", bg: "#FFFFFF" },

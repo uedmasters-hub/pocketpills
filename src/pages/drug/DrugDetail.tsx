@@ -139,7 +139,7 @@ export function DrugDetail() {
             </p>
 
             <div className="mt-5 space-y-2">
-              <Button fullWidth onClick={() => nav("/find-care")}>
+              <Button fullWidth onClick={() => nav("/appointments")}>
                 {tx("Request via consultation")}
               </Button>
               <Button fullWidth variant="secondary" onClick={() => nav("/fill")}>

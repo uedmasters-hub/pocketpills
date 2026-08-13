@@ -1,4 +1,4 @@
-export type OrderType = "fill" | "consultation" | "transfer" | "refill";
+export type OrderType = "fill" | "consultation" | "transfer" | "refill" | "lab";
 export type OrderStatus = "verifying" | "processing" | "out_for_delivery" | "delivered" | "cancelled";
 
 export interface OrderItem {
@@ -24,6 +24,12 @@ export interface Order {
   pharmacist?: string;
   /** Source pharmacy name — set for transfer orders */
   fromPharmacy?: string;
+  /** Lab centre name — set for lab visit orders */
+  labName?: string;
+  /** Scheduled visit slot for lab / consult-style bookings */
+  visitSlot?: string;
+  /** Linked lab booking id */
+  labBookingId?: string;
 }
 
 export const typeMeta: Record<OrderType, { label: string; icon: string }> = {
@@ -31,6 +37,7 @@ export const typeMeta: Record<OrderType, { label: string; icon: string }> = {
   consultation: { label: "Consultation", icon: "🩺" },
   transfer: { label: "Transfer", icon: "📦" },
   refill: { label: "Refill", icon: "🔁" },
+  lab: { label: "Lab visit", icon: "🧪" },
 };
 
 export const statusMeta: Record<OrderStatus, { label: string; tone: "primary" | "info" | "wellness" | "danger" | "neutral" }> = {
@@ -204,6 +211,71 @@ export function createTransferOrder(input: {
     insuranceCovered: 0,
     payment: { method: "mixed", cardLast4: input.cardLast4 ?? "4242" },
     pharmacist: "Care team",
+  });
+}
+
+export function labStatusLabel(status: OrderStatus): string {
+  switch (status) {
+    case "verifying":
+      return "Visit scheduled";
+    case "processing":
+      return "Preparing for your visit";
+    case "out_for_delivery":
+      return "Check-in ready";
+    case "delivered":
+      return "Visit complete";
+    case "cancelled":
+      return "Cancelled";
+  }
+}
+
+export const LAB_TRACK_STEPS = ["Booked", "Confirmed", "Visit day", "Complete"] as const;
+
+export function labStepIndex(status: OrderStatus): number {
+  if (status === "verifying") return 0;
+  if (status === "processing") return 1;
+  if (status === "out_for_delivery") return 2;
+  if (status === "delivered") return 3;
+  return 0;
+}
+
+export function createLabOrder(input: {
+  labName: string;
+  labAddress: string;
+  itemNames: string;
+  fee: number;
+  date: string;
+  time: string;
+  patient?: string;
+  labBookingId?: string;
+  confirmationNo?: string;
+}): Order {
+  const n = Math.floor(1000 + Math.random() * 9000);
+  const id = input.confirmationNo?.replace("PP-LAB-", "PP-LAB-") ?? `PP-LAB-${n}`;
+  const orderId = id.startsWith("PP-") ? id : `PP-LAB-${n}`;
+  return addOrder({
+    id: orderId,
+    invoiceNo: `INV-LAB-${n}`,
+    date: input.date,
+    type: "lab",
+    status: "verifying",
+    patient: input.patient ?? "Ramesh Mandal",
+    address: input.labAddress,
+    labName: input.labName,
+    visitSlot: `${input.date} · ${input.time}`,
+    labBookingId: input.labBookingId,
+    items: [
+      {
+        name: input.itemNames,
+        strength: `${input.date} · ${input.time}`,
+        qty: 1,
+        unitPrice: input.fee,
+      },
+    ],
+    dispensingFee: 0,
+    insuranceCovered: 0,
+    payment: { method: input.fee <= 0 ? "insurance" : "card", cardLast4: input.fee <= 0 ? undefined : "4242" },
+    pharmacist: "Lab care team",
   });
 }
 

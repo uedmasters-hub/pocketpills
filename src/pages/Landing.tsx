@@ -435,7 +435,7 @@ function BuyAgain({ go }: { go: (to?: string) => void }) {
         </div>
 
         <div className="flex min-h-0 w-full flex-col">
-          <SectionHeads title="Doctor-led treatment" onLink={() => go("/find-care")} />
+          <SectionHeads title="Doctor-led treatment" onLink={() => go("/appointments")} />
           <div className="w-full flex-1 rounded-3xl bg-[color:var(--primary-200)] p-2 sm:p-3">
             <Tiles onPick={(to) => go(to)} />
           </div>
@@ -494,7 +494,7 @@ function FeatureCards({ go }: { go: (to?: string) => void }) {
         </FeatureCard>
 
         <FeatureCard
-          onClick={() => go("/find-care")}
+          onClick={() => go("/appointments")}
           bgClass="bg-[color:var(--pp-primary-950)]"
           img={IMG.sildenafilCard}
           alt="Get a Sildenafil prescription online through PocketPills."
@@ -507,7 +507,7 @@ function FeatureCards({ go }: { go: (to?: string) => void }) {
         </FeatureCard>
 
         <FeatureCard
-          onClick={() => go("/find-care")}
+          onClick={() => go("/appointments")}
           bgClass="bg-[color:var(--pp-primary-300)]"
           img={IMG.novoCard}
           alt="PocketPills and Novo Nordisk, changing care for Canadians."

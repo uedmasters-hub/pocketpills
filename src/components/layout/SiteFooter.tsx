@@ -14,7 +14,7 @@ const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTa
 /* ── 64px tile icons ──────────────────────────────────── */
 type TileId = "doctor" | "fill" | "transfer" | "how";
 const TILE: Record<TileId, { bg: string; labelKey: "footer.doctorLed" | "footer.fillRx" | "footer.transferRx" | "footer.howItWorks"; to: string }> = {
-  doctor: { bg: "#54C7DA", labelKey: "footer.doctorLed", to: "/find-care" },
+  doctor: { bg: "#54C7DA", labelKey: "footer.doctorLed", to: "/appointments" },
   fill: { bg: "#4E2A84", labelKey: "footer.fillRx", to: "/fill" },
   transfer: { bg: "#8C60FF", labelKey: "footer.transferRx", to: "/transfer" },
   how: { bg: "#AAA4FF", labelKey: "footer.howItWorks", to: "/how-it-works" },
@@ -169,7 +169,7 @@ const PROVINCES = [
 ];
 
 const COLUMNS: { head: string; links: [string, string][]; cta: [string, string] }[] = [
-  { head: "Treatment", links: [["Weight loss", "/find-care"], ["Hair loss", "/find-care"], ["Erectile dysfunction", "/find-care"], ["Birth control", "/treatment/birth-control"]], cta: ["See all treatments", "/find-care"] },
+  { head: "Treatment", links: [["Weight loss", "/appointments/treatments/weight-loss"], ["Hair loss", "/appointments/treatments/hair-loss"], ["Erectile dysfunction", "/appointments/treatments/erectile-dysfunction"], ["Birth control", "/appointments/treatments/birth-control"]], cta: ["See all treatments", "/appointments"] },
   { head: "Pharmacy", links: [["Fill a prescription", "/fill"], ["Transfer a prescription", "/transfer"], ["Find medications", "/drug"], ["Pharmacies by region", "/pharmacies"]], cta: ["Get started", "/get-started"] },
   { head: "Medications", links: [["Ozempic", "/drug/ozempic"], ["Browse A–Z", "/drug"], ["Offers", "/offers"]], cta: ["Search prices", "/drug"] },
   { head: "Company", links: [["About", "/about-us"], ["How it works", "/how-it-works"], ["FAQs", "/questions"], ["Help centre", "/questions"]], cta: ["Contact us", "/questions"] },

@@ -7,6 +7,7 @@ import type { MessageKey } from "@/lib/i18n";
 
 type IconId =
   | "profile"
+  | "business"
   | "bell"
   | "book"
   | "family"
@@ -32,6 +33,14 @@ function MenuIcon({ id }: { id: IconId }) {
         <svg {...c}>
           <circle cx="12" cy="8" r="3.5" />
           <path d="M5 19.5c0-3.4 3.1-5.5 7-5.5s7 2.1 7 5.5" />
+        </svg>
+      );
+    case "business":
+      return (
+        <svg {...c}>
+          <path d="M4 20V8.5L12 4l8 4.5V20" />
+          <path d="M9 20v-6h6v6" />
+          <path d="M9 10.5h.01M15 10.5h.01" />
         </svg>
       );
     case "bell":

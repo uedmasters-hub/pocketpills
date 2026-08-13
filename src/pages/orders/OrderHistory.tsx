@@ -14,12 +14,16 @@ import {
   transferStepIndex,
   TRANSFER_TRACK_STEPS,
   TRANSFER_HINTS,
+  labStatusLabel,
+  labStepIndex,
+  LAB_TRACK_STEPS,
   canCancelOrder,
   cancelOrder,
   type Order,
   type OrderStatus,
   type OrderType,
 } from "@/lib/orders";
+import { updateLabBookingStatus } from "@/lib/labs";
 
 const IN_PROGRESS: OrderStatus[] = ["verifying", "processing", "out_for_delivery"];
 const CARD = "rounded-2xl border border-line bg-white";
@@ -31,16 +35,18 @@ const TYPE_RAIL: Record<OrderType, string> = {
   consultation: "linear-gradient(180deg, #9B93F0 0%, #C8C2FF 100%)",
   refill: "linear-gradient(180deg, #0A5A68 0%, #54C7DA 100%)",
   transfer: "linear-gradient(180deg, #8B7355 0%, #D2C2A8 100%)",
+  lab: "linear-gradient(180deg, #2F5D50 0%, #7BC4A8 100%)",
 };
 
 const TYPE_SECTIONS: { type: OrderType; title: string }[] = [
   { type: "fill", title: "Prescription fills" },
   { type: "consultation", title: "Consultations" },
+  { type: "lab", title: "Lab visits" },
   { type: "refill", title: "Refills" },
   { type: "transfer", title: "Transfers" },
 ];
 
-function StatusPill({ status }: { status: OrderStatus }) {
+function StatusPill({ status, type }: { status: OrderStatus; type?: OrderType }) {
   const { tx } = useI18n();
   const style: Record<OrderStatus, string> = {
     verifying: "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]",
@@ -49,11 +55,18 @@ function StatusPill({ status }: { status: OrderStatus }) {
     delivered: "bg-wellness-subtle text-wellness",
     cancelled: "bg-danger-subtle text-danger",
   };
-  return <span className={`${PILL} ${style[status]}`}>{tx(statusMeta[status].label)}</span>;
+  const label =
+    type === "lab"
+      ? labStatusLabel(status)
+      : type === "transfer"
+        ? transferStatusLabel(status)
+        : statusMeta[status].label;
+  return <span className={`${PILL} ${style[status]}`}>{tx(label)}</span>;
 }
 
 function orderTitle(o: Order, tx: (s: string) => string) {
   if (o.type === "transfer") return o.fromPharmacy ? `${tx("From")} ${o.fromPharmacy}` : tx("Prescription transfer");
+  if (o.type === "lab") return o.labName ?? tx("Lab visit");
   const names = o.items.map((i) => i.name);
   if (names.length === 0) return tx(typeMeta[o.type].label);
   if (names.length === 1) return names[0];
@@ -67,7 +80,7 @@ function OrderCard({ o }: { o: Order }) {
   const total = orderTotals(o).total;
   const cancelled = o.status === "cancelled";
   const delivered = o.status === "delivered";
-  const showDocs = delivered && o.type !== "transfer";
+  const showDocs = delivered && o.type !== "transfer" && o.type !== "lab";
 
   return (
     <div
@@ -95,13 +108,16 @@ function OrderCard({ o }: { o: Order }) {
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
           <span className="truncate font-semibold text-[color:var(--pp-primary-950)]">{orderTitle(o, tx)}</span>
-          <StatusPill status={o.status} />
+          <StatusPill status={o.status} type={o.type} />
         </span>
         <span className="mt-1 block truncate text-sm text-ink-tertiary">
-          {fmtDate(o.date)} · {o.id}
-          {o.items.length > 1 && o.type !== "transfer"
-            ? ` · ${o.items.map((i) => i.name).join(", ")}`
-            : ""}
+          {o.type === "lab"
+            ? `${o.visitSlot ?? fmtDate(o.date)} · ${o.items[0]?.name ?? o.id}`
+            : `${fmtDate(o.date)} · ${o.id}${
+                o.items.length > 1 && o.type !== "transfer"
+                  ? ` · ${o.items.map((i) => i.name).join(", ")}`
+                  : ""
+              }`}
         </span>
       </span>
 
@@ -186,7 +202,7 @@ export function OrderHistory() {
           {tx("Order history")}
         </h1>
         <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          {tx("Track deliveries, reopen receipts, and reorder medications in one place.")}
+          {tx("Track deliveries, lab visits, receipts, and reorders in one place.")}
         </p>
       </header>
 
@@ -319,7 +335,13 @@ function SummaryPanel({
         style={{ background: TYPE_RAIL[o.type] }}
       >
         <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-white/75">
-          {o.status === "cancelled" ? tx("Order total") : isTransfer ? tx("Due now") : tx("Total paid")}
+          {o.status === "cancelled"
+            ? tx("Order total")
+            : isTransfer
+              ? tx("Due now")
+              : o.type === "lab"
+                ? tx("Estimated total")
+                : tx("Total paid")}
         </p>
         <p className="mt-1 font-display text-3xl font-medium leading-none text-white tnum">
           {isTransfer ? "$0.00" : money(totals.total)}
@@ -405,27 +427,37 @@ export function OrderDetail() {
 
   const totals = orderTotals(o);
   const isTransfer = o.type === "transfer";
+  const isLab = o.type === "lab";
   const cancellable = canCancelOrder(o);
   const steps = isTransfer
     ? [...TRANSFER_TRACK_STEPS]
-    : ["Order placed", "Processing", "Out for delivery", "Delivered"];
+    : isLab
+      ? [...LAB_TRACK_STEPS]
+      : ["Order placed", "Processing", "Out for delivery", "Delivered"];
   const statusOrder: OrderStatus[] = ["verifying", "processing", "out_for_delivery", "delivered"];
   const cur = isTransfer
     ? transferStepIndex(o.status)
-    : o.status === "cancelled"
-      ? 0
-      : statusOrder.indexOf(o.status);
+    : isLab
+      ? labStepIndex(o.status)
+      : o.status === "cancelled"
+        ? 0
+        : statusOrder.indexOf(o.status);
 
   const onCancel = () => {
     const next = cancelOrder(o.id);
     if (next) {
+      if (o.labBookingId) updateLabBookingStatus(o.labBookingId, "cancelled");
       setO(next);
       setConfirmCancel(false);
     }
   };
 
   const statusLabel =
-    isTransfer && o.status !== "cancelled" ? transferStatusLabel(o.status) : statusMeta[o.status].label;
+    isLab && o.status !== "cancelled"
+      ? labStatusLabel(o.status)
+      : isTransfer && o.status !== "cancelled"
+        ? transferStatusLabel(o.status)
+        : statusMeta[o.status].label;
 
   return (
     <div>
@@ -452,7 +484,7 @@ export function OrderDetail() {
             <div className="px-5 py-6 pl-6 sm:px-7 sm:py-7 sm:pl-8">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="pp-caps text-[color:var(--pp-violet)]">{tx(typeMeta[o.type].label)}</p>
-                <StatusPill status={o.status} />
+                <StatusPill status={o.status} type={o.type} />
               </div>
               <h1 className="mt-3 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] sm:text-4xl">
                 {orderTitle(o, tx)}
@@ -460,22 +492,28 @@ export function OrderDetail() {
               <p className="mt-2 text-sm text-ink-secondary">
                 {o.id}
                 <span className="mx-2 text-ink-tertiary/50">·</span>
-                {fmtDate(o.date)}
+                {isLab && o.visitSlot ? o.visitSlot : fmtDate(o.date)}
                 {o.fromPharmacy ? (
                   <>
                     <span className="mx-2 text-ink-tertiary/50">·</span>
                     {tx("From")} {o.fromPharmacy}
                   </>
                 ) : null}
+                {isLab && o.labName ? (
+                  <>
+                    <span className="mx-2 text-ink-tertiary/50">·</span>
+                    {o.labName}
+                  </>
+                ) : null}
               </p>
 
               <div className="mt-5 flex flex-wrap items-center gap-2">
-                {!isTransfer && (
+                {!isTransfer && !isLab && (
                   <Button size="sm" onClick={() => nav("/fill")}>
                     {tx("Reorder")}
                   </Button>
                 )}
-                {isTransfer && o.status !== "cancelled" && (
+                {(isTransfer || isLab) && o.status !== "cancelled" && (
                   <Button
                     type="button"
                     size="sm"
@@ -485,9 +523,14 @@ export function OrderDetail() {
                     {tx("Message care team")}
                   </Button>
                 )}
+                {isLab && o.status !== "cancelled" && (
+                  <Button size="sm" onClick={() => nav("/appointments")}>
+                    {tx("View in care hub")}
+                  </Button>
+                )}
                 {cancellable && !confirmCancel && (
                   <Button size="sm" variant="outline" onClick={() => setConfirmCancel(true)}>
-                    {tx("Cancel order")}
+                    {tx(isLab ? "Cancel visit" : "Cancel order")}
                   </Button>
                 )}
               </div>

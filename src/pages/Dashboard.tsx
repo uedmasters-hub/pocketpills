@@ -57,7 +57,7 @@ const PROMOS: Promo[] = [
     offer: "Covered by most plans",
     persuasion: "Doctor-led · Ships free · Pause anytime",
     img: `${DASH_IMG}/img/minor-ailment-bc.svg`,
-    to: "/treatment/birth-control",
+    to: "/appointments/treatments/birth-control",
     brand: true,
   },
   {
@@ -76,7 +76,7 @@ const PROMOS: Promo[] = [
     offer: "Start from $39/mo",
     persuasion: "Discreet packaging · Results in 3–6 months",
     img: `${DASH_IMG}/images/dashboard/hair-loss-card.webp`,
-    to: "/find-care",
+    to: "/appointments",
   },
   {
     badge: "Private & discreet",
@@ -85,7 +85,7 @@ const PROMOS: Promo[] = [
     offer: "Consult from $0",
     persuasion: "Plain packaging · Ships to your door",
     img: `${DASH_IMG}/images/dashboard/ed-card.webp`,
-    to: "/find-care",
+    to: "/appointments",
   },
 ];
 
@@ -413,7 +413,7 @@ export function Dashboard() {
           {treatments.map((t) => (
             <button
               key={t.slug}
-              onClick={() => nav(`/treatment/${t.slug}`)}
+              onClick={() => nav(`/appointments/treatments/${t.slug}`)}
               /* flex-col: a bare <button> centres its content, which pushed the
                  label into the middle of the card over the portrait. */
               className="pp-snap relative flex aspect-[4/5] w-[13.5rem] shrink-0 flex-col overflow-hidden rounded-2xl text-left transition-transform"
@@ -451,7 +451,7 @@ export function Dashboard() {
         <ActionRow id="transfer" title={tx("Transfer my prescriptions")} sub={tx("Switch to PocketPills")} onClick={() => nav("/transfer")} />
         <ActionRow id="order" title={tx("Start a new order")} sub={tx("Refill an active prescription")} onClick={() => nav("/pharmacy")} />
         <ActionRow id="renew" title={tx("Renew my prescription")} sub={tx("Renew an expired prescription")} onClick={() => nav("/fill")} />
-        <ActionRow id="treatments" title={tx("Explore treatments")} sub={tx("Get care from healthcare practitioners")} onClick={() => nav("/find-care")} />
+        <ActionRow id="treatments" title={tx("Explore treatments")} sub={tx("Get care from healthcare practitioners")} onClick={() => nav("/appointments")} />
         <ActionRow id="prices" title={tx("See drug prices")} sub={tx("Look up pricing details")} onClick={() => nav("/drug")} />
       </section>
 

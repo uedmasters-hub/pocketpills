@@ -16,7 +16,7 @@ import { useI18n } from "@/lib/i18n";
 import type { MessageKey } from "@/lib/i18n";
 
 /* ── sidebar icons ─────────────────────────────────────── */
-type NavId = "dashboard" | "treatments" | "appointments" | "medications" | "orders" | "more";
+type NavId = "dashboard" | "appointments" | "medications" | "orders" | "more";
 
 function NavIcon({ id }: { id: NavId }) {
   const c = {
@@ -27,8 +27,6 @@ function NavIcon({ id }: { id: NavId }) {
   switch (id) {
     case "dashboard":
       return <svg {...c}><rect x="3" y="3" width="7" height="9" rx="2" /><rect x="14" y="3" width="7" height="5" rx="2" /><rect x="14" y="12" width="7" height="9" rx="2" /><rect x="3" y="16" width="7" height="5" rx="2" /></svg>;
-    case "treatments":
-      return <svg {...c}><rect x="3" y="7" width="18" height="13" rx="3" /><path d="M8.5 7V5.6A1.6 1.6 0 0 1 10.1 4h3.8a1.6 1.6 0 0 1 1.6 1.6V7" /><path d="M12 11.2v4.6M9.7 13.5h4.6" /></svg>;
     case "appointments":
       return <svg {...c}><rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M8 3v4M16 3v4M3 10h18" /><circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none" /></svg>;
     case "medications":
@@ -42,7 +40,6 @@ function NavIcon({ id }: { id: NavId }) {
 
 const NAV: { id: NavId; labelKey: MessageKey; to: string }[] = [
   { id: "dashboard", labelKey: "app.dashboard", to: "/dashboard" },
-  { id: "treatments", labelKey: "app.treatments", to: "/find-care" },
   { id: "appointments", labelKey: "app.bookAppointment", to: "/appointments" },
   { id: "medications", labelKey: "app.medications", to: "/drug" },
   { id: "orders", labelKey: "app.orders", to: "/orders" },
@@ -79,16 +76,15 @@ function navIsActive(id: NavId, pathname: string) {
   switch (id) {
     case "dashboard":
       return pathname.startsWith("/dashboard") || pathname === "/app";
-    case "treatments":
-      return (
-        pathname.startsWith("/find-care") ||
-        pathname.startsWith("/treatment") ||
-        pathname.startsWith("/care")
-      );
     case "medications":
       return pathname.startsWith("/drug") || pathname.startsWith("/medications");
     case "appointments":
-      return pathname.startsWith("/appointments");
+      return (
+        pathname.startsWith("/appointments") ||
+        pathname.startsWith("/care") ||
+        pathname.startsWith("/find-care") ||
+        pathname.startsWith("/treatment")
+      );
     case "orders":
       /* Pharmacy is the orders & refills surface */
       return pathname.startsWith("/orders") || pathname.startsWith("/pharmacy");
@@ -188,7 +184,7 @@ function MobileNav({ hidden }: { hidden: boolean }) {
         transition: "transform 380ms cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
-      <div className="mx-auto grid max-w-lg grid-cols-5">
+      <div className="mx-auto grid max-w-lg grid-cols-4">
         {NAV.map((n) => {
           const active = navIsActive(n.id, pathname);
           return (
@@ -235,13 +231,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname.startsWith("/appointments/book");
   /* PDP / focused browse pages own a sticky right column — Activity would collide. */
   const isDrugDetail = /^\/drug\/[^/]+$/.test(pathname);
-  const isTreatmentDetail = /^\/treatment\/[^/]+$/.test(pathname);
   const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname);
   const isPharmacies = pathname === "/pharmacies" || pathname.startsWith("/pharmacies/");
   const isAppointments = pathname.startsWith("/appointments");
   const hideActivityRail =
     isDrugDetail ||
-    isTreatmentDetail ||
     isOrderDetail ||
     isPharmacies ||
     isAppointments ||

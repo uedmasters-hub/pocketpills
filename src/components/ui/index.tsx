@@ -178,3 +178,33 @@ export function SectionHead({ eyebrow, title, sub }: { eyebrow?: string; title: 
     </div>
   );
 }
+
+/** Stroke chevron used for dropdowns, accordions, and nav groups. */
+export function Caret({
+  open = false,
+  size = 16,
+  className = "",
+}: {
+  open?: boolean;
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={
+        "shrink-0 transition-transform duration-200 " + (open ? "rotate-180 " : "") + className
+      }
+      aria-hidden
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}

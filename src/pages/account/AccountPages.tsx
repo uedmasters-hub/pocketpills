@@ -557,7 +557,7 @@ export function PocketpillsBenefits() {
         <Button type="button" onClick={() => nav("/fill")}>
           {tx("Fill a prescription")}
         </Button>
-        <Button type="button" variant="secondary" onClick={() => nav("/find-care")}>
+        <Button type="button" variant="secondary" onClick={() => nav("/appointments")}>
           {tx("Explore treatments")}
         </Button>
       </div>
