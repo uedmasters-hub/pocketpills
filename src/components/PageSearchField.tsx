@@ -35,6 +35,8 @@ function voiceErrorMessage(
       return tx("Voice search is blocked in this browser. Try Chrome.");
     case "busy":
       return tx("Mic is busy. Wait a moment, then try again.");
+    case "no-speech":
+      return tx("Didn’t catch that — tap the mic and try again.");
     case "language-not-supported":
       return tx("That voice language isn’t supported here. Try EN.");
     default:
@@ -232,3 +234,4 @@ export function CareSearchField(
     />
   );
 }
+

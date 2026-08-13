@@ -35,16 +35,42 @@ function getSpeechRecognitionCtor(): SpeechRecognitionCtor | null {
   return w.SpeechRecognition || w.webkitSpeechRecognition || null;
 }
 
-async function primeMicrophone(): Promise<void> {
-  if (!navigator.mediaDevices?.getUserMedia) return;
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  // Release immediately — SpeechRecognition opens its own capture stream.
-  stream.getTracks().forEach((t) => t.stop());
+/**
+ * Read-only permission check — never opens the microphone.
+ *
+ * The previous approach called getUserMedia() and immediately stopped the
+ * tracks to "warm up" the permission before handing off to SpeechRecognition.
+ * That open-then-instantly-close cycle races the capture device: the OS/driver
+ * hasn't finished tearing down the first stream when SpeechRecognition opens
+ * its own, so its first audio buffer window comes back empty and Chrome's
+ * silence detector fires `no-speech` within a few hundred ms — indistinguishable
+ * from the mic switching itself off right after it switched on. The fix is to
+ * never touch the hardware before `rec.start()`: SpeechRecognition manages its
+ * own capture and permission prompt, so there's nothing to prime.
+ *
+ * The Permissions API query below is informational only — it reads recorded
+ * state without opening a stream, so it can't cause this race. It's used
+ * purely to fail fast with a friendly message when permission is already
+ * denied, skipping the recognition attempt entirely.
+ */
+async function isMicExplicitlyDenied(): Promise<boolean> {
+  try {
+    if (!navigator.permissions?.query) return false;
+    // Not all browsers support "microphone" as a query name (notably Firefox);
+    // an unsupported name throws, which the catch below treats as "unknown".
+    const status = await navigator.permissions.query({
+      name: "microphone" as PermissionName,
+    });
+    return status.state === "denied";
+  } catch {
+    return false;
+  }
 }
 
 /**
  * Web Speech API wrapper for EN / Nepali voice search.
- * - Primes mic permission via getUserMedia first
+ * - Never opens its own getUserMedia stream — avoids racing SpeechRecognition's
+ *   internal capture, which was causing near-instant `no-speech` shutoffs.
  * - Never auto-restarts (avoids mic flip)
  * - Waits for prior sessions to finish before starting again
  */
@@ -129,17 +155,9 @@ export function useBrowserSpeech(lang: BrowserSpeechLang) {
     setError(null);
     setTranscript("");
 
-    try {
-      // Warm mic permission first so SpeechRecognition doesn’t fail opaquely.
-      await primeMicrophone();
-    } catch (err) {
+    if (await isMicExplicitlyDenied()) {
       startingRef.current = false;
-      const name = err instanceof DOMException ? err.name : "";
-      setError(
-        name === "NotAllowedError" || name === "PermissionDeniedError"
-          ? "not-allowed"
-          : "audio-capture",
-      );
+      setError("not-allowed");
       setListening(false);
       return;
     }
@@ -174,15 +192,15 @@ export function useBrowserSpeech(lang: BrowserSpeechLang) {
 
     rec.onerror = (event) => {
       const code = event.error || "error";
-      if (code === "aborted" || code === "no-speech") {
-        sessionRef.current = false;
-        startingRef.current = false;
-        setListening(false);
-        return;
-      }
       sessionRef.current = false;
       startingRef.current = false;
       setListening(false);
+      // "aborted" is our own hardStop()/restart flow — silent by design.
+      // "no-speech" now surfaces a soft message instead of vanishing silently:
+      // with the mic-priming race removed, a real no-speech means the user
+      // genuinely didn't say anything in time, and they should know that's
+      // why listening stopped rather than wonder if it broke.
+      if (code === "aborted") return;
       setError(code);
     };
 
@@ -244,3 +262,4 @@ export function useBrowserSpeech(lang: BrowserSpeechLang) {
     stop,
   };
 }
+
