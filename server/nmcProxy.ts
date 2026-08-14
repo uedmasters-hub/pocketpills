@@ -1,22 +1,23 @@
 /**
- * Server-side proxy to nmc-api. The API key never ships to the browser.
+ * NMC registry for Express + Vercel. Uses the bundled CSV; optional HTTP fallback.
  */
 
 import path from "node:path";
 import { config as loadEnv } from "dotenv";
+import {
+  getLocalDoctor,
+  localRegistryAvailable,
+  searchLocalDoctors,
+  type NmcDoctor,
+} from "./nmcRegistry.js";
 
 loadEnv({ path: path.resolve(process.cwd(), "nmc-api/.env") });
 
 const NMC_BASE = (process.env.NMC_API_URL || "http://localhost:3000").replace(/\/$/, "");
 const NMC_KEY = process.env.NMC_API_KEY || "";
+const PREFER_REMOTE = Boolean(process.env.NMC_API_URL && !/localhost|127\.0\.0\.1/i.test(process.env.NMC_API_URL));
 
-export type NmcDoctor = {
-  nmcNumber: string;
-  name: string;
-  address: string;
-  gender: string;
-  degree: string;
-};
+export type { NmcDoctor };
 
 export type NmcLookup = {
   found: true;
@@ -107,24 +108,47 @@ function normalizeNmcNumber(raw: string): string | null {
   return n;
 }
 
-export async function lookupDoctor(nmcNumber: string) {
-  const nmc = normalizeNmcNumber(nmcNumber);
-  if (!nmc) {
-    return { status: 400, body: { error: "Enter a valid NMC registration number." } };
+function useLocalRegistry() {
+  return !PREFER_REMOTE && localRegistryAvailable();
+}
+
+async function remoteDoctor(pathname: string) {
+  if (process.env.VERCEL && !PREFER_REMOTE) {
+    return {
+      status: 503,
+      body: { error: "Doctor registry data is missing from this deployment." },
+    };
   }
-  const result = await nmcFetch(`/api/v1/doctors/${encodeURIComponent(nmc)}`);
-  if (result.status === 404) {
-    return { status: 404, body: { error: "No NMC registration found for that number.", nmcNumber: nmc } };
-  }
-  if (result.status !== 200) return result;
-  const doctor = asDoctor(result.body, nmc);
-  const lookup: NmcLookup = {
+  return nmcFetch(pathname);
+}
+
+function lookupBody(doctor: NmcDoctor, nmc: string): NmcLookup {
+  return {
     found: true,
     nmcNumber: doctor.nmcNumber || nmc,
     cityHint: cityHintFromAddress(doctor.address),
     degree: doctor.degree || "—",
   };
-  return { status: 200, body: lookup };
+}
+
+export async function lookupDoctor(nmcNumber: string) {
+  const nmc = normalizeNmcNumber(nmcNumber);
+  if (!nmc) {
+    return { status: 400, body: { error: "Enter a valid NMC registration number." } };
+  }
+  if (useLocalRegistry()) {
+    const doctor = getLocalDoctor(nmc);
+    if (!doctor) {
+      return { status: 404, body: { error: "No NMC registration found for that number.", nmcNumber: nmc } };
+    }
+    return { status: 200, body: lookupBody(doctor, nmc) };
+  }
+  const result = await remoteDoctor(`/api/v1/doctors/${encodeURIComponent(nmc)}`);
+  if (result.status === 404) {
+    return { status: 404, body: { error: "No NMC registration found for that number.", nmcNumber: nmc } };
+  }
+  if (result.status !== 200) return result;
+  return { status: 200, body: lookupBody(asDoctor(result.body, nmc), nmc) };
 }
 
 export async function verifyDoctor(nmcNumber: string, lastName: string) {
@@ -136,12 +160,20 @@ export async function verifyDoctor(nmcNumber: string, lastName: string) {
   if (last.length < 2) {
     return { status: 400, body: { error: "Enter the last name on your NMC registration." } };
   }
-  const result = await nmcFetch(`/api/v1/doctors/${encodeURIComponent(nmc)}`);
-  if (result.status === 404) {
-    return { status: 404, body: { error: "No NMC registration found for that number.", nmcNumber: nmc } };
+  let doctor: NmcDoctor | null = null;
+  if (useLocalRegistry()) {
+    doctor = getLocalDoctor(nmc);
+    if (!doctor) {
+      return { status: 404, body: { error: "No NMC registration found for that number.", nmcNumber: nmc } };
+    }
+  } else {
+    const result = await remoteDoctor(`/api/v1/doctors/${encodeURIComponent(nmc)}`);
+    if (result.status === 404) {
+      return { status: 404, body: { error: "No NMC registration found for that number.", nmcNumber: nmc } };
+    }
+    if (result.status !== 200) return result;
+    doctor = asDoctor(result.body, nmc);
   }
-  if (result.status !== 200) return result;
-  const doctor = asDoctor(result.body, nmc);
   if (!lastNameMatches(doctor.name, last)) {
     return { status: 403, body: { error: "Last name does not match this NMC registration." } };
   }
@@ -155,13 +187,16 @@ export async function searchDoctors(query: {
   page?: string;
   limit?: string;
 }) {
+  if (useLocalRegistry()) {
+    return { status: 200, body: searchLocalDoctors(query) };
+  }
   const params = new URLSearchParams();
   if (query.q?.trim()) params.set("q", query.q.trim());
   if (query.name?.trim()) params.set("name", query.name.trim());
   if (query.address?.trim()) params.set("address", query.address.trim());
   params.set("page", query.page || "1");
   params.set("limit", query.limit || "24");
-  const result = await nmcFetch(`/api/v1/doctors?${params.toString()}`);
+  const result = await remoteDoctor(`/api/v1/doctors?${params.toString()}`);
   if (result.status !== 200 || !result.body || typeof result.body !== "object") return result;
   const body = result.body as { data?: unknown; pagination?: unknown };
   const data = Array.isArray(body.data) ? body.data.map((row) => asDoctor(row)) : [];

@@ -30,14 +30,12 @@ import {
   verifyClaimOtp,
 } from "@/lib/doctorDirectory";
 import { useProvider } from "@/lib/providerAuth";
-import { useUser } from "@/lib/user";
 
 const CARD = "rounded-2xl border border-line bg-white p-5 sm:p-6";
 
 export function ClaimDoctor() {
   const { tx } = useI18n();
   const nav = useNavigate();
-  const { signedIn } = useUser();
   const [params] = useSearchParams();
   const prefill = normalizeNmcNumber(params.get("nmc") || "") ?? "";
 
@@ -135,38 +133,6 @@ export function ClaimDoctor() {
     rememberVerifiedNmc(res.doctor);
     nav(`/doctors/${lookup.nmcNumber}?claim=1`, { replace: true });
   };
-
-  if (signedIn) {
-    return (
-      <div className="mx-auto max-w-xl">
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Doctors")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-4xl">
-          {tx("Claim your profile")}
-        </h1>
-        <p className="mt-2 text-base text-ink-secondary">
-          {tx("Physician listings are claimed from a doctor account, not a patient session.")}
-        </p>
-        <div className="relative mt-6">
-          <div className={`pointer-events-none select-none opacity-[0.38] ${CARD}`} aria-hidden>
-            <p className="text-sm font-medium text-ink-secondary">{tx("Registration number")}</p>
-            <div className="mt-2 h-11 rounded-xl border border-line bg-white" />
-            <div className="mt-4 h-11 rounded-full bg-[color:var(--pp-primary-100)]" />
-          </div>
-          <div className="absolute inset-0 grid place-items-center px-6">
-            <p className="rounded-2xl border border-line bg-white/95 px-5 py-4 text-center text-sm font-medium text-[color:var(--pp-primary-950)] shadow-[0_12px_32px_rgba(24,7,48,0.08)]">
-              {tx("You’re signed in as a patient, so claiming is unavailable. Sign out to continue as a physician.")}
-            </p>
-          </div>
-        </div>
-        <Link
-          to="/doctors"
-          className="mt-6 inline-block text-sm font-medium text-[color:var(--pp-violet)] hover:underline"
-        >
-          {tx("Back to directory")}
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="mx-auto max-w-xl">

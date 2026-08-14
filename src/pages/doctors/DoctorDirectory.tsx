@@ -421,15 +421,9 @@ export function DoctorDirectory() {
 
       <p className="mt-10 text-center text-sm text-ink-tertiary">
         {tx("Are you a registered specialist?")}{" "}
-        {signedIn ? (
-          <span className="font-medium text-[color:var(--pp-violet)] opacity-40">
-            {tx("Claim your profile")}
-          </span>
-        ) : (
-          <Link to="/doctors/claim" className="font-medium text-[color:var(--pp-violet)] hover:underline">
-            {tx("Claim your profile")}
-          </Link>
-        )}
+        <Link to="/doctors/claim" className="font-medium text-[color:var(--pp-violet)] hover:underline">
+          {tx("Claim your profile")}
+        </Link>
       </p>
     </div>
   );
