@@ -334,15 +334,21 @@ export function ProviderSignUp() {
 
   if (signedIn) return <Navigate to="/provider" replace />;
 
+  const isDoctor = vendorType === "doctor";
   const ready =
-    firstName.trim() &&
-    lastName.trim() &&
-    orgName.trim() &&
-    email.includes("@") &&
-    password.trim().length >= 4;
+    isDoctor ||
+    (firstName.trim() &&
+      lastName.trim() &&
+      orgName.trim() &&
+      email.includes("@") &&
+      password.trim().length >= 4);
 
   const submit = () => {
     if (!ready) return;
+    if (isDoctor) {
+      nav("/doctors/claim");
+      return;
+    }
     setBusy(true);
     window.setTimeout(() => {
       signUp({
@@ -368,40 +374,7 @@ export function ProviderSignUp() {
       title={tx("Join as a provider")}
       sub={tx("Pick your portal — hospital, pharmacy, ambulance, and more.")}
     >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block">
-          <span className={LABEL}>{tx("First name")}</span>
-          <input className={FIELD} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-        </label>
-        <label className="block">
-          <span className={LABEL}>{tx("Last name")}</span>
-          <input className={FIELD} value={lastName} onChange={(e) => setLastName(e.target.value)} />
-        </label>
-      </div>
-      <label className="mt-4 block">
-        <span className={LABEL}>{tx("Practice / organization")}</span>
-        <input className={FIELD} value={orgName} onChange={(e) => setOrgName(e.target.value)} />
-      </label>
-      <label className="mt-4 block">
-        <span className={LABEL}>{tx("Work email")}</span>
-        <input
-          className={FIELD}
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </label>
-      <label className="mt-4 block">
-        <span className={LABEL}>{tx("Password")}</span>
-        <input
-          className={FIELD}
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="new-password"
-        />
-      </label>
-      <div className="mt-4">
+      <div>
         <p className={LABEL}>{tx("Portal type")}</p>
         <div className="flex flex-wrap gap-2">
           {SIGNUP_VENDOR_TYPES.map((t) => (
@@ -421,6 +394,49 @@ export function ProviderSignUp() {
           ))}
         </div>
       </div>
+      {isDoctor ? (
+        <p className="mt-4 text-sm text-ink-secondary">
+          {tx(
+            "Doctors onboard from the Nepal Medical Council registry: search your NMC number, confirm last name, then claim the page with mobile verification.",
+          )}
+        </p>
+      ) : (
+        <>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className={LABEL}>{tx("First name")}</span>
+              <input className={FIELD} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            </label>
+            <label className="block">
+              <span className={LABEL}>{tx("Last name")}</span>
+              <input className={FIELD} value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            </label>
+          </div>
+          <label className="mt-4 block">
+            <span className={LABEL}>{tx("Practice / organization")}</span>
+            <input className={FIELD} value={orgName} onChange={(e) => setOrgName(e.target.value)} />
+          </label>
+          <label className="mt-4 block">
+            <span className={LABEL}>{tx("Work email")}</span>
+            <input
+              className={FIELD}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </label>
+          <label className="mt-4 block">
+            <span className={LABEL}>{tx("Password")}</span>
+            <input
+              className={FIELD}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+          </label>
+        </>
+      )}
       {vendorType === "ambulance" ? (
         <div className="mt-4">
           <p className={LABEL}>{tx("Ambulance role")}</p>
@@ -444,7 +460,7 @@ export function ProviderSignUp() {
         </div>
       ) : null}
       <Button fullWidth className="mt-6" disabled={busy || !ready} onClick={submit}>
-        {tx("Create provider account")}
+        {isDoctor ? tx("Claim your NMC profile") : tx("Create provider account")}
       </Button>
       <p className="mt-6 text-center text-sm text-ink-secondary">
         {tx("Already registered?")}{" "}

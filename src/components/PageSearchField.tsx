@@ -15,6 +15,7 @@ type Props = {
   className?: string;
   /** Optional override for placeholder (still stays page-local). */
   placeholder?: string;
+  pill?: boolean;
 };
 
 function voiceErrorMessage(
@@ -53,6 +54,7 @@ export function PageSearchField({
   onChange,
   className = "",
   placeholder: placeholderOverride,
+  pill = false,
 }: Props) {
   const { tx, lang } = useI18n();
   const inputId = useId();
@@ -128,8 +130,12 @@ export function PageSearchField({
           aria-label={ariaLabel}
           data-search-scope={scope}
           autoComplete="off"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.preventDefault();
+          }}
           className={
-            "h-12 w-full rounded-2xl border border-line bg-white pl-11 pr-[7.75rem] text-base text-ink " +
+            "h-12 w-full border border-line bg-white pl-11 pr-[7.75rem] text-base text-ink " +
+            (pill ? "rounded-full " : "rounded-2xl ") +
             "placeholder:text-ink-tertiary focus:border-primary " +
             (listening ? "border-[color:var(--pp-violet)] shadow-[0_0_0_3px_rgba(107,77,230,0.12)]" : "")
           }

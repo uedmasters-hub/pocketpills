@@ -24,6 +24,7 @@ import {
   type BusinessService,
 } from "@/lib/businessProfile";
 import { useProvider } from "@/lib/providerAuth";
+import { nmcNumberFromId, setDoctorPublished } from "@/lib/doctorDirectory";
 
 const FIELD =
   "h-12 w-full rounded-xl border border-line bg-white px-4 text-sm text-[color:var(--pp-primary-950)] placeholder:text-ink-tertiary outline-none focus:border-[color:var(--pp-primary-950)]";
@@ -136,6 +137,10 @@ export function BusinessProfile() {
       return;
     }
     const next = publishBusinessProfile(profile, provider.id);
+    if (next.publishedId) {
+      const nmc = nmcNumberFromId(next.publishedId);
+      if (nmc) setDoctorPublished(nmc, true);
+    }
     setProfile(next);
     updateProvider({ orgName: next.name });
     setDirty(false);
@@ -144,6 +149,10 @@ export function BusinessProfile() {
 
   const onUnpublish = () => {
     const next = unpublishBusinessProfile(provider.id);
+    if (next.publishedId) {
+      const nmc = nmcNumberFromId(next.publishedId);
+      if (nmc) setDoctorPublished(nmc, false);
+    }
     setProfile(next);
     setDirty(false);
     setSavedFlash(tx("Unpublished"));

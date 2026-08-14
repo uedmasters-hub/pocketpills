@@ -12,6 +12,7 @@ export type PageSearchScope =
   | "medications"
   | "offers"
   | "pharmacies"
+  | "doctors"
   /** Reserved — not wired yet. */
   | "universal";
 
@@ -56,6 +57,12 @@ export const PAGE_SEARCH_COPY: Record<PageSearchScope, PageSearchCopy> = {
   pharmacies: {
     placeholder: "Search by name, city, or street…",
     ariaLabel: "Search pharmacies",
+    listeningEn: "Listening in English… speak, then pause",
+    listeningNe: "Listening in Nepali… speak, then pause",
+  },
+  doctors: {
+    placeholder: "Name, city or degree",
+    ariaLabel: "Search doctors",
     listeningEn: "Listening in English… speak, then pause",
     listeningNe: "Listening in Nepali… speak, then pause",
   },

@@ -1,6 +1,7 @@
 /** Demo care booking — specialty → nearest providers → book. localStorage-backed. */
 
 import { getPublishedCareProvider } from "@/lib/businessProfile";
+import { getNmcProvider, listPublishedNmcProviders } from "@/lib/doctorDirectory";
 
 export type VisitType = "virtual" | "clinic";
 export type AppointmentStatus = "upcoming" | "completed" | "cancelled";
@@ -882,14 +883,18 @@ export function getAppointments(): Appointment[] {
 export function getProvider(id: string): CareProvider | undefined {
   const published = getPublishedCareProvider();
   if (published && published.id === id) return published;
+  const nmc = getNmcProvider(id);
+  if (nmc) return nmc;
   return PROVIDERS.find((p) => p.id === id);
 }
 
-/** Seed + published business overlay (published first). */
+/** Seed + published business overlay (published first) + claimed NMC doctors. */
 export function listProviders(): CareProvider[] {
   const published = getPublishedCareProvider();
-  if (!published) return PROVIDERS;
-  return [published, ...PROVIDERS.filter((p) => p.id !== published.id)];
+  const nmc = listPublishedNmcProviders();
+  const extra = [published, ...nmc].filter((p): p is CareProvider => Boolean(p));
+  const seen = new Set(extra.map((p) => p.id));
+  return [...extra, ...PROVIDERS.filter((p) => !seen.has(p.id))];
 }
 
 export function getClinician(id: string): CareProvider | undefined {

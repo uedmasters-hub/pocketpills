@@ -169,7 +169,7 @@ const PROVINCES = [
 ];
 
 const COLUMNS: { head: string; links: [string, string][]; cta: [string, string] }[] = [
-  { head: "Treatment", links: [["Weight loss", "/appointments/treatments/weight-loss"], ["Hair loss", "/appointments/treatments/hair-loss"], ["Erectile dysfunction", "/appointments/treatments/erectile-dysfunction"], ["Birth control", "/appointments/treatments/birth-control"]], cta: ["See all treatments", "/appointments"] },
+  { head: "Treatment", links: [["Weight loss", "/appointments/treatments/weight-loss"], ["Hair loss", "/appointments/treatments/hair-loss"], ["Find a doctor", "/doctors"], ["Claim your profile", "/doctors/claim"]], cta: ["See all treatments", "/appointments"] },
   { head: "Pharmacy", links: [["Fill a prescription", "/fill"], ["Transfer a prescription", "/transfer"], ["Find medications", "/drug"], ["Pharmacies by region", "/pharmacies"]], cta: ["Get started", "/get-started"] },
   { head: "Medications", links: [["Ozempic", "/drug/ozempic"], ["Browse A–Z", "/drug"], ["Offers", "/offers"]], cta: ["Search prices", "/drug"] },
   { head: "Company", links: [["About", "/about-us"], ["How it works", "/how-it-works"], ["FAQs", "/questions"], ["Help centre", "/questions"]], cta: ["Contact us", "/questions"] },
@@ -251,6 +251,7 @@ function LanguageSwitcher() {
 export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string) => void; variant?: FooterVariant } = {}) {
   const nav = useNavigate();
   const { t, tx } = useI18n();
+  const { signedIn } = useUser();
   const derived = useFooterVariant();
   const variant = forced ?? derived;
   const go = goProp ?? ((to?: string) => nav(to ?? "/app"));
@@ -391,9 +392,13 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
             <div key={c.head} className="min-w-0">
               <h3 className="pp-caps text-[color:var(--pp-violet)]">{tx(c.head)}</h3>
               <ul className="mt-4 space-y-2.5">
-                {c.links.map(([l, to]) => (
+                {c.links.map(([l, to]) => {
+                  const claimLocked = signedIn && to === "/doctors/claim";
+                  return (
                   <li key={l}>
-                    {to.startsWith("#") || to.includes("/#") ? (
+                    {claimLocked ? (
+                      <span className="text-sm text-ink-secondary opacity-40">{tx(l)}</span>
+                    ) : to.startsWith("#") || to.includes("/#") ? (
                       <a href={to.includes("#") ? to.slice(to.indexOf("#")) : to} className="text-sm text-ink-secondary transition-colors hover:text-[color:var(--pp-primary-950)]">
                         {tx(l)}
                       </a>
@@ -403,7 +408,8 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
                       </Link>
                     )}
                   </li>
-                ))}
+                  );
+                })}
                 <li className="pt-1">
                   <button
                     type="button"

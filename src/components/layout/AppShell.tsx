@@ -233,11 +233,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isDrugDetail = /^\/drug\/[^/]+$/.test(pathname);
   const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname);
   const isPharmacies = pathname === "/pharmacies" || pathname.startsWith("/pharmacies/");
+  const isDoctors = pathname === "/doctors" || pathname.startsWith("/doctors/");
   const isAppointments = pathname.startsWith("/appointments");
   const hideActivityRail =
     isDrugDetail ||
     isOrderDetail ||
     isPharmacies ||
+    isDoctors ||
     isAppointments ||
     pathname === "/messages";
   const showActivity = !focusedFlow && !hideActivityRail;

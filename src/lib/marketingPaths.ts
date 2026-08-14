@@ -1,10 +1,15 @@
-/** Always public marketing chrome — even when signed in (How it works, Support). */
+/** Always public marketing chrome — even when signed in (How it works, Support, doctor directory). */
 export function isAlwaysPublicPath(pathname: string) {
-  return (
+  if (
     pathname === "/how-it-works" ||
     pathname === "/about-us" ||
     pathname === "/questions"
-  );
+  ) {
+    return true;
+  }
+  if (pathname === "/doctors" || pathname === "/doctors/claim") return true;
+  if (pathname.startsWith("/doctors/")) return true;
+  return false;
 }
 
 /** Pharmacy / drug / offers browse: marketing when logged out, AppShell when logged in. */

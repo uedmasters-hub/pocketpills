@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
@@ -133,6 +134,22 @@ function AvailabilitySlots({
 }
 
 function DoctorDetailPage({ provider }: { provider: CareProvider }) {
+  return <DoctorProfilePage provider={provider} />;
+}
+
+export function DoctorProfilePage({
+  provider,
+  backTo,
+  backLabel,
+  sidebar,
+  hideAvailability,
+}: {
+  provider: CareProvider;
+  backTo?: string;
+  backLabel?: string;
+  sidebar?: ReactNode;
+  hideAvailability?: boolean;
+}) {
   const { tx } = useI18n();
   const nav = useNavigate();
   const specialtyId = useSpecialtyFromQuery();
@@ -208,16 +225,29 @@ function DoctorDetailPage({ provider }: { provider: CareProvider }) {
   return (
     <div>
       <Link
-        to={facilityId ? `/appointments/provider/${facilityId}${specialtyId ? `?specialty=${specialtyId}` : ""}` : backToList(specialtyId)}
+        to={
+          backTo
+            ? backTo
+            : facilityId
+              ? `/appointments/provider/${facilityId}${specialtyId ? `?specialty=${specialtyId}` : ""}`
+              : backToList(specialtyId)
+        }
         className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
       >
-        ← {facilityId ? tx("Back to facility") : specialty ? tx(specialty.label) : tx("Book an appointment")}
+        ←{" "}
+        {backLabel
+          ? backLabel
+          : facilityId
+            ? tx("Back to facility")
+            : specialty
+              ? tx(specialty.label)
+              : tx("Book an appointment")}
       </Link>
 
       <div className="mt-5 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-10 lg:gap-y-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
         {/* Hero */}
         <header className="min-w-0 overflow-hidden rounded-[1.5rem] border border-line bg-[color:var(--pp-primary-200)] lg:col-start-1 lg:row-start-1">
-          <div className="flex flex-col sm:min-h-[17rem] sm:flex-row sm:items-stretch">
+          <div className="flex flex-col sm:min-h-[22rem] sm:flex-row sm:items-stretch">
             <div className="flex min-w-0 flex-1 flex-col justify-center px-6 py-7 sm:px-8 sm:py-8 lg:px-10">
               <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Doctor")}</p>
               <h1 className="mt-2 font-display text-[clamp(2rem,4vw,2.75rem)] font-medium leading-[1.1] tracking-tight text-[color:var(--pp-primary-950)]">
@@ -228,30 +258,40 @@ function DoctorDetailPage({ provider }: { provider: CareProvider }) {
                 {tx(provider.bio)}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
-                <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[color:var(--pp-primary-950)] shadow-sm">
-                  ★ {provider.rating.toFixed(1)} · {provider.reviewCount} {tx("reviews")}
-                </span>
-                <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-                  {formatDistance(provider.distanceKm)} {tx("away")}
-                </span>
+                {provider.reviewCount > 0 ? (
+                  <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[color:var(--pp-primary-950)] shadow-sm">
+                    ★ {provider.rating.toFixed(1)} · {provider.reviewCount} {tx("reviews")}
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[color:var(--pp-primary-950)] shadow-sm">
+                    {tx("NMC registry")}
+                  </span>
+                )}
+                {provider.distanceKm > 0 && (
+                  <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
+                    {formatDistance(provider.distanceKm)} {tx("away")}
+                  </span>
+                )}
                 {provider.experienceYears != null && (
                   <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
                     {tx("{n}+ years").replace("{n}", String(provider.experienceYears))}
                   </span>
                 )}
-                <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-                  {tx("Next")}: {next}
-                </span>
+                {!hideAvailability && (
+                  <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
+                    {tx("Next")}: {next}
+                  </span>
+                )}
               </div>
             </div>
-            <div className="relative mx-auto h-52 w-full max-w-[14rem] shrink-0 overflow-hidden sm:mx-0 sm:h-auto sm:w-[42%] sm:max-w-none lg:w-[38%]">
+            <div className="relative mx-auto h-72 w-full max-w-[16rem] shrink-0 overflow-hidden sm:mx-0 sm:h-auto sm:w-[40%] sm:max-w-none lg:w-[38%]">
               <img
                 src={provider.imageUrl}
                 alt=""
-                className="absolute inset-0 h-full w-full object-cover object-top"
+                className="absolute inset-0 h-full w-full object-cover object-[center_18%]"
               />
               <span
-                className="pointer-events-none absolute inset-y-0 left-0 hidden w-12 bg-gradient-to-r from-[color:var(--pp-primary-200)] to-transparent sm:block"
+                className="pointer-events-none absolute inset-y-0 left-0 hidden w-16 bg-gradient-to-r from-[color:var(--pp-primary-200)] to-transparent sm:block"
                 aria-hidden
               />
             </div>
@@ -260,6 +300,8 @@ function DoctorDetailPage({ provider }: { provider: CareProvider }) {
 
         {/* Sticky booking column */}
         <aside className="space-y-3 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
+          {sidebar ?? (
+            <>
           <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
             <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Book visit")}</p>
             <p className="mt-0.5 text-2xs text-ink-tertiary">
@@ -292,6 +334,8 @@ function DoctorDetailPage({ provider }: { provider: CareProvider }) {
           <p className="px-1 text-center text-2xs leading-relaxed text-ink-tertiary">
             {tx("Demo booking — no real visit is scheduled with a clinic.")}
           </p>
+            </>
+          )}
         </aside>
 
         {/* About */}
@@ -338,6 +382,7 @@ function DoctorDetailPage({ provider }: { provider: CareProvider }) {
         </section>
 
         {/* Availability — selectable virtual + in-clinic */}
+        {!hideAvailability && (
         <section id="availability" className="min-w-0 scroll-mt-28 lg:col-start-1 lg:row-start-3">
           <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
             {tx("Availability")}
@@ -446,6 +491,7 @@ function DoctorDetailPage({ provider }: { provider: CareProvider }) {
             </div>
           )}
         </section>
+        )}
 
         {/* Location / languages / affiliations */}
         <section className="min-w-0 space-y-4 lg:col-start-1 lg:row-start-4">
@@ -454,6 +500,10 @@ function DoctorDetailPage({ provider }: { provider: CareProvider }) {
           </h2>
           <dl className="overflow-hidden rounded-2xl border border-line bg-white">
             {[
+              provider.id.startsWith("nmc-") && {
+                k: tx("NMC number"),
+                v: `#${provider.id.replace(/^nmc-/, "")}`,
+              },
               provider.address && { k: tx("Location"), v: provider.address },
               provider.hours && { k: tx("Hours"), v: provider.hours },
               provider.phone && { k: tx("Phone"), v: provider.phone },

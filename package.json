@@ -5,9 +5,10 @@
   "type": "module",
   "description": "PocketPills UX redesign — MVP scaffold + flagship Care Journey flow. Implements the specs in the pocketpills docs repo.",
   "scripts": {
-    "dev": "concurrently -k -n api,web -c magenta,cyan \"npm run dev:api\" \"npm run dev:web\"",
+    "dev": "concurrently --kill-others-on-fail -n nmc,api,web -c yellow,magenta,cyan \"npm run dev:nmc\" \"npm run dev:api\" \"npm run dev:web\"",
     "dev:web": "vite",
     "dev:api": "tsx watch server/index.ts",
+    "dev:nmc": "node nmc-api/src/server.js",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit"

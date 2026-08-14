@@ -26,6 +26,8 @@ export type ProviderAccount = {
   pharmacyOrgId?: string;
   delegateId?: string;
   onboarded: boolean;
+  /** Nepal Medical Council number when this account claimed an NMC profile */
+  nmcNumber?: string;
 };
 
 type ProviderState = {
@@ -43,7 +45,9 @@ type ProviderState = {
     pharmacyRole?: PharmacyRole;
     phone?: string;
     password?: string;
-  }) => void;
+    nmcNumber?: string;
+    id?: string;
+  }) => ProviderAccount;
   logOut: () => void;
   update: (p: Partial<ProviderAccount>) => void;
   /** Replace session (account switch) without clearing stashed owner unless cleared */
@@ -81,6 +85,7 @@ function normalizeAccount(raw: ProviderAccount): ProviderAccount {
     ownerOrgId,
     pharmacyOrgId: vendorType === "pharmacy" && isDel ? ownerOrgId : undefined,
     delegateId: isDel ? String(raw.delegateId ?? "") : undefined,
+    nmcNumber: raw.nmcNumber ? String(raw.nmcNumber).trim() : undefined,
   };
 }
 
@@ -185,6 +190,7 @@ export function ProviderAuthProvider({ children }: { children: ReactNode }) {
           pharmacyOrgId: opts?.pharmacyOrgId ?? opts?.ownerOrgId,
           delegateId: opts?.delegateId,
           onboarded: opts?.onboarded ?? true,
+          nmcNumber: opts?.nmcNumber,
         });
         if (!isDel && opts?.password) {
           saveOwnerPassword(account.id, opts.password, account.email);
@@ -194,7 +200,7 @@ export function ProviderAuthProvider({ children }: { children: ReactNode }) {
       signUp: (input) => {
         const vendorType = normalizeVendorType(input.vendorType);
         const account = normalizeAccount({
-          id: `prov-${Date.now().toString(36)}`,
+          id: input.id?.trim() || `prov-${Date.now().toString(36)}`,
           email: input.email.trim().toLowerCase(),
           firstName: input.firstName.trim(),
           lastName: input.lastName.trim(),
@@ -213,9 +219,12 @@ export function ProviderAuthProvider({ children }: { children: ReactNode }) {
           accountRole: "owner",
           pharmacyRole: vendorType === "pharmacy" ? "owner" : undefined,
           onboarded: true,
+          nmcNumber: input.nmcNumber ? String(input.nmcNumber).trim() : undefined,
         });
         if (input.password) saveOwnerPassword(account.id, input.password, account.email);
+        write(account);
         setProvider(account);
+        return account;
       },
       logOut: () => setProvider(null),
       setSession: (account) => setProvider(normalizeAccount(account)),

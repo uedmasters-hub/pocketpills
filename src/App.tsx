@@ -80,6 +80,9 @@ import { AssistantDetail } from "@/pages/appointments/AssistantDetail";
 import { BookAssistant } from "@/pages/appointments/BookAssistant";
 import { ServiceDetail } from "@/pages/appointments/ServiceDetail";
 import { TreatmentHubDetail } from "@/pages/appointments/TreatmentHubDetail";
+import { DoctorDirectory } from "@/pages/doctors/DoctorDirectory";
+import { ClaimDoctor } from "@/pages/doctors/ClaimDoctor";
+import { DoctorPublic } from "@/pages/doctors/DoctorPublic";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -138,6 +141,9 @@ export default function App() {
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/about-us" element={<AboutUs />} />
             <Route path="/questions" element={<Questions />} />
+            <Route path="/doctors" element={<DoctorDirectory />} />
+            <Route path="/doctors/claim" element={<ClaimDoctor />} />
+            <Route path="/doctors/:nmcNumber" element={<DoctorPublic />} />
           </Route>
 
           {/* Treatment + Pharmacy — guests: marketing; signed-in: AppShell */}
