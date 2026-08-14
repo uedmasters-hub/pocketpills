@@ -52,18 +52,15 @@ function csvCandidates(): string[] {
     (v): v is string => Boolean(v),
   );
   const here = path.dirname(fileURLToPath(import.meta.url));
-  const files = [
-    "nmc-api/data/nmc-database-final.csv",
-    "nmc-api/nmc-database-final.csv",
-  ];
+  const files = ["nmc-api/data/nmc-database-active.csv"];
   const out: string[] = [];
   for (const root of roots) {
     for (const file of files) out.push(path.join(root, file));
   }
   out.push(
-    path.join(here, "../nmc-api/data/nmc-database-final.csv"),
-    path.join(here, "../../nmc-api/data/nmc-database-final.csv"),
-    path.join(here, "../../../nmc-api/data/nmc-database-final.csv"),
+    path.join(here, "../nmc-api/data/nmc-database-active.csv"),
+    path.join(here, "../../nmc-api/data/nmc-database-active.csv"),
+    path.join(here, "../../../nmc-api/data/nmc-database-active.csv"),
   );
   return out;
 }

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const Database = require('better-sqlite3');
 
-const csvFile = 'data/nmc-database-final.csv';
+const csvFile = 'data/nmc-database-active.csv';
 const dbFile = 'database/nmc.sqlite';
 
 const db = new Database(dbFile);

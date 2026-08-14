@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 
 /**
- * Canonical page grid — body sections and footer share these so edges align.
+ * Canonical page grid — header, body, and footer share this column.
  *   width  : max-w-[105rem]  (1680px)
  *   gutters: 20 / 32 / 80px  (px-5 md:px-8 xl:px-20)
  *
- * FRAME = gutters outside white islands (landing). CONTAINER = gutters inside
- * max-width (in-app / footer). Use FRAME + SURFACE for landing islands so they
- * match the upper white shell width.
+ * FRAME sits outside the column (viewport inset). SURFACE is the column.
+ * Marketing chrome (header pill, page body, footer links) is FRAME + SURFACE
+ * so left/right edges match. CONTAINER = padding inside the column (in-app).
  */
 export const FRAME = "px-5 md:px-8 xl:px-20";
 export const SURFACE = "mx-auto w-full max-w-[105rem]";

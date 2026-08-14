@@ -6,6 +6,7 @@ import { LogoLink } from "@/components/Logo";
 import { useChromeVisibility } from "@/lib/useChromeVisibility";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
 import { Caret } from "@/components/ui";
+import { FRAME, SURFACE } from "@/components/layout/Grid";
 import { isAlwaysPublicPath, isDualBrowsePath } from "@/lib/marketingPaths";
 
 const NAVCDN = "https://static.pocketpills.com/acq-web/redesign/navbar";
@@ -244,7 +245,7 @@ function Shell({
 }) {
   return (
     <div
-      className="sticky top-3 z-50 mt-3 px-4 will-change-transform sm:px-6 md:px-8 xl:px-20"
+      className={`sticky top-3 z-50 mt-3 ${FRAME} will-change-transform`}
       style={{
         transform: hidden ? "translateY(calc(-100% - 1.5rem))" : "translateY(0)",
         opacity: hidden ? 0 : 1,
@@ -253,7 +254,7 @@ function Shell({
     >
       <div
         className={
-          "mx-auto flex h-[3.75rem] w-full max-w-[105rem] items-center rounded-[1.25rem] " +
+          `${SURFACE} flex h-[3.75rem] items-center rounded-[1.25rem] ` +
           "border border-[color:var(--neutral-200)]/80 bg-white/90 px-4 shadow-[0_10px_40px_rgba(24,7,48,0.06)] " +
           "backdrop-blur-xl backdrop-saturate-150 md:h-16 md:px-6 " +
           (balanced ? "grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 md:gap-6" : "justify-between gap-4")

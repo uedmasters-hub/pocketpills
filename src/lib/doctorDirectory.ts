@@ -115,65 +115,69 @@ export function listPublishedDoctorClaims(): DoctorClaim[] {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+const DEMO_SEED_KEY = "pp.doctors.demo-seed";
+const DEMO_SEED = "nmc-active-v1";
+const STALE_DEMO_NMCS = ["1", "19", "23", "27", "28", "35"];
+
 const DEMO_PUBLISHED: Array<Omit<DoctorClaim, "claimedAt" | "publishedAt" | "email" | "phone">> = [
   {
-    nmcNumber: "1",
-    name: "Dr. Jishnu Prasad Rijal",
-    address: "Biratnagar, Morang",
+    nmcNumber: "6",
+    name: "Dr. Sudhakar Anil Thapaliya",
+    address: "Biratnagar , Morang,",
     gender: "Male",
     degree: "MBBS",
     city: "Biratnagar",
-    providerId: "prov-nmc-1",
+    providerId: "prov-nmc-6",
+    published: true,
+  },
+  {
+    nmcNumber: "5",
+    name: "Dr. Premu Shah",
+    address: "Tangal , Kathmandu,",
+    gender: "Female",
+    degree: "MBBS",
+    city: "Kathmandu",
+    providerId: "prov-nmc-5",
+    published: true,
+  },
+  {
+    nmcNumber: "10",
+    name: "Dr. Keshab Raj Bhattarai",
+    address: "Baneshwor , Kathmandu,",
+    gender: "Male",
+    degree: "MBBS",
+    city: "Kathmandu",
+    providerId: "prov-nmc-10",
     published: true,
   },
   {
     nmcNumber: "19",
-    name: "Dr. Anjani Kumar Sharma",
-    address: "Kathmandu, Nepal",
-    gender: "Male",
+    name: "Dr. Hira Devi Dangol",
+    address: "Kamalachhi , Kathmandu,",
+    gender: "Female",
     degree: "MBBS",
     city: "Kathmandu",
     providerId: "prov-nmc-19",
     published: true,
   },
   {
-    nmcNumber: "23",
-    name: "Dr. Laxmi Narayan Prasad",
-    address: "Kathmandu, Nepal",
+    nmcNumber: "22",
+    name: "Dr. Mahodadhi Shrestha",
+    address: "Newbaneswor , Kathmandu,",
     gender: "Male",
     degree: "MBBS",
     city: "Kathmandu",
-    providerId: "prov-nmc-23",
+    providerId: "prov-nmc-22",
     published: true,
   },
   {
-    nmcNumber: "27",
+    nmcNumber: "38",
     name: "Dr. Geeta Joshi",
-    address: "Kathmandu",
-    gender: "Female",
+    address: "Kathmandu,",
+    gender: "Male",
     degree: "MD",
     city: "Kathmandu",
-    providerId: "prov-nmc-27",
-    published: true,
-  },
-  {
-    nmcNumber: "28",
-    name: "Dr. Purushottam Narayan Shrestha",
-    address: "Kathmandu",
-    gender: "Male",
-    degree: "MBBS",
-    city: "Kathmandu",
-    providerId: "prov-nmc-28",
-    published: true,
-  },
-  {
-    nmcNumber: "35",
-    name: "Dr. Ram Bhadra Adiga",
-    address: "Kathmandu, Nepal",
-    gender: "Male",
-    degree: "MBBS",
-    city: "Kathmandu",
-    providerId: "prov-nmc-35",
+    providerId: "prov-nmc-38",
     published: true,
   },
 ];
@@ -181,7 +185,20 @@ const DEMO_PUBLISHED: Array<Omit<DoctorClaim, "claimedAt" | "publishedAt" | "ema
 /** Demo listings so the directory can show Available cards before anyone claims. */
 export function ensureDemoPublishedDoctors() {
   const dir = readDir();
-  if (Object.values(dir).some((c) => c.published)) return;
+  let seeded = "";
+  try {
+    seeded = localStorage.getItem(DEMO_SEED_KEY) || "";
+  } catch {
+    /* ignore */
+  }
+  if (seeded === DEMO_SEED) return;
+
+  const replaceable = new Set([...STALE_DEMO_NMCS, ...DEMO_PUBLISHED.map((r) => r.nmcNumber)]);
+  for (const nmc of replaceable) {
+    const row = dir[nmc];
+    if (!row) continue;
+    if (row.providerId.startsWith("prov-nmc-") && !row.email && !row.phone) delete dir[nmc];
+  }
   const now = new Date().toISOString();
   for (const row of DEMO_PUBLISHED) {
     if (dir[row.nmcNumber]) continue;
@@ -194,6 +211,11 @@ export function ensureDemoPublishedDoctors() {
     };
   }
   writeDir(dir);
+  try {
+    localStorage.setItem(DEMO_SEED_KEY, DEMO_SEED);
+  } catch {
+    /* ignore */
+  }
 }
 
 export function cityFromNmcAddress(address: string) {

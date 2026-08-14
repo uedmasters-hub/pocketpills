@@ -5,7 +5,7 @@
   "outputDirectory": "dist",
   "functions": {
     "api/nmc/[...path].ts": {
-      "includeFiles": "nmc-api/data/nmc-database-final.csv",
+      "includeFiles": "nmc-api/data/nmc-database-active.csv",
       "maxDuration": 10
     }
   },

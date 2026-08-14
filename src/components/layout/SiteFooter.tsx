@@ -5,7 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { useDismiss } from "@/lib/useDismiss";
 import { LANG_META, type LangCode } from "@/lib/accountPrefs";
 import { LogoMark } from "@/components/Logo";
-import { CONTAINER, FOOTER_GAP } from "@/components/layout/Grid";
+import { FRAME, SURFACE, FOOTER_GAP } from "@/components/layout/Grid";
 import { isAlwaysPublicPath, isDualBrowsePath } from "@/lib/marketingPaths";
 
 const CDN = "https://static.pocketpills.com/acq-web";
@@ -246,7 +246,7 @@ function LanguageSwitcher() {
 
 /**
  * Footer is full-bleed white (edge-to-edge), contrasting the lavender body.
- * Inner content uses the same CONTAINER gutters as landing sections so edges align.
+ * Inner content uses FRAME + SURFACE so it matches the header pill and page body.
  */
 export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string) => void; variant?: FooterVariant } = {}) {
   const nav = useNavigate();
@@ -259,7 +259,8 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
 
   return (
     <footer className={`${FOOTER_GAP} w-full bg-white`}>
-      <div className={`${CONTAINER} py-10 md:py-12 flex flex-col gap-10 md:gap-12`}>
+      <div className={FRAME}>
+      <div className={`${SURFACE} py-10 md:py-12 flex flex-col gap-10 md:gap-12`}>
         {/* Stay in control + Get Started */}
         {variant === "full" && (
           <div className="grid justify-center gap-6 md:gap-12 lg:grid-cols-[minmax(0,50rem)_1fr]">
@@ -449,6 +450,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
             </nav>
           </div>
         </div>
+      </div>
       </div>
     </footer>
   );

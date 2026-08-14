@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
+import { FRAME, SURFACE } from "@/components/layout/Grid";
 
 const DISMISS_KEY = "pp.announce.dismissed";
 const ANNOUNCE_INTERVAL_MS = 8000;
@@ -162,10 +163,11 @@ export function AnnouncementBar({ onGo }: { onGo?: () => void } = {}) {
       aria-label={isOffer ? "Promotion" : "Why Pocketpills"}
       aria-live="polite"
     >
-      <div className="relative mx-auto flex h-10 max-w-[1600px] items-center px-10 sm:h-11 sm:px-12">
+      <div className={FRAME}>
+      <div className={`${SURFACE} relative flex h-10 items-center sm:h-11`}>
         <div
           className={
-            "absolute inset-x-10 flex items-center justify-center gap-3 sm:inset-x-12 sm:gap-4 " +
+            "absolute inset-x-0 flex items-center justify-center gap-3 sm:gap-4 " +
             ANNOUNCE_FADE +
             " " +
             (isOffer ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-1 opacity-0")
@@ -183,7 +185,7 @@ export function AnnouncementBar({ onGo }: { onGo?: () => void } = {}) {
 
         <div
           className={
-            "absolute inset-x-10 flex items-center sm:inset-x-12 " +
+            "absolute inset-x-0 flex items-center " +
             ANNOUNCE_FADE +
             " " +
             (isOffer ? "pointer-events-none -translate-y-1 opacity-0" : "translate-y-0 opacity-100")
@@ -213,6 +215,7 @@ export function AnnouncementBar({ onGo }: { onGo?: () => void } = {}) {
         >
           ✕
         </button>
+      </div>
       </div>
     </div>
   );
