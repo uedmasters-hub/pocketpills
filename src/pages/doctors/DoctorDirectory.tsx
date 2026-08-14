@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type Ref } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PageSearchField } from "@/components/PageSearchField";
 import { useI18n } from "@/lib/i18n";
@@ -732,7 +732,7 @@ function Pagination({
   onPage: (n: number) => void;
   searchOpen: boolean;
   searchValue: string;
-  searchRef: RefObject<HTMLInputElement | null>;
+  searchRef: Ref<HTMLInputElement>;
   onSearchChange: (v: string) => void;
   onToggleSearch: () => void;
   onCloseSearch: () => void;

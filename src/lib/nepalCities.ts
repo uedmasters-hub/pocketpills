@@ -86,7 +86,7 @@ export function nearbyCities(city: string, count = 5): string[] {
 
 export function citySelectOptions(current: string): string[] {
   const cur = normalizeCityName(current) || DEFAULT_DOCTOR_CITY;
-  const names = [...NEPAL_CITIES];
+  const names: string[] = [...NEPAL_CITIES];
   if (!names.some((c) => c.toLowerCase() === cur.toLowerCase())) names.unshift(cur);
   return [...new Set(names)];
 }
