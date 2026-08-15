@@ -7,6 +7,7 @@ import { LANG_META, type LangCode } from "@/lib/accountPrefs";
 import { LogoMark } from "@/components/Logo";
 import { FRAME, SURFACE, FOOTER_GAP } from "@/components/layout/Grid";
 import { isAlwaysPublicPath, isDualBrowsePath } from "@/lib/marketingPaths";
+import { FEATURED_DELIVERY_DISTRICTS, pharmacyDirectoryPath } from "@/lib/nepalCities";
 
 const CDN = "https://static.pocketpills.com/acq-web";
 const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = "none"; };
@@ -151,22 +152,6 @@ function Social() {
     </div>
   );
 }
-
-const PROVINCES = [
-  { name: "Alberta", code: "AB", slug: "ab" },
-  { name: "British Columbia", code: "BC", slug: "bc" },
-  { name: "Manitoba", code: "MB", slug: "mb" },
-  { name: "Newfoundland & Labrador", code: "NL", slug: "nl" },
-  { name: "New Brunswick", code: "NB", slug: "nb" },
-  { name: "Nova Scotia", code: "NS", slug: "ns" },
-  { name: "Northwest Territories", code: "NT", slug: "nt" },
-  { name: "Nunavut", code: "NU", slug: "nu" },
-  { name: "Ontario", code: "ON", slug: "on" },
-  { name: "Prince Edward Island", code: "PE", slug: "pe" },
-  { name: "Quebec", code: "QC", slug: "qc" },
-  { name: "Saskatchewan", code: "SK", slug: "sk" },
-  { name: "Yukon", code: "YT", slug: "yt" },
-];
 
 const COLUMNS: { head: string; links: [string, string][]; cta: [string, string] }[] = [
   { head: "Treatment", links: [["Weight loss", "/appointments/treatments/weight-loss"], ["Hair loss", "/appointments/treatments/hair-loss"], ["Find a doctor", "/doctors"], ["Claim your profile", "/doctors/claim"]], cta: ["See all treatments", "/appointments"] },
@@ -341,14 +326,13 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
               {tx("Pocketpills delivers to:")}
             </h2>
             <ul className="mt-5 flex flex-wrap gap-2" aria-label={tx("Delivery regions")}>
-              {PROVINCES.map((p) => (
-                <li key={p.code}>
+              {FEATURED_DELIVERY_DISTRICTS.map((name) => (
+                <li key={name}>
                   <Link
-                    to={`/pharmacies/regions/${p.slug}`}
+                    to={pharmacyDirectoryPath(name)}
                     className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--primary-200)] px-3 py-1.5 text-sm text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-200)] active:bg-[color:var(--state-pressed)]"
                   >
-                    <span className="font-medium">{tx(p.name)}</span>
-                    <span className="text-2xs text-ink-tertiary">{p.code}</span>
+                    <span className="font-medium">{tx(name)}</span>
                   </Link>
                 </li>
               ))}
@@ -364,23 +348,25 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
           <aside className="rounded-2xl border border-line bg-[color:var(--primary-200)] p-5 sm:p-6">
             <p className="pp-caps text-ink-tertiary">{tx("Your region")}</p>
             <h3 className="mt-2 font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-              {tx("Pocketpills East")}
+              {tx("Pocketpills Nepal")}
             </h3>
             <p className="mt-1 text-sm leading-snug text-ink-secondary">
-              Unit 6 - 6375 Dixie Rd, Mississauga, ON, L5T 2E7
+              {tx("Kathmandu, Bagmati Province, Nepal")}
             </p>
             <p className="mt-4 text-sm leading-snug text-[color:var(--pp-primary-950)]">
               {tx("Licensed by")}{" "}
-              <span className="font-medium text-[color:var(--pp-violet)]">{tx("Ontario College of Pharmacists")}</span>
+              <span className="font-medium text-[color:var(--pp-violet)]">
+                {tx("Department of Drug Administration")}
+              </span>
             </p>
             <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
               <div>
-                <dt className="text-2xs text-ink-tertiary">{tx("License No.")}</dt>
-                <dd className="mt-0.5 font-medium text-[color:var(--pp-primary-800)]">#307234</dd>
+                <dt className="text-2xs text-ink-tertiary">{tx("Registry")}</dt>
+                <dd className="mt-0.5 font-medium text-[color:var(--pp-primary-800)]">{tx("DDA pharmacies")}</dd>
               </div>
               <div>
-                <dt className="text-2xs text-ink-tertiary">{tx("Pharmacy Manager")}</dt>
-                <dd className="mt-0.5 font-medium text-[color:var(--pp-primary-800)]">Aisha Abo Saada</dd>
+                <dt className="text-2xs text-ink-tertiary">{tx("Coverage")}</dt>
+                <dd className="mt-0.5 font-medium text-[color:var(--pp-primary-800)]">{tx("All districts")}</dd>
               </div>
             </dl>
           </aside>

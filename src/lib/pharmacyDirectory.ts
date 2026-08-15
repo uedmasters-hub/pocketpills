@@ -139,6 +139,18 @@ export function maskPharmacyName(name: string): string {
   return `${display} •••`;
 }
 
+/** Hide Allopathy; keep Ayurvedic, Unani, Homeopathy. HUMAN and veterinary are dropped in the API. */
+export function displayPranali(raw: string): string {
+  let s = String(raw || "").trim();
+  s = s.replace(/\bhuman\b/gi, "");
+  s = s.replace(/\bveterinar\w*/gi, "");
+  s = s.replace(/\ballopath(?:y|ic)\b/gi, "");
+  s = s.replace(/[-–—]/g, " ");
+  s = s.replace(/\s+/g, " ").trim();
+  if (!s) return "";
+  return s.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase());
+}
+
 export function placeLine(pharmacy: Pick<DdaPharmacy, "place" | "district">) {
   const place = pharmacy.place.trim();
   const district = pharmacy.district.trim();
@@ -155,7 +167,7 @@ const DEMO_PUBLISHED: Array<Omit<PharmacyClaim, "claimedAt" | "publishedAt" | "e
     name: "KANCHAN MEDICAL AND DIAGNOSTIC CENTER P LTD PHARMACY UNIT",
     place: "Kathmandu",
     district: "Kathmandu",
-    pranali: "ALLOPATHY - HUMAN",
+    pranali: "ALLOPATHY",
     providerId: "prov-dda-3711213090457",
     published: true,
   },
@@ -164,7 +176,7 @@ const DEMO_PUBLISHED: Array<Omit<PharmacyClaim, "claimedAt" | "publishedAt" | "e
     name: "MANABIYATA PHARMACY",
     place: "Tokha",
     district: "Kathmandu",
-    pranali: "ALLOPATHY - HUMAN",
+    pranali: "ALLOPATHY",
     providerId: "prov-dda-3711215063850",
     published: true,
   },
@@ -173,7 +185,7 @@ const DEMO_PUBLISHED: Array<Omit<PharmacyClaim, "claimedAt" | "publishedAt" | "e
     name: "SURYAAMSHA PHARMACY",
     place: "Budhanilkantha",
     district: "Kathmandu",
-    pranali: "ALLOPATHY - HUMAN",
+    pranali: "ALLOPATHY",
     providerId: "prov-dda-3720229050938",
     published: true,
   },
@@ -182,7 +194,7 @@ const DEMO_PUBLISHED: Array<Omit<PharmacyClaim, "claimedAt" | "publishedAt" | "e
     name: "SUMANTH MEDICAL SUPPLIERS",
     place: "Kathmandu",
     district: "Kathmandu",
-    pranali: "ALLOPATHY - HUMAN",
+    pranali: "ALLOPATHY",
     providerId: "prov-dda-3720229061524",
     published: true,
   },
@@ -394,7 +406,7 @@ export function shortRegNo(registrationNo: string) {
 }
 
 export function pharmacyHours() {
-  return "Open today · 9:00 AM – 7:00 PM";
+  return "9:00 AM – 7:00 PM";
 }
 
 export function claimPharmacyProfile(input: {
@@ -432,7 +444,7 @@ export function claimPharmacyProfile(input: {
     {
       ...draft,
       name: claim.name,
-      subtitle: `${claim.pranali || "Pharmacy"} · DDA #${n}`,
+      subtitle: `${displayPranali(claim.pranali) || "Pharmacy"} · DDA #${n}`,
       bio: `${claim.name} is a DDA-registered pharmacy in ${placeLine(claim)}.`,
       about: `${claim.name} claimed this DDA profile and can receive transfers through PocketPills.`,
       city: claim.district || claim.place,

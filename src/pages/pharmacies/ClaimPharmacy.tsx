@@ -20,6 +20,7 @@ import {
   getPharmacyClaim,
   lastNameLockStatus,
   maskPharmacyName,
+  displayPranali,
   pharmacyProviderId,
   placeLine,
   recordNameFailure,
@@ -207,7 +208,9 @@ export function ClaimPharmacy() {
                               : maskPharmacyName(row.name)}
                           </span>
                           <span className="mt-0.5 block text-xs text-ink-tertiary">
-                            {row.pranali || "—"} · {placeLine(row)}
+                            {displayPranali(row.pranali)
+                              ? `${displayPranali(row.pranali)} · ${placeLine(row)}`
+                              : placeLine(row)}
                           </span>
                         </span>
                         <span className="shrink-0 text-xs font-semibold text-ink-tertiary tnum">
@@ -231,7 +234,7 @@ export function ClaimPharmacy() {
             <span className="font-medium text-[color:var(--pp-primary-950)]">
               {placeLine({ place: lookup.place, district: lookup.district }) || tx("Nepal")}
             </span>
-            {lookup.pranali ? <> ({lookup.pranali})</> : null}.{" "}
+            {displayPranali(lookup.pranali) ? <> ({displayPranali(lookup.pranali)})</> : null}.{" "}
             {tx(
               "Enter a distinctive word from the registered name (not Pharmacy, Medical, Pvt, or Ltd). The directory hides the full name until you claim.",
             )}

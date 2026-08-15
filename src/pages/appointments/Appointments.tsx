@@ -364,7 +364,7 @@ export function Appointments() {
                   headerExtra={
                     <button
                       type="button"
-                      onClick={() => nav("/pharmacies/regions/on")}
+                      onClick={() => nav("/pharmacies/regions")}
                       className="text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
                     >
                       {tx("Browse regions")}

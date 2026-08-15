@@ -97,21 +97,40 @@ export const DEFAULT_PHARMACY_DISTRICT = "Kathmandu";
 
 export const NEPAL_DISTRICTS = [
   "Kathmandu",
-  "Lalitpur",
-  "Bhaktapur",
-  "Kaski",
   "Morang",
   "Rupandehi",
-  "Chitwan",
+  "Lalitpur",
   "Jhapa",
+  "Chitwan",
+  "Kaski",
   "Kailali",
-  "Parsa",
-  "Makwanpur",
-  "Kavrepalanchok",
-  "Banke",
   "Sunsari",
+  "Banke",
   "Dhanusha",
+  "Parsa",
+  "Dang",
+  "Bhaktapur",
+  "Makwanpur",
 ] as const;
+
+/** Top DDA districts — footer / coverage pills (mirrors former CA province chips). */
+export const FEATURED_DELIVERY_DISTRICTS = NEPAL_DISTRICTS.slice(0, 13);
+
+export function districtSlug(name: string) {
+  return normalizeCityName(name)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function districtFromSlug(slug: string, districts: string[]) {
+  const key = districtSlug(slug);
+  return districts.find((d) => districtSlug(d) === key) || null;
+}
+
+export function pharmacyDirectoryPath(district: string) {
+  return `/pharmacies?district=${encodeURIComponent(normalizeCityName(district))}`;
+}
 
 const NEARBY_DISTRICTS: Record<string, string[]> = {
   Kathmandu: ["Lalitpur", "Bhaktapur", "Kavrepalanchok", "Makwanpur", "Chitwan"],

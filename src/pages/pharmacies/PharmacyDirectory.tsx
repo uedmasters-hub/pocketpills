@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type Ref } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PageSearchField } from "@/components/PageSearchField";
+import { DirectoryFilterSelect } from "@/components/DirectoryFilterSelect";
 import { useI18n } from "@/lib/i18n";
 import { useUser } from "@/lib/user";
 import { listDdaPharmacies, listDdaDistricts, normalizeRegNo, type DdaPharmacy } from "@/lib/ddaApi";
@@ -10,6 +11,7 @@ import {
   getPharmacyClaim,
   listPublishedPharmacyClaims,
   maskPharmacyName,
+  displayPranali,
   pharmacyHours,
   placeLine,
   shortRegNo,
@@ -103,7 +105,7 @@ export function PharmacyDirectory() {
     const unsub = subscribePharmacyDirectory(() => setRev((n) => n + 1));
     ensureDemoPublishedPharmacies();
     void listDdaDistricts().then((list) => {
-      if (list.length) setApiDistricts(list);
+      if (list.length) setApiDistricts(list.map((d) => d.district));
     });
     return unsub;
   }, []);
@@ -333,7 +335,12 @@ export function PharmacyDirectory() {
                 {tx("Show all pharmacies")}
               </button>
             )}
-            <DistrictSelect district={district} options={districtOptions} onChange={selectDistrict} />
+            <DirectoryFilterSelect
+              label={tx("District")}
+              value={district}
+              options={districtOptions}
+              onChange={selectDistrict}
+            />
           </div>
         </div>
       )}
@@ -420,41 +427,6 @@ export function PharmacyDirectory() {
         </Link>
       </p>
     </div>
-  );
-}
-
-function DistrictSelect({
-  district,
-  options,
-  onChange,
-}: {
-  district: string;
-  options: string[];
-  onChange: (district: string) => void;
-}) {
-  const { tx } = useI18n();
-  return (
-    <label className="inline-flex items-center gap-2 text-sm">
-      <span className="text-ink-tertiary">{tx("District")}</span>
-      <span className="relative inline-flex">
-        <select
-          value={district}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-9 min-w-[9.5rem] appearance-none rounded-full border border-line bg-white py-0 pl-4 pr-10 text-sm font-medium text-[color:var(--pp-primary-950)]"
-        >
-          {options.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <span className="pointer-events-none absolute inset-y-0 right-3 grid w-4 place-items-center text-ink-tertiary">
-          <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-            <path d="M5 7.5 10 12.5 15 7.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-      </span>
-    </label>
   );
 }
 
@@ -549,7 +521,7 @@ function DirectoryCard({
   const faded = !live;
   const name = live ? displayPharmacyName(claim?.name || pharmacy.name) : maskPharmacyName(pharmacy.name);
   const place = placeLine(live && claim ? claim : pharmacy);
-  const pranali = (claim?.pranali || pharmacy.pranali || "").trim() || "Pharmacy";
+  const kind = displayPranali(claim?.pranali || pharmacy.pranali);
   const photo = live ? PHOTO : undefined;
 
   return (
@@ -596,7 +568,7 @@ function DirectoryCard({
             {name}
           </h2>
           <p className="mt-0.5 block w-full truncate text-sm leading-snug text-ink-tertiary">
-            {pranali} • {place}
+            {kind ? `${kind} • ${place}` : place}
           </p>
           {live && (
             <p className="mt-1.5 text-sm font-medium leading-snug text-[color:var(--pp-primary-950)]">

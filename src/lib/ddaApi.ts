@@ -125,11 +125,32 @@ export async function listDdaPharmacies(opts?: {
   }
 }
 
-export async function listDdaDistricts(): Promise<string[]> {
+export type DdaDistrict = {
+  district: string;
+  count: number;
+};
+
+function parseDistricts(body: Record<string, unknown>): DdaDistrict[] {
+  const data = Array.isArray(body.data) ? body.data : [];
+  const out: DdaDistrict[] = [];
+  for (const row of data) {
+    if (typeof row === "string") {
+      if (row.trim()) out.push({ district: row.trim(), count: 0 });
+      continue;
+    }
+    if (!row || typeof row !== "object") continue;
+    const district = String((row as { district?: unknown }).district ?? "").trim();
+    if (!district) continue;
+    out.push({ district, count: Number((row as { count?: unknown }).count) || 0 });
+  }
+  return out;
+}
+
+export async function listDdaDistricts(): Promise<DdaDistrict[]> {
   try {
     const res = await fetch("/api/pharmacy/districts");
     const body = await readJson(res);
-    return Array.isArray(body.data) ? (body.data as string[]).filter(Boolean) : [];
+    return parseDistricts(body);
   } catch {
     return [];
   }

@@ -65,16 +65,30 @@ export function normalizeRegNo(raw: string): string | null {
   return digits;
 }
 
+/** Drop "HUMAN" from DDA pranali. Allopathy itself is left for the UI to hide. */
+export function normalizePranali(raw: string): string {
+  let s = String(raw || "").trim();
+  s = s.replace(/\bHUMAN\b/gi, "");
+  s = s.replace(/\s*[-–—]\s*/g, " - ");
+  s = s.replace(/\s+/g, " ").replace(/^[\s\-–—]+|[\s\-–—]+$/g, "").trim();
+  return s;
+}
+
+export function isVeterinaryPranali(raw: string) {
+  return /\bveterinar/i.test(String(raw || ""));
+}
+
 function asPharmacy(row: RawRow): DdaPharmacy | null {
   const registrationNo = normalizeRegNo(String(row["Registration No"] ?? ""));
   const name = String(row["Pharmacy Name"] ?? "").trim();
   if (!registrationNo || !name) return null;
+  if (isVeterinaryPranali(String(row.Pranali ?? ""))) return null;
   return {
     registrationNo,
     name,
     place: String(row.Place ?? "").trim(),
     district: String(row.District ?? "").trim(),
-    pranali: String(row.Pranali ?? "").trim(),
+    pranali: normalizePranali(String(row.Pranali ?? "")),
   };
 }
 
@@ -128,7 +142,19 @@ export function getLocalPharmacy(registrationNo: string): DdaPharmacy | null {
 }
 
 export function listLocalDistricts(): string[] {
-  return loadRegistry().districts;
+  return listLocalDistrictCounts().map((d) => d.district);
+}
+
+export function listLocalDistrictCounts(): { district: string; count: number }[] {
+  const { pharmacies } = loadRegistry();
+  const counts = new Map<string, number>();
+  for (const p of pharmacies) {
+    if (!p.district) continue;
+    counts.set(p.district, (counts.get(p.district) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([district, count]) => ({ district, count }))
+    .sort((a, b) => b.count - a.count || a.district.localeCompare(b.district));
 }
 
 export function searchLocalPharmacies(query: {

@@ -24,7 +24,7 @@ function GuestMarketingChrome() {
       <AnnouncementBar onGo={() => go()} />
       <SiteHeader />
       <main id="main" tabIndex={-1} className={`${FRAME} pb-4 pt-8 md:pt-10`}>
-        <div key={pathname} className={`${SURFACE} animate-fade-up`}>
+        <div key={pathname} data-page-column className={`${SURFACE} animate-fade-up`}>
           <Outlet />
         </div>
       </main>

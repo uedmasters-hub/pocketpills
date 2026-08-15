@@ -1,3 +1,4 @@
+import re
 from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
@@ -9,7 +10,12 @@ from pathlib import Path
 DATA_FILE = Path(__file__).parent / "pharmacies.json"
 
 with DATA_FILE.open("r", encoding="utf-8") as f:
-    PHARMACIES = json.load(f)
+    RAW_PHARMACIES = json.load(f)
+
+def is_veterinary(raw) -> bool:
+    return bool(re.search(r"\bveterinar", str(raw or ""), flags=re.I))
+
+PHARMACIES = [p for p in RAW_PHARMACIES if not is_veterinary(p.get("Pranali"))]
 
 API_KEY = os.getenv("DDA_API_KEY")
 if not API_KEY:
@@ -36,6 +42,17 @@ def require_api_key(api_key: Optional[str] = Depends(api_key_header)):
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
     return api_key
 
+def public_pranali(raw) -> str:
+    s = re.sub(r"\bHUMAN\b", "", str(raw or ""), flags=re.I)
+    s = re.sub(r"\s*[-–—]\s*", " - ", s)
+    return re.sub(r"\s+", " ", s).strip(" -")
+
+def public_row(row: dict) -> dict:
+    out = dict(row)
+    if "Pranali" in out:
+        out["Pranali"] = public_pranali(out.get("Pranali"))
+    return out
+
 @app.get("/")
 def root():
     return {
@@ -54,7 +71,7 @@ def root():
 @app.get("/api/stats", dependencies=[Depends(require_api_key)])
 def stats():
     districts = sorted({p.get("District") for p in PHARMACIES if p.get("District")})
-    pranalis = sorted({p.get("Pranali") for p in PHARMACIES if p.get("Pranali")})
+    pranalis = sorted({public_pranali(p.get("Pranali")) for p in PHARMACIES if p.get("Pranali")})
     return {"total": len(PHARMACIES), "districts": len(districts), "pranali": pranalis}
 
 @app.get("/api/districts", dependencies=[Depends(require_api_key)])
@@ -112,5 +129,5 @@ def pharmacies(
         "limit": limit,
         "total": total,
         "pages": (total + limit - 1) // limit,
-        "data": results[start:end],
+        "data": [public_row(p) for p in results[start:end]],
     }

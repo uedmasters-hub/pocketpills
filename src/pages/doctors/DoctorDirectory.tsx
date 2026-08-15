@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type Ref } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PageSearchField } from "@/components/PageSearchField";
+import { DirectoryFilterSelect } from "@/components/DirectoryFilterSelect";
 import { useI18n } from "@/lib/i18n";
 import { useUser } from "@/lib/user";
 import { formatFee } from "@/lib/appointments";
@@ -337,7 +338,7 @@ export function DoctorDirectory() {
                 {tx("Show all doctors")}
               </button>
             )}
-            <CitySelect city={city} options={cityOptions} onChange={selectCity} />
+            <DirectoryFilterSelect label={tx("City")} value={city} options={cityOptions} onChange={selectCity} />
           </div>
         </div>
       )}
@@ -426,41 +427,6 @@ export function DoctorDirectory() {
         </Link>
       </p>
     </div>
-  );
-}
-
-function CitySelect({
-  city,
-  options,
-  onChange,
-}: {
-  city: string;
-  options: string[];
-  onChange: (city: string) => void;
-}) {
-  const { tx } = useI18n();
-  return (
-    <label className="inline-flex items-center gap-2 text-sm">
-      <span className="text-ink-tertiary">{tx("City")}</span>
-      <span className="relative inline-flex">
-        <select
-          value={city}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-9 min-w-[9.5rem] appearance-none rounded-full border border-line bg-white py-0 pl-4 pr-10 text-sm font-medium text-[color:var(--pp-primary-950)]"
-        >
-          {options.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <span className="pointer-events-none absolute inset-y-0 right-3 grid w-4 place-items-center text-ink-tertiary">
-          <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-            <path d="M5 7.5 10 12.5 15 7.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-      </span>
-    </label>
   );
 }
 

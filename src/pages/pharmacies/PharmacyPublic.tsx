@@ -10,6 +10,7 @@ import {
   getPharmacyClaim,
   getVerifiedPharmacy,
   pharmacyHours,
+  displayPranali,
   placeLine,
   sameDda,
 } from "@/lib/pharmacyDirectory";
@@ -183,6 +184,7 @@ function PharmacyProfile({
   sidebar: ReactNode;
 }) {
   const { tx } = useI18n();
+  const kind = displayPranali(pranali);
   return (
     <ServicePageShell backTo={backTo} backLabel={backLabel} aside={sidebar}>
       <div className="overflow-hidden rounded-[1.75rem] border border-[#E6E1EF] bg-white">
@@ -198,7 +200,7 @@ function PharmacyProfile({
             {name}
           </h1>
           <p className="mt-2 text-base text-ink-secondary">
-            {(pranali || tx("Pharmacy"))} · {place}
+            {kind ? `${kind} · ${place}` : place}
           </p>
           <p className="mt-1 text-sm font-medium text-ink-tertiary tnum">DDA #{registrationNo}</p>
           {live && (
