@@ -85,9 +85,12 @@ export default async function handler(req: VercelRequest, res: ServerResponse) {
     return;
   }
 
-  const lookup = /^\/lookup\/([^/]+)$/.exec(pathname);
-  if (method === "GET" && lookup) {
-    const result = await lookupPharmacy(decodeURIComponent(lookup[1]));
+  const lookupPath = /^\/lookup\/([^/]+)$/.exec(pathname);
+  if (method === "GET" && (pathname === "/lookup" || lookupPath)) {
+    const reg = lookupPath
+      ? decodeURIComponent(lookupPath[1])
+      : qstr(query.reg) || qstr(query.registrationNo) || "";
+    const result = await lookupPharmacy(reg);
     sendJson(res, result.status, result.body);
     return;
   }

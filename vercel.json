@@ -24,6 +24,9 @@
     }
   },
   "rewrites": [
+    { "source": "/api/nmc/lookup/:nmc", "destination": "/api/nmc/lookup?nmc=:nmc" },
+    { "source": "/api/pharmacy/lookup/:reg", "destination": "/api/pharmacy/lookup?reg=:reg" },
+    { "source": "/api/facility/lookup/:hf", "destination": "/api/facility/lookup?hf=:hf" },
     { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/((?!api/|assets/|img/|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
   ],

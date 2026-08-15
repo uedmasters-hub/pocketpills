@@ -125,10 +125,10 @@ export async function deleteOwnReview(id: string, who: ReviewerIdentity) {
 }
 
 export async function reportReview(id: string, who: ReviewerIdentity, reason = "") {
-  const res = await fetch(`/api/reviews/${encodeURIComponent(id)}/report`, {
+  const res = await fetch("/api/reviews/report", {
     method: "POST",
     headers: { "Content-Type": "application/json", ...reviewerHeaders(who) },
-    body: JSON.stringify({ email: who.email, name: who.name, reason }),
+    body: JSON.stringify({ id, email: who.email, name: who.name, reason }),
   });
   const body = await readJson(res);
   if (!res.ok) throw new Error(String(body.error || "Could not report that review."));

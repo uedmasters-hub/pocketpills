@@ -36,7 +36,7 @@ export async function lookupDdaPharmacy(registrationNo: string): Promise<
     return { ok: false, status: 400, error: "Enter a valid DDA registration number." };
   }
   try {
-    const res = await fetch(`/api/pharmacy/lookup/${encodeURIComponent(n)}`);
+    const res = await fetch(`/api/pharmacy/lookup?reg=${encodeURIComponent(n)}`);
     const body = await readJson(res);
     if (!res.ok) {
       return {

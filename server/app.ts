@@ -41,6 +41,11 @@ export function createAccessApp() {
   app.all("/api/access/session", (req, res) => run("session", req, res));
   app.all("/api/access/health", (req, res) => run("health", req, res));
 
+  app.get("/api/nmc/lookup", async (req, res) => {
+    const nmc = typeof req.query.nmc === "string" ? req.query.nmc : typeof req.query.nmcNumber === "string" ? req.query.nmcNumber : "";
+    const result = await lookupDoctor(nmc);
+    res.status(result.status).json(result.body);
+  });
   app.get("/api/nmc/lookup/:nmcNumber", async (req, res) => {
     const result = await lookupDoctor(req.params.nmcNumber);
     res.status(result.status).json(result.body);
@@ -85,6 +90,16 @@ export function createAccessApp() {
     res.status(result.status).json(result.body);
   });
 
+  app.get("/api/pharmacy/lookup", async (req, res) => {
+    const reg =
+      typeof req.query.reg === "string"
+        ? req.query.reg
+        : typeof req.query.registrationNo === "string"
+          ? req.query.registrationNo
+          : "";
+    const result = await lookupPharmacy(reg);
+    res.status(result.status).json(result.body);
+  });
   app.get("/api/pharmacy/lookup/:registrationNo", async (req, res) => {
     const result = await lookupPharmacy(req.params.registrationNo);
     res.status(result.status).json(result.body);
@@ -118,6 +133,12 @@ export function createAccessApp() {
     res.status(result.status).json(result.body);
   });
 
+  app.get("/api/facility/lookup", async (req, res) => {
+    const hf =
+      typeof req.query.hf === "string" ? req.query.hf : typeof req.query.hfCode === "string" ? req.query.hfCode : "";
+    const result = await lookupFacility(hf);
+    res.status(result.status).json(result.body);
+  });
   app.get("/api/facility/lookup/:hfCode", async (req, res) => {
     const result = await lookupFacility(req.params.hfCode);
     res.status(result.status).json(result.body);

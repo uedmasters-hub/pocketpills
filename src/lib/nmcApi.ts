@@ -38,7 +38,7 @@ export async function lookupNmc(nmcNumber: string): Promise<
     return { ok: false, status: 400, error: "Enter a valid NMC registration number." };
   }
   try {
-    const res = await fetch(`/api/nmc/lookup/${encodeURIComponent(nmc)}`);
+    const res = await fetch(`/api/nmc/lookup?nmc=${encodeURIComponent(nmc)}`);
     const body = await readJson(res);
     if (!res.ok) {
       return {

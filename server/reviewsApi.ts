@@ -136,6 +136,14 @@ export async function handleReviews(req: ReviewsRequest): Promise<{ status: numb
       return userDeleteReview(del[1], reviewer);
     }
 
+    if (method === "POST" && path === "/report") {
+      const reviewer = reviewerFrom(req, body);
+      if (!reviewer) return { status: 401, body: { error: "Sign in to report a review." } };
+      const id = String(body.id || qstr(query, "id") || "").trim();
+      if (!id) return { status: 400, body: { error: "Review id is required." } };
+      return userReportReview(id, reviewer, String(body.reason ?? ""));
+    }
+
     const report = /^\/([^/]+)\/report$/.exec(path);
     if (method === "POST" && report) {
       const reviewer = reviewerFrom(req, body);

@@ -39,7 +39,7 @@ export async function lookupHfFacility(hfCode: string): Promise<
     return { ok: false, status: 400, error: "Enter a valid health facility code." };
   }
   try {
-    const res = await fetch(`/api/facility/lookup/${encodeURIComponent(n)}`);
+    const res = await fetch(`/api/facility/lookup?hf=${encodeURIComponent(n)}`);
     const body = await readJson(res);
     if (!res.ok) {
       return {
