@@ -6,3 +6,9 @@ dist
 .env.*
 !.env.example
 .patch-backup/
+pharmacy_api/.git
+pharmacy_api/.venv
+pharmacy_api/.env
+pharmacy_api/.api_key
+pharmacy_api/api/pharmacies.json.backup
+pharmacy_api/**/__pycache__/

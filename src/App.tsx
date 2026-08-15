@@ -83,6 +83,9 @@ import { TreatmentHubDetail } from "@/pages/appointments/TreatmentHubDetail";
 import { DoctorDirectory } from "@/pages/doctors/DoctorDirectory";
 import { ClaimDoctor } from "@/pages/doctors/ClaimDoctor";
 import { DoctorPublic } from "@/pages/doctors/DoctorPublic";
+import { PharmacyDirectory } from "@/pages/pharmacies/PharmacyDirectory";
+import { ClaimPharmacy } from "@/pages/pharmacies/ClaimPharmacy";
+import { PharmacyPublic } from "@/pages/pharmacies/PharmacyPublic";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -144,6 +147,11 @@ export default function App() {
             <Route path="/doctors" element={<DoctorDirectory />} />
             <Route path="/doctors/claim" element={<ClaimDoctor />} />
             <Route path="/doctors/:nmcNumber" element={<DoctorPublic />} />
+            <Route path="/pharmacies" element={<PharmacyDirectory />} />
+            <Route path="/pharmacies/claim" element={<ClaimPharmacy />} />
+            <Route path="/pharmacies/regions" element={<PharmaciesIndex />} />
+            <Route path="/pharmacies/regions/:region" element={<PharmaciesByRegion />} />
+            <Route path="/pharmacies/:regNo" element={<PharmacyPublic />} />
           </Route>
 
           {/* Treatment + Pharmacy — guests: marketing; signed-in: AppShell */}
@@ -153,8 +161,6 @@ export default function App() {
             <Route path="/find-care" element={<Navigate to="/appointments" replace />} />
             <Route path="/treatment/:slug" element={<TreatmentRedirect />} />
             <Route path="/offers" element={<Offers />} />
-            <Route path="/pharmacies" element={<PharmaciesIndex />} />
-            <Route path="/pharmacies/:region" element={<PharmaciesByRegion />} />
             <Route path="/medications" element={<Navigate to="/drug" replace />} />
             <Route path="/consult/minor-ailments" element={<Navigate to="/appointments" replace />} />
             <Route path="/consult/:slug" element={<ConsultRedirect />} />

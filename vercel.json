@@ -7,6 +7,10 @@
     "api/nmc/[...path].ts": {
       "includeFiles": "nmc-api/data/nmc-database-active.csv",
       "maxDuration": 10
+    },
+    "api/pharmacy/[...path].ts": {
+      "includeFiles": "pharmacy_api/api/pharmacies.json",
+      "maxDuration": 15
     }
   },
   "rewrites": [

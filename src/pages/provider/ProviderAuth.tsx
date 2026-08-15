@@ -335,8 +335,10 @@ export function ProviderSignUp() {
   if (signedIn) return <Navigate to="/provider" replace />;
 
   const isDoctor = vendorType === "doctor";
+  const isPharmacy = vendorType === "pharmacy";
   const ready =
     isDoctor ||
+    isPharmacy ||
     (firstName.trim() &&
       lastName.trim() &&
       orgName.trim() &&
@@ -349,6 +351,10 @@ export function ProviderSignUp() {
       nav("/doctors/claim");
       return;
     }
+    if (isPharmacy) {
+      nav("/pharmacies/claim");
+      return;
+    }
     setBusy(true);
     window.setTimeout(() => {
       signUp({
@@ -359,7 +365,6 @@ export function ProviderSignUp() {
         vendorType,
         ambulanceRole: vendorType === "ambulance" ? ambulanceRole : undefined,
         accountRole: "owner",
-        pharmacyRole: vendorType === "pharmacy" ? "owner" : undefined,
         password: password.trim(),
       });
       nav(
@@ -398,6 +403,12 @@ export function ProviderSignUp() {
         <p className="mt-4 text-sm text-ink-secondary">
           {tx(
             "Doctors onboard from the Nepal Medical Council registry: search your NMC number, confirm last name, then claim the page with mobile verification.",
+          )}
+        </p>
+      ) : isPharmacy ? (
+        <p className="mt-4 text-sm text-ink-secondary">
+          {tx(
+            "Pharmacies onboard from the DDA registry: search your registration number, confirm a distinctive word from the pharmacy name, then claim the page with mobile verification.",
           )}
         </p>
       ) : (

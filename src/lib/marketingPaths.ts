@@ -1,4 +1,4 @@
-/** Always public marketing chrome — even when signed in (How it works, Support, doctor directory). */
+/** Always public marketing chrome — even when signed in (How it works, Support, doctor / pharmacy directory). */
 export function isAlwaysPublicPath(pathname: string) {
   if (
     pathname === "/how-it-works" ||
@@ -9,6 +9,8 @@ export function isAlwaysPublicPath(pathname: string) {
   }
   if (pathname === "/doctors" || pathname === "/doctors/claim") return true;
   if (pathname.startsWith("/doctors/")) return true;
+  if (pathname === "/pharmacies" || pathname === "/pharmacies/claim") return true;
+  if (pathname.startsWith("/pharmacies/")) return true;
   return false;
 }
 
@@ -18,14 +20,12 @@ export function isDualBrowsePath(pathname: string) {
     pathname === "/drug" ||
     pathname === "/delivery-check" ||
     pathname === "/offers" ||
-    pathname === "/pharmacies" ||
     pathname === "/find-care"
   ) {
     return true;
   }
   if (pathname.startsWith("/drug/")) return true;
   if (pathname.startsWith("/consult/")) return true;
-  if (pathname.startsWith("/pharmacies/")) return true;
   if (pathname.startsWith("/treatment/")) return true;
   return false;
 }

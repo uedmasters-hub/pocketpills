@@ -170,7 +170,7 @@ const PROVINCES = [
 
 const COLUMNS: { head: string; links: [string, string][]; cta: [string, string] }[] = [
   { head: "Treatment", links: [["Weight loss", "/appointments/treatments/weight-loss"], ["Hair loss", "/appointments/treatments/hair-loss"], ["Find a doctor", "/doctors"], ["Claim your profile", "/doctors/claim"]], cta: ["See all treatments", "/appointments"] },
-  { head: "Pharmacy", links: [["Fill a prescription", "/fill"], ["Transfer a prescription", "/transfer"], ["Find medications", "/drug"], ["Pharmacies by region", "/pharmacies"]], cta: ["Get started", "/get-started"] },
+  { head: "Pharmacy", links: [["Find a pharmacy", "/pharmacies"], ["Claim your pharmacy", "/pharmacies/claim"], ["Fill a prescription", "/fill"], ["Transfer a prescription", "/transfer"], ["Pharmacies by region", "/pharmacies/regions"]], cta: ["Get started", "/get-started"] },
   { head: "Medications", links: [["Ozempic", "/drug/ozempic"], ["Browse A–Z", "/drug"], ["Offers", "/offers"]], cta: ["Search prices", "/drug"] },
   { head: "Company", links: [["About", "/about-us"], ["How it works", "/how-it-works"], ["FAQs", "/questions"], ["Help centre", "/questions"]], cta: ["Contact us", "/questions"] },
 ];
@@ -344,7 +344,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
               {PROVINCES.map((p) => (
                 <li key={p.code}>
                   <Link
-                    to={`/pharmacies/${p.slug}`}
+                    to={`/pharmacies/regions/${p.slug}`}
                     className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--primary-200)] px-3 py-1.5 text-sm text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-200)] active:bg-[color:var(--state-pressed)]"
                   >
                     <span className="font-medium">{tx(p.name)}</span>
@@ -354,7 +354,7 @@ export function SiteFooter({ go: goProp, variant: forced }: { go?: (to?: string)
               ))}
             </ul>
             <Link
-              to="/pharmacies"
+              to="/pharmacies/regions"
               className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-80"
             >
               {tx("More…")} <ArrowRight w={14} />

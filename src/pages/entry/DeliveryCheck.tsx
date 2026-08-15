@@ -117,7 +117,7 @@ export function DeliveryCheck() {
               <p className="mt-0.5 text-ink-secondary">
                 {tx("Enter any postal code in {code}, or ").replace("{code}", region.code)}{" "}
                 <Link
-                  to={`/pharmacies/${region.slug}`}
+                  to={`/pharmacies/regions/${region.slug}`}
                   className="font-medium text-[color:var(--pp-violet)] hover:underline"
                 >
                   {tx("browse pharmacies")}

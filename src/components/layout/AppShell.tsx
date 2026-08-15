@@ -50,7 +50,7 @@ const MORE: [MessageKey, string][] = [
   ["app.pharmacy", "/pharmacy"],
   ["app.messages", "/messages"],
   ["app.offers", "/offers"],
-  ["app.pharmaciesRegion", "/pharmacies"],
+  ["app.pharmaciesRegion", "/pharmacies/regions"],
   ["app.editProfile", "/account"],
   ["app.family", "/account/family"],
   ["app.notifications", "/account/notifications"],

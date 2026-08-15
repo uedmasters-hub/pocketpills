@@ -25,7 +25,7 @@ function RegionPills({ active }: { active?: string }) {
         return (
           <li key={r.code}>
             <Link
-              to={`/pharmacies/${r.slug}`}
+              to={`/pharmacies/regions/${r.slug}`}
               aria-current={on ? "page" : undefined}
               className={
                 "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors " +
@@ -299,7 +299,7 @@ export function PharmaciesIndex() {
               return (
                 <Link
                   key={r.code}
-                  to={`/pharmacies/${r.slug}`}
+                  to={`/pharmacies/regions/${r.slug}`}
                   className={`${CARD} p-5 transition-colors hover:bg-[color:var(--state-hover)]`}
                 >
                   <p className="font-semibold text-[color:var(--pp-primary-950)]">
@@ -356,12 +356,12 @@ export function PharmaciesByRegion() {
     if (!selectedId && list[0]) setSelectedId(list[0].id);
   }, [list, selectedId]);
 
-  if (!region) return <Navigate to="/pharmacies" replace />;
+  if (!region) return <Navigate to="/pharmacies/regions" replace />;
 
   return (
     <div>
       <Link
-        to="/pharmacies"
+        to="/pharmacies/regions"
         className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-[color:var(--pp-primary-950)] transition-opacity hover:opacity-70"
       >
         <span aria-hidden>←</span> {tx("All regions")}

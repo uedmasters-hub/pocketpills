@@ -55,7 +55,7 @@ export const PAGE_SEARCH_COPY: Record<PageSearchScope, PageSearchCopy> = {
     listeningNe: "Listening in Nepali… speak, then pause",
   },
   pharmacies: {
-    placeholder: "Search by name, city, or street…",
+    placeholder: "Name or place",
     ariaLabel: "Search pharmacies",
     listeningEn: "Listening in English… speak, then pause",
     listeningNe: "Listening in Nepali… speak, then pause",

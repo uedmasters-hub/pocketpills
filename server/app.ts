@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { handleAccess, type AccessRequest } from "./accessApi.js";
 import { lookupDoctor, searchDoctors, verifyDoctor } from "./nmcProxy.js";
+import { listPharmacyDistricts, lookupPharmacy, searchPharmacies, verifyPharmacy } from "./pharmacyProxy.js";
 
 function toAccessRequest(req: express.Request): AccessRequest {
   return {
@@ -54,6 +55,39 @@ export function createAccessApp() {
       page: typeof req.query.page === "string" ? req.query.page : undefined,
       limit: typeof req.query.limit === "string" ? req.query.limit : undefined,
     });
+    res.status(result.status).json(result.body);
+  });
+
+  app.get("/api/pharmacy/health", (_req, res) => {
+    res.json({ status: "ok", service: "dda-pharmacy-registry" });
+  });
+
+  app.get("/api/pharmacy/districts", async (_req, res) => {
+    const result = await listPharmacyDistricts();
+    res.status(result.status).json(result.body);
+  });
+
+  app.get("/api/pharmacy/list", async (req, res) => {
+    const result = await searchPharmacies({
+      q: typeof req.query.q === "string" ? req.query.q : undefined,
+      name: typeof req.query.name === "string" ? req.query.name : undefined,
+      district: typeof req.query.district === "string" ? req.query.district : undefined,
+      place: typeof req.query.place === "string" ? req.query.place : undefined,
+      page: typeof req.query.page === "string" ? req.query.page : undefined,
+      limit: typeof req.query.limit === "string" ? req.query.limit : undefined,
+    });
+    res.status(result.status).json(result.body);
+  });
+
+  app.get("/api/pharmacy/lookup/:registrationNo", async (req, res) => {
+    const result = await lookupPharmacy(req.params.registrationNo);
+    res.status(result.status).json(result.body);
+  });
+
+  app.post("/api/pharmacy/verify", async (req, res) => {
+    const registrationNo = String(req.body?.registrationNo ?? "");
+    const nameToken = String(req.body?.nameToken ?? req.body?.name ?? "");
+    const result = await verifyPharmacy(registrationNo, nameToken);
     res.status(result.status).json(result.body);
   });
 

@@ -90,3 +90,96 @@ export function citySelectOptions(current: string): string[] {
   if (!names.some((c) => c.toLowerCase() === cur.toLowerCase())) names.unshift(cur);
   return [...new Set(names)];
 }
+
+const DISTRICT_KEY = "pp.pharmacies.district.v1";
+
+export const DEFAULT_PHARMACY_DISTRICT = "Kathmandu";
+
+export const NEPAL_DISTRICTS = [
+  "Kathmandu",
+  "Lalitpur",
+  "Bhaktapur",
+  "Kaski",
+  "Morang",
+  "Rupandehi",
+  "Chitwan",
+  "Jhapa",
+  "Kailali",
+  "Parsa",
+  "Makwanpur",
+  "Kavrepalanchok",
+  "Banke",
+  "Sunsari",
+  "Dhanusha",
+] as const;
+
+const NEARBY_DISTRICTS: Record<string, string[]> = {
+  Kathmandu: ["Lalitpur", "Bhaktapur", "Kavrepalanchok", "Makwanpur", "Chitwan"],
+  Lalitpur: ["Kathmandu", "Bhaktapur", "Makwanpur", "Kavrepalanchok", "Chitwan"],
+  Bhaktapur: ["Kathmandu", "Lalitpur", "Kavrepalanchok", "Makwanpur", "Chitwan"],
+  Kaski: ["Tanahu", "Syangja", "Parbat", "Lamjung", "Kathmandu"],
+  Morang: ["Sunsari", "Jhapa", "Dhankuta", "Saptari", "Kathmandu"],
+  Rupandehi: ["Nawalparasi", "Kapilvastu", "Palpa", "Chitwan", "Kathmandu"],
+  Chitwan: ["Makwanpur", "Nawalparasi", "Dhading", "Kathmandu", "Lalitpur"],
+  Jhapa: ["Morang", "Ilam", "Sunsari", "Panchthar", "Kathmandu"],
+  Kailali: ["Kanchanpur", "Bardiya", "Doti", "Surkhet", "Kathmandu"],
+  Parsa: ["Bara", "Rautahat", "Makwanpur", "Chitwan", "Kathmandu"],
+};
+
+const FALLBACK_NEARBY_DISTRICTS = ["Kathmandu", "Lalitpur", "Kaski", "Morang", "Chitwan"];
+
+export function readSavedPharmacyDistrict() {
+  try {
+    const saved = normalizeCityName(localStorage.getItem(DISTRICT_KEY) || "");
+    if (saved) return saved;
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_PHARMACY_DISTRICT;
+}
+
+export function savePharmacyDistrict(district: string) {
+  const next = normalizeCityName(district) || DEFAULT_PHARMACY_DISTRICT;
+  try {
+    localStorage.setItem(DISTRICT_KEY, next);
+  } catch {
+    /* ignore */
+  }
+  return next;
+}
+
+export function nearbyDistricts(district: string, count = 5): string[] {
+  const current = normalizeCityName(district);
+  const key =
+    Object.keys(NEARBY_DISTRICTS).find((c) => c.toLowerCase() === current.toLowerCase()) || current;
+  const listed = NEARBY_DISTRICTS[key] || FALLBACK_NEARBY_DISTRICTS;
+  const out: string[] = [];
+  for (const name of listed) {
+    if (name.toLowerCase() === current.toLowerCase()) continue;
+    out.push(name);
+    if (out.length >= count) break;
+  }
+  if (out.length < count) {
+    for (const name of FALLBACK_NEARBY_DISTRICTS) {
+      if (name.toLowerCase() === current.toLowerCase()) continue;
+      if (out.some((c) => c.toLowerCase() === name.toLowerCase())) continue;
+      out.push(name);
+      if (out.length >= count) break;
+    }
+  }
+  return out.slice(0, count);
+}
+
+export function districtSelectOptions(current: string, extra: string[] = []): string[] {
+  const cur = normalizeCityName(current) || DEFAULT_PHARMACY_DISTRICT;
+  const names: string[] = [cur, ...NEPAL_DISTRICTS, ...extra.map(normalizeCityName).filter(Boolean)];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const name of names) {
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(name);
+  }
+  return out;
+}

@@ -28,6 +28,8 @@ export type ProviderAccount = {
   onboarded: boolean;
   /** Nepal Medical Council number when this account claimed an NMC profile */
   nmcNumber?: string;
+  /** DDA pharmacy registration when this account claimed a pharmacy profile */
+  ddaNumber?: string;
 };
 
 type ProviderState = {
@@ -46,6 +48,7 @@ type ProviderState = {
     phone?: string;
     password?: string;
     nmcNumber?: string;
+    ddaNumber?: string;
     id?: string;
   }) => ProviderAccount;
   logOut: () => void;
@@ -86,6 +89,7 @@ function normalizeAccount(raw: ProviderAccount): ProviderAccount {
     pharmacyOrgId: vendorType === "pharmacy" && isDel ? ownerOrgId : undefined,
     delegateId: isDel ? String(raw.delegateId ?? "") : undefined,
     nmcNumber: raw.nmcNumber ? String(raw.nmcNumber).trim() : undefined,
+    ddaNumber: raw.ddaNumber ? String(raw.ddaNumber).trim() : undefined,
   };
 }
 
@@ -191,6 +195,7 @@ export function ProviderAuthProvider({ children }: { children: ReactNode }) {
           delegateId: opts?.delegateId,
           onboarded: opts?.onboarded ?? true,
           nmcNumber: opts?.nmcNumber,
+          ddaNumber: opts?.ddaNumber,
         });
         if (!isDel && opts?.password) {
           saveOwnerPassword(account.id, opts.password, account.email);
@@ -220,6 +225,7 @@ export function ProviderAuthProvider({ children }: { children: ReactNode }) {
           pharmacyRole: vendorType === "pharmacy" ? "owner" : undefined,
           onboarded: true,
           nmcNumber: input.nmcNumber ? String(input.nmcNumber).trim() : undefined,
+          ddaNumber: input.ddaNumber ? String(input.ddaNumber).trim() : undefined,
         });
         if (input.password) saveOwnerPassword(account.id, input.password, account.email);
         write(account);
