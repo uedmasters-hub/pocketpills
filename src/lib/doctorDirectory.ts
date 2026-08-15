@@ -9,7 +9,9 @@ import {
   emptyBusinessProfile,
   publishBusinessProfile,
   saveDraft,
+  specialisedInFromListing,
 } from "@/lib/businessProfile";
+import { defaultDoctorSpecialised } from "@/lib/specialisedIn";
 
 const DIR_KEY = "pp.doctors.directory.v1";
 const IDENT_KEY = "pp.doctors.identities.v1";
@@ -317,11 +319,12 @@ export function nmcDoctorToCareProvider(
     phone: extras?.phone,
     focusAreas: [degree, "General consultation", "Follow-up"],
     education: [`Nepal Medical Council #${nmc}`, degree],
+    specialisedIn: defaultDoctorSpecialised({ degree, specialties: [specialty] }),
   };
 }
 
 export function claimToCareProvider(claim: DoctorClaim): CareProvider {
-  return nmcDoctorToCareProvider(
+  const care = nmcDoctorToCareProvider(
     {
       nmcNumber: claim.nmcNumber,
       name: claim.name,
@@ -331,6 +334,11 @@ export function claimToCareProvider(claim: DoctorClaim): CareProvider {
     },
     { published: claim.published, phone: claim.phone },
   );
+  care.specialisedIn = specialisedInFromListing(
+    claim.providerId,
+    care.specialisedIn ?? defaultDoctorSpecialised({ degree: claim.degree }),
+  );
+  return care;
 }
 
 export function listPublishedNmcProviders(): CareProvider[] {
@@ -512,6 +520,7 @@ export function claimDoctorProfile(input: {
       email: claim.email,
       licenseNumber: nmc,
       specialtyNote: claim.degree,
+      specialisedIn: defaultDoctorSpecialised({ degree: claim.degree }),
       imageUrl: nmcDoctorToCareProvider(snapshot).imageUrl,
       publishedId: nmcProfileId(nmc),
       ownerId: input.providerId,

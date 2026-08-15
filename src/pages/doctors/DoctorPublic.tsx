@@ -1,6 +1,7 @@
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
+import { DIRECTORY_SIDEBAR_CARD } from "@/components/DirectoryDetailLayout";
 import { DoctorProfilePage } from "@/pages/appointments/ProviderDetail";
 import { normalizeNmcNumber } from "@/lib/nmcApi";
 import {
@@ -49,14 +50,16 @@ export function DoctorPublic() {
         provider={care}
         backTo="/doctors"
         backLabel={tx("Doctor directory")}
+        canWrite
+        owned={owned}
         sidebar={
           owned ? (
-            <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
+            <div className={DIRECTORY_SIDEBAR_CARD}>
               <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Your live profile")}</p>
               <p className="mt-2 text-sm text-ink-secondary">
                 {tx("Patients can book this page. Edit hours and bio from your listing.")}
               </p>
-              <Button fullWidth className="mt-5" onClick={() => nav("/provider/listing")}>
+              <Button fullWidth size="sm" className="mt-4" onClick={() => nav("/provider/listing")}>
                 {tx("Edit listing")}
               </Button>
             </div>
@@ -74,13 +77,15 @@ export function DoctorPublic() {
           backTo="/doctors"
           backLabel={tx("Doctor directory")}
           hideAvailability
+          canWrite={false}
+          owned
           sidebar={
-            <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
+            <div className={DIRECTORY_SIDEBAR_CARD}>
               <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Unpublished")}</p>
               <p className="mt-2 text-sm text-ink-secondary">
                 {tx("You claimed this NMC profile, but the card is hidden until you publish the listing.")}
               </p>
-              <Button fullWidth className="mt-5" onClick={() => nav("/provider/listing")}>
+              <Button fullWidth size="sm" className="mt-4" onClick={() => nav("/provider/listing")}>
                 {tx("Publish listing")}
               </Button>
             </div>
@@ -109,6 +114,7 @@ export function DoctorPublic() {
         backTo="/doctors/claim"
         backLabel={tx("Claim flow")}
         hideAvailability
+        canWrite={false}
         sidebar={
           <ClaimPanel doctor={verified} />
         }

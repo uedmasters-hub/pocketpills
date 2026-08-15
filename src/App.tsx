@@ -86,6 +86,9 @@ import { DoctorPublic } from "@/pages/doctors/DoctorPublic";
 import { PharmacyDirectory } from "@/pages/pharmacies/PharmacyDirectory";
 import { ClaimPharmacy } from "@/pages/pharmacies/ClaimPharmacy";
 import { PharmacyPublic } from "@/pages/pharmacies/PharmacyPublic";
+import { FacilityDirectory } from "@/pages/facilities/FacilityDirectory";
+import { ClaimFacility } from "@/pages/facilities/ClaimFacility";
+import { FacilityPublic } from "@/pages/facilities/FacilityPublic";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -152,6 +155,9 @@ export default function App() {
             <Route path="/pharmacies/regions" element={<PharmaciesIndex />} />
             <Route path="/pharmacies/regions/:region" element={<PharmaciesByRegion />} />
             <Route path="/pharmacies/:regNo" element={<PharmacyPublic />} />
+            <Route path="/facilities" element={<FacilityDirectory />} />
+            <Route path="/facilities/claim" element={<ClaimFacility />} />
+            <Route path="/facilities/:hfCode" element={<FacilityPublic />} />
           </Route>
 
           {/* Treatment + Pharmacy — guests: marketing; signed-in: AppShell */}

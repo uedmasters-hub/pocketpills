@@ -1,19 +1,67 @@
+import treatmentCatalog from "../../treatments.json";
+
 export interface Treatment {
   slug: string; name: string; category: string; blurb: string; from: number; eligible: boolean; emoji: string;
   /** Cut-out portrait for the card; falls back to the emoji when absent. */
   img?: string;
 }
-export const treatments: Treatment[] = [
-  { slug: "weight-loss", name: "Weight loss", category: "Chronic care", blurb: "Doctor-led programs with brand-name medication and ongoing support.", from: 139, eligible: true, emoji: "⚖️", img: "/img/treatments/weight-loss.png" },
-  { slug: "hair-loss", name: "Hair loss", category: "Dermatology", blurb: "Evidence-based treatments to slow and reverse thinning.", from: 29, eligible: true, emoji: "💇", img: "/img/treatments/hair-loss.png" },
-  { slug: "erectile-dysfunction", name: "Erectile dysfunction", category: "Sexual health", blurb: "Easy consults, expert care, discreet delivery.", from: 24, eligible: true, emoji: "💙", img: "/img/treatments/ed.png" },
-  { slug: "acne", name: "Acne", category: "Dermatology", blurb: "Prescription treatments for clearer skin, assessed online.", from: 20, eligible: true, emoji: "✨", img: "/img/treatments/acne.png" },
-  { slug: "birth-control", name: "Birth control", category: "Sexual health", blurb: "Ongoing prescription and free delivery, renewed automatically.", from: 0, eligible: true, emoji: "💊", img: "/img/treatments/birth-control.png" },
-  { slug: "uti", name: "UTI", category: "Everyday care", blurb: "Fast assessment and treatment for urinary tract infections.", from: 25, eligible: true, emoji: "💧", img: "/img/treatments/uti.png" },
-  { slug: "high-blood-pressure", name: "Blood pressure", category: "Chronic care", blurb: "Continuous monitoring, medication, and pharmacist support.", from: 25, eligible: true, emoji: "❤️", img: "/img/treatments/blood-pressure.png" },
-  { slug: "diabetes", name: "Diabetes", category: "Chronic care", blurb: "Long-term management with refills, reminders, and check-ins.", from: 30, eligible: true, emoji: "🩸", img: "/img/treatments/diabetes.png" },
-  { slug: "acid-reflux", name: "Acid reflux", category: "Digestive", blurb: "Manage heartburn and GERD with a tailored plan.", from: 22, eligible: true, emoji: "🔥", img: "/img/treatments/acid-reflux.png" },
-];
+
+const CATEGORY_EMOJI: Record<string, string> = {
+  Popular: "⭐",
+  "General Surgery": "🩺",
+  Proctology: "🩹",
+  Ophthalmology: "👁️",
+  Urology: "💧",
+  "Cosmetic Surgery": "✨",
+  Orthopedics: "🦴",
+  "Robotic Surgeries": "🤖",
+  Oncology: "🎗️",
+  Dental: "🦷",
+};
+
+function slugifyTreatment(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function specialtyCategory(name: string, catalog: Record<string, string[]>) {
+  for (const [category, names] of Object.entries(catalog)) {
+    if (category === "Popular") continue;
+    if (names.includes(name)) return category;
+  }
+  return "Popular";
+}
+
+function treatmentsFromCatalog(catalog: Record<string, string[]>): Treatment[] {
+  const seen = new Set<string>();
+  const out: Treatment[] = [];
+  const add = (name: string) => {
+    const slug = slugifyTreatment(name);
+    if (!slug || seen.has(slug)) return;
+    seen.add(slug);
+    const category = specialtyCategory(name, catalog);
+    out.push({
+      slug,
+      name,
+      category,
+      blurb: `${name} consults with specialists through PocketPills.`,
+      from: 25,
+      eligible: true,
+      emoji: CATEGORY_EMOJI[category] || "🏥",
+    });
+  };
+  for (const name of catalog.Popular || []) add(name);
+  for (const [category, names] of Object.entries(catalog)) {
+    if (category === "Popular") continue;
+    for (const name of names) add(name);
+  }
+  return out;
+}
+
+export const treatments: Treatment[] = treatmentsFromCatalog(treatmentCatalog);
+
 
 
 export type EntryIconKey = "treatment" | "fill" | "transfer" | "explore";

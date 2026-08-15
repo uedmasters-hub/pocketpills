@@ -45,7 +45,12 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   });
   const data = (await res.json().catch(() => ({}))) as T & { error?: string };
   if (!res.ok) {
-    throw new Error(data.error || `Request failed (${res.status})`);
+    throw new Error(
+      data.error ||
+        (res.status === 405
+          ? "Could not reach the access API. Restart the app with npm run dev."
+          : `Request failed (${res.status})`),
+    );
   }
   return data;
 }

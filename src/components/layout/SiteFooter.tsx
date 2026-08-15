@@ -154,7 +154,7 @@ function Social() {
 }
 
 const COLUMNS: { head: string; links: [string, string][]; cta: [string, string] }[] = [
-  { head: "Treatment", links: [["Weight loss", "/appointments/treatments/weight-loss"], ["Hair loss", "/appointments/treatments/hair-loss"], ["Find a doctor", "/doctors"], ["Claim your profile", "/doctors/claim"]], cta: ["See all treatments", "/appointments"] },
+  { head: "Treatment", links: [["Weight loss", "/appointments/treatments/weight-loss"], ["Hair loss", "/appointments/treatments/hair-loss"], ["Find a doctor", "/doctors"], ["Claim your profile", "/doctors/claim"], ["Find a hospital", "/facilities"], ["Claim your facility", "/facilities/claim"]], cta: ["See all treatments", "/appointments"] },
   { head: "Pharmacy", links: [["Find a pharmacy", "/pharmacies"], ["Claim your pharmacy", "/pharmacies/claim"], ["Fill a prescription", "/fill"], ["Transfer a prescription", "/transfer"], ["Pharmacies by region", "/pharmacies/regions"]], cta: ["Get started", "/get-started"] },
   { head: "Medications", links: [["Ozempic", "/drug/ozempic"], ["Browse A–Z", "/drug"], ["Offers", "/offers"]], cta: ["Search prices", "/drug"] },
   { head: "Company", links: [["About", "/about-us"], ["How it works", "/how-it-works"], ["FAQs", "/questions"], ["Help centre", "/questions"]], cta: ["Contact us", "/questions"] },

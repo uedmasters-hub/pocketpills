@@ -6,6 +6,11 @@ import type { CareProvider, FacilityService, ProviderKind, SpecialtyId, VisitTyp
 import type { CareVisitType, CareWorker, CareWorkerKind } from "@/lib/careWorkers";
 import type { LabCentre } from "@/lib/labs";
 import {
+  defaultSpecialisedForVendor,
+  sanitizeSpecialisedIn,
+  type SpecialisedGroup,
+} from "@/lib/specialisedIn";
+import {
   formatDateRange,
   formatDiscount,
   loadOfferings,
@@ -172,6 +177,249 @@ export type BusinessDaySchedule = {
   end: string;
 };
 
+export type ListingPublicationKind = "article" | "news" | "publication";
+
+export type ListingPublication = {
+  id: string;
+  kind: ListingPublicationKind;
+  title: string;
+  summary: string;
+  date?: string;
+  imageUrl?: string;
+  minutes?: number;
+};
+
+export const PUBLICATION_KIND_LABELS: Record<ListingPublicationKind, string> = {
+  article: "Article",
+  news: "News",
+  publication: "Publication",
+};
+
+export function newListingPublication(kind: ListingPublicationKind = "article"): ListingPublication {
+  return {
+    id: `pub-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    kind,
+    title: "",
+    summary: "",
+  };
+}
+
+export function sanitizePublications(raw: unknown): ListingPublication[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((row): ListingPublication | null => {
+      if (!row || typeof row !== "object") return null;
+      const r = row as Partial<ListingPublication>;
+      const kind: ListingPublicationKind =
+        r.kind === "news" || r.kind === "publication" ? r.kind : "article";
+      const title = String(r.title ?? "").trim();
+      if (!title) return null;
+      const minutes = Number(r.minutes);
+      return {
+        id: String(r.id || `pub-${title}`),
+        kind,
+        title,
+        summary: String(r.summary ?? "").trim(),
+        date: String(r.date ?? "").trim() || undefined,
+        imageUrl: String(r.imageUrl ?? "").trim() || undefined,
+        minutes: minutes > 0 ? minutes : undefined,
+      };
+    })
+    .filter((p): p is ListingPublication => Boolean(p));
+}
+
+function demoPub(
+  id: string,
+  kind: ListingPublicationKind,
+  title: string,
+  summary: string,
+  minutes: number,
+  imageUrl: string,
+): ListingPublication {
+  return { id, kind, title, summary, minutes, imageUrl };
+}
+
+/** Sample publications for a few demo directory listings. Overridden when the owner saves publications (including an empty list). */
+const DEMO_LISTING_PUBLICATIONS: Record<string, ListingPublication[]> = {
+  "prov-nmc-6": [
+    demoPub(
+      "nmc-6-fever",
+      "article",
+      "Fever and infections: when to see a doctor",
+      "How to tell a passing illness from symptoms that need a clinician.",
+      4,
+      "/img/General Physician.png",
+    ),
+    demoPub(
+      "nmc-6-bp",
+      "article",
+      "Living with high blood pressure",
+      "Everyday steps that support blood-pressure care between visits.",
+      5,
+      "/img/treatments/blood-pressure.png",
+    ),
+    demoPub(
+      "nmc-6-diabetes",
+      "article",
+      "Diabetes follow-up: what to bring",
+      "Readings, medicines, and questions that make a consult more useful.",
+      3,
+      "/img/treatments/diabetes.png",
+    ),
+    demoPub(
+      "nmc-6-preventive",
+      "article",
+      "What a preventive health consult covers",
+      "Screening, lifestyle, and when a follow-up is the right next step.",
+      4,
+      "/img/Cardiologist.png",
+    ),
+  ],
+  "prov-nmc-5": [
+    demoPub(
+      "nmc-5-women",
+      "article",
+      "Making the most of a women’s health visit",
+      "Cycle changes, contraception, and questions that help the consult.",
+      4,
+      "/img/General Physician.png",
+    ),
+    demoPub(
+      "nmc-5-prepare",
+      "publication",
+      "How to prepare for your appointment",
+      "ID, medicine list, and notes that help your clinician help you.",
+      3,
+      "/img/treatments/blood-pressure.png",
+    ),
+  ],
+  "prov-dda-3711215063850": [
+    demoPub(
+      "dda-manab-store",
+      "article",
+      "How to store medicines at home",
+      "Heat, moisture, and bathroom cabinets — simple habits that keep medicines effective.",
+      4,
+      "/img/treatments/uti.png",
+    ),
+    demoPub(
+      "dda-manab-labels",
+      "article",
+      "Understanding prescription labels",
+      "What the directions, warnings, and refill line actually mean.",
+      3,
+      "/img/General Physician.png",
+    ),
+    demoPub(
+      "dda-manab-generic",
+      "article",
+      "Generic vs. brand medicines",
+      "How generics relate to brand-name products, and what to ask your pharmacist.",
+      4,
+      "/img/treatments/blood-pressure.png",
+    ),
+    demoPub(
+      "dda-manab-hours",
+      "news",
+      "Updated dispensing hours",
+      "Weekday counter hours and how to send a prescription for review.",
+      2,
+      "/img/Cardiologist.png",
+    ),
+  ],
+  "prov-dda-3711213090457": [
+    demoPub(
+      "dda-kanchan-safe",
+      "article",
+      "How to take medicines safely",
+      "Timing, missed doses, and when to pause and ask for help.",
+      4,
+      "/img/treatments/uti.png",
+    ),
+    demoPub(
+      "dda-kanchan-ask",
+      "article",
+      "When to ask a pharmacist for help",
+      "Side effects, interactions, and questions that belong with a pharmacist.",
+      3,
+      "/img/General Physician.png",
+    ),
+  ],
+  "prov-hf-3060100072": [
+    demoPub(
+      "hf-peoples-opd",
+      "news",
+      "OPD schedule this month",
+      "How to book an outpatient visit and what to bring to reception.",
+      3,
+      "/img/treatments/blood-pressure.png",
+    ),
+    demoPub(
+      "hf-peoples-fever",
+      "article",
+      "Fever and infections: when to come in",
+      "What to watch for at home and when an in-person visit is the safer choice.",
+      4,
+      "/img/General Physician.png",
+    ),
+    demoPub(
+      "hf-peoples-bp",
+      "article",
+      "Living with high blood pressure",
+      "Everyday steps that support blood-pressure care between hospital visits.",
+      5,
+      "/img/Cardiologist.png",
+    ),
+    demoPub(
+      "hf-peoples-prepare",
+      "publication",
+      "Preparing for a hospital visit",
+      "ID, reports, and questions that help your care team help you.",
+      3,
+      "/img/treatments/uti.png",
+    ),
+  ],
+  "prov-hf-3060300122": [
+    demoPub(
+      "hf-shankar-news",
+      "news",
+      "Outpatient booking reminder",
+      "Bring a photo ID and your current medicine list to the desk.",
+      2,
+      "/img/General Physician.png",
+    ),
+    demoPub(
+      "hf-shankar-preventive",
+      "article",
+      "What a preventive health consult covers",
+      "Screening, lifestyle, and when a follow-up is the right next step.",
+      4,
+      "/img/treatments/blood-pressure.png",
+    ),
+  ],
+};
+
+/** Published listing content. Saved publications (including an empty list) override demo samples. */
+export function publicationsForOwner(ownerId?: string): ListingPublication[] {
+  if (!ownerId) return [];
+  const pub = getPublishedBusiness();
+  if (pub?.ownerId === ownerId && Array.isArray(pub.publications)) {
+    return sanitizePublications(pub.publications);
+  }
+  const stored = readJson<BusinessProfile>(draftKey(ownerId));
+  if (stored && Array.isArray(stored.publications)) {
+    return sanitizePublications(stored.publications);
+  }
+  return DEMO_LISTING_PUBLICATIONS[ownerId] ?? [];
+}
+
+export function ownerIdForListing(publishedId?: string, claimOwnerId?: string): string | undefined {
+  if (claimOwnerId) return claimOwnerId;
+  if (!publishedId) return undefined;
+  const pub = getPublishedBusiness();
+  if (pub?.publishedId === publishedId) return pub.ownerId;
+}
+
 export type BusinessProfile = {
   type: BusinessVendorType;
   name: string;
@@ -194,6 +442,8 @@ export type BusinessProfile = {
   feeFrom: number;
   /** Free-text specialty labels (mapped to general specialty on hub) */
   specialtyNote: string;
+  /** Departments / procedures shown on the public profile accordion */
+  specialisedIn: SpecialisedGroup[];
   rating: number;
   nextAvailable: string;
   emoji: string;
@@ -203,6 +453,8 @@ export type BusinessProfile = {
   ownerId?: string;
   status: "draft" | "published";
   updatedAt: string;
+  /** News, articles, and other verified publications shown on the public profile */
+  publications: ListingPublication[];
 };
 
 export const BUSINESS_WEEKDAYS = [
@@ -313,12 +565,14 @@ export function emptyBusinessProfile(type: BusinessVendorType = "doctor"): Busin
     capabilities: defaultCapabilities(type),
     feeFrom: type === "lab" ? 0 : 79,
     specialtyNote: "",
+    specialisedIn: defaultSpecialisedForVendor(type),
     rating: 4.8,
     nextAvailable: "Today",
     emoji: defaultEmoji(type),
     imageUrl: defaultImage(type),
     status: "draft",
     updatedAt: new Date().toISOString(),
+    publications: [],
   };
 }
 
@@ -409,6 +663,28 @@ function normalizeDraft(stored: BusinessProfile): BusinessProfile {
     services: Array.isArray(stored.services)
       ? stored.services.map((s) => normalizeBusinessService(s))
       : [],
+    specialisedIn: (() => {
+      const groups = sanitizeSpecialisedIn(stored.specialisedIn);
+      return groups.length
+        ? groups
+        : defaultSpecialisedForVendor(type, {
+            degree: stored.specialtyNote,
+            subtitle: stored.subtitle,
+            name: stored.name,
+          });
+    })(),
+    publications: Array.isArray(stored.publications)
+      ? stored.publications.map((row) => ({
+          id: String(row?.id || `pub-${Math.random().toString(36).slice(2, 8)}`),
+          kind:
+            row?.kind === "news" || row?.kind === "publication" ? row.kind : ("article" as const),
+          title: String(row?.title ?? ""),
+          summary: String(row?.summary ?? ""),
+          date: String(row?.date ?? "").trim() || undefined,
+          imageUrl: String(row?.imageUrl ?? "").trim() || undefined,
+          minutes: Number(row?.minutes) > 0 ? Number(row?.minutes) : undefined,
+        }))
+      : [],
   };
 }
 
@@ -440,10 +716,12 @@ export function loadDraftForProvider(provider: {
 }): BusinessProfile {
   const seedName = listingNameFromProvider(provider);
   const stored = readJson<BusinessProfile>(draftKey(provider.id));
+  const demoPubs = DEMO_LISTING_PUBLICATIONS[provider.id];
   if (stored?.type) {
     const next = normalizeDraft(stored);
     return {
       ...next,
+      publications: Array.isArray(stored.publications) ? next.publications : (demoPubs ?? next.publications),
       name: next.name.trim() || seedName,
       phone: next.phone.trim() || provider.phone || "",
     };
@@ -451,6 +729,7 @@ export function loadDraftForProvider(provider: {
   // Fresh listing from this provider — ignore legacy patient drafts (e.g. other names).
   return {
     ...emptyBusinessProfile(provider.vendorType),
+    publications: demoPubs ?? [],
     name: seedName,
     phone: provider.phone?.trim() || "",
   };
@@ -473,8 +752,21 @@ export function getPublishedBusiness(): BusinessProfile | null {
   return stored;
 }
 
+/** Listing accordion, or a type-aware fallback when the vendor has not edited it yet. */
+export function specialisedInFromListing(
+  ownerId: string | undefined,
+  fallback: SpecialisedGroup[],
+): SpecialisedGroup[] {
+  if (!ownerId) return fallback;
+  const stored = readJson<BusinessProfile>(draftKey(ownerId));
+  const groups = sanitizeSpecialisedIn(stored?.specialisedIn);
+  return groups.length ? groups : fallback;
+}
+
 export function hubPathForProfile(profile: BusinessProfile): string | null {
   if (!profile.publishedId) return null;
+  const hf = /^hf-(\d+)$/.exec(profile.publishedId);
+  if (hf) return `/facilities/${hf[1]}`;
   if (profile.type === "lab") return `/appointments/labs/${profile.publishedId}`;
   if (profile.type === "doctor" || profile.type === "hospital" || profile.type === "clinic") {
     return `/appointments/provider/${profile.publishedId}`;
@@ -585,6 +877,7 @@ export function businessAsCareProvider(profile: BusinessProfile): CareProvider |
     hours: profile.hours || undefined,
     phone: profile.phone || undefined,
     focusAreas: profile.specialtyNote ? [profile.specialtyNote] : undefined,
+    specialisedIn: sanitizeSpecialisedIn(profile.specialisedIn),
     services:
       profile.type === "hospital" || profile.type === "clinic"
         ? facilityServices(profile)

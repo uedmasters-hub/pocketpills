@@ -1,12 +1,19 @@
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { DetailPageSkeleton, RatingChipSkeleton, useEnterSkeleton } from "@/components/ui";
+import { DirectoryDetailLayout, DIRECTORY_SIDEBAR_CARD } from "@/components/DirectoryDetailLayout";
+import { RatingChip } from "@/components/reviews/RatingChip";
+import { ReviewsPanel } from "@/components/reviews/ReviewsPanel";
 import { useI18n } from "@/lib/i18n";
+import type { ReviewSummary } from "@/lib/reviewsApi";
 import { normalizeRegNo } from "@/lib/ddaApi";
 import { getRegion } from "@/lib/pharmacies";
 import {
   ddaNumberFromId,
   displayPharmacyName,
+  formatNepalMobile,
   getPharmacyClaim,
   getVerifiedPharmacy,
   pharmacyHours,
@@ -15,8 +22,15 @@ import {
   sameDda,
 } from "@/lib/pharmacyDirectory";
 import { useProvider } from "@/lib/providerAuth";
+import {
+  PharmacyAboutFacts,
+  PharmacyProfileAfterReviews,
+  PharmacyProfileMid,
+  PharmacyRelatedSection,
+  PharmacySidebarMap,
+} from "@/components/pharmacy/PharmacyDetailExtras";
+import { PHARMACY_REVIEW_TOPICS, pharmacyFromListing } from "@/lib/pharmacyProfileContent";
 import { PharmacyClaimPanel } from "@/pages/pharmacies/ClaimPharmacy";
-import { ServicePageShell } from "@/pages/appointments/ServicePageShell";
 
 const PHOTO = "/img/treatments/uti.png";
 
@@ -62,18 +76,22 @@ export function PharmacyPublic() {
         name={displayPharmacyName(claim.name)}
         registrationNo={n}
         place={placeLine(claim)}
+        district={claim.district}
         pranali={claim.pranali}
+        phone={claim.phone}
         live
+        owned={owned}
+        ownerId={claim.providerId}
         backTo="/pharmacies"
         backLabel={tx("Pharmacy directory")}
         sidebar={
           owned ? (
-            <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
+            <div className={DIRECTORY_SIDEBAR_CARD}>
               <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Your live profile")}</p>
               <p className="mt-2 text-sm text-ink-secondary">
                 {tx("Patients can find this pharmacy. Edit hours and bio from your listing.")}
               </p>
-              <Button fullWidth className="mt-5" onClick={() => nav("/provider/listing")}>
+              <Button fullWidth size="sm" className="mt-4" onClick={() => nav("/provider/listing")}>
                 {tx("Edit listing")}
               </Button>
             </div>
@@ -96,17 +114,21 @@ export function PharmacyPublic() {
           name={displayPharmacyName(claim.name)}
           registrationNo={n}
           place={placeLine(claim)}
+          district={claim.district}
           pranali={claim.pranali}
+          phone={claim.phone}
           live={false}
+          owned
+          ownerId={claim.providerId}
           backTo="/pharmacies"
           backLabel={tx("Pharmacy directory")}
           sidebar={
-            <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
+            <div className={DIRECTORY_SIDEBAR_CARD}>
               <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Unpublished")}</p>
               <p className="mt-2 text-sm text-ink-secondary">
                 {tx("You claimed this DDA profile, but the card is hidden until you publish the listing.")}
               </p>
-              <Button fullWidth className="mt-5" onClick={() => nav("/provider/listing")}>
+              <Button fullWidth size="sm" className="mt-4" onClick={() => nav("/provider/listing")}>
                 {tx("Publish listing")}
               </Button>
             </div>
@@ -133,6 +155,7 @@ export function PharmacyPublic() {
         name={displayPharmacyName(verified.name)}
         registrationNo={n}
         place={placeLine(verified)}
+        district={verified.district}
         pranali={verified.pranali}
         live={false}
         backTo="/pharmacies/claim"
@@ -168,8 +191,12 @@ function PharmacyProfile({
   name,
   registrationNo,
   place,
+  district,
   pranali,
+  phone,
   live,
+  owned = false,
+  ownerId,
   backTo,
   backLabel,
   sidebar,
@@ -177,53 +204,107 @@ function PharmacyProfile({
   name: string;
   registrationNo: string;
   place: string;
+  district?: string;
   pranali: string;
+  phone?: string;
   live: boolean;
+  owned?: boolean;
+  ownerId?: string;
   backTo: string;
   backLabel: string;
   sidebar: ReactNode;
 }) {
   const { tx } = useI18n();
+  const entering = useEnterSkeleton(registrationNo);
+  const [reviewSummary, setReviewSummary] = useState<ReviewSummary | null>(null);
   const kind = displayPranali(pranali);
-  return (
-    <ServicePageShell backTo={backTo} backLabel={backLabel} aside={sidebar}>
-      <div className="overflow-hidden rounded-[1.75rem] border border-[#E6E1EF] bg-white">
-        <div className="relative h-40 bg-[color:var(--pp-primary-100)] sm:h-48">
-          <img src={PHOTO} alt="" className="h-full w-full object-cover object-[50%_35%] opacity-90" />
-          <span className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
-        </div>
-        <div className="relative -mt-8 px-5 pb-6 sm:px-6">
-          <p className={"pp-caps " + (live ? "text-wellness" : "text-ink-tertiary")}>
-            {live ? tx("Available") : tx("Not available")}
-          </p>
-          <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-            {name}
-          </h1>
-          <p className="mt-2 text-base text-ink-secondary">
-            {kind ? `${kind} · ${place}` : place}
-          </p>
-          <p className="mt-1 text-sm font-medium text-ink-tertiary tnum">DDA #{registrationNo}</p>
-          {live && (
-            <p className="mt-3 text-sm font-medium text-[color:var(--pp-primary-950)]">{pharmacyHours()}</p>
-          )}
-        </div>
-      </div>
+  const hours = pharmacyHours();
+  const bio = tx("{name} is a DDA-registered pharmacy in {place}.")
+    .replace("{name}", name)
+    .replace("{place}", place);
+  const about = live
+    ? tx("{name} claimed this DDA profile and can receive fills and transfers through PocketPills.")
+        .replace("{name}", name)
+    : tx("{name}’s DDA record is pre-filled from the pharmacy registry. Claim it to publish this card.")
+        .replace("{name}", name);
+  const serviceKeys = live
+    ? ["Prescription fills", "Same-day delivery", "OTC consult"]
+    : ["Prescription fills", "OTC consult"];
+  const services = serviceKeys.map((s) => tx(s));
+  const pharmacy = pharmacyFromListing({
+    name,
+    registrationNo,
+    place,
+    district,
+    kindLabel: kind || tx("Pharmacy"),
+    phone,
+    hours,
+    about,
+    live,
+    ownerId,
+    listedServices: serviceKeys,
+  });
 
-      <h2 className="mt-10 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        {tx("Services")}
-      </h2>
-      <ul className="mt-4 space-y-3">
-        {(live
-          ? [tx("Prescription fills"), tx("Same-day delivery"), tx("OTC consult")]
-          : [tx("Prescription fills"), tx("OTC consult")]
-        ).map((s) => (
-          <li key={s} className="rounded-2xl border border-line bg-white px-4 py-3.5">
-            <p className="font-semibold text-[color:var(--pp-primary-950)]">{s}</p>
-            <p className="mt-0.5 text-sm text-ink-tertiary">{place}</p>
-          </li>
-        ))}
-      </ul>
-    </ServicePageShell>
+  if (entering) return <DetailPageSkeleton label={tx("Loading profile")} />;
+
+  return (
+    <DirectoryDetailLayout
+      backTo={backTo}
+      backLabel={backLabel}
+      eyebrow={tx("Pharmacy")}
+      name={name}
+      subtitle={`${kind || tx("Pharmacy")} · DDA #${registrationNo}`}
+      bio={bio}
+      about={about}
+      imageUrl={PHOTO}
+      leadingBadges={
+        reviewSummary == null ? (
+          <RatingChipSkeleton variant="badge" />
+        ) : reviewSummary.count ? (
+          <RatingChip summary={reviewSummary} variant="badge" />
+        ) : null
+      }
+      badges={[
+        { label: tx("DDA registry"), strong: true },
+        live ? { label: `${tx("Next")}: ${tx("Today")}` } : null,
+      ].filter(Boolean) as { label: string; strong?: boolean }[]}
+      extras={[{ title: tx("Services"), items: services, check: true }]}
+      details={[
+        { k: tx("DDA number"), v: `#${registrationNo}` },
+        { k: tx("Location"), v: place },
+        kind ? { k: tx("Type"), v: kind } : null,
+        live ? { k: tx("Hours"), v: hours } : null,
+        phone ? { k: tx("Phone"), v: formatNepalMobile(phone) } : null,
+      ].filter(Boolean) as { k: string; v: string }[]}
+      afterAbout={<PharmacyAboutFacts pharmacy={pharmacy} />}
+      sidebar={
+        <>
+          {sidebar}
+          <PharmacySidebarMap pharmacy={pharmacy} />
+        </>
+      }
+      reviews={
+        live || owned ? (
+          <ReviewsPanel
+            kind="pharmacy"
+            subjectId={registrationNo}
+            listingName={name}
+            canWrite={live}
+            owned={owned}
+            onSummary={setReviewSummary}
+            topics={[...PHARMACY_REVIEW_TOPICS]}
+          />
+        ) : undefined
+      }
+      afterReviews={
+        <>
+          <PharmacyProfileAfterReviews pharmacy={pharmacy} />
+          <PharmacyRelatedSection pharmacy={pharmacy} />
+        </>
+      }
+    >
+      <PharmacyProfileMid pharmacy={pharmacy} />
+    </DirectoryDetailLayout>
   );
 }
 
@@ -238,15 +319,15 @@ function LivePharmacyCta({
 }) {
   const { tx } = useI18n();
   return (
-    <div className="rounded-[1.75rem] border border-[#E6E1EF] bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.05)]">
-      <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("This pharmacy is live")}</p>
-      <p className="mt-2 text-sm text-ink-secondary">{hours}</p>
-      <p className="mt-1 text-sm text-ink-tertiary">{tx("Free standard delivery where PocketPills ships.")}</p>
-      <div className="mt-5 space-y-2">
-        <Button fullWidth onClick={onFill}>
+    <div className={DIRECTORY_SIDEBAR_CARD}>
+      <p className="text-sm font-semibold leading-snug text-[color:var(--pp-primary-950)]">{tx("This pharmacy is live")}</p>
+      <p className="mt-2 text-sm leading-snug text-ink-secondary">{hours}</p>
+      <p className="mt-2 text-sm leading-snug text-ink-tertiary">{tx("Free standard delivery where PocketPills ships.")}</p>
+      <div className="mt-4 space-y-2">
+        <Button fullWidth size="sm" onClick={onFill}>
           {tx("Fill a prescription")}
         </Button>
-        <Button fullWidth variant="secondary" onClick={onTransfer}>
+        <Button fullWidth size="sm" variant="secondary" onClick={onTransfer}>
           {tx("Transfer a prescription")}
         </Button>
       </div>

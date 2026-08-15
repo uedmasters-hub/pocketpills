@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { MapEmbed } from "@/components/MapEmbed";
+import { RegionGridSkeleton } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { listDdaDistricts, type DdaDistrict } from "@/lib/ddaApi";
 import { getRegion } from "@/lib/pharmacies";
@@ -144,13 +145,15 @@ export function PharmaciesIndex() {
           <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
             {tx("Pocketpills delivers to:")}
           </h2>
+          {busy && districts.length === 0 ? (
+            <div className="mt-4">
+              <RegionGridSkeleton label={tx("Loading districts…")} />
+            </div>
+          ) : (
+            <>
           <div className="mt-4">
             <DistrictPills items={pills} />
           </div>
-
-          {busy && districts.length === 0 && (
-            <p className="mt-8 text-sm text-ink-tertiary">{tx("Loading districts…")}</p>
-          )}
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {cards.map((d) => (
@@ -170,6 +173,8 @@ export function PharmaciesIndex() {
               </Link>
             ))}
           </div>
+            </>
+          )}
         </div>
 
         <NepalMapPanel total={total} districtCount={districts.length} />
@@ -200,7 +205,9 @@ export function PharmaciesByRegion() {
   }
 
   if (!regionParam) return <Navigate to="/pharmacies/regions" replace />;
-  if (!districts) return null;
+  if (!districts) {
+    return <RegionGridSkeleton label="Loading district" />;
+  }
 
   const name = districtFromSlug(regionParam, districts);
   if (name) {

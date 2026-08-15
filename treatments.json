@@ -1,0 +1,88 @@
+{
+  "Popular": [
+    "Piles",
+    "Varicose Veins",
+    "Hernia",
+    "Lasik",
+    "Gallstone",
+    "Anal Fistula",
+    "Cataract",
+    "Kidney Stone",
+    "Circumcision",
+    "Anal Fissure",
+    "Lipoma Removal",
+    "Sebaceous Cyst",
+    "Pilonidal Sinus",
+    "Lump in Breast",
+    "TURP",
+    "Hydrocele",
+    "Knee Replacement",
+    "Hair Transplant",
+    "Gynaecomastia"
+  ],
+
+  "General Surgery": [
+    "Hernia",
+    "Appendicitis",
+    "Gallstone",
+    "Lipoma Removal",
+    "Sebaceous Cyst",
+    "Pilonidal Sinus"
+  ],
+
+  "Proctology": [
+    "Piles",
+    "Anal Fistula",
+    "Anal Fissure",
+    "Pilonidal Sinus",
+    "Perianal Abscess"
+  ],
+
+  "Ophthalmology": [
+    "Cataract",
+    "Lasik",
+    "Glaucoma",
+    "Squint Eye"
+  ],
+
+  "Urology": [
+    "Kidney Stone",
+    "TURP",
+    "Hydrocele",
+    "Circumcision",
+    "Varicocele",
+    "Urethroplasty"
+  ],
+
+  "Cosmetic Surgery": [
+    "Hair Transplant",
+    "Gynaecomastia",
+    "Rhinoplasty",
+    "Liposuction",
+    "Breast Lift"
+  ],
+
+  "Orthopedics": [
+    "Knee Replacement",
+    "Knee Arthroscopy",
+    "Shoulder Arthroscopy"
+  ],
+
+  "Robotic Surgeries": [
+    "Robotic Hernia",
+    "Robotic Prostatectomy"
+  ],
+
+  "Oncology": [
+    "Breast Cancer",
+    "Prostate Cancer",
+    "Cervical Cancer",
+    "Lung Cancer"
+  ],
+
+  "Dental": [
+    "Dental Implants",
+    "Root Canal",
+    "Teeth Whitening"
+  ]
+}

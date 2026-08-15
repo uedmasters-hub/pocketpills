@@ -319,7 +319,7 @@ function TreatmentMenu() {
       </>}
       cta="/appointments" ctaLabel="Get a prescription"
       asideTitle="Virtual Care"
-      tags={[["Find a doctor", "/doctors"], ["Find a pharmacy", "/pharmacies"], ["Acne (Mild)", "/appointments/treatments/acne"], ["Birth Control", "/appointments/treatments/birth-control"], ["Erectile Dysfunction", "/appointments/treatments/erectile-dysfunction"], ["Hair Loss", "/appointments/treatments/hair-loss"], ["Urinary Tract Infection", "/appointments/treatments/uti"], ["Weight Loss", "/appointments/treatments/weight-loss"], ["Minor ailments", "/appointments"]]}
+      tags={[["Find a doctor", "/doctors"], ["Find a pharmacy", "/pharmacies"], ["Find a hospital", "/facilities"], ["Acne (Mild)", "/appointments/treatments/acne"], ["Birth Control", "/appointments/treatments/birth-control"], ["Erectile Dysfunction", "/appointments/treatments/erectile-dysfunction"], ["Hair Loss", "/appointments/treatments/hair-loss"], ["Urinary Tract Infection", "/appointments/treatments/uti"], ["Weight Loss", "/appointments/treatments/weight-loss"], ["Minor ailments", "/appointments"]]}
       browseTo="/appointments" browseLabel="See all treatments"
       faqs={[
         { label: "Can I get a prescription online?", slug: "online-prescription" },

@@ -7,6 +7,7 @@ import {
   validateSiteAccessSession,
   writeSiteAccessSession,
 } from "@/lib/siteAccess";
+import { AccessGateSkeleton } from "@/components/ui";
 
 const ink = "text-[#3A2A5C]";
 const muted = "text-[#8A8399]";
@@ -59,11 +60,7 @@ export function SiteAccessGate({ children }: { children: ReactNode }) {
   }, []);
 
   if (checking) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-[#F5F4F9] px-5">
-        <p className={`text-sm ${muted}`}>Checking access…</p>
-      </div>
-    );
+    return <AccessGateSkeleton />;
   }
 
   if (ok) return <>{children}</>;

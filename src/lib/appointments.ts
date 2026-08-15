@@ -2,6 +2,7 @@
 
 import { getPublishedCareProvider } from "@/lib/businessProfile";
 import { getNmcProvider, listPublishedNmcProviders } from "@/lib/doctorDirectory";
+import type { SpecialisedGroup } from "@/lib/specialisedIn";
 
 export type VisitType = "virtual" | "clinic";
 export type AppointmentStatus = "upcoming" | "completed" | "cancelled";
@@ -94,6 +95,10 @@ export interface CareProvider {
   amenities?: string[];
   /** Clinic/hospital: doctor ids on staff */
   staffIds?: string[];
+  /** Departments / procedures shown on the public profile accordion */
+  specialisedIn?: SpecialisedGroup[];
+  /** Verified awards only — omit or empty to hide the section */
+  awards?: { title: string; org: string; year: string }[];
 }
 
 /** @deprecated Prefer CareProvider */

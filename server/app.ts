@@ -3,6 +3,8 @@ import cors from "cors";
 import { handleAccess, type AccessRequest } from "./accessApi.js";
 import { lookupDoctor, searchDoctors, verifyDoctor } from "./nmcProxy.js";
 import { listPharmacyDistricts, lookupPharmacy, searchPharmacies, verifyPharmacy } from "./pharmacyProxy.js";
+import { listFacilityDistricts, lookupFacility, searchFacilities, verifyFacility } from "./facilityProxy.js";
+import { handleReviews } from "./reviewsApi.js";
 
 function toAccessRequest(req: express.Request): AccessRequest {
   return {
@@ -20,6 +22,10 @@ async function run(
   res: express.Response,
 ) {
   const result = await handleAccess(route, toAccessRequest(req));
+  if (result.status === 204) {
+    res.status(204).end();
+    return;
+  }
   res.status(result.status).json(result.body);
 }
 
@@ -29,11 +35,11 @@ export function createAccessApp() {
   app.use(cors({ origin: true, credentials: true }));
   app.use(express.json({ limit: "32kb" }));
 
-  app.post("/api/access/password", (req, res) => run("password", req, res));
-  app.post("/api/access/magic-link", (req, res) => run("magic-link", req, res));
-  app.post("/api/access/verify", (req, res) => run("verify", req, res));
-  app.get("/api/access/session", (req, res) => run("session", req, res));
-  app.get("/api/access/health", (req, res) => run("health", req, res));
+  app.all("/api/access/password", (req, res) => run("password", req, res));
+  app.all("/api/access/magic-link", (req, res) => run("magic-link", req, res));
+  app.all("/api/access/verify", (req, res) => run("verify", req, res));
+  app.all("/api/access/session", (req, res) => run("session", req, res));
+  app.all("/api/access/health", (req, res) => run("health", req, res));
 
   app.get("/api/nmc/lookup/:nmcNumber", async (req, res) => {
     const result = await lookupDoctor(req.params.nmcNumber);
@@ -91,5 +97,53 @@ export function createAccessApp() {
     res.status(result.status).json(result.body);
   });
 
+  app.get("/api/facility/health", (_req, res) => {
+    res.json({ status: "ok", service: "health-facility-registry" });
+  });
+
+  app.get("/api/facility/districts", async (_req, res) => {
+    const result = await listFacilityDistricts();
+    res.status(result.status).json(result.body);
+  });
+
+  app.get("/api/facility/list", async (req, res) => {
+    const result = await searchFacilities({
+      q: typeof req.query.q === "string" ? req.query.q : undefined,
+      name: typeof req.query.name === "string" ? req.query.name : undefined,
+      district: typeof req.query.district === "string" ? req.query.district : undefined,
+      facilityLevel: typeof req.query.facilityLevel === "string" ? req.query.facilityLevel : undefined,
+      page: typeof req.query.page === "string" ? req.query.page : undefined,
+      limit: typeof req.query.limit === "string" ? req.query.limit : undefined,
+    });
+    res.status(result.status).json(result.body);
+  });
+
+  app.get("/api/facility/lookup/:hfCode", async (req, res) => {
+    const result = await lookupFacility(req.params.hfCode);
+    res.status(result.status).json(result.body);
+  });
+
+  app.post("/api/facility/verify", async (req, res) => {
+    const hfCode = String(req.body?.hfCode ?? "");
+    const nameToken = String(req.body?.nameToken ?? req.body?.name ?? "");
+    const result = await verifyFacility(hfCode, nameToken);
+    res.status(result.status).json(result.body);
+  });
+
+  app.use("/api/reviews", (req, res) => {
+    void runReviews(req, res);
+  });
+
   return app;
+}
+
+async function runReviews(req: express.Request, res: express.Response) {
+  const result = await handleReviews({
+    method: req.method,
+    url: req.originalUrl || req.url,
+    headers: req.headers as Record<string, string | string[] | undefined>,
+    body: req.body,
+    query: req.query as Record<string, string | string[] | undefined>,
+  });
+  res.status(result.status).json(result.body);
 }

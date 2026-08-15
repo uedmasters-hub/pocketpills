@@ -45,12 +45,12 @@ export function DirectoryFilterSelect({
         aria-label={label}
         onClick={() => setOpen((v) => !v)}
         className={
-          "relative box-border inline-flex h-10 w-[12.5rem] shrink-0 items-center " +
+          "relative box-border inline-flex h-10 w-[12.5rem] shrink-0 items-center overflow-visible " +
           "rounded-full border border-line bg-white py-0 pl-4 pr-10 text-left text-sm font-medium " +
-          "leading-none text-[color:var(--pp-primary-950)] shadow-[0_1px_2px_rgba(24,7,48,0.06)]"
+          "leading-5 text-[color:var(--pp-primary-950)] shadow-[0_1px_2px_rgba(24,7,48,0.06)]"
         }
       >
-        <span className="min-w-0 flex-1 truncate">{value}</span>
+        <span className="min-w-0 flex-1 truncate leading-5">{value}</span>
         <span className="pointer-events-none absolute inset-y-0 right-3 grid w-4 place-items-center text-[color:var(--pp-primary-950)]">
           <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
             <path d="M5 7.5 10 12.5 15 7.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -81,7 +81,7 @@ export function DirectoryFilterSelect({
                   close();
                 }}
                 className={
-                  "flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm " +
+                  "flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm leading-5 " +
                   (on
                     ? "bg-[color:var(--pp-primary-950)] font-medium text-white"
                     : "text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]")
@@ -94,7 +94,7 @@ export function DirectoryFilterSelect({
                     </svg>
                   ) : null}
                 </span>
-                <span className="min-w-0 flex-1 text-pretty">{name}</span>
+                <span className="min-w-0 flex-1 text-pretty leading-5">{name}</span>
               </button>
             );
           })}

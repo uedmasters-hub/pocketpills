@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { DIRECTORY_SIDEBAR_CARD } from "@/components/DirectoryDetailLayout";
 import { Button } from "@/components/ui/Button";
-import { Field } from "@/components/ui";
+import { ClaimLookupSkeleton, Field, RegistrySearchSkeleton } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import {
   lookupDdaPharmacy,
@@ -156,11 +157,7 @@ export function ClaimPharmacy() {
 
       {!lookup ? (
         prefill && busy ? (
-          <div className={`mt-6 ${CARD}`}>
-            <p className="text-sm text-ink-secondary">
-              {tx("Opening DDA #{n}…").replace("{n}", prefill)}
-            </p>
-          </div>
+          <ClaimLookupSkeleton label={tx("Opening DDA #{n}…").replace("{n}", prefill)} />
         ) : (
           <div className={`mt-6 ${CARD}`}>
             <Field
@@ -191,7 +188,7 @@ export function ClaimPharmacy() {
                 placeholder={tx("Pharmacy name as on the DDA certificate")}
                 hint={tx("Pick your row, then you’ll still confirm a distinctive name word.")}
               />
-              {searching && <p className="mt-2 text-sm text-ink-tertiary">{tx("Searching registry…")}</p>}
+              {searching && <RegistrySearchSkeleton />}
               {hits.length > 0 && (
                 <ul className="mt-3 overflow-hidden rounded-xl border border-line">
                   {hits.map((row, i) => (
@@ -322,18 +319,18 @@ export function PharmacyClaimPanel({ pharmacy }: { pharmacy: DdaPharmacy }) {
 
   if (owned) {
     return (
-      <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
+      <div className={DIRECTORY_SIDEBAR_CARD}>
         <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("This is your profile")}</p>
         <p className="mt-2 text-sm text-ink-secondary">
           {existing?.published
             ? tx("Your card is live on the pharmacy directory.")
             : tx("Claimed, but unpublished. Publish from your listing to show the card.")}
         </p>
-        <div className="mt-5 space-y-2">
-          <Button fullWidth onClick={() => nav("/provider/listing")}>
+        <div className="mt-4 space-y-2">
+          <Button fullWidth size="sm" onClick={() => nav("/provider/listing")}>
             {tx("Open listing")}
           </Button>
-          <Button fullWidth variant="secondary" onClick={() => nav("/provider")}>
+          <Button fullWidth size="sm" variant="secondary" onClick={() => nav("/provider")}>
             {tx("Provider portal")}
           </Button>
         </div>
@@ -343,12 +340,12 @@ export function PharmacyClaimPanel({ pharmacy }: { pharmacy: DdaPharmacy }) {
 
   if (otherClaim) {
     return (
-      <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
+      <div className={DIRECTORY_SIDEBAR_CARD}>
         <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Already claimed")}</p>
         <p className="mt-2 text-sm text-ink-secondary">
           {tx("This DDA number already has a published profile. Each registration can only be claimed once.")}
         </p>
-        <Button fullWidth className="mt-5" onClick={() => nav(`/pharmacies/${n}`)}>
+        <Button fullWidth size="sm" className="mt-4" onClick={() => nav(`/pharmacies/${n}`)}>
           {tx("View profile")}
         </Button>
       </div>
@@ -424,7 +421,7 @@ export function PharmacyClaimPanel({ pharmacy }: { pharmacy: DdaPharmacy }) {
   };
 
   return (
-    <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
+    <div className={DIRECTORY_SIDEBAR_CARD}>
       <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Claim this page")}</p>
       <p className="mt-1 text-sm text-ink-secondary">
         {tx("Verify a Nepal mobile number once. We’ll publish this DDA card on the pharmacy directory.")}
@@ -506,14 +503,14 @@ export function PharmacyClaimPanel({ pharmacy }: { pharmacy: DdaPharmacy }) {
       )}
       {error && <p className="mt-3 text-sm text-danger">{error}</p>}
 
-      <div className="mt-5 space-y-2">
+      <div className="mt-4 space-y-2">
         {!sent ? (
-          <Button fullWidth disabled={busy} onClick={sendCode}>
+          <Button fullWidth size="sm" disabled={busy} onClick={sendCode}>
             {tx("Send verification code")}
           </Button>
         ) : (
           <>
-            <Button fullWidth disabled={busy || code.length !== 6} onClick={finish}>
+            <Button fullWidth size="sm" disabled={busy || code.length !== 6} onClick={finish}>
               {busy ? tx("Publishing…") : tx("Verify and publish")}
             </Button>
             <button

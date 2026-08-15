@@ -1,19 +1,32 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useUser } from "@/lib/user";
-import { treatments } from "@/lib/data";
+import { treatments, type Treatment } from "@/lib/data";
 import { pendingRows } from "@/lib/profile";
 import { useI18n } from "@/lib/i18n";
 
 /* ── shared bits ───────────────────────────────────────── */
-function ArrowBtn({ dir, onClick }: { dir: "l" | "r"; onClick: () => void }) {
+function ArrowBtn({
+  dir,
+  onClick,
+  disabled = false,
+}: {
+  dir: "l" | "r";
+  onClick: () => void;
+  disabled?: boolean;
+}) {
   const { tx } = useI18n();
   return (
     <button
+      type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-label={dir === "l" ? tx("Previous") : tx("Next")}
-      className="rounded-full bg-[color:var(--pp-primary-100)] p-1 text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--pp-primary-200)]"
+      className={
+        "rounded-full bg-[color:var(--pp-primary-100)] p-1 text-[color:var(--pp-primary-950)] transition-colors " +
+        (disabled ? "cursor-default opacity-40" : "hover:bg-[color:var(--pp-primary-200)]")
+      }
     >
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ transform: dir === "l" ? "rotate(180deg)" : undefined }} aria-hidden>
         <path d="M9.58902 6.22528C9.29923 6.52124 9.30422 6.99609 9.60018 7.28588L14.4529 12.0375L9.60018 16.7891C9.30422 17.0789 9.29922 17.5538 9.58902 17.8497C9.87881 18.1457 10.3537 18.1507 10.6496 17.8609L16.0496 12.5734C16.1937 12.4323 16.2749 12.2391 16.2749 12.0375C16.2749 11.8359 16.1937 11.6427 16.0496 11.5016L10.6496 6.21412C10.3537 5.92432 9.87881 5.92932 9.58902 6.22528Z" fill="currentColor" />
@@ -89,16 +102,85 @@ const PROMOS: Promo[] = [
   },
 ];
 
-function RailHeader({ title, boxRef }: { title?: string; boxRef: React.RefObject<HTMLDivElement | null> }) {
-  const scroll = (d: number) => boxRef.current?.scrollBy({ left: d * 320, behavior: "smooth" });
+const TREAT_CARD =
+  "relative flex aspect-[4/5] flex-col overflow-hidden rounded-2xl text-left transition-transform";
+const TREAT_CARD_RAIL =
+  TREAT_CARD + " w-[calc((100%-1rem)/2)] shrink-0 sm:w-[calc((100%-3rem)/4)]";
+const TREAT_CARD_GRID = TREAT_CARD + " w-full";
+const TREAT_CARD_BG = {
+  backgroundImage: "linear-gradient(180deg,#FFFFFF 0%,#FAF9FE 42%,#E7E2F7 100%)",
+} as const;
+const TREAT_GRID = "grid grid-cols-2 gap-4 sm:grid-cols-4";
+/** Collapsed rail: 7 treatments + View more. */
+const TREAT_COLLAPSED = 7;
+
+function RailHeader({
+  title,
+  showArrows = true,
+  extra,
+  onPrev,
+  onNext,
+  prevDisabled,
+  nextDisabled,
+}: {
+  title?: string;
+  showArrows?: boolean;
+  extra?: ReactNode;
+  onPrev?: () => void;
+  onNext?: () => void;
+  prevDisabled?: boolean;
+  nextDisabled?: boolean;
+}) {
   return (
     <div className="mb-4 flex items-center justify-between gap-4">
       {title ? <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{title}</h2> : <span />}
-      <div className="flex gap-2">
-        <ArrowBtn dir="l" onClick={() => scroll(-1)} />
-        <ArrowBtn dir="r" onClick={() => scroll(1)} />
+      <div className="flex items-center gap-3">
+        {extra}
+        {showArrows ? (
+          <div className="flex gap-2">
+            <ArrowBtn dir="l" onClick={() => onPrev?.()} disabled={prevDisabled} />
+            <ArrowBtn dir="r" onClick={() => onNext?.()} disabled={nextDisabled} />
+          </div>
+        ) : null}
       </div>
     </div>
+  );
+}
+
+function TreatmentDashCard({
+  treatment,
+  onOpen,
+  className = TREAT_CARD_RAIL,
+}: {
+  treatment: Treatment;
+  onOpen: () => void;
+  className?: string;
+}) {
+  const { tx } = useI18n();
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={className}
+      style={TREAT_CARD_BG}
+    >
+      <p className="relative z-10 px-5 pt-5 font-display text-xl font-normal leading-tight text-[color:var(--pp-primary-950)]">
+        {tx(treatment.name)}
+      </p>
+      {treatment.img ? (
+        <img
+          src={treatment.img}
+          alt=""
+          loading="lazy"
+          onError={hideOnError}
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[66%] w-full object-contain object-bottom"
+        />
+      ) : (
+        <span className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-5xl" aria-hidden>
+          {treatment.emoji}
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -386,8 +468,46 @@ export function Dashboard() {
   const { user } = useUser();
   const promoRef = useRef<HTMLDivElement>(null);
   const treatRef = useRef<HTMLDivElement>(null);
+  const [showAllTreatments, setShowAllTreatments] = useState(false);
+  const [treatAtStart, setTreatAtStart] = useState(true);
+  const [treatAtEnd, setTreatAtEnd] = useState(false);
 
   const pending = pendingRows(user);
+  const canCollapseTreatments = treatments.length > TREAT_COLLAPSED + 1;
+  const treatCollapsed = canCollapseTreatments && !showAllTreatments;
+  const treatExpanded = canCollapseTreatments && showAllTreatments;
+  const visibleTreatments = treatCollapsed ? treatments.slice(0, TREAT_COLLAPSED) : treatments;
+
+  const syncTreatRail = () => {
+    const el = treatRef.current;
+    if (!el) return;
+    setTreatAtStart(el.scrollLeft <= 4);
+    setTreatAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    if (!treatCollapsed) return;
+    const el = treatRef.current;
+    if (!el) return;
+    syncTreatRail();
+    const ro = new ResizeObserver(syncTreatRail);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [treatCollapsed]);
+
+  const scrollTreat = (dir: -1 | 1) => {
+    const el = treatRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth, behavior: "smooth" });
+  };
+
+  const collapseTreatments = () => {
+    setShowAllTreatments(false);
+    requestAnimationFrame(() => {
+      treatRef.current?.scrollTo({ left: 0 });
+      syncTreatRail();
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -408,35 +528,64 @@ export function Dashboard() {
 
       {/* treatments */}
       <section>
-        <RailHeader title={tx("Start a new treatment")} boxRef={treatRef} />
-        <div ref={treatRef} className="pp-scroll flex gap-4 overflow-x-auto pb-1">
-          {treatments.map((t) => (
-            <button
+        <RailHeader
+          title={tx("Start a new treatment")}
+          showArrows={treatCollapsed}
+          onPrev={() => scrollTreat(-1)}
+          onNext={() => scrollTreat(1)}
+          prevDisabled={treatAtStart}
+          nextDisabled={treatAtEnd}
+          extra={
+            treatExpanded ? (
+              <button
+                type="button"
+                onClick={collapseTreatments}
+                className="text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
+              >
+                {tx("Show less")}
+              </button>
+            ) : null
+          }
+        />
+        <div
+          ref={treatCollapsed ? treatRef : undefined}
+          onScroll={treatCollapsed ? syncTreatRail : undefined}
+          className={treatExpanded ? TREAT_GRID : "pp-scroll flex gap-4 overflow-x-auto pb-1 [scroll-snap-type:none]"}
+        >
+          {visibleTreatments.map((t) => (
+            <TreatmentDashCard
               key={t.slug}
-              onClick={() => nav(`/appointments/treatments/${t.slug}`)}
-              /* flex-col: a bare <button> centres its content, which pushed the
-                 label into the middle of the card over the portrait. */
-              className="pp-snap relative flex aspect-[4/5] w-[13.5rem] shrink-0 flex-col overflow-hidden rounded-2xl text-left transition-transform"
-              style={{ backgroundImage: "linear-gradient(180deg,#FFFFFF 0%,#FAF9FE 42%,#E7E2F7 100%)" }}
+              treatment={t}
+              className={treatExpanded ? TREAT_CARD_GRID : TREAT_CARD_RAIL}
+              onOpen={() => nav(`/appointments/treatments/${t.slug}`)}
+            />
+          ))}
+          {treatCollapsed ? (
+            <button
+              type="button"
+              onClick={() => setShowAllTreatments(true)}
+              className={TREAT_CARD_RAIL}
+              style={TREAT_CARD_BG}
+              aria-label={tx("View more treatments")}
             >
               <p className="relative z-10 px-5 pt-5 font-display text-xl font-normal leading-tight text-[color:var(--pp-primary-950)]">
-                {tx(t.name)}
+                {tx("View more")}
               </p>
-
-              {/* portrait: centred, contained, sitting on the card's lower edge */}
-              {t.img ? (
-                <img
-                  src={t.img}
-                  alt=""
-                  loading="lazy"
-                  onError={hideOnError}
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-[66%] w-full object-contain object-bottom"
-                />
-              ) : (
-                <span className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-5xl" aria-hidden>{t.emoji}</span>
-              )}
+              <p className="relative z-10 px-5 pt-1 text-sm text-ink-tertiary">
+                +{treatments.length - TREAT_COLLAPSED}
+              </p>
+              <span
+                className="pointer-events-none absolute inset-x-0 bottom-8 grid place-items-center"
+                aria-hidden
+              >
+                <span className="grid h-14 w-14 place-items-center rounded-full bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+                  </svg>
+                </span>
+              </span>
             </button>
-          ))}
+          ) : null}
         </div>
       </section>
 

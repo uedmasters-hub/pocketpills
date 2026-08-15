@@ -336,9 +336,11 @@ export function ProviderSignUp() {
 
   const isDoctor = vendorType === "doctor";
   const isPharmacy = vendorType === "pharmacy";
+  const isFacility = vendorType === "hospital" || vendorType === "clinic" || vendorType === "lab";
   const ready =
     isDoctor ||
     isPharmacy ||
+    isFacility ||
     (firstName.trim() &&
       lastName.trim() &&
       orgName.trim() &&
@@ -353,6 +355,10 @@ export function ProviderSignUp() {
     }
     if (isPharmacy) {
       nav("/pharmacies/claim");
+      return;
+    }
+    if (isFacility) {
+      nav("/facilities/claim");
       return;
     }
     setBusy(true);
@@ -409,6 +415,12 @@ export function ProviderSignUp() {
         <p className="mt-4 text-sm text-ink-secondary">
           {tx(
             "Pharmacies onboard from the DDA registry: search your registration number, confirm a distinctive word from the pharmacy name, then claim the page with mobile verification.",
+          )}
+        </p>
+      ) : isFacility ? (
+        <p className="mt-4 text-sm text-ink-secondary">
+          {tx(
+            "Hospitals, clinics, and labs onboard from the health-facility registry: search your facility code, confirm a distinctive word from the registered name, then claim the page with mobile verification.",
           )}
         </p>
       ) : (
@@ -471,7 +483,13 @@ export function ProviderSignUp() {
         </div>
       ) : null}
       <Button fullWidth className="mt-6" disabled={busy || !ready} onClick={submit}>
-        {isDoctor ? tx("Claim your NMC profile") : tx("Create provider account")}
+        {isDoctor
+          ? tx("Claim your NMC profile")
+          : isPharmacy
+            ? tx("Claim your DDA pharmacy")
+            : isFacility
+              ? tx("Claim your facility")
+              : tx("Create provider account")}
       </Button>
       <p className="mt-6 text-center text-sm text-ink-secondary">
         {tx("Already registered?")}{" "}

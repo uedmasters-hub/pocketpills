@@ -595,6 +595,24 @@ export function listInventory(orgId: string): InventorySku[] {
   return readInv(orgId);
 }
 
+/** Read saved stock without seeding demo SKUs. Null if this pharmacy has no inventory yet. */
+export function peekStoredInventory(orgId: string): InventorySku[] | null {
+  try {
+    const raw = localStorage.getItem(invKey(orgId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<InventorySku>[];
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    const list = parsed
+      .filter((s): s is Partial<InventorySku> & Pick<InventorySku, "id" | "name" | "sku"> =>
+        Boolean(s && s.id && s.name && s.sku),
+      )
+      .map(normalizeSku);
+    return list.length ? list : null;
+  } catch {
+    return null;
+  }
+}
+
 export function findInventoryForLine(orgId: string, line: PharmacyOrderLine): InventorySku | null {
   const inv = readInv(orgId);
   if (line.skuId) {

@@ -18,13 +18,19 @@ import {
   saveDraft,
   summarizeSchedule,
   unpublishBusinessProfile,
+  newListingPublication,
+  PUBLICATION_KIND_LABELS,
   type BusinessCapabilities,
   type BusinessDaySchedule,
   type BusinessProfile,
   type BusinessService,
+  type ListingPublicationKind,
 } from "@/lib/businessProfile";
 import { useProvider } from "@/lib/providerAuth";
 import { nmcNumberFromId, setDoctorPublished } from "@/lib/doctorDirectory";
+import { hfCodeFromId, setFacilityPublished } from "@/lib/facilityDirectory";
+import { specialisedVariantForVendor } from "@/lib/specialisedIn";
+import { SpecialisedInEditor, SpecialisedInSection } from "@/components/SpecialisedIn";
 
 const FIELD =
   "h-12 w-full rounded-xl border border-line bg-white px-4 text-sm text-[color:var(--pp-primary-950)] placeholder:text-ink-tertiary outline-none focus:border-[color:var(--pp-primary-950)]";
@@ -140,6 +146,8 @@ export function BusinessProfile() {
     if (next.publishedId) {
       const nmc = nmcNumberFromId(next.publishedId);
       if (nmc) setDoctorPublished(nmc, true);
+      const hf = hfCodeFromId(next.publishedId);
+      if (hf) setFacilityPublished(hf, true);
     }
     setProfile(next);
     updateProvider({ orgName: next.name });
@@ -152,6 +160,8 @@ export function BusinessProfile() {
     if (next.publishedId) {
       const nmc = nmcNumberFromId(next.publishedId);
       if (nmc) setDoctorPublished(nmc, false);
+      const hf = hfCodeFromId(next.publishedId);
+      if (hf) setFacilityPublished(hf, false);
     }
     setProfile(next);
     setDirty(false);
@@ -385,6 +395,14 @@ export function BusinessProfile() {
                       placeholder={tx("Specialty / focus")}
                     />
                   </BareField>
+                ) : null}
+
+                {showDoctorBits ? (
+                  <SpecialisedInEditor
+                    variant={specialisedVariantForVendor(profile.type) ?? "doctor"}
+                    value={profile.specialisedIn}
+                    onChange={(specialisedIn) => patch({ specialisedIn })}
+                  />
                 ) : null}
 
                 <div>
@@ -650,6 +668,119 @@ export function BusinessProfile() {
                   />
                 </BareField>
 
+                <div>
+                  <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">
+                    {tx("Publications")}
+                  </p>
+                  <p className="mt-1 text-sm text-ink-tertiary">
+                    {tx("News, articles, and other verified content shown on your public profile. Leave empty to hide the section.")}
+                  </p>
+                  <ul className="mt-3 space-y-3">
+                    {profile.publications.map((item) => (
+                      <li key={item.id} className="rounded-2xl border border-line bg-white p-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <select
+                            className={SELECT + " !h-10 w-[9.5rem]"}
+                            style={SELECT_CHEVRON}
+                            value={item.kind}
+                            onChange={(e) =>
+                              patch({
+                                publications: profile.publications.map((p) =>
+                                  p.id === item.id
+                                    ? { ...p, kind: e.target.value as ListingPublicationKind }
+                                    : p,
+                                ),
+                              })
+                            }
+                            aria-label={tx("Type")}
+                          >
+                            {(Object.keys(PUBLICATION_KIND_LABELS) as ListingPublicationKind[]).map((k) => (
+                              <option key={k} value={k}>
+                                {tx(PUBLICATION_KIND_LABELS[k])}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            className="ml-auto text-sm text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
+                            onClick={() =>
+                              patch({
+                                publications: profile.publications.filter((p) => p.id !== item.id),
+                              })
+                            }
+                          >
+                            {tx("Remove")}
+                          </button>
+                        </div>
+                        <input
+                          className={FIELD + " mt-3"}
+                          value={item.title}
+                          onChange={(e) =>
+                            patch({
+                              publications: profile.publications.map((p) =>
+                                p.id === item.id ? { ...p, title: e.target.value } : p,
+                              ),
+                            })
+                          }
+                          placeholder={tx("Title")}
+                        />
+                        <textarea
+                          className={AREA + " mt-2"}
+                          rows={2}
+                          value={item.summary}
+                          onChange={(e) =>
+                            patch({
+                              publications: profile.publications.map((p) =>
+                                p.id === item.id ? { ...p, summary: e.target.value } : p,
+                              ),
+                            })
+                          }
+                          placeholder={tx("Short summary (optional)")}
+                        />
+                        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_6.5rem]">
+                          <input
+                            className={FIELD}
+                            value={item.imageUrl || ""}
+                            onChange={(e) =>
+                              patch({
+                                publications: profile.publications.map((p) =>
+                                  p.id === item.id ? { ...p, imageUrl: e.target.value } : p,
+                                ),
+                              })
+                            }
+                            placeholder={tx("Image URL (optional)")}
+                          />
+                          <input
+                            className={FIELD}
+                            inputMode="numeric"
+                            value={item.minutes || ""}
+                            onChange={(e) =>
+                              patch({
+                                publications: profile.publications.map((p) =>
+                                  p.id === item.id
+                                    ? { ...p, minutes: Number(e.target.value) || undefined }
+                                    : p,
+                                ),
+                              })
+                            }
+                            placeholder={tx("Min")}
+                            aria-label={tx("Minutes to read")}
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    type="button"
+                    className="mt-3 text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
+                    onClick={() =>
+                      patch({ publications: [...profile.publications, newListingPublication()] })
+                    }
+                  >
+                    {tx("Add publication")}
+                  </button>
+                </div>
+
                 {live ? (
                   <button
                     type="button"
@@ -847,6 +978,15 @@ function BusinessPagePreview({
           <p className="mt-1 text-sm text-[color:var(--pp-violet)]">{profile.phone}</p>
         ) : null}
       </div>
+      {profile.specialisedIn.length > 0 && specialisedVariantForVendor(profile.type) ? (
+        <div className="mt-4 border-t border-line pt-4">
+          <SpecialisedInSection
+            compact
+            groups={profile.specialisedIn}
+            variant={specialisedVariantForVendor(profile.type) ?? "doctor"}
+          />
+        </div>
+      ) : null}
       {items.length > 0 ? (
         <ul className="mt-4 space-y-2.5 border-t border-line pt-4">
           {items.map((s) => {

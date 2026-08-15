@@ -2,7 +2,45 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { DetailPageSkeleton, RatingChipSkeleton, useEnterSkeleton } from "@/components/ui";
+import { DirectoryDetailLayout, DirectoryHeroCard, DIRECTORY_SIDEBAR_CARD } from "@/components/DirectoryDetailLayout";
+import { RatingChip, ReviewCountChip } from "@/components/reviews/RatingChip";
+import { ReviewsPanel } from "@/components/reviews/ReviewsPanel";
+import { SpecialisedInSection } from "@/components/SpecialisedIn";
+import {
+  DoctorArticlesSection,
+  DoctorConditionsSection,
+  DoctorExperienceSection,
+  DoctorFaqSection,
+  DoctorPracticeSection,
+  DoctorRelatedSection,
+} from "@/components/doctor/DoctorDetailExtras";
+import {
+  ClinicAboutFacts,
+  ClinicDoctorsSection,
+  ClinicProfileAfterReviews,
+  ClinicProfileMid,
+  ClinicRelatedSection,
+  ClinicTreatmentsSection,
+} from "@/components/clinic/ClinicDetailExtras";
+import {
+  HospitalAboutFacts,
+  HospitalDoctorsSection,
+  HospitalProfileAfterReviews,
+  HospitalProfileMid,
+  HospitalRelatedSection,
+} from "@/components/hospital/HospitalDetailExtras";
+import { DirectorySidebarMap } from "@/components/MapEmbed";
+import { CLINIC_REVIEW_TOPICS, clinicFromProvider, clinicMapsQuery } from "@/lib/clinicProfileContent";
+import { DOCTOR_REVIEW_TOPICS } from "@/lib/doctorProfileContent";
+import { HOSPITAL_REVIEW_TOPICS, hospitalFromProvider, hospitalMapsQuery } from "@/lib/hospitalProfileContent";
 import { useI18n } from "@/lib/i18n";
+import {
+  defaultDoctorSpecialised,
+  defaultFacilitySpecialised,
+  sanitizeSpecialisedIn,
+} from "@/lib/specialisedIn";
+import type { ReviewSummary } from "@/lib/reviewsApi";
 import {
   formatDistance,
   formatFee,
@@ -143,15 +181,22 @@ export function DoctorProfilePage({
   backLabel,
   sidebar,
   hideAvailability,
+  canWrite = true,
+  owned = false,
 }: {
   provider: CareProvider;
   backTo?: string;
   backLabel?: string;
   sidebar?: ReactNode;
   hideAvailability?: boolean;
+  canWrite?: boolean;
+  owned?: boolean;
 }) {
   const { tx } = useI18n();
   const nav = useNavigate();
+  const entering = useEnterSkeleton(provider.id);
+  const [reviewSummary, setReviewSummary] = useState<ReviewSummary | null>(null);
+  const reviewSubjectId = provider.id.replace(/^nmc-/, "");
   const specialtyId = useSpecialtyFromQuery();
   const specialty = specialtyId ? specialtyById(specialtyId) : undefined;
   const [params] = useSearchParams();
@@ -222,168 +267,144 @@ export function DoctorProfilePage({
     );
   };
 
+  const backHref = backTo
+    ? backTo
+    : facilityId
+      ? `/appointments/provider/${facilityId}${specialtyId ? `?specialty=${specialtyId}` : ""}`
+      : backToList(specialtyId);
+  const backText = backLabel
+    ? backLabel
+    : facilityId
+      ? tx("Back to facility")
+      : specialty
+        ? tx(specialty.label)
+        : tx("Book an appointment");
+
+  const badges = [
+    { label: tx("NMC registry"), strong: true },
+    !hideAvailability ? { label: `${tx("Next")}: ${next}` } : null,
+  ].filter(Boolean) as { label: string; strong?: boolean }[];
+
+  const extras = [
+    provider.focusAreas?.length
+      ? { title: tx("Focus areas"), items: provider.focusAreas.map((a) => tx(a)), check: true }
+      : null,
+    provider.education?.length
+      ? { title: tx("Education"), items: provider.education.map((e) => tx(e)) }
+      : null,
+  ].filter(Boolean) as { title: string; items: string[]; check?: boolean }[];
+
+  const specialisedIn = (() => {
+    const stored = sanitizeSpecialisedIn(provider.specialisedIn);
+    return stored.length
+      ? stored
+      : defaultDoctorSpecialised({
+          degree: provider.subtitle,
+          subtitle: provider.subtitle,
+          specialties: provider.specialties,
+        });
+  })();
+
+  const details = [
+    provider.id.startsWith("nmc-")
+      ? { k: tx("NMC number"), v: `#${provider.id.replace(/^nmc-/, "")}` }
+      : null,
+    provider.address ? { k: tx("Location"), v: provider.address } : null,
+    provider.hours ? { k: tx("Hours"), v: provider.hours } : null,
+    provider.phone ? { k: tx("Phone"), v: provider.phone } : null,
+    { k: tx("Languages"), v: provider.languages.map((l) => tx(l)).join(", ") },
+    {
+      k: tx("Specialisations"),
+      v: provider.specialties.map((s) => tx(specialtyById(s)?.label || s)).join(", "),
+    },
+  ].filter(Boolean) as { k: string; v: string }[];
+
+  const bookingSidebar = sidebar ?? (
+    <>
+      <div className={DIRECTORY_SIDEBAR_CARD}>
+        <p className="text-sm font-semibold leading-snug text-[color:var(--pp-primary-950)]">{tx("Book visit")}</p>
+        <p className="mt-2 text-sm leading-snug text-ink-tertiary">
+          {time
+            ? `${dayLabel(days.find((d) => d.date === date) ?? { label: date })} · ${time} · ${tx(visitType === "virtual" ? "Virtual" : "In-clinic")}`
+            : tx("Select a date and time below")}
+        </p>
+
+        <div className="mt-4 flex items-end justify-between gap-3 border-t border-line pt-4">
+          <span>
+            <span className="block text-2xs text-ink-tertiary">{tx("Consultation")}</span>
+            <span className="font-display text-2xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
+              {formatFee(fee)}
+            </span>
+          </span>
+          <span className="inline-flex h-7 items-center rounded-full bg-wellness-subtle px-3 text-xs font-semibold leading-none text-wellness">
+            {next}
+          </span>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          <Button fullWidth size="sm" onClick={startBook} disabled={!date || !time}>
+            {tx("Book appointment")}
+          </Button>
+          <Button fullWidth size="sm" variant="secondary" onClick={() => nav("/messages")}>
+            {tx("Message care team")}
+          </Button>
+        </div>
+      </div>
+      <p className="px-1 text-center text-2xs leading-relaxed text-ink-tertiary">
+        {tx("Demo booking — no real visit is scheduled with a clinic.")}
+      </p>
+    </>
+  );
+
+  if (entering) return <DetailPageSkeleton label={tx("Loading profile")} />;
+
   return (
-    <div>
-      <Link
-        to={
-          backTo
-            ? backTo
-            : facilityId
-              ? `/appointments/provider/${facilityId}${specialtyId ? `?specialty=${specialtyId}` : ""}`
-              : backToList(specialtyId)
-        }
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
-      >
-        ←{" "}
-        {backLabel
-          ? backLabel
-          : facilityId
-            ? tx("Back to facility")
-            : specialty
-              ? tx(specialty.label)
-              : tx("Book an appointment")}
-      </Link>
-
-      <div className="mt-5 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-10 lg:gap-y-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        {/* Hero */}
-        <header className="min-w-0 overflow-hidden rounded-[1.5rem] border border-line bg-[color:var(--pp-primary-200)] lg:col-start-1 lg:row-start-1">
-          <div className="flex flex-col sm:min-h-[22rem] sm:flex-row sm:items-stretch">
-            <div className="flex min-w-0 flex-1 flex-col justify-center px-6 py-7 sm:px-8 sm:py-8 lg:px-10">
-              <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Doctor")}</p>
-              <h1 className="mt-2 font-display text-[clamp(2rem,4vw,2.75rem)] font-medium leading-[1.1] tracking-tight text-[color:var(--pp-primary-950)]">
-                {provider.name}
-              </h1>
-              <p className="mt-2 text-base text-ink-secondary">{tx(provider.subtitle)}</p>
-              <p className="mt-3 max-w-md text-base leading-relaxed text-ink-secondary">
-                {tx(provider.bio)}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {provider.reviewCount > 0 ? (
-                  <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[color:var(--pp-primary-950)] shadow-sm">
-                    ★ {provider.rating.toFixed(1)} · {provider.reviewCount} {tx("reviews")}
-                  </span>
-                ) : (
-                  <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[color:var(--pp-primary-950)] shadow-sm">
-                    {tx("NMC registry")}
-                  </span>
-                )}
-                {provider.distanceKm > 0 && (
-                  <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-                    {formatDistance(provider.distanceKm)} {tx("away")}
-                  </span>
-                )}
-                {provider.experienceYears != null && (
-                  <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-                    {tx("{n}+ years").replace("{n}", String(provider.experienceYears))}
-                  </span>
-                )}
-                {!hideAvailability && (
-                  <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-                    {tx("Next")}: {next}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="relative mx-auto h-72 w-full max-w-[16rem] shrink-0 overflow-hidden sm:mx-0 sm:h-auto sm:w-[40%] sm:max-w-none lg:w-[38%]">
-              <img
-                src={provider.imageUrl}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover object-[center_18%]"
-              />
-              <span
-                className="pointer-events-none absolute inset-y-0 left-0 hidden w-16 bg-gradient-to-r from-[color:var(--pp-primary-200)] to-transparent sm:block"
-                aria-hidden
-              />
-            </div>
-          </div>
-        </header>
-
-        {/* Sticky booking column */}
-        <aside className="space-y-3 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
-          {sidebar ?? (
-            <>
-          <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
-            <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Book visit")}</p>
-            <p className="mt-0.5 text-2xs text-ink-tertiary">
-              {time
-                ? `${dayLabel(days.find((d) => d.date === date) ?? { label: date })} · ${time} · ${tx(visitType === "virtual" ? "Virtual" : "In-clinic")}`
-                : tx("Select a date and time below")}
-            </p>
-
-            <div className="mt-5 flex items-end justify-between gap-3 border-t border-line pt-4">
-              <span>
-                <span className="block text-2xs text-ink-tertiary">{tx("Consultation")}</span>
-                <span className="font-display text-3xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
-                  {formatFee(fee)}
-                </span>
-              </span>
-              <span className="rounded-full bg-wellness-subtle px-2.5 py-1 text-2xs font-semibold text-wellness">
-                {next}
-              </span>
-            </div>
-
-            <div className="mt-5 space-y-2">
-              <Button fullWidth onClick={startBook} disabled={!date || !time}>
-                {tx("Book appointment")}
-              </Button>
-              <Button fullWidth variant="secondary" onClick={() => nav("/messages")}>
-                {tx("Message care team")}
-              </Button>
-            </div>
-          </div>
-          <p className="px-1 text-center text-2xs leading-relaxed text-ink-tertiary">
-            {tx("Demo booking — no real visit is scheduled with a clinic.")}
-          </p>
-            </>
-          )}
-        </aside>
-
-        {/* About */}
-        <section className="min-w-0 lg:col-start-1 lg:row-start-2">
-          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-            {tx("About")}
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-ink-secondary">
-            {tx(provider.about || provider.bio)}
-          </p>
-          {(provider.focusAreas?.length || provider.education?.length) && (
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              {provider.focusAreas && provider.focusAreas.length > 0 && (
-                <div className="rounded-2xl border border-line bg-white p-4">
-                  <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
-                    {tx("Focus areas")}
-                  </p>
-                  <ul className="mt-2 space-y-1.5">
-                    {provider.focusAreas.map((a) => (
-                      <li key={a} className="flex gap-2 text-sm text-[color:var(--pp-primary-950)]">
-                        <span className="text-wellness" aria-hidden>✓</span>
-                        {tx(a)}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {provider.education && provider.education.length > 0 && (
-                <div className="rounded-2xl border border-line bg-white p-4">
-                  <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
-                    {tx("Education")}
-                  </p>
-                  <ul className="mt-2 space-y-1.5">
-                    {provider.education.map((e) => (
-                      <li key={e} className="text-sm text-[color:var(--pp-primary-950)]">
-                        {tx(e)}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-
-        {/* Availability — selectable virtual + in-clinic */}
+    <DirectoryDetailLayout
+      backTo={backHref}
+      backLabel={backText}
+      eyebrow={tx("Doctor")}
+      name={provider.name}
+      subtitle={tx(provider.subtitle)}
+      bio={tx(provider.bio)}
+      about={tx(provider.about || provider.bio)}
+      imageUrl={provider.imageUrl}
+      leadingBadges={
+        reviewSummary == null ? (
+          <RatingChipSkeleton variant="badge" />
+        ) : reviewSummary.count ? (
+          <RatingChip summary={reviewSummary} variant="badge" />
+        ) : null
+      }
+      badges={badges}
+      extras={extras}
+      details={details}
+      sidebar={
+        <>
+          {bookingSidebar}
+          <DirectorySidebarMap
+            query={[provider.name, provider.address, provider.city].filter(Boolean).join(", ")}
+          />
+        </>
+      }
+      reviews={
+        canWrite || owned ? (
+          <ReviewsPanel
+            kind="doctor"
+            subjectId={reviewSubjectId}
+            listingName={provider.name}
+            canWrite={canWrite}
+            owned={owned}
+            onSummary={setReviewSummary}
+            topics={[...DOCTOR_REVIEW_TOPICS]}
+          />
+        ) : undefined
+      }
+      afterReviews={<DoctorRelatedSection provider={provider} />}
+    >
+        <SpecialisedInSection groups={specialisedIn} variant="doctor" />
+        <DoctorConditionsSection provider={provider} specialisedIn={specialisedIn} />
         {!hideAvailability && (
-        <section id="availability" className="min-w-0 scroll-mt-28 lg:col-start-1 lg:row-start-3">
+        <section id="availability" className="min-w-0 scroll-mt-28">
           <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
             {tx("Availability")}
           </h2>
@@ -492,69 +513,39 @@ export function DoctorProfilePage({
           )}
         </section>
         )}
-
-        {/* Location / languages / affiliations */}
-        <section className="min-w-0 space-y-4 lg:col-start-1 lg:row-start-4">
-          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-            {tx("Details")}
-          </h2>
-          <dl className="overflow-hidden rounded-2xl border border-line bg-white">
-            {[
-              provider.id.startsWith("nmc-") && {
-                k: tx("NMC number"),
-                v: `#${provider.id.replace(/^nmc-/, "")}`,
-              },
-              provider.address && { k: tx("Location"), v: provider.address },
-              provider.hours && { k: tx("Hours"), v: provider.hours },
-              provider.phone && { k: tx("Phone"), v: provider.phone },
-              { k: tx("Languages"), v: provider.languages.map((l) => tx(l)).join(", ") },
-              {
-                k: tx("Specialisations"),
-                v: provider.specialties.map((s) => tx(specialtyById(s)?.label || s)).join(", "),
-              },
-            ]
-              .filter(Boolean)
-              .map((row, i) => {
-                const r = row as { k: string; v: string };
-                return (
-                  <div
-                    key={r.k}
-                    className={"flex justify-between gap-4 px-5 py-3.5 " + (i > 0 ? "border-t border-line" : "")}
-                  >
-                    <dt className="text-sm text-ink-tertiary">{r.k}</dt>
-                    <dd className="max-w-[60%] text-right text-sm font-medium text-[color:var(--pp-primary-950)]">
-                      {r.v}
-                    </dd>
-                  </div>
-                );
-              })}
-          </dl>
-
-          {facilities.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-[color:var(--pp-primary-950)]">
-                {tx("Practices at")}
-              </h3>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {facilities.map((f) => (
-                  <Link
-                    key={f.id}
-                    to={`/appointments/provider/${f.id}${specialtyId ? `?specialty=${specialtyId}` : ""}`}
-                    className="flex gap-3 overflow-hidden rounded-2xl border border-line bg-white transition-colors hover:bg-[color:var(--state-hover)]"
-                  >
-                    <img src={f.imageUrl} alt="" className="h-20 w-24 shrink-0 object-cover" />
-                    <span className="flex min-w-0 flex-col justify-center py-2 pr-3">
-                      <span className="truncate font-semibold text-[color:var(--pp-primary-950)]">{f.name}</span>
-                      <span className="mt-0.5 text-xs text-ink-tertiary">{tx(kindLabel(f.kind))}</span>
-                    </span>
-                  </Link>
-                ))}
-              </div>
+        <DoctorExperienceSection provider={provider} />
+        {provider.awards?.length ? (
+          <section className="min-w-0 scroll-mt-28">
+            <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
+              {tx("Awards & achievements")}
+            </h2>
+            <p className="mt-1 text-sm text-ink-tertiary">
+              {tx("Verified recognitions listed on this profile.")}
+            </p>
+            <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-white">
+              {provider.awards.map((a, i) => (
+                <div
+                  key={a.title + a.year}
+                  className={"px-5 py-3.5 " + (i > 0 ? "border-t border-line" : "")}
+                >
+                  <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx(a.title)}</p>
+                  <p className="mt-0.5 text-sm text-ink-secondary">
+                    {a.org}
+                    <span className="text-ink-tertiary"> · {a.year}</span>
+                  </p>
+                </div>
+              ))}
             </div>
-          )}
-        </section>
-      </div>
-    </div>
+          </section>
+        ) : null}
+        <DoctorPracticeSection
+          provider={provider}
+          facilities={facilities}
+          specialtyId={specialtyId}
+        />
+        <DoctorFaqSection provider={provider} specialisedIn={specialisedIn} />
+        <DoctorArticlesSection provider={provider} />
+    </DirectoryDetailLayout>
   );
 }
 
@@ -569,6 +560,20 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
   const specialty = specialtyId ? specialtyById(specialtyId) : undefined;
   const staff = getFacilityStaff(provider.id);
   const services = provider.services ?? [];
+  const specialisedIn = (() => {
+    const stored = sanitizeSpecialisedIn(provider.specialisedIn);
+    return stored.length
+      ? stored
+      : defaultFacilitySpecialised({
+          name: provider.name,
+          subtitle: provider.subtitle,
+          specialties: provider.specialties,
+          breadth: provider.kind === "clinic" ? "clinic" : "hospital",
+        });
+  })();
+  const hospital = hospitalFromProvider(provider, staff, specialisedIn);
+  const clinic = clinicFromProvider(provider, staff, specialisedIn);
+  const isClinic = provider.kind === "clinic";
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const selected = services.find((s) => s.id === selectedServiceId) ?? null;
 
@@ -580,7 +585,7 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
     if (!selected) return;
     if (selected.kind === "consult") {
       /* Scroll to consultants — booking happens after doctor pick */
-      document.getElementById("consultants")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById(isClinic ? "clinic-doctors" : "hospital-doctors")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     const day = upcomingDays(1)[0]?.date ?? "";
@@ -598,14 +603,6 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
     );
   };
 
-  const openDoctor = (d: CareProvider) => {
-    const qs = new URLSearchParams();
-    if (specialtyId) qs.set("specialty", specialtyId);
-    qs.set("facility", provider.id);
-    if (selected) qs.set("service", selected.id);
-    nav(`/appointments/provider/${d.id}?${qs.toString()}`);
-  };
-
   return (
     <div>
       <Link
@@ -615,77 +612,52 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
         ← {specialty ? tx(specialty.label) : tx("Book an appointment")}
       </Link>
 
-      <div
-        className={
-          "mt-5 grid items-start gap-8 lg:gap-x-10 lg:gap-y-8 " +
-          (selected
-            ? "lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]"
-            : "lg:grid-cols-1")
-        }
-      >
-        {/* Hero */}
-        <header className="min-w-0 overflow-hidden rounded-[1.5rem] border border-line bg-[color:var(--pp-primary-200)] lg:col-start-1 lg:row-start-1">
-          <div className="flex flex-col sm:min-h-[16rem] sm:flex-row sm:items-stretch">
-            <div className="flex min-w-0 flex-1 flex-col justify-center px-6 py-7 sm:px-8 sm:py-8 lg:px-10">
-              <p className="pp-caps text-[color:var(--pp-violet)]">{tx(kindLabel(provider.kind))}</p>
-              <h1 className="mt-2 font-display text-[clamp(2rem,4vw,2.75rem)] font-medium leading-[1.1] tracking-tight text-[color:var(--pp-primary-950)]">
-                {provider.name}
-              </h1>
-              <p className="mt-2 text-base text-ink-secondary">{tx(provider.subtitle)}</p>
-              <p className="mt-3 max-w-xl text-base leading-relaxed text-ink-secondary">
-                {tx(provider.bio)}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[color:var(--pp-primary-950)] shadow-sm">
-                  ★ {provider.rating.toFixed(1)} · {provider.reviewCount} {tx("reviews")}
-                </span>
-                <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-                  {formatDistance(provider.distanceKm)} {tx("away")}
-                </span>
-                {provider.hours && (
-                  <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-                    {tx(provider.hours)}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="relative mx-auto h-48 w-full max-w-md shrink-0 overflow-hidden sm:mx-0 sm:h-auto sm:w-[44%] sm:max-w-none lg:w-[40%]">
-              <img src={provider.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-              <span
-                className="pointer-events-none absolute inset-y-0 left-0 hidden w-12 bg-gradient-to-r from-[color:var(--pp-primary-200)] to-transparent sm:block"
-                aria-hidden
-              />
-            </div>
-          </div>
-        </header>
+      <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+          <DirectoryHeroCard
+            eyebrow={tx(kindLabel(provider.kind))}
+            name={provider.name}
+            subtitle={tx(provider.subtitle)}
+            bio={tx(provider.bio)}
+            imageUrl={provider.imageUrl}
+            leadingBadges={
+              <ReviewCountChip average={provider.rating} count={provider.reviewCount} />
+            }
+            badges={[
+              provider.distanceKm > 0
+                ? { label: `${formatDistance(provider.distanceKm)} ${tx("away")}` }
+                : null,
+              provider.hours ? { label: tx(provider.hours) } : null,
+            ].filter(Boolean) as { label: string }[]}
+          />
+        </div>
 
-        {/* Booking column — only after a service is selected */}
-        {selected && (
-          <aside className="space-y-3 lg:col-start-2 lg:row-span-5 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
-            <div className="rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
-              <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Book service")}</p>
-              <p className="mt-0.5 text-2xs text-ink-tertiary">{tx(selected.label)}</p>
+        <aside className="space-y-3 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
+          {selected ? (
+            <div className={DIRECTORY_SIDEBAR_CARD}>
+              <p className="text-sm font-semibold leading-snug text-[color:var(--pp-primary-950)]">{tx("Book service")}</p>
+              <p className="mt-2 text-sm leading-snug text-ink-tertiary">{tx(selected.label)}</p>
 
-              <div className="mt-5 flex items-end justify-between gap-3 border-t border-line pt-4">
+              <div className="mt-4 flex items-end justify-between gap-3 border-t border-line pt-4">
                 <span>
                   <span className="block text-2xs text-ink-tertiary">
                     {selected.feeFrom === 0 ? tx("Coverage") : tx("From")}
                   </span>
-                  <span className="font-display text-3xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
+                  <span className="font-display text-2xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
                     {formatFee(selected.feeFrom)}
                   </span>
                 </span>
-                <span className="rounded-full bg-[color:var(--pp-primary-100)] px-2.5 py-1 text-2xs font-semibold text-[color:var(--pp-primary-950)]">
+                <span className="inline-flex h-7 items-center rounded-full bg-[color:var(--pp-primary-100)] px-3 text-xs font-semibold leading-none text-[color:var(--pp-primary-950)]">
                   {tx(serviceKindLabel(selected.kind))}
                 </span>
               </div>
 
-              <p className="mt-3 text-sm text-ink-secondary">{tx(selected.blurb)}</p>
+              <p className="mt-3 text-sm leading-snug text-ink-secondary">{tx(selected.blurb)}</p>
 
-              <div className="mt-5 space-y-2">
+              <div className="mt-4 space-y-2">
                 {selected.kind === "consult" ? (
                   <>
-                    <Button fullWidth onClick={bookFacilityService}>
+                    <Button fullWidth size="sm" onClick={bookFacilityService}>
                       {tx("Choose a consultant")}
                     </Button>
                     <p className="text-center text-2xs text-ink-tertiary">
@@ -693,26 +665,30 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
                     </p>
                   </>
                 ) : (
-                  <Button fullWidth onClick={bookFacilityService}>
+                  <Button fullWidth size="sm" onClick={bookFacilityService}>
                     {tx("Book appointment")}
                   </Button>
                 )}
-                <Button fullWidth variant="ghost" onClick={() => setSelectedServiceId(null)}>
+                <Button fullWidth size="sm" variant="ghost" onClick={() => setSelectedServiceId(null)}>
                   {tx("Change service")}
                 </Button>
               </div>
             </div>
-          </aside>
-        )}
+          ) : null}
+          <DirectorySidebarMap
+            query={isClinic ? clinicMapsQuery(clinic) : hospitalMapsQuery(hospital)}
+          />
+        </aside>
 
-        {/* About */}
-        <section className="min-w-0 lg:col-start-1 lg:row-start-2">
+        <div className="min-w-0 space-y-10 lg:col-start-1 lg:row-start-2">
+        <section>
           <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
             {tx("About")}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-ink-secondary">
             {tx(provider.about || provider.bio)}
           </p>
+          {isClinic ? <ClinicAboutFacts clinic={clinic} /> : <HospitalAboutFacts hospital={hospital} />}
           {(provider.address || provider.phone) && (
             <dl className="mt-4 overflow-hidden rounded-2xl border border-line bg-white">
               {provider.address && (
@@ -741,123 +717,104 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
           )}
         </section>
 
-        {/* Services */}
-        <section className="min-w-0 lg:col-start-1 lg:row-start-3">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-              {tx("Services")}
-            </h2>
-            {!selected && (
-              <p className="text-sm text-ink-tertiary">{tx("Select a service to book")}</p>
-            )}
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {services.map((s) => {
-              const on = selected?.id === s.id;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => selectService(s)}
-                  aria-pressed={on}
-                  className={
-                    "rounded-2xl border p-4 text-left transition-colors " +
-                    (on
-                      ? "border-[color:var(--pp-primary-950)] bg-[color:var(--pp-primary-100)]"
-                      : "border-line bg-white hover:bg-[color:var(--state-hover)]")
-                  }
-                >
-                  <span className="flex items-start justify-between gap-3">
-                    <span>
-                      <span className="block text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
-                        {tx(serviceKindLabel(s.kind))}
-                      </span>
-                      <span className="mt-1 block font-semibold text-[color:var(--pp-primary-950)]">
-                        {tx(s.label)}
-                      </span>
-                      <span className="mt-1 block text-sm text-ink-secondary">{tx(s.blurb)}</span>
-                    </span>
-                    <span className="shrink-0 text-sm font-semibold text-[color:var(--pp-primary-950)] tnum">
-                      {formatFee(s.feeFrom)}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+          <SpecialisedInSection groups={specialisedIn} variant="facility" staff={staff} />
 
-        {/* Consultants */}
-        <section id="consultants" className="min-w-0 scroll-mt-28 lg:col-start-1 lg:row-start-4">
-          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-            {tx("Consultants")}
-          </h2>
-          <p className="mt-1 text-sm text-ink-tertiary">
-            {tx("Doctors and clinicians practicing at this {kind}.")
-              .replace("{kind}", tx(kindLabel(provider.kind)).toLowerCase())}
-          </p>
-          {staff.length === 0 ? (
-            <p className="mt-4 rounded-2xl border border-dashed border-line bg-white px-5 py-8 text-center text-sm text-ink-tertiary">
-              {tx("No consultants listed yet.")}
-            </p>
-          ) : (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {staff.map((d) => (
-                <button
-                  key={d.id}
-                  type="button"
-                  onClick={() => openDoctor(d)}
-                  className="flex gap-3 overflow-hidden rounded-2xl border border-line bg-white p-3 text-left transition-colors hover:bg-[color:var(--state-hover)]"
-                >
-                  <img
-                    src={d.imageUrl}
-                    alt=""
-                    className="h-20 w-20 shrink-0 rounded-xl object-cover object-top"
-                  />
-                  <span className="min-w-0 flex-1 py-0.5">
-                    <span className="block font-semibold text-[color:var(--pp-primary-950)]">{d.name}</span>
-                    <span className="mt-0.5 block text-xs text-ink-tertiary">{tx(d.subtitle)}</span>
-                    <span className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-tertiary">
-                      <span className="font-semibold text-[color:var(--pp-violet)]">★ {d.rating.toFixed(1)}</span>
-                      <span>·</span>
-                      <span className="tnum">{formatFee(d.consultationFee)}</span>
-                      <span>·</span>
-                      <span>
-                        {d.nextAvailable === "Today" ||
-                        d.nextAvailable === "Tomorrow" ||
-                        d.nextAvailable === "In 2 days"
-                          ? tx(d.nextAvailable)
-                          : d.nextAvailable}
-                      </span>
-                    </span>
-                  </span>
-                </button>
-              ))}
+          <section className="min-w-0">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
+                {tx("Services")}
+              </h2>
+              {!selected && (
+                <p className="text-sm text-ink-tertiary">{tx("Select a service to book")}</p>
+              )}
             </div>
-          )}
-        </section>
-
-        {/* Facilities / amenities */}
-        {provider.amenities && provider.amenities.length > 0 && (
-          <section className="min-w-0 lg:col-start-1 lg:row-start-5">
-            <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-              {tx("Facilities")}
-            </h2>
-            <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-              {provider.amenities.map((item) => (
-                <li
-                  key={item}
-                  className="flex items-start gap-2.5 rounded-2xl border border-line bg-white px-4 py-3 text-sm text-[color:var(--pp-primary-950)]"
-                >
-                  <span className="mt-0.5 text-wellness" aria-hidden>
-                    ✓
-                  </span>
-                  {tx(item)}
-                </li>
-              ))}
-            </ul>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {services.map((s) => {
+                const on = selected?.id === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => selectService(s)}
+                    aria-pressed={on}
+                    className={
+                      "rounded-2xl border p-4 text-left transition-colors " +
+                      (on
+                        ? "border-[color:var(--pp-primary-950)] bg-[color:var(--pp-primary-100)]"
+                        : "border-line bg-white hover:bg-[color:var(--state-hover)]")
+                    }
+                  >
+                    <span className="flex items-start justify-between gap-3">
+                      <span>
+                        <span className="block text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
+                          {tx(serviceKindLabel(s.kind))}
+                        </span>
+                        <span className="mt-1 block font-semibold text-[color:var(--pp-primary-950)]">
+                          {tx(s.label)}
+                        </span>
+                        <span className="mt-1 block text-sm text-ink-secondary">{tx(s.blurb)}</span>
+                      </span>
+                      <span className="shrink-0 text-sm font-semibold text-[color:var(--pp-primary-950)] tnum">
+                        {formatFee(s.feeFrom)}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </section>
-        )}
+
+          {isClinic ? <ClinicTreatmentsSection clinic={clinic} /> : null}
+
+          {staff.length ? (
+            isClinic ? (
+              <ClinicDoctorsSection clinic={clinic} />
+            ) : (
+              <HospitalDoctorsSection hospital={hospital} />
+            )
+          ) : (
+            <section
+              id={isClinic ? "clinic-doctors" : "hospital-doctors"}
+              className="min-w-0 scroll-mt-28"
+            >
+              <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
+                {tx(isClinic ? "Doctors & practitioners" : "Doctors & specialists")}
+              </h2>
+              <p className="mt-1 text-sm text-ink-tertiary">
+                {tx("Doctors and clinicians practicing at this {kind}.")
+                  .replace("{kind}", tx(kindLabel(provider.kind)).toLowerCase())}
+              </p>
+              <p className="mt-4 rounded-2xl border border-dashed border-line bg-white px-5 py-8 text-center text-sm text-ink-tertiary">
+                {tx("No consultants listed yet.")}
+              </p>
+            </section>
+          )}
+
+          {isClinic ? (
+            <ClinicProfileMid clinic={clinic} includeDoctors={false} />
+          ) : (
+            <HospitalProfileMid hospital={hospital} includeDoctors={false} />
+          )}
+
+          <ReviewsPanel
+            kind="facility"
+            subjectId={provider.id.startsWith("hf-") ? provider.id.replace(/^hf-/, "") : provider.id}
+            listingName={provider.name}
+            topics={[...(isClinic ? CLINIC_REVIEW_TOPICS : HOSPITAL_REVIEW_TOPICS)]}
+          />
+
+          {isClinic ? (
+            <>
+              <ClinicProfileAfterReviews clinic={clinic} />
+              <ClinicRelatedSection clinic={clinic} />
+            </>
+          ) : (
+            <>
+              <HospitalProfileAfterReviews hospital={hospital} />
+              <HospitalRelatedSection hospital={hospital} />
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

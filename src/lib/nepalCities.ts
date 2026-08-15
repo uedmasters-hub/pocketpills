@@ -132,6 +132,38 @@ export function pharmacyDirectoryPath(district: string) {
   return `/pharmacies?district=${encodeURIComponent(normalizeCityName(district))}`;
 }
 
+export function facilityDirectoryPath(district: string) {
+  return `/facilities?district=${encodeURIComponent(normalizeCityName(district))}`;
+}
+
+const FACILITY_DISTRICT_KEY = "pp.facilities.district.v1";
+export const DEFAULT_FACILITY_DISTRICT = "Kathmandu";
+
+export function readSavedFacilityDistrict() {
+  try {
+    const saved = normalizeCityName(localStorage.getItem(FACILITY_DISTRICT_KEY) || "");
+    if (saved) return saved;
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_FACILITY_DISTRICT;
+}
+
+export function saveFacilityDistrict(district: string) {
+  const next = normalizeCityName(district) || DEFAULT_FACILITY_DISTRICT;
+  try {
+    localStorage.setItem(FACILITY_DISTRICT_KEY, next);
+  } catch {
+    /* ignore */
+  }
+  return next;
+}
+
+/** Health-facility registry spells Chitwan as Chitawan. */
+export function nearbyFacilityDistricts(district: string, count = 5): string[] {
+  return nearbyDistricts(district, count).map((name) => (name === "Chitwan" ? "Chitawan" : name));
+}
+
 const NEARBY_DISTRICTS: Record<string, string[]> = {
   Kathmandu: ["Lalitpur", "Bhaktapur", "Kavrepalanchok", "Makwanpur", "Chitwan"],
   Lalitpur: ["Kathmandu", "Bhaktapur", "Makwanpur", "Kavrepalanchok", "Chitwan"],
@@ -140,6 +172,7 @@ const NEARBY_DISTRICTS: Record<string, string[]> = {
   Morang: ["Sunsari", "Jhapa", "Dhankuta", "Saptari", "Kathmandu"],
   Rupandehi: ["Nawalparasi", "Kapilvastu", "Palpa", "Chitwan", "Kathmandu"],
   Chitwan: ["Makwanpur", "Nawalparasi", "Dhading", "Kathmandu", "Lalitpur"],
+  Chitawan: ["Makwanpur", "Nawalparasi", "Dhading", "Kathmandu", "Lalitpur"],
   Jhapa: ["Morang", "Ilam", "Sunsari", "Panchthar", "Kathmandu"],
   Kailali: ["Kanchanpur", "Bardiya", "Doti", "Surkhet", "Kathmandu"],
   Parsa: ["Bara", "Rautahat", "Makwanpur", "Chitwan", "Kathmandu"],

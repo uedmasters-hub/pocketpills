@@ -4,6 +4,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
+    "api/access/[...path].ts": {
+      "maxDuration": 10
+    },
     "api/nmc/[...path].ts": {
       "includeFiles": "nmc-api/data/nmc-database-active.csv",
       "maxDuration": 10
@@ -11,9 +14,17 @@
     "api/pharmacy/[...path].ts": {
       "includeFiles": "pharmacy_api/api/pharmacies.json",
       "maxDuration": 15
+    },
+    "api/facility/[...path].ts": {
+      "includeFiles": "health-facility-api/data/health-facilities.json",
+      "maxDuration": 15
+    },
+    "api/reviews/[...path].ts": {
+      "maxDuration": 10
     }
   },
   "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/((?!api/|assets/|img/|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
   ],
   "headers": [

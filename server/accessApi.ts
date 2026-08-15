@@ -27,6 +27,11 @@ export async function handleAccess(
   route: "password" | "magic-link" | "verify" | "session" | "health",
   req: AccessRequest,
 ): Promise<AccessResponse> {
+  const method = (req.method || "GET").toUpperCase();
+  if (method === "OPTIONS") {
+    return { status: 204, body: {} };
+  }
+
   if (route === "health") {
     return { status: 200, body: { ok: true } };
   }

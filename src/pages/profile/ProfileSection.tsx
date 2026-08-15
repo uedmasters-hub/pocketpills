@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useUser, newInsuranceId, primaryInsurance, fmtInsuranceList, fmtInsurancePlan, type InsurancePlan } from "@/lib/user";
 import { profileChecklist, isChecklistId, type ChecklistId } from "@/lib/profile";
 import { useReviewDraft, type ReviewChange } from "@/lib/rightRail";
-import { Switch } from "@/components/ui";
+import { FormSectionSkeleton, Switch } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 
 const FIELD = "h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-base text-ink outline-none focus:border-primary";
@@ -118,21 +118,7 @@ const META: Record<ChecklistId, { title: string; blurb: string }> = {
 
 function SectionSkeleton() {
   const { tx } = useI18n();
-  return (
-    <div aria-busy="true" aria-live="polite">
-      <div className="pp-skeleton h-4 w-16" />
-      <div className="mt-5 flex items-center gap-3">
-        <div className="pp-skeleton h-9 w-64" />
-        <div className="pp-skeleton h-6 w-20 rounded-full" />
-      </div>
-      <div className="pp-skeleton mt-3 h-4 w-80" />
-      <div className="mt-6 max-w-3xl space-y-4">
-        <div className="pp-skeleton h-32 w-full rounded-2xl" />
-        <div className="pp-skeleton h-56 w-full rounded-2xl" />
-      </div>
-      <span className="sr-only">{tx("Loading section…")}</span>
-    </div>
-  );
+  return <FormSectionSkeleton label={tx("Loading section…")} />;
 }
 
 export function ProfileSection() {

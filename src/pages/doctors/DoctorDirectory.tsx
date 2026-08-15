@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useRef, useState, type Ref } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { PageSearchField } from "@/components/PageSearchField";
 import { DirectoryFilterSelect } from "@/components/DirectoryFilterSelect";
+import { PageSearchField } from "@/components/PageSearchField";
+import { RatingChip } from "@/components/reviews/RatingChip";
+import { DirectoryGridSkeleton, RatingChipSkeleton, ResultCountSkeleton, SkeletonImage } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { useUser } from "@/lib/user";
 import { formatFee } from "@/lib/appointments";
 import { treatments, type Treatment } from "@/lib/data";
 import { listNmcDoctors, normalizeNmcNumber, type NmcDoctor } from "@/lib/nmcApi";
+import type { ReviewSummary } from "@/lib/reviewsApi";
+import { useReviewSummaries } from "@/lib/useReviewSummaries";
 import {
   cityFromNmcAddress,
   claimToCareProvider,
@@ -268,6 +272,17 @@ export function DoctorDirectory() {
     return out;
   }, [registeredOnly, pagedRegistered, page, appliedQ, registeredPool, rows, rev]);
 
+  const liveReviewIds = useMemo(
+    () =>
+      gridItems.flatMap((item) =>
+        "doctor" in item && item.activated
+          ? [normalizeNmcNumber(item.doctor.nmcNumber) || String(item.doctor.nmcNumber)]
+          : [],
+      ),
+    [gridItems],
+  );
+  const { map: reviewSummaries, ready: reviewsReady } = useReviewSummaries("doctor", liveReviewIds);
+
   const resultCount = registeredOnly ? registeredPool.length : total;
   const cityEmpty = !busy && !error && !appliedQ && !registeredOnly && total === 0 && registeredPool.length === 0;
   const searchEmpty = !busy && !error && Boolean(appliedQ) && gridItems.length === 0;
@@ -314,11 +329,11 @@ export function DoctorDirectory() {
         </span>
       </div>
 
-      {(gridItems.length > 0 || cityEmpty || searchEmpty || (!busy && !error)) && (
+      {(busy || gridItems.length > 0 || cityEmpty || searchEmpty || !error) && (
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-ink-tertiary tnum">
             {busy && gridItems.length === 0
-              ? tx("Loading…")
+              ? <ResultCountSkeleton />
               : searchEmpty || cityEmpty
                 ? tx("0 results found")
                 : resultCount === 1
@@ -348,7 +363,7 @@ export function DoctorDirectory() {
       )}
 
       {busy && gridItems.length === 0 && (
-        <p className="mt-8 text-sm text-ink-tertiary">{tx("Loading registry…")}</p>
+        <DirectoryGridSkeleton label={tx("Loading registry…")} />
       )}
 
       {searchEmpty && (
@@ -387,6 +402,12 @@ export function DoctorDirectory() {
                   doctor={item.doctor}
                   activated={item.activated}
                   claimLocked={signedIn && !item.activated}
+                  summary={
+                    reviewSummaries[
+                      normalizeNmcNumber(item.doctor.nmcNumber) || String(item.doctor.nmcNumber)
+                    ]
+                  }
+                  ratingPending={!reviewsReady}
                   onOpen={() => {
                     if (signedIn && !item.activated) return;
                     nav(
@@ -588,11 +609,15 @@ function DirectoryCard({
   doctor,
   activated,
   claimLocked = false,
+  summary,
+  ratingPending = false,
   onOpen,
 }: {
   doctor: NmcDoctor;
   activated: boolean;
   claimLocked?: boolean;
+  summary?: ReviewSummary;
+  ratingPending?: boolean;
   onOpen: () => void;
 }) {
   const { tx } = useI18n();
@@ -623,11 +648,12 @@ function DirectoryCard({
     >
       {photo && (
         <div className="pointer-events-none absolute inset-y-0 right-0 w-[40%]" aria-hidden>
-          <img
+          <SkeletonImage
             src={photo}
             alt=""
             loading="lazy"
-            className="h-full w-full object-cover object-[22%_12%]"
+            className="h-full w-full"
+            imgClassName="object-cover object-[22%_12%]"
             style={{
               WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 18%)",
               maskImage: "linear-gradient(to right, transparent 0%, #000 18%)",
@@ -644,9 +670,18 @@ function DirectoryCard({
         }
       >
         <div className="flex min-w-0 flex-col">
-          <p className={"pp-caps " + (live ? "text-wellness" : "text-ink-tertiary")}>
-            {live ? tx("Available") : tx("Not available")}
-          </p>
+          <div className="flex items-center gap-2.5">
+            <p className={"pp-caps " + (live ? "text-wellness" : "text-ink-tertiary")}>
+              {live ? tx("Available") : tx("Not available")}
+            </p>
+            {live ? (
+              summary ? (
+                <RatingChip summary={summary} />
+              ) : ratingPending ? (
+                <RatingChipSkeleton />
+              ) : null
+            ) : null}
+          </div>
           <h2 className="mt-2 block w-full truncate font-display text-lg font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)]">
             {name}
           </h2>
@@ -814,3 +849,4 @@ function pageWindow(page: number, total: number): Array<number | "…"> {
   if (page >= total - 2) return [1, "…", total - 2, total - 1, total];
   return [1, "…", page - 1, page, page + 1, "…", total];
 }
+

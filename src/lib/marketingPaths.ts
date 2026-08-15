@@ -11,6 +11,8 @@ export function isAlwaysPublicPath(pathname: string) {
   if (pathname.startsWith("/doctors/")) return true;
   if (pathname === "/pharmacies" || pathname === "/pharmacies/claim") return true;
   if (pathname.startsWith("/pharmacies/")) return true;
+  if (pathname === "/facilities" || pathname === "/facilities/claim") return true;
+  if (pathname.startsWith("/facilities/")) return true;
   return false;
 }
 

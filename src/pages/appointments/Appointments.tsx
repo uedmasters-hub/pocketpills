@@ -395,6 +395,15 @@ export function Appointments() {
                   onShowAll={() => setShowAllLabs(true)}
                   onShowLess={() => setShowAllLabs(false)}
                   gridClass={listGridClass}
+                  headerExtra={
+                    <button
+                      type="button"
+                      onClick={() => nav("/facilities")}
+                      className="text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
+                    >
+                      {tx("Find a hospital")}
+                    </button>
+                  }
                 >
                   {labsCollapse.visible.map((l) => (
                     <LabCard
