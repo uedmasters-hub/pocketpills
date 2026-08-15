@@ -113,6 +113,6 @@ VALUES
     '536a4c1d7d961f5aab25971371019644572a30d1ef985819b5b76f9cd5497f29', 'Sarita G.', 'seed.sarita.gurung@pocketpills.demo', 'visible',
     '2026-08-13 14:00:00+00'::timestamptz, '2026-08-13 14:00:00+00'::timestamptz
   )
-ON CONFLICT (subject_kind, subject_id, reviewer_key) WHERE (status IN ('visible', 'hidden'))
+ON CONFLICT (subject_kind, subject_id, reviewer_key) WHERE (status IN ('pending', 'visible', 'hidden'))
 DO NOTHING;
 

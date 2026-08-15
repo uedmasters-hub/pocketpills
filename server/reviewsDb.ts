@@ -1,10 +1,11 @@
 /**
  * Dedicated Neon connection for the rating system.
  * Uses REVIEWS_DATABASE_URL when set so reviews can live on a separate database
- * from site access. Falls back to DATABASE_URL only for local/dev.
+ * from site access. Falls back to DATABASE_URL when unset (including Vercel).
  */
 
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+import { DEMO_REVIEW_SEEDS } from "./reviewsSeedData.js";
 
 let sqlClient: NeonQueryFunction<false, false> | null = null;
 let migrated = false;
@@ -107,5 +108,31 @@ export async function ensureReviewsSchema() {
       ON rating.moderation_events (review_id, created_at DESC)
   `;
 
+  try {
+    await ensureReviewsSeed(sql);
+  } catch {
+    /* best-effort — public chips stay hidden until seed succeeds */
+  }
+
   migrated = true;
+}
+
+async function ensureReviewsSeed(sql: NeonQueryFunction<false, false>) {
+  const existing = await sql`SELECT 1 FROM rating.reviews LIMIT 1`;
+  if (existing.length) return;
+  for (const row of DEMO_REVIEW_SEEDS) {
+    await sql`
+      INSERT INTO rating.reviews (
+        subject_kind, subject_id, rating, title, body,
+        reviewer_key, reviewer_name, reviewer_email, status,
+        created_at, updated_at
+      )
+      VALUES (
+        ${row.kind}, ${row.subjectId}, ${row.rating}, ${row.title}, ${row.body},
+        ${row.reviewerKey}, ${row.reviewerName}, ${row.reviewerEmail}, 'visible',
+        ${row.createdAt}::timestamptz, ${row.createdAt}::timestamptz
+      )
+      ON CONFLICT DO NOTHING
+    `;
+  }
 }
