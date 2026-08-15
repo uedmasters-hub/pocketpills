@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { RatingChipSkeleton } from "@/components/ui";
+import { RatingChip } from "@/components/reviews/RatingChip";
 import { PageSearchField } from "@/components/PageSearchField";
 import { type Treatment } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
@@ -49,6 +51,9 @@ import {
 } from "@/lib/healthServices";
 import { saveSelectedPharmacy, type AreaPharmacy } from "@/lib/pharmacies";
 import { searchPharmacies } from "@/lib/pharmacySearch";
+import { subscribePharmacyDirectory } from "@/lib/pharmacyDirectory";
+import { useReviewSummaries } from "@/lib/useReviewSummaries";
+import type { ReviewSummary } from "@/lib/reviewsApi";
 import { searchSpecialties } from "@/lib/specialtySearch";
 import { searchTreatments } from "@/lib/treatmentSearch";
 
@@ -97,7 +102,11 @@ export function Appointments() {
       if (document.visibilityState === "visible") setTick((t) => t + 1);
     };
     document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
+    const unsub = subscribePharmacyDirectory(() => setTick((t) => t + 1));
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      unsub();
+    };
   }, []);
 
   const specialtyParam = params.get("specialty");
@@ -137,7 +146,12 @@ export function Appointments() {
 
   const filteredSpecialties = useMemo(() => searchSpecialties(q), [q]);
   const filteredTreatments = useMemo(() => searchTreatments(q), [q]);
-  const filteredPharmacies = useMemo(() => searchPharmacies(q), [q]);
+  const filteredPharmacies = useMemo(() => searchPharmacies(q), [q, tick]);
+  const pharmacyReviewIds = useMemo(
+    () => filteredPharmacies.map((p) => p.id.replace(/^dda-/, "")),
+    [filteredPharmacies],
+  );
+  const { map: pharmacyRatings, ready: pharmacyRatingsReady } = useReviewSummaries("pharmacy", pharmacyReviewIds);
   const filteredLabs = useMemo(() => searchLabs(q), [q]);
   const filteredAssistants = useMemo(() => searchCareWorkers(q), [q]);
   const filteredServices = useMemo(() => searchHealthServices(q), [q]);
@@ -372,13 +386,20 @@ export function Appointments() {
                   }
                 >
                   {pharmaciesCollapse.visible.map((p) => (
-                    <PharmacyCard key={p.id} pharmacy={p} onOpen={() => openPharmacy(p)} />
+                    <PharmacyCard
+                      key={p.id}
+                      pharmacy={p}
+                      summary={pharmacyRatings[p.id.replace(/^dda-/, "")]}
+                      ratingPending={!pharmacyRatingsReady}
+                      onOpen={() => openPharmacy(p)}
+                    />
                   ))}
                   {pharmaciesCollapse.canCollapse && (
                     <ViewAllCard
                       remaining={filteredPharmacies.length - collapsedVisible}
                       label={tx("View all")}
                       ariaLabel={tx("View all pharmacies")}
+                      compact
                       onClick={() => setShowAllPharmacies(true)}
                     />
                   )}
@@ -698,12 +719,36 @@ function ViewAllCard({
   label,
   ariaLabel,
   onClick,
+  compact = false,
 }: {
   remaining: number;
   label: string;
   ariaLabel: string;
   onClick: () => void;
+  compact?: boolean;
 }) {
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={
+          "flex flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-[#D4CDE3] bg-[#FBFAFE] px-5 py-8 text-center " +
+          "transition-[transform,box-shadow,border-color] duration-200 " +
+          "hover:-translate-y-0.5 hover:border-[#D9D2E8] hover:shadow-[0_14px_32px_rgba(40,24,72,0.08)]"
+        }
+        aria-label={ariaLabel}
+      >
+        <span className="grid h-14 w-14 place-items-center rounded-full bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]">
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+          </svg>
+        </span>
+        <p className="mt-4 text-base font-semibold text-[color:var(--pp-primary-950)]">{label}</p>
+        <p className="mt-1 text-sm text-[#8B849C]">+{remaining}</p>
+      </button>
+    );
+  }
   return (
     <button
       type="button"
@@ -922,28 +967,51 @@ function ServiceCard({ service, onOpen }: { service: HealthService; onOpen: () =
   );
 }
 
-function PharmacyCard({ pharmacy, onOpen }: { pharmacy: AreaPharmacy; onOpen: () => void }) {
+function samePlace(a?: string, b?: string) {
+  const x = (a || "").trim().toLowerCase();
+  const y = (b || "").trim().toLowerCase();
+  return Boolean(x && y && x === y);
+}
+
+function PharmacyCard({
+  pharmacy,
+  summary,
+  ratingPending = false,
+  onOpen,
+}: {
+  pharmacy: AreaPharmacy;
+  summary?: ReviewSummary;
+  ratingPending?: boolean;
+  onOpen: () => void;
+}) {
   const { tx } = useI18n();
+  const nepal = pharmacy.province === "NP";
+  const location = nepal
+    ? pharmacy.address || pharmacy.city
+    : [pharmacy.city, pharmacy.distance].filter(Boolean).join(" • ");
+  const street =
+    !nepal && pharmacy.address && !samePlace(pharmacy.address, pharmacy.city) ? pharmacy.address : "";
   return (
     <button
       type="button"
       onClick={onOpen}
       className={
-        "group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#E6E1EF] bg-white p-5 text-left " +
+        "group flex min-h-[11.5rem] flex-col overflow-hidden rounded-[1.75rem] border border-[#E6E1EF] bg-white p-5 text-left " +
         "transition-[transform,box-shadow,border-color] duration-200 " +
         "hover:-translate-y-0.5 hover:border-[#D9D2E8] hover:shadow-[0_14px_32px_rgba(40,24,72,0.08)]"
       }
     >
-      <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Pharmacy")}</p>
-      <h3 className="mt-2 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
+      <div className="flex items-center gap-2.5">
+        <p className="pp-caps text-wellness">{tx("Available")}</p>
+        {summary ? <RatingChip summary={summary} /> : ratingPending ? <RatingChipSkeleton /> : null}
+      </div>
+      <h3 className="mt-2 font-display text-xl font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)]">
         {pharmacy.name}
       </h3>
-      <p className="mt-1 text-sm text-ink-tertiary">
-        {pharmacy.city} · {pharmacy.distance}
-      </p>
-      <p className="mt-2 line-clamp-2 flex-1 text-sm text-ink-secondary">{pharmacy.address}</p>
-      <p className="mt-4 text-sm font-medium text-[color:var(--pp-violet)]">
-        {tx("Transfer prescription →")}
+      {location ? <p className="mt-1 text-sm text-ink-tertiary">{location}</p> : null}
+      {street ? <p className="mt-1.5 text-sm text-ink-secondary">{street}</p> : null}
+      <p className="mt-auto pt-4 text-sm font-medium text-[color:var(--pp-violet)]">
+        {tx("Transfer prescription")} →
       </p>
     </button>
   );

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { MapEmbed } from "@/components/MapEmbed";
 import { createTransferOrder, TRANSFER_HINTS, type Order } from "@/lib/orders";
 import { useUser } from "@/lib/user";
-import { getPharmacy, loadSelectedPharmacy } from "@/lib/pharmacies";
+import { getHubPharmacy } from "@/lib/pharmacySearch";
+import { loadSelectedPharmacy } from "@/lib/pharmacies";
 import { useI18n } from "@/lib/i18n";
 
 /* ── Flow model ─────────────────────────────────────────── */
@@ -273,12 +274,12 @@ export function TransferPrescription() {
   /* Prefill from /pharmacies/:region → Transfer from this pharmacy (once). */
   useEffect(() => {
     const id = params.get("pharmacy");
-    const area = (id ? getPharmacy(id) : null) ?? loadSelectedPharmacy();
+    const area = (id ? getHubPharmacy(id) : null) ?? loadSelectedPharmacy();
     if (!area) return;
     const mapped: Pharmacy = {
       id: area.id,
       name: area.name,
-      address: `${area.address}, ${area.city}, ${area.province}`,
+      address: area.province === "NP" ? `${area.address}, Nepal` : `${area.address}, ${area.city}, ${area.province}`,
       distance: area.distance,
       lat: area.lat,
       lng: area.lng,
@@ -453,7 +454,10 @@ export function TransferPrescription() {
 
   /* ── 3. Review pharmacy ──────────────────────────────── */
   if (step === "review" && pharmacy) {
-    const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${pharmacy.lng - 0.04}%2C${pharmacy.lat - 0.025}%2C${pharmacy.lng + 0.04}%2C${pharmacy.lat + 0.025}&layer=mapnik&marker=${pharmacy.lat}%2C${pharmacy.lng}`;
+    const hasPin = pharmacy.lat !== 0 && pharmacy.lng !== 0;
+    const mapSrc = hasPin
+      ? `https://www.openstreetmap.org/export/embed.html?bbox=${pharmacy.lng - 0.04}%2C${pharmacy.lat - 0.025}%2C${pharmacy.lng + 0.04}%2C${pharmacy.lat + 0.025}&layer=mapnik&marker=${pharmacy.lat}%2C${pharmacy.lng}`
+      : `https://maps.google.com/maps?q=${encodeURIComponent(pharmacy.address || pharmacy.name)}&z=14&hl=en&t=m&output=embed`;
 
     return (
       <TransferShell
