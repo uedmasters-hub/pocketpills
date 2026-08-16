@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { EntryFlow } from "@/components/layout/EntryFlow";
 import { Card, Field, Badge, Switch } from "@/components/ui";
@@ -7,6 +7,15 @@ import { drugs } from "@/lib/data";
 import { ActiveOfferBanner } from "@/components/offers/ActiveOfferBanner";
 import { getActiveOffer } from "@/lib/offers";
 import { useI18n } from "@/lib/i18n";
+import {
+  fileToUpload,
+  isReadableImage,
+  revokeUploads,
+  samplePrescriptionFile,
+  scanPrescriptions,
+  type ExtractedMed,
+  type RxUpload,
+} from "@/lib/rxOcr";
 
 const DISPENSING_FEE = 11.99;
 const STEPS = ["method", "capture", "meds", "patient", "packaging", "insurance", "delivery", "review", "payment"] as const;
@@ -16,11 +25,13 @@ type Method = "upload" | "fax" | "mail" | "transfer";
 interface Med {
   id: string; slug?: string; name: string; strength: string; qty: number;
   directions: string; asNeeded: boolean; price: number; coverage: number; dosages: string[];
+  source?: "ocr" | "manual";
+  confidence?: "high" | "low";
 }
 interface State {
   method: Method | null;
-  files: string[];
-  clinic: string; prescriber: string;
+  files: RxUpload[];
+  clinic: string; prescriber: string; ocrText: string;
   mailAddress: string; transferPharmacy: string; transferPhone: string;
   meds: Med[];
   who: "self" | "other"; otherName: string; otherDob: string; otherRel: string;
@@ -32,8 +43,25 @@ interface State {
   card: string; exp: string; cvc: string;
 }
 
+function medFromExtracted(m: ExtractedMed): Med {
+  return {
+    id: crypto.randomUUID(),
+    slug: m.slug,
+    name: m.name,
+    strength: m.strength,
+    qty: m.qty,
+    directions: m.directions,
+    asNeeded: m.asNeeded,
+    price: m.price,
+    coverage: m.coverage,
+    dosages: m.dosages,
+    source: "ocr",
+    confidence: m.confidence,
+  };
+}
+
 const initial: State = {
-  method: null, files: [], clinic: "", prescriber: "",
+  method: null, files: [], clinic: "", prescriber: "", ocrText: "",
   mailAddress: "", transferPharmacy: "", transferPhone: "",
   meds: [], who: "self", otherName: "", otherDob: "", otherRel: "",
   province: "ON", healthNumber: "", allergies: [], currentMeds: [], pregnant: "",
@@ -63,6 +91,118 @@ function RadioCards<T extends string>({ options, value, onChange }: {
           {value === o.id && <span className="ml-auto text-primary" aria-hidden>✓</span>}
         </Card>
       ))}
+    </div>
+  );
+}
+
+const NONE_ALLERGY = "No known allergies";
+
+const ALLERGY_OPTIONS = [
+  "Penicillin",
+  "Sulfa drugs",
+  "Aspirin / NSAIDs",
+  "Codeine / opioids",
+  "Latex",
+  "Iodine",
+  "Eggs",
+  "Peanuts",
+  "Tree nuts",
+  "Shellfish",
+  "Dairy",
+  "Gluten",
+] as const;
+
+function AllergyPicker({
+  items,
+  onChange,
+}: {
+  items: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const { tx } = useI18n();
+  const [custom, setCustom] = useState("");
+  const selected = new Set(items.map((x) => x.toLowerCase()));
+  const noneOn = selected.has(NONE_ALLERGY.toLowerCase());
+  const extras = items.filter(
+    (it) =>
+      it !== NONE_ALLERGY &&
+      !ALLERGY_OPTIONS.some((o) => o.toLowerCase() === it.toLowerCase()),
+  );
+
+  const toggle = (label: string) => {
+    if (label === NONE_ALLERGY) {
+      onChange(noneOn ? [] : [NONE_ALLERGY]);
+      return;
+    }
+    const key = label.toLowerCase();
+    const withoutNone = items.filter((x) => x.toLowerCase() !== NONE_ALLERGY.toLowerCase());
+    onChange(
+      selected.has(key) ? withoutNone.filter((x) => x.toLowerCase() !== key) : [...withoutNone, label],
+    );
+  };
+
+  const addCustom = () => {
+    const v = custom.trim();
+    if (!v) return;
+    if (v.toLowerCase() === NONE_ALLERGY.toLowerCase()) {
+      onChange([NONE_ALLERGY]);
+    } else if (!selected.has(v.toLowerCase())) {
+      onChange([...items.filter((x) => x.toLowerCase() !== NONE_ALLERGY.toLowerCase()), v]);
+    }
+    setCustom("");
+  };
+
+  const chip = (on: boolean) =>
+    "inline-flex h-9 items-center rounded-full border px-3.5 text-sm font-medium transition-colors " +
+    (on
+      ? "border-[color:var(--pp-violet)] bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]"
+      : "border-line bg-white text-ink-secondary hover:border-[color:var(--pp-violet)] hover:text-[color:var(--pp-primary-950)]");
+
+  return (
+    <div>
+      <div className="flex flex-wrap gap-2" role="group" aria-label={tx("Allergies")}>
+        <button type="button" aria-pressed={noneOn} onClick={() => toggle(NONE_ALLERGY)} className={chip(noneOn)}>
+          {tx(NONE_ALLERGY)}
+        </button>
+        {ALLERGY_OPTIONS.map((label) => {
+          const on = selected.has(label.toLowerCase());
+          return (
+            <button key={label} type="button" aria-pressed={on} onClick={() => toggle(label)} className={chip(on)}>
+              {tx(label)}
+            </button>
+          );
+        })}
+      </div>
+      {extras.length ? (
+        <ul className="mt-3 flex flex-wrap gap-2" aria-label={tx("Other allergies")}>
+          {extras.map((it) => (
+            <li
+              key={it}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[color:var(--pp-violet)] bg-[color:var(--pp-primary-100)] px-3.5 text-sm font-medium text-[color:var(--pp-primary-950)]"
+            >
+              {it}
+              <button type="button" onClick={() => toggle(it)} aria-label={tx("Remove {name}").replace("{name}", it)}>
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="mt-3 flex gap-2">
+        <label className="min-w-0 flex-1">
+          <span className="sr-only">{tx("Other allergy")}</span>
+          <input
+            value={custom}
+            onChange={(e) => setCustom(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustom())}
+            placeholder={tx("Other (optional)")}
+            className="h-11 w-full rounded-full border border-line bg-white px-4 text-ink placeholder:text-ink-tertiary focus:border-primary"
+          />
+        </label>
+        <Button variant="secondary" size="sm" onClick={addCustom} disabled={!custom.trim()}>
+          {tx("Add")}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -150,13 +290,104 @@ export function FillPrescription() {
   const [step, setStep] = useState<Step>("method");
   const [s, setS] = useState<State>(initial);
   const set = (p: Partial<State>) => setS((prev) => ({ ...prev, ...p }));
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanPct, setScanPct] = useState(0);
+  const [scanLabel, setScanLabel] = useState("Reading your prescription");
+  const [scanNote, setScanNote] = useState<"found" | "partial" | "empty" | "failed" | null>(null);
+  const scannedKey = useRef("");
+  const filesRef = useRef(s.files);
+  filesRef.current = s.files;
+
+  useEffect(() => {
+    return () => revokeUploads(filesRef.current);
+  }, []);
 
   const idx = STEPS.indexOf(step as (typeof STEPS)[number]);
   const total = STEPS.length;
   const goNext = () => setStep(idx < total - 1 ? STEPS[idx + 1] : "done");
   const goBack = () => (idx <= 0 ? nav("/app") : setStep(STEPS[idx - 1]));
 
-  const addMed = (m: Med) => set({ meds: [...s.meds, m] });
+  const addUploads = (list: FileList | File[]) => {
+    const next = Array.from(list)
+      .filter((f) => isReadableImage(f) || f.type === "application/pdf")
+      .map(fileToUpload);
+    if (!next.length) return;
+    scannedKey.current = "";
+    setS((prev) => ({ ...prev, files: [...prev.files, ...next] }));
+  };
+
+  const removeUpload = (id: string) => {
+    scannedKey.current = "";
+    setS((prev) => {
+      const gone = prev.files.find((f) => f.id === id);
+      if (gone) revokeUploads([gone]);
+      return { ...prev, files: prev.files.filter((f) => f.id !== id) };
+    });
+  };
+
+  const addSample = async () => {
+    const file = await samplePrescriptionFile();
+    addUploads([file]);
+  };
+
+  const continueFromCapture = async () => {
+    if (s.method !== "upload") {
+      goNext();
+      return;
+    }
+    const key = s.files.map((f) => f.id).join(",");
+    if (!s.files.some((f) => isReadableImage(f.file))) {
+      setScanNote("empty");
+      set({ ocrText: "" });
+      goNext();
+      return;
+    }
+    if (key && key === scannedKey.current) {
+      goNext();
+      return;
+    }
+    setScanning(true);
+    setScanPct(4);
+    setScanLabel(tx("Reading your prescription"));
+    try {
+      const result = await scanPrescriptions(s.files, (label, pct) => {
+        setScanLabel(label);
+        setScanPct(pct);
+      });
+      scannedKey.current = key;
+      setS((prev) => {
+        const manual = prev.meds.filter((m) => m.source !== "ocr");
+        const seen = new Set(manual.map((m) => (m.slug || m.name).toLowerCase()));
+        const ocr = result.meds.map(medFromExtracted).filter((m) => {
+          const k = (m.slug || m.name).toLowerCase();
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
+        return {
+          ...prev,
+          meds: [...ocr, ...manual],
+          ocrText: result.text,
+          prescriber: prev.prescriber || result.prescriber,
+          clinic: prev.clinic || result.clinic,
+        };
+      });
+      setScanNote(
+        result.catalogHits > 0 ? "found" : result.meds.length ? "partial" : "empty",
+      );
+      setStep("meds");
+    } catch {
+      setScanNote("failed");
+      set({ ocrText: "" });
+      setStep("meds");
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const addMed = (m: Med) => set({ meds: [...s.meds, { ...m, source: m.source ?? "manual" }] });
   const updMed = (id: string, p: Partial<Med>) => set({ meds: s.meds.map((m) => (m.id === id ? { ...m, ...p } : m)) });
   const rmMed = (id: string) => set({ meds: s.meds.filter((m) => m.id !== id) });
 
@@ -190,6 +421,28 @@ export function FillPrescription() {
     );
 
   /* 2. Capture (method-specific) */
+  if (step === "capture" && scanning) {
+    return (
+      <EntryFlow
+        {...common}
+        title={tx("Reading your prescription")}
+        subtitle={tx("We’re picking out medication names, strengths, and directions. A pharmacist will still confirm before we fill.")}
+        hideNav
+      >
+        <Card className="p-6">
+          <p className="text-sm font-medium text-ink">{tx(scanLabel)}</p>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--pp-primary-100)]">
+            <div
+              className="h-full rounded-full bg-[color:var(--pp-violet)] transition-[width] duration-300"
+              style={{ width: `${Math.max(6, scanPct)}%` }}
+            />
+          </div>
+          <p className="mt-3 text-sm text-ink-tertiary tnum">{scanPct}%</p>
+        </Card>
+      </EntryFlow>
+    );
+  }
+
   if (step === "capture") {
     const m = s.method;
     const captureTitle =
@@ -200,7 +453,8 @@ export function FillPrescription() {
     return (
       <EntryFlow {...common}
         title={captureTitle}
-        onNext={goNext}
+        subtitle={m === "upload" ? tx("We’ll scan the photo and list the medications for you to check.") : undefined}
+        onNext={continueFromCapture}
         nextDisabled={
           m === "upload" ? s.files.length === 0 :
           m === "fax" ? !s.clinic :
@@ -209,18 +463,61 @@ export function FillPrescription() {
         }>
         {m === "upload" && (
           <div className="space-y-4">
-            <Card className="flex flex-col items-center gap-2 border-dashed p-8 text-center">
-              <span className="text-3xl">📄</span>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,image/jpeg,image/png,image/webp"
+              multiple
+              className="sr-only"
+              onChange={(e) => {
+                if (e.target.files) addUploads(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <Card
+              className={
+                "flex cursor-pointer flex-col items-center gap-2 border-dashed p-8 text-center " +
+                (dragOver ? "border-[color:var(--pp-violet)] bg-[color:var(--pp-primary-100)]" : "")
+              }
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+                if (e.dataTransfer.files.length) addUploads(e.dataTransfer.files);
+              }}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("button")) return;
+                fileRef.current?.click();
+              }}
+            >
+              <span className="text-3xl" aria-hidden>📄</span>
               <p className="font-semibold text-ink">{tx("Drag & drop or tap to upload")}</p>
               <p className="text-sm text-ink-tertiary">{tx("Clear photos of the front (and back) of your prescription")}</p>
-              <Button variant="secondary" size="sm" className="mt-2" onClick={() => set({ files: [...s.files, `prescription-${s.files.length + 1}.jpg`] })}>{tx("Add a photo")}</Button>
+              <Button variant="secondary" size="sm" className="mt-2" onClick={() => fileRef.current?.click()}>
+                {tx("Add a photo")}
+              </Button>
+              <button
+                type="button"
+                onClick={() => void addSample()}
+                className="mt-1 text-sm font-medium text-[color:var(--pp-violet)] hover:underline"
+              >
+                {tx("Use a sample prescription")}
+              </button>
             </Card>
-            {s.files.map((f, i) => (
-              <Card key={f} className="flex items-center gap-3 p-3">
-                <span className="grid h-10 w-10 place-items-center rounded-lg bg-primary-subtle">🖼️</span>
-                <span className="flex-1 text-sm font-medium text-ink">{f}</span>
+            {s.files.map((f) => (
+              <Card key={f.id} className="flex items-center gap-3 p-3">
+                {f.previewUrl && isReadableImage(f.file) ? (
+                  <img src={f.previewUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                ) : (
+                  <span className="grid h-10 w-10 place-items-center rounded-lg bg-primary-subtle">🖼️</span>
+                )}
+                <span className="flex-1 truncate text-sm font-medium text-ink">{f.name}</span>
                 <Badge tone="wellness">{tx("Uploaded")}</Badge>
-                <button onClick={() => set({ files: s.files.filter((_, idx) => idx !== i) })} className="text-ink-tertiary hover:text-danger" aria-label={tx("Remove")}>✕</button>
+                <button type="button" onClick={() => removeUpload(f.id)} className="text-ink-tertiary hover:text-danger" aria-label={tx("Remove")}>✕</button>
               </Card>
             ))}
           </div>
@@ -253,15 +550,66 @@ export function FillPrescription() {
   if (step === "meds")
     return (
       <EntryFlow {...common} title={tx("What are we filling?")}
-        subtitle={tx("Add each medication. Not sure of the exact details? A pharmacist will confirm from your prescription.")}
+        subtitle={
+          scanNote === "found"
+            ? tx("We read these from your prescription. Check each one — a pharmacist will confirm before we fill.")
+            : scanNote === "partial"
+              ? tx("We found wording that looks like a medication, but it isn’t on our list yet. Check the name, or search below.")
+            : scanNote === "failed"
+              ? tx("We couldn’t read that photo. Try a clearer JPEG or PNG, or search and add medications below.")
+              : scanNote === "empty" && s.ocrText.trim()
+                ? tx("Printed prescriptions scan best. Faded or cursive handwriting often doesn’t. Search below, or go back and try a brighter, flatter photo.")
+                : scanNote === "empty"
+                ? tx("No medication names matched yet. Search below, or go back and upload a clearer photo.")
+                : tx("Add each medication. Not sure of the exact details? A pharmacist will confirm from your prescription.")
+        }
         onNext={goNext} nextDisabled={s.meds.length === 0}>
         <div className="space-y-4">
+          {scanNote === "found" || scanNote === "partial" ? (
+            <Card className="border-[color:var(--pp-violet)]/30 bg-[color:var(--pp-primary-100)] p-4">
+              <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">
+                {tx("Found {n} from your prescription")
+                  .replace("{n}", String(s.meds.filter((m) => m.source === "ocr").length))}
+              </p>
+              <p className="mt-1 text-sm text-ink-secondary">
+                {scanNote === "partial"
+                  ? tx("These names still need a check. Edit anything that looks off, and add anything we missed.")
+                  : tx("Remove anything that doesn’t belong, and add anything we missed.")}
+              </p>
+            </Card>
+          ) : null}
+          {s.ocrText.trim() ? (
+            <details className="rounded-2xl border border-line bg-surface-2 p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-ink">
+                {tx("Text we read from the photo")}
+              </summary>
+              <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap text-xs leading-5 text-ink-secondary">
+                {s.ocrText.trim()}
+              </pre>
+            </details>
+          ) : null}
           <Card className="p-4"><MedPicker onAdd={addMed} /></Card>
           {s.meds.map((m) => (
             <Card key={m.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-ink">💊 {m.name}</p>
-                <button onClick={() => rmMed(m.id)} className="text-ink-tertiary hover:text-danger" aria-label={tx("Remove")}>✕</button>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  {m.source === "ocr" && (m.confidence === "low" || !m.slug) ? (
+                    <input
+                      value={m.name}
+                      onChange={(e) => updMed(m.id, { name: e.target.value })}
+                      className="w-full rounded-lg border border-line bg-surface-2 px-2 py-1.5 font-semibold text-ink focus:border-primary"
+                      aria-label={tx("Medication name")}
+                    />
+                  ) : (
+                    <p className="font-semibold text-ink">💊 {m.name}</p>
+                  )}
+                  {m.source === "ocr" ? (
+                    <p className="mt-0.5 text-2xs font-semibold uppercase tracking-wide text-[color:var(--pp-violet)]">
+                      {m.confidence === "low" ? tx("Needs a check") : tx("From prescription")}
+                    </p>
+                  ) : null}
+                </div>
+                <button type="button" onClick={() => rmMed(m.id)} className="text-ink-tertiary hover:text-danger" aria-label={tx("Remove")}>✕</button>
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 <label className="block text-sm">
@@ -277,7 +625,7 @@ export function FillPrescription() {
                 <label className="block text-sm">
                   <span className="mb-1 block text-ink-secondary">{tx("Quantity")}</span>
                   <select value={m.qty} onChange={(e) => updMed(m.id, { qty: Number(e.target.value) })} className="h-10 w-full rounded-lg border border-line bg-surface-2 px-2 text-ink focus:border-primary">
-                    {[30, 60, 90].map((n) => <option key={n} value={n}>{n}</option>)}
+                    {[...new Set([30, 60, 90, m.qty])].sort((a, b) => a - b).map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </label>
                 <label className="block text-sm">
@@ -325,7 +673,10 @@ export function FillPrescription() {
               <Field label={tx("Health card number")} placeholder={tx("Optional")} value={s.healthNumber} onChange={(e) => set({ healthNumber: e.target.value })} />
             </div>
           </Card>
-          <Card className="p-5"><p className="mb-2 text-sm font-medium text-ink-secondary">{tx("Allergies")}</p><Chips label={tx("Allergies")} items={s.allergies} placeholder={tx("e.g. penicillin")} onAdd={(v) => set({ allergies: [...s.allergies, v] })} onRemove={(i) => set({ allergies: s.allergies.filter((_, idx) => idx !== i) })} /></Card>
+          <Card className="p-5">
+            <p className="mb-3 text-sm font-medium text-ink-secondary">{tx("Allergies")}</p>
+            <AllergyPicker items={s.allergies} onChange={(allergies) => set({ allergies })} />
+          </Card>
           <Card className="p-5"><p className="mb-2 text-sm font-medium text-ink-secondary">{tx("Other medications you take")}</p><Chips label={tx("Other medications")} items={s.currentMeds} placeholder={tx("e.g. vitamin D")} onAdd={(v) => set({ currentMeds: [...s.currentMeds, v] })} onRemove={(i) => set({ currentMeds: s.currentMeds.filter((_, idx) => idx !== i) })} /></Card>
           <Card className="p-5">
             <p className="mb-2.5 text-sm font-medium text-ink-secondary">{tx("Pregnant or breastfeeding?")}</p>
