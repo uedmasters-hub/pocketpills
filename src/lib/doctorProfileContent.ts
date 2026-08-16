@@ -3,7 +3,7 @@
  * no invented awards, years, or statistics.
  */
 
-import type { CareProvider, SpecialtyId } from "@/lib/appointments";
+import { specialtyById, type CareProvider, type SpecialtyId } from "@/lib/appointments";
 import { getDoctorClaim } from "@/lib/doctorDirectory";
 import { treatments } from "@/lib/data";
 import type { SpecialisedGroup } from "@/lib/specialisedIn";
@@ -217,6 +217,10 @@ export function doctorConditions(provider: CareProvider): string[] {
   return unique([...fromSpecialty, ...(provider.focusAreas ?? [])]).slice(0, 8);
 }
 
+export function conditionsForSpecialty(id: SpecialtyId): string[] {
+  return unique(CONDITIONS[id] ?? []).slice(0, 8);
+}
+
 export function doctorServices(provider: CareProvider, specialisedIn: SpecialisedGroup[]): string[] {
   const listed = [
     "General consultation",
@@ -354,4 +358,94 @@ export function articlesForSpecialties(specialties: readonly SpecialtyId[]): Hea
     }
   }
   return out;
+}
+
+export function articleBySlug(slug: string): HealthArticle | undefined {
+  for (const list of Object.values(ARTICLES)) {
+    const hit = list?.find((a) => a.slug === slug);
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
+export type DoctorHighlightFact = {
+  key: "nmc" | "college" | "experience" | "hospital" | "since";
+  label: string;
+};
+
+/** Registry / listing facts only — never invents years, colleges, or hospital names. */
+export function doctorHighlightFacts(
+  provider: CareProvider,
+  facilities: CareProvider[] = [],
+): DoctorHighlightFact[] {
+  const facts: DoctorHighlightFact[] = [];
+  const nmc = nmcNumberOf(provider);
+  if (nmc) facts.push({ key: "nmc", label: "NMC registered" });
+
+  const college = (provider.education ?? []).find((line) => {
+    if (/^Nepal Medical Council/i.test(line)) return false;
+    return /college|university|campus|institute|academy/i.test(line);
+  });
+  if (college) facts.push({ key: "college", label: college });
+
+  if (provider.experienceYears && provider.experienceYears > 0) {
+    facts.push({
+      key: "experience",
+      label: `${provider.experienceYears} yrs of experience`,
+    });
+  }
+
+  const hospital = facilities[0]?.name?.trim();
+  if (hospital) facts.push({ key: "hospital", label: hospital });
+
+  const claim = nmc ? getDoctorClaim(nmc) : null;
+  const since = claim?.publishedAt || claim?.claimedAt;
+  if (since) {
+    const year = new Date(since).getFullYear();
+    if (!Number.isNaN(year)) facts.push({ key: "since", label: `Available since ${year}` });
+  }
+
+  return facts.slice(0, 5);
+}
+
+export type SpecialisationTile = {
+  id: string;
+  label: string;
+  imageUrl: string;
+};
+
+const DEPARTMENT_TO_SPECIALTY: Record<string, SpecialtyId> = {
+  Physician: "general",
+  "Cosmetic Surgery": "dermatologist",
+  Orthopedics: "orthopedist",
+  Ophthalmology: "ophthalmologist",
+  Urology: "urologist",
+  Dental: "dentist",
+};
+
+/** Listed specialties with art — no placeholder departments. */
+export function doctorSpecialisationTiles(
+  provider: CareProvider,
+  specialisedIn: SpecialisedGroup[],
+): SpecialisationTile[] {
+  const tiles: SpecialisationTile[] = [];
+  const seen = new Set<string>();
+
+  for (const id of provider.specialties) {
+    const spec = specialtyById(id);
+    if (!spec || seen.has(spec.id)) continue;
+    seen.add(spec.id);
+    tiles.push({ id: spec.id, label: spec.label, imageUrl: spec.imageUrl });
+  }
+
+  for (const group of specialisedIn) {
+    const sid = DEPARTMENT_TO_SPECIALTY[group.specialty];
+    if (!sid || seen.has(sid)) continue;
+    const spec = specialtyById(sid);
+    if (!spec) continue;
+    seen.add(sid);
+    tiles.push({ id: spec.id, label: spec.label, imageUrl: spec.imageUrl });
+  }
+
+  return tiles;
 }

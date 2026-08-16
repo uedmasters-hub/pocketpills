@@ -166,14 +166,14 @@ function OptionCard({
   return (
     <Link
       to={item.href}
-      className="relative flex min-h-[9.5rem] overflow-hidden rounded-2xl border border-line bg-white"
+      className="relative flex h-[11.25rem] w-full overflow-hidden rounded-2xl border border-line bg-white"
     >
       <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between px-5 py-5 pr-6">
         <div className="min-w-0">
-          <p className="font-semibold leading-snug text-[color:var(--pp-primary-950)]">{item.name}</p>
-          {item.meta ? <p className="mt-1 text-sm text-ink-tertiary">{item.meta}</p> : null}
+          <p className="line-clamp-2 font-semibold leading-snug text-[color:var(--pp-primary-950)]">{item.name}</p>
+          {item.meta ? <p className="mt-1 truncate text-sm text-ink-tertiary">{item.meta}</p> : null}
         </div>
-        <span className="mt-6 text-sm font-medium text-[color:var(--pp-violet)]">
+        <span className="mt-auto pt-3 text-sm font-medium text-[color:var(--pp-violet)]">
           {tx("View profile")} →
         </span>
       </div>
@@ -259,7 +259,7 @@ export function RelatedHealthcareOptions({
           );
         })}
       </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {active === "doctor"
           ? doctors.map((d) => {
               const id = nmcNumberOf(d) || d.id.replace(/^nmc-/, "");
@@ -268,7 +268,7 @@ export function RelatedHealthcareOptions({
                 <DoctorRelatedCard
                   key={d.id}
                   item={d}
-                  rating={summary?.count ? summary.average : null}
+                  summary={summary}
                 />
               );
             })

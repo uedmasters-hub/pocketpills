@@ -253,10 +253,17 @@ function PharmacyProfile({
       backLabel={backLabel}
       eyebrow={tx("Pharmacy")}
       name={name}
-      subtitle={`${kind || tx("Pharmacy")} · DDA #${registrationNo}`}
+      subtitle={[kind && kind.toLowerCase() !== "pharmacy" ? kind : null, `DDA #${registrationNo}`]
+        .filter(Boolean)
+        .join(" • ")}
       bio={bio}
       about={about}
       imageUrl={PHOTO}
+      usps={[
+        { label: tx("DDA registered") },
+        { label: tx("Digital Prescription") },
+        { label: tx("Pharmacist review") },
+      ]}
       leadingBadges={
         reviewSummary == null ? (
           <RatingChipSkeleton variant="badge" />

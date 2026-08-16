@@ -133,7 +133,7 @@ function liveRequestsFromHub(): ProviderRequest[] {
       patientName: a.patientName || "Patient",
       service: a.specialtyLabel || "Consult",
       channel: "hub",
-      status: a.status === "completed" ? "completed" : "accepted",
+      status: a.status === "completed" ? "completed" : a.status === "pending" ? "new" : "accepted",
       requestedAt: a.createdAt || `${a.date}T12:00:00`,
       slot: `${a.date} · ${a.time}`,
       fee: a.fee,

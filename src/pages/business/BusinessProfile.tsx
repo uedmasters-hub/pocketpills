@@ -20,6 +20,7 @@ import {
   unpublishBusinessProfile,
   newListingPublication,
   PUBLICATION_KIND_LABELS,
+  MAX_LISTING_PUBLICATIONS,
   type BusinessCapabilities,
   type BusinessDaySchedule,
   type BusinessProfile,
@@ -673,7 +674,12 @@ export function BusinessProfile() {
                     {tx("Publications")}
                   </p>
                   <p className="mt-1 text-sm text-ink-tertiary">
-                    {tx("News, articles, and other verified content shown on your public profile. Leave empty to hide the section.")}
+                    {tx(
+                      "Up to 6 news items, articles, or publications on your public profile. Remove an older one to add a new one.",
+                    )}
+                  </p>
+                  <p className="mt-2 text-2xs font-medium uppercase tracking-wide text-ink-tertiary">
+                    {profile.publications.length} {tx("of")} {MAX_LISTING_PUBLICATIONS}
                   </p>
                   <ul className="mt-3 space-y-3">
                     {profile.publications.map((item) => (
@@ -770,15 +776,21 @@ export function BusinessProfile() {
                       </li>
                     ))}
                   </ul>
-                  <button
-                    type="button"
-                    className="mt-3 text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
-                    onClick={() =>
-                      patch({ publications: [...profile.publications, newListingPublication()] })
-                    }
-                  >
-                    {tx("Add publication")}
-                  </button>
+                  {profile.publications.length < MAX_LISTING_PUBLICATIONS ? (
+                    <button
+                      type="button"
+                      className="mt-3 text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
+                      onClick={() =>
+                        patch({ publications: [...profile.publications, newListingPublication()] })
+                      }
+                    >
+                      {tx("Add publication")}
+                    </button>
+                  ) : (
+                    <p className="mt-3 text-sm text-ink-tertiary">
+                      {tx("Remove an older publication to keep this slot clean, then add a new one.")}
+                    </p>
+                  )}
                 </div>
 
                 {live ? (

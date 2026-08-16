@@ -12,6 +12,7 @@ import {
 import { useRightRail } from "@/lib/rightRail";
 import { useDismiss } from "@/lib/useDismiss";
 import { useChromeVisibility } from "@/lib/useChromeVisibility";
+import { FRAME, SURFACE } from "@/components/layout/Grid";
 import { useI18n } from "@/lib/i18n";
 import type { MessageKey } from "@/lib/i18n";
 
@@ -222,13 +223,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { tx } = useI18n();
   const chromeHidden = useChromeVisibility();
   const { review } = useRightRail();
+  const isBookFlow = pathname.startsWith("/appointments/book");
   const focusedFlow =
     pathname.startsWith("/care/") ||
     pathname === "/fill" ||
     pathname === "/transfer" ||
     pathname === "/delivery-check" ||
-    pathname === "/appointments/book" ||
-    pathname.startsWith("/appointments/book");
+    isBookFlow;
   /* PDP / focused browse pages own a sticky right column — Activity would collide. */
   const isDrugDetail = /^\/drug\/[^/]+$/.test(pathname);
   const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname);
@@ -260,24 +261,32 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
       <AnnouncementBar />
       <SiteHeader />
-      <div className="mx-auto flex w-full max-w-[105rem] flex-col gap-8 px-5 pb-28 pt-8 md:px-8 lg:flex-row lg:items-start lg:pb-16 xl:px-20">
-        {focusedFlow ? <div className="hidden w-60 shrink-0 lg:block" aria-hidden /> : <Sidebar />}
-
-        <div className="flex min-w-0 w-full flex-1 flex-col gap-8">
-          {showActivity && (review ? <MobileReview /> : <MobileActivity />)}
-          <main id="main" key={pathname} tabIndex={-1} className="w-full min-w-0 animate-fade-up">
+      {isBookFlow ? (
+        <div className={`${FRAME} pb-16 pt-8`}>
+          <main id="main" key={pathname} tabIndex={-1} className={`${SURFACE} min-w-0 animate-fade-up`}>
             {children}
           </main>
         </div>
+      ) : (
+        <div className="mx-auto flex w-full max-w-[105rem] flex-col gap-8 px-5 pb-28 pt-8 md:px-8 lg:flex-row lg:items-start lg:pb-16 xl:px-20">
+          {focusedFlow ? <div className="hidden w-60 shrink-0 lg:block" aria-hidden /> : <Sidebar />}
 
-        {hideActivityRail ? null : focusedFlow ? (
-          <ActivityRailSpacer />
-        ) : review ? (
-          <ReviewRail />
-        ) : (
-          <ActivityRail />
-        )}
-      </div>
+          <div className="flex min-w-0 w-full flex-1 flex-col gap-8">
+            {showActivity && (review ? <MobileReview /> : <MobileActivity />)}
+            <main id="main" key={pathname} tabIndex={-1} className="w-full min-w-0 animate-fade-up">
+              {children}
+            </main>
+          </div>
+
+          {hideActivityRail ? null : focusedFlow ? (
+            <ActivityRailSpacer />
+          ) : review ? (
+            <ReviewRail />
+          ) : (
+            <ActivityRail />
+          )}
+        </div>
+      )}
       {!focusedFlow && <MobileNav hidden={chromeHidden} />}
     </div>
   );

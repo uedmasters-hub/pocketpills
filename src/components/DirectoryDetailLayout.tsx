@@ -20,6 +20,10 @@ export type DirectoryDetailExtra = {
   check?: boolean;
 };
 
+export type DirectoryHeroUsp = {
+  label: string;
+};
+
 const CHIP =
   "inline-flex h-7 shrink-0 items-center rounded-full border border-line bg-white px-3 text-xs font-medium leading-none text-[color:var(--pp-primary-950)] box-border";
 
@@ -28,66 +32,95 @@ export const DIRECTORY_CHIP = CHIP;
 export const DIRECTORY_SIDEBAR_CARD =
   "rounded-[1.5rem] border border-line bg-white p-6 shadow-[0_12px_40px_rgba(24,7,48,0.06)]";
 
+function UspIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0 text-ink-tertiary">
+      <path
+        d="M8 3.75h5.2L18 8.4v11.85A1.5 1.5 0 0 1 16.5 21.75h-9A1.5 1.5 0 0 1 6 20.25V5.25A1.5 1.5 0 0 1 7.5 3.75H8Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M13 3.75V8.4h4.8" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="m9.2 14.2 1.7 1.7 3.9-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function displaySubtitle(value: string) {
+  return value.replace(/\s*·\s*/g, " • ");
+}
+
 /** Compact split hero shared by doctor, pharmacy, and hospital public pages. */
 export function DirectoryHeroCard({
   eyebrow,
   name,
   subtitle,
-  bio,
   imageUrl,
   imageClassName = "object-cover object-[center_28%]",
   badges = [],
   leadingBadges,
+  usps = [],
   verified = true,
 }: {
   eyebrow: string;
   name: string;
   subtitle?: string;
-  bio?: string;
   imageUrl: string;
   imageClassName?: string;
   badges?: DirectoryDetailBadge[];
   leadingBadges?: ReactNode;
+  usps?: DirectoryHeroUsp[];
   verified?: boolean;
 }) {
+  const shownUsps = usps.filter((u) => u.label.trim()).slice(0, 3);
   return (
     <header className="min-w-0 overflow-hidden rounded-[1.5rem] border border-line bg-[color:var(--pp-primary-200)] sm:h-[16.5rem]">
       <div className="flex h-full flex-col sm:flex-row sm:items-stretch">
-        <div className="flex min-w-0 flex-1 flex-col justify-center px-5 py-4 sm:px-6 sm:py-5">
-          <p className="pp-caps inline-flex items-center gap-1.5 text-[color:var(--pp-violet)]">
-            {eyebrow}
-            {verified ? (
-              <span className="inline-flex" title="Verified">
-                <img src={verifiedBadge} alt="" className="h-3.5 w-3.5 shrink-0" />
-                <span className="sr-only">Verified</span>
-              </span>
-            ) : null}
-          </p>
-          <h1
-            title={name}
-            className="mt-1.5 line-clamp-2 font-display text-[1.375rem] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-primary-950)] sm:text-[1.5rem]"
-          >
-            {name}
-          </h1>
-          {subtitle ? (
-            <p className="mt-1.5 truncate text-sm text-ink-secondary">{subtitle}</p>
-          ) : null}
-          {bio ? (
-            <p className="mt-1.5 line-clamp-2 max-w-md text-sm leading-snug text-ink-secondary">{bio}</p>
-          ) : null}
-          {(leadingBadges || badges.length > 0) && (
-            <div className="mt-3 flex flex-nowrap items-center gap-2 overflow-x-auto">
-              {leadingBadges}
-              {badges.map((b) => (
-                <span
-                  key={b.label}
-                  className={CHIP + (b.strong ? " font-semibold" : "")}
-                >
-                  {b.label}
+        <div className="flex min-w-0 flex-1 flex-col justify-center px-5 py-5 sm:px-6">
+          <div className="min-w-0 text-left">
+            <p className="pp-caps inline-flex items-center gap-1.5 text-[color:var(--pp-violet)]">
+              {eyebrow}
+              {verified ? (
+                <span className="inline-flex" title="Verified">
+                  <img src={verifiedBadge} alt="" className="h-3.5 w-3.5 shrink-0" />
+                  <span className="sr-only">Verified</span>
                 </span>
-              ))}
-            </div>
-          )}
+              ) : null}
+            </p>
+            <h1
+              title={name}
+              className="mt-1.5 line-clamp-2 font-display text-[1.375rem] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-primary-950)] sm:text-[1.5rem]"
+            >
+              {name}
+            </h1>
+            {subtitle ? (
+              <p className="mt-1.5 truncate text-sm text-ink-secondary">{displaySubtitle(subtitle)}</p>
+            ) : null}
+            {shownUsps.length ? (
+              <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-left">
+                {shownUsps.map((u) => (
+                  <li key={u.label} className="inline-flex items-center gap-1.5 text-sm text-ink-tertiary">
+                    <UspIcon />
+                    {u.label}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {(leadingBadges || badges.length > 0) && (
+              <div className="mt-4 flex flex-nowrap items-center gap-4 overflow-x-auto">
+                {leadingBadges}
+                {badges.map((b) => (
+                  <span
+                    key={b.label}
+                    className={CHIP + (b.strong ? " font-semibold" : "")}
+                  >
+                    {b.label}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div className="relative h-52 w-full shrink-0 overflow-hidden sm:h-auto sm:w-[32%]">
           <SkeletonImage
@@ -122,6 +155,7 @@ export function DirectoryDetailLayout({
   imageClassName = "object-cover object-[center_28%]",
   badges = [],
   leadingBadges,
+  usps = [],
   extras = [],
   details = [],
   sidebar,
@@ -131,6 +165,7 @@ export function DirectoryDetailLayout({
   afterAbout,
   afterDetails,
   afterReviews,
+  afterPage,
 }: {
   backTo: string;
   backLabel: string;
@@ -143,6 +178,7 @@ export function DirectoryDetailLayout({
   imageClassName?: string;
   badges?: DirectoryDetailBadge[];
   leadingBadges?: ReactNode;
+  usps?: DirectoryHeroUsp[];
   extras?: DirectoryDetailExtra[];
   details?: DirectoryDetailRow[];
   sidebar: ReactNode;
@@ -152,6 +188,7 @@ export function DirectoryDetailLayout({
   afterAbout?: ReactNode;
   afterDetails?: ReactNode;
   afterReviews?: ReactNode;
+  afterPage?: ReactNode;
 }) {
   const { tx } = useI18n();
   const aboutCopy = about || bio;
@@ -165,26 +202,26 @@ export function DirectoryDetailLayout({
         ← {backLabel}
       </Link>
 
-      <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
-        <div className="min-w-0 space-y-5 lg:col-start-1 lg:row-start-1">
+      <div className="mt-5 grid items-start gap-5 lg:grid-cols-4 lg:gap-6">
+        <div className="min-w-0 space-y-5 lg:col-span-3 lg:col-start-1 lg:row-start-1">
           <DirectoryHeroCard
             eyebrow={eyebrow}
             name={name}
             subtitle={subtitle}
-            bio={bio}
             imageUrl={imageUrl}
             imageClassName={imageClassName}
             badges={badges}
             leadingBadges={leadingBadges}
+            usps={usps}
           />
           {afterHero}
         </div>
 
-        <aside className="space-y-3 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
+        <aside className="space-y-3 lg:col-span-1 lg:col-start-4 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
           {sidebar}
         </aside>
 
-        <div className="min-w-0 space-y-10 lg:col-start-1 lg:row-start-2">
+        <div className="min-w-0 space-y-10 lg:col-span-3 lg:col-start-1 lg:row-start-2">
           <section>
             <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
               {tx("About")}
@@ -249,6 +286,8 @@ export function DirectoryDetailLayout({
           {afterReviews ? <div className="space-y-10">{afterReviews}</div> : null}
         </div>
       </div>
+
+      {afterPage ? <div className="mt-10 space-y-10">{afterPage}</div> : null}
     </div>
   );
 }

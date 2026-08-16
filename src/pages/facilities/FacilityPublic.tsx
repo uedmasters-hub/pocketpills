@@ -279,10 +279,17 @@ function FacilityProfile({
       backLabel={backLabel}
       eyebrow={typeLabel}
       name={name}
-      subtitle={`${kind || typeLabel} · HF #${hfCode}`}
+      subtitle={[kind && kind.toLowerCase() !== typeLabel.toLowerCase() ? kind : null, `HF #${hfCode}`]
+        .filter(Boolean)
+        .join(" • ")}
       bio={bio}
       about={about}
       imageUrl={PHOTO}
+      usps={[
+        { label: tx("Verified Doctors") },
+        { label: tx("Digital Prescription") },
+        { label: tx("Free Followup") },
+      ]}
       leadingBadges={
         reviewSummary == null ? (
           <RatingChipSkeleton variant="badge" />

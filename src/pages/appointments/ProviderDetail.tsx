@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { DetailPageSkeleton, RatingChipSkeleton, useEnterSkeleton } from "@/components/ui";
@@ -9,11 +9,11 @@ import { ReviewsPanel } from "@/components/reviews/ReviewsPanel";
 import { SpecialisedInSection } from "@/components/SpecialisedIn";
 import {
   DoctorArticlesSection,
-  DoctorConditionsSection,
-  DoctorExperienceSection,
   DoctorFaqSection,
+  DoctorHighlightsSection,
   DoctorPracticeSection,
   DoctorRelatedSection,
+  DoctorSpecialisationsGrid,
 } from "@/components/doctor/DoctorDetailExtras";
 import {
   ClinicAboutFacts,
@@ -35,6 +35,7 @@ import { CLINIC_REVIEW_TOPICS, clinicFromProvider, clinicMapsQuery } from "@/lib
 import { DOCTOR_REVIEW_TOPICS } from "@/lib/doctorProfileContent";
 import { HOSPITAL_REVIEW_TOPICS, hospitalFromProvider, hospitalMapsQuery } from "@/lib/hospitalProfileContent";
 import { useI18n } from "@/lib/i18n";
+import { addCalendarDays, isPastDate, isSlotInPast, monthLong, todayIso } from "@/lib/timeSlots";
 import {
   defaultDoctorSpecialised,
   defaultFacilitySpecialised,
@@ -42,18 +43,22 @@ import {
 } from "@/lib/specialisedIn";
 import type { ReviewSummary } from "@/lib/reviewsApi";
 import {
+  firstOpenSlot,
   formatDistance,
   formatFee,
   getAffiliatedFacilities,
   getFacilityStaff,
   getProvider,
+  hasOpenSlot,
   isSpecialtyId,
   kindLabel,
   serviceKindLabel,
   slotsByVisitType,
   specialtyById,
   upcomingDays,
+  SLOT_BANDS,
   type CareProvider,
+  type DaySlots,
   type FacilityService,
   type SpecialtyId,
   type VisitType,
@@ -123,52 +128,252 @@ function bookHref(opts: {
    Doctor — micro consultant site + sticky booking column
    ═══════════════════════════════════════════════════════════ */
 
-function AvailabilitySlots({
-  title,
-  sub,
-  slots,
-  selected,
-  active,
-  onSelect,
+function monthTitle(iso: string) {
+  return monthLong(iso).toUpperCase();
+}
+
+function DoctorAvailabilityBoard({
+  provider,
+  facilities,
+  date,
+  days,
+  weekOffset,
+  visitType,
+  time,
+  clinicId,
+  onSelectDay,
+  onSelectVisit,
+  onSelectTime,
+  onShiftWeek,
+  onSelectClinic,
 }: {
-  title: string;
-  sub: string;
-  slots: string[];
-  selected: string;
-  active: boolean;
-  onSelect: (t: string) => void;
+  provider: CareProvider;
+  facilities: CareProvider[];
+  date: string;
+  days: { date: string; label: string; weekday: string }[];
+  weekOffset: number;
+  visitType: VisitType;
+  time: string;
+  clinicId: string;
+  onSelectDay: (date: string) => void;
+  onSelectVisit: (v: VisitType) => void;
+  onSelectTime: (t: string) => void;
+  onShiftWeek: (delta: number) => void;
+  onSelectClinic: (id: string) => void;
 }) {
-  return (
-    <div
-      className={
-        "rounded-2xl border p-4 " +
-        (active ? "border-[color:var(--pp-primary-950)] bg-white" : "border-line bg-white/80")
-      }
-    >
-      <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{title}</p>
-      <p className="mt-0.5 line-clamp-1 text-xs text-ink-tertiary">{sub}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {slots.map((t) => {
-          const on = selected === t;
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => onSelect(t)}
-              className={
-                "rounded-full border px-3 py-1.5 text-sm font-medium tnum transition-colors " +
-                (on
-                  ? "border-[color:var(--pp-primary-950)] bg-[color:var(--pp-primary-950)] text-white"
-                  : "border-line bg-white text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]")
-              }
-            >
-              {t}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+  const { tx } = useI18n();
+  const slots: DaySlots = useMemo(
+    () => slotsByVisitType(provider.id, date, visitType),
+    [provider.id, date, visitType],
   );
+  const available = new Set([...slots.morning, ...slots.afternoon, ...slots.evening]);
+  const clinicOptions =
+    facilities.length > 0
+      ? facilities.map((f) => ({
+          id: f.id,
+          label: f.city || f.name,
+        }))
+      : provider.city
+        ? [{ id: "", label: provider.city }]
+        : [];
+  const showClinic = visitType === "clinic" && clinicOptions.length > 0;
+  const dayLabel = (d: { label: string }) =>
+    d.label === "Today" || d.label === "Tomorrow" ? tx(d.label) : d.label;
+
+  return (
+    <section id="availability" className="min-w-0 scroll-mt-28">
+      <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
+        {tx("Availability")}
+      </h2>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+        {provider.visitTypes.length ? (
+          <div
+            className="inline-flex rounded-full bg-[color:var(--pp-primary-200)] p-1"
+            role="group"
+            aria-label={tx("Visit type")}
+          >
+            {provider.visitTypes.includes("clinic") ? (
+              <button
+                type="button"
+                onClick={() => onSelectVisit("clinic")}
+                className={
+                  "rounded-full px-5 py-2 text-sm font-medium transition-colors " +
+                  (visitType === "clinic"
+                    ? "bg-white text-[color:var(--pp-primary-950)] shadow-[0_1px_4px_rgba(24,7,48,0.08)] ring-1 ring-[color:var(--pp-primary-950)]"
+                    : "text-ink-tertiary")
+                }
+              >
+                {tx("In person")}
+              </button>
+            ) : null}
+            {provider.visitTypes.includes("virtual") ? (
+              <button
+                type="button"
+                onClick={() => onSelectVisit("virtual")}
+                className={
+                  "rounded-full px-5 py-2 text-sm font-medium transition-colors " +
+                  (visitType === "virtual"
+                    ? "bg-white text-[color:var(--pp-primary-950)] shadow-[0_1px_4px_rgba(24,7,48,0.08)] ring-1 ring-[color:var(--pp-primary-950)]"
+                    : "text-ink-tertiary")
+                }
+              >
+                {tx("Virtual")}
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <span />
+        )}
+
+        {showClinic ? (
+          clinicOptions.length > 1 ? (
+            <label className="relative inline-flex min-w-[10rem] items-center">
+              <span className="sr-only">{tx("Clinic address")}</span>
+              <select
+                value={clinicId}
+                onChange={(e) => onSelectClinic(e.target.value)}
+                className="h-10 appearance-none rounded-full border border-line bg-white py-2 pl-4 pr-9 text-sm font-medium text-[color:var(--pp-primary-950)] outline-none"
+              >
+                {clinicOptions.map((opt) => (
+                  <option key={opt.id || opt.label} value={opt.id}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-ink-tertiary">
+                <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                  <path d="M5 7.5 10 12.5 15 7.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </label>
+          ) : (
+            <span className="inline-flex h-10 items-center rounded-full border border-line bg-white px-4 text-sm font-medium text-[color:var(--pp-primary-950)]">
+              {clinicOptions[0]?.label || tx("Clinic address")}
+            </span>
+          )
+        ) : null}
+      </div>
+
+      <div className="mt-4 rounded-[1.5rem] border border-line bg-[color:var(--pp-primary-200)] p-5">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => onShiftWeek(-7)}
+            disabled={weekOffset <= 0}
+            className="grid h-8 w-8 place-items-center rounded-full text-[color:var(--pp-primary-950)] disabled:opacity-30"
+            aria-label={tx("Previous week")}
+          >
+            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+              <path d="M12.5 5 7.5 10l5 5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <p className="text-sm font-semibold tracking-[0.14em] text-[color:var(--pp-primary-950)]">
+            {monthTitle(date || days[0]?.date || "")}
+          </p>
+          <button
+            type="button"
+            onClick={() => onShiftWeek(7)}
+            className="grid h-8 w-8 place-items-center rounded-full text-[color:var(--pp-primary-950)]"
+            aria-label={tx("Next week")}
+          >
+            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+              <path d="M7.5 5 12.5 10l-5 5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div
+          className="mt-4 grid grid-cols-7 gap-3"
+          role="group"
+          aria-label={tx("Choose a day")}
+        >
+          {days.map((d) => {
+                const past = isPastDate(d.date);
+                const on = d.date === date;
+                return (
+                  <button
+                    key={d.date}
+                    type="button"
+                    disabled={past}
+                    onClick={() => {
+                      if (!past) onSelectDay(d.date);
+                    }}
+                    className={
+                      "min-w-0 rounded-2xl border bg-white px-1 py-3 text-center " +
+                      (past
+                        ? "cursor-default border-line text-[color:var(--text-disabled)]"
+                        : on
+                          ? "border-[color:var(--pp-primary-950)]"
+                          : "border-transparent")
+                    }
+                  >
+                    <span className={"block truncate text-2xs " + (past ? "text-[color:var(--text-disabled)]" : "text-ink-tertiary")}>
+                      {d.weekday}
+                    </span>
+                    <span
+                      className={
+                        "mt-1 block truncate text-sm font-semibold " +
+                        (past ? "text-[color:var(--text-disabled)]" : "text-[color:var(--pp-primary-950)]")
+                      }
+                    >
+                      {dayLabel(d)}
+                    </span>
+                  </button>
+                );
+          })}
+        </div>
+
+        <div className="mt-5 space-y-4">
+          {(
+            [
+              ["Morning", SLOT_BANDS.morning],
+              ["Afternoon", SLOT_BANDS.afternoon],
+              ["Evening", SLOT_BANDS.evening],
+            ] as const
+          ).map(([label, band]) => (
+            <div key={label}>
+              <p className="text-2xs font-medium text-ink-tertiary">{tx(label)}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                {band.map((t) => {
+                  const open = available.has(t) && !isSlotInPast(date, t);
+                  const on = time === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      disabled={!open}
+                      onClick={() => open && onSelectTime(t)}
+                      className={
+                        "rounded-full border bg-white px-3.5 py-2 text-sm tnum " +
+                        (on
+                          ? "border-[color:var(--pp-primary-950)] font-medium text-[color:var(--pp-primary-950)]"
+                          : open
+                            ? "border-line text-[color:var(--pp-primary-950)]"
+                            : "cursor-default border-line text-[color:var(--text-disabled)]")
+                      }
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function weekOffsetFor(iso: string): number {
+  const today = todayIso();
+  for (let w = 0; w < 8; w++) {
+    for (let d = 0; d < 7; d++) {
+      if (addCalendarDays(today, w * 7 + d) === iso) return w;
+    }
+  }
+  return 0;
 }
 
 function DoctorDetailPage({ provider }: { provider: CareProvider }) {
@@ -208,30 +413,45 @@ export function DoctorProfilePage({
       ? provider.consultationFee
       : specialty?.feeFrom ?? 79;
 
-  const days = useMemo(() => upcomingDays(7), []);
-  const [date, setDate] = useState(days[0]?.date ?? "");
-  const defaultVisit: VisitType =
-    provider.visitTypes.includes("virtual") ? "virtual" : provider.visitTypes[0] ?? "clinic";
+  const defaultVisit: VisitType = provider.visitTypes.includes("clinic")
+    ? "clinic"
+    : provider.visitTypes[0] ?? "clinic";
+  const firstOpen = firstOpenSlot(provider.id, todayIso(), defaultVisit);
+  const [weekOffset, setWeekOffset] = useState(() => (firstOpen ? weekOffsetFor(firstOpen.date) : 0));
+  const days = useMemo(() => upcomingDays(7, weekOffset), [weekOffset]);
+  const [date, setDate] = useState(() => firstOpen?.date ?? todayIso());
   const [visitType, setVisitType] = useState<VisitType>(defaultVisit);
   const [time, setTime] = useState("");
+  const [clinicId, setClinicId] = useState(facilityId || facilities[0]?.id || "");
+  const [holdEmpty, setHoldEmpty] = useState(false);
+  const [clock, setClock] = useState(0);
 
-  const virtualSlots = useMemo(
-    () =>
-      provider.visitTypes.includes("virtual")
-        ? slotsByVisitType(provider.id, date, "virtual")
-        : { morning: [], afternoon: [] },
-    [provider.id, provider.visitTypes, date],
-  );
-  const clinicSlots = useMemo(
-    () =>
-      provider.visitTypes.includes("clinic")
-        ? slotsByVisitType(provider.id, date, "clinic")
-        : { morning: [], afternoon: [] },
-    [provider.id, provider.visitTypes, date],
-  );
+  useEffect(() => {
+    const id = window.setInterval(() => setClock((n) => n + 1), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
 
-  const activeSlots = visitType === "virtual" ? virtualSlots : clinicSlots;
-  const activeList = [...activeSlots.morning, ...activeSlots.afternoon];
+  useEffect(() => {
+    if (isPastDate(date)) {
+      setHoldEmpty(false);
+      const next = firstOpenSlot(provider.id, todayIso(), visitType);
+      setDate(next?.date ?? todayIso());
+      setWeekOffset(next ? weekOffsetFor(next.date) : 0);
+      setTime("");
+      return;
+    }
+    if (time && isSlotInPast(date, time)) setTime("");
+  }, [date, time, provider.id, visitType]);
+
+  useEffect(() => {
+    if (holdEmpty) return;
+    if (hasOpenSlot(provider.id, date, visitType)) return;
+    const next = firstOpenSlot(provider.id, date, visitType);
+    if (!next || next.date === date) return;
+    setDate(next.date);
+    setWeekOffset(weekOffsetFor(next.date));
+    setTime("");
+  }, [clock, date, visitType, provider.id, holdEmpty]);
 
   const next =
     provider.nextAvailable === "Today" ||
@@ -244,22 +464,38 @@ export function DoctorProfilePage({
     d.label === "Today" || d.label === "Tomorrow" ? tx(d.label) : d.label;
 
   const selectDay = (d: string) => {
+    if (isPastDate(d)) return;
     setDate(d);
     setTime("");
+    setHoldEmpty(!hasOpenSlot(provider.id, d, visitType));
   };
 
   const selectVisit = (v: VisitType) => {
     setVisitType(v);
     setTime("");
+    setHoldEmpty(false);
+  };
+
+  const shiftWeek = (delta: number) => {
+    const nextOffset = Math.max(0, weekOffset + delta);
+    setWeekOffset(nextOffset);
+    setHoldEmpty(false);
+    const nextDays = upcomingDays(7, nextOffset);
+    const start = nextDays[0]?.date ?? todayIso();
+    const next = firstOpenSlot(provider.id, start, visitType);
+    setDate(next?.date ?? start);
+    if (next) setWeekOffset(weekOffsetFor(next.date));
+    setTime("");
   };
 
   const startBook = () => {
     if (!date || !time) return;
+    if (isPastDate(date) || isSlotInPast(date, time)) return;
     nav(
       bookHref({
         providerId: provider.id,
         specialtyId: specialtyId ?? provider.specialties[0],
-        facilityId,
+        facilityId: clinicId || facilityId,
         date,
         time,
         visitType,
@@ -285,15 +521,6 @@ export function DoctorProfilePage({
     !hideAvailability ? { label: `${tx("Next")}: ${next}` } : null,
   ].filter(Boolean) as { label: string; strong?: boolean }[];
 
-  const extras = [
-    provider.focusAreas?.length
-      ? { title: tx("Focus areas"), items: provider.focusAreas.map((a) => tx(a)), check: true }
-      : null,
-    provider.education?.length
-      ? { title: tx("Education"), items: provider.education.map((e) => tx(e)) }
-      : null,
-  ].filter(Boolean) as { title: string; items: string[]; check?: boolean }[];
-
   const specialisedIn = (() => {
     const stored = sanitizeSpecialisedIn(provider.specialisedIn);
     return stored.length
@@ -305,27 +532,13 @@ export function DoctorProfilePage({
         });
   })();
 
-  const details = [
-    provider.id.startsWith("nmc-")
-      ? { k: tx("NMC number"), v: `#${provider.id.replace(/^nmc-/, "")}` }
-      : null,
-    provider.address ? { k: tx("Location"), v: provider.address } : null,
-    provider.hours ? { k: tx("Hours"), v: provider.hours } : null,
-    provider.phone ? { k: tx("Phone"), v: provider.phone } : null,
-    { k: tx("Languages"), v: provider.languages.map((l) => tx(l)).join(", ") },
-    {
-      k: tx("Specialisations"),
-      v: provider.specialties.map((s) => tx(specialtyById(s)?.label || s)).join(", "),
-    },
-  ].filter(Boolean) as { k: string; v: string }[];
-
   const bookingSidebar = sidebar ?? (
     <>
       <div className={DIRECTORY_SIDEBAR_CARD}>
         <p className="text-sm font-semibold leading-snug text-[color:var(--pp-primary-950)]">{tx("Book visit")}</p>
         <p className="mt-2 text-sm leading-snug text-ink-tertiary">
           {time
-            ? `${dayLabel(days.find((d) => d.date === date) ?? { label: date })} · ${time} · ${tx(visitType === "virtual" ? "Virtual" : "In-clinic")}`
+            ? `${dayLabel(days.find((d) => d.date === date) ?? { label: date })} · ${time} · ${tx(visitType === "virtual" ? "Virtual" : "In person")}`
             : tx("Select a date and time below")}
         </p>
 
@@ -345,9 +558,13 @@ export function DoctorProfilePage({
           <Button fullWidth size="sm" onClick={startBook} disabled={!date || !time}>
             {tx("Book appointment")}
           </Button>
-          <Button fullWidth size="sm" variant="secondary" onClick={() => nav("/messages")}>
+          <button
+            type="button"
+            onClick={() => nav("/messages")}
+            className="w-full py-2 text-center text-sm font-medium text-[color:var(--pp-primary-950)] hover:opacity-70"
+          >
             {tx("Message care team")}
-          </Button>
+          </button>
         </div>
       </div>
       <p className="px-1 text-center text-2xs leading-relaxed text-ink-tertiary">
@@ -368,6 +585,11 @@ export function DoctorProfilePage({
       bio={tx(provider.bio)}
       about={tx(provider.about || provider.bio)}
       imageUrl={provider.imageUrl}
+      usps={[
+        { label: tx("NMC verified") },
+        { label: tx("Digital Prescription") },
+        { label: tx("Free Followup") },
+      ]}
       leadingBadges={
         reviewSummary == null ? (
           <RatingChipSkeleton variant="badge" />
@@ -376,8 +598,6 @@ export function DoctorProfilePage({
         ) : null
       }
       badges={badges}
-      extras={extras}
-      details={details}
       sidebar={
         <>
           {bookingSidebar}
@@ -399,121 +619,34 @@ export function DoctorProfilePage({
           />
         ) : undefined
       }
-      afterReviews={<DoctorRelatedSection provider={provider} />}
+      afterPage={<DoctorRelatedSection provider={provider} />}
     >
-        <SpecialisedInSection groups={specialisedIn} variant="doctor" />
-        <DoctorConditionsSection provider={provider} specialisedIn={specialisedIn} />
+        <DoctorHighlightsSection provider={provider} facilities={facilities} />
         {!hideAvailability && (
-        <section id="availability" className="min-w-0 scroll-mt-28">
-          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-            {tx("Availability")}
-          </h2>
-          <p className="mt-1 text-sm text-ink-tertiary">
-            {tx("Choose a day, visit type, and time — then continue to patient details.")}
-          </p>
-
-          <div className="pp-scroll mt-4 flex gap-2 overflow-x-auto pb-1" role="group" aria-label={tx("Choose a day")}>
-            {days.map((d) => {
-              const on = d.date === date;
-              return (
-                <button
-                  key={d.date}
-                  type="button"
-                  onClick={() => selectDay(d.date)}
-                  className={
-                    "shrink-0 rounded-2xl border px-3 py-2 text-center transition-colors " +
-                    (on
-                      ? "border-[color:var(--pp-primary-950)] bg-[color:var(--pp-primary-100)]"
-                      : "border-line bg-white hover:bg-[color:var(--state-hover)]")
-                  }
-                >
-                  <span className="block text-2xs text-ink-tertiary">{d.weekday}</span>
-                  <span className="mt-0.5 block text-sm font-semibold text-[color:var(--pp-primary-950)]">
-                    {dayLabel(d)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {provider.visitTypes.length > 1 && (
-            <div className="mt-4 flex gap-2" role="group" aria-label={tx("Visit type")}>
-              {provider.visitTypes.includes("virtual") && (
-                <button
-                  type="button"
-                  onClick={() => selectVisit("virtual")}
-                  className={
-                    "flex-1 rounded-full px-4 py-2.5 text-sm font-medium transition-colors " +
-                    (visitType === "virtual"
-                      ? "bg-[color:var(--pp-primary-950)] text-white"
-                      : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]")
-                  }
-                >
-                  {tx("Virtual")}
-                </button>
-              )}
-              {provider.visitTypes.includes("clinic") && (
-                <button
-                  type="button"
-                  onClick={() => selectVisit("clinic")}
-                  className={
-                    "flex-1 rounded-full px-4 py-2.5 text-sm font-medium transition-colors " +
-                    (visitType === "clinic"
-                      ? "bg-[color:var(--pp-primary-950)] text-white"
-                      : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]")
-                  }
-                >
-                  {tx("In-clinic")}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Show both visit-type grids when both available */}
-          {provider.visitTypes.includes("virtual") && provider.visitTypes.includes("clinic") ? (
-            <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              <AvailabilitySlots
-                title={tx("Virtual visit")}
-                sub={tx("Secure video from home")}
-                slots={[...virtualSlots.morning, ...virtualSlots.afternoon]}
-                selected={visitType === "virtual" ? time : ""}
-                active={visitType === "virtual"}
-                onSelect={(t) => {
-                  setVisitType("virtual");
-                  setTime(t);
-                }}
-              />
-              <AvailabilitySlots
-                title={tx("In-clinic visit")}
-                sub={provider.address || tx("See a clinician in person")}
-                slots={[...clinicSlots.morning, ...clinicSlots.afternoon]}
-                selected={visitType === "clinic" ? time : ""}
-                active={visitType === "clinic"}
-                onSelect={(t) => {
-                  setVisitType("clinic");
-                  setTime(t);
-                }}
-              />
-            </div>
-          ) : (
-            <div className="mt-5">
-              <AvailabilitySlots
-                title={tx(visitType === "virtual" ? "Virtual visit" : "In-clinic visit")}
-                sub={
-                  visitType === "virtual"
-                    ? tx("Secure video from home")
-                    : provider.address || tx("See a clinician in person")
-                }
-                slots={activeList}
-                selected={time}
-                active
-                onSelect={setTime}
-              />
-            </div>
-          )}
-        </section>
+          <DoctorAvailabilityBoard
+            provider={provider}
+            facilities={facilities}
+            date={date}
+            days={days}
+            weekOffset={weekOffset}
+            visitType={visitType}
+            time={time}
+            clinicId={clinicId}
+            onSelectDay={selectDay}
+            onSelectVisit={selectVisit}
+            onSelectTime={setTime}
+            onShiftWeek={shiftWeek}
+            onSelectClinic={setClinicId}
+          />
         )}
-        <DoctorExperienceSection provider={provider} />
+        <DoctorSpecialisationsGrid provider={provider} specialisedIn={specialisedIn} />
+        {facilities.length ? (
+          <DoctorPracticeSection
+            provider={provider}
+            facilities={facilities}
+            specialtyId={specialtyId}
+          />
+        ) : null}
         {provider.awards?.length ? (
           <section className="min-w-0 scroll-mt-28">
             <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
@@ -538,13 +671,8 @@ export function DoctorProfilePage({
             </div>
           </section>
         ) : null}
-        <DoctorPracticeSection
-          provider={provider}
-          facilities={facilities}
-          specialtyId={specialtyId}
-        />
-        <DoctorFaqSection provider={provider} specialisedIn={specialisedIn} />
         <DoctorArticlesSection provider={provider} />
+        <DoctorFaqSection provider={provider} specialisedIn={specialisedIn} />
     </DirectoryDetailLayout>
   );
 }
@@ -588,16 +716,15 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
       document.getElementById(isClinic ? "clinic-doctors" : "hospital-doctors")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
-    const day = upcomingDays(1)[0]?.date ?? "";
-    const slots = slotsByVisitType(provider.id, day, "clinic");
-    const first = [...slots.morning, ...slots.afternoon][0] ?? "10:00 AM";
+    const next = firstOpenSlot(provider.id, todayIso(), "clinic");
+    if (!next) return;
     nav(
       bookHref({
         providerId: provider.id,
         specialtyId: specialtyId ?? provider.specialties[0],
         serviceId: selected.id,
-        date: day,
-        time: first,
+        date: next.date,
+        time: next.time,
         visitType: "clinic",
       }),
     );
@@ -618,8 +745,20 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
             eyebrow={tx(kindLabel(provider.kind))}
             name={provider.name}
             subtitle={tx(provider.subtitle)}
-            bio={tx(provider.bio)}
             imageUrl={provider.imageUrl}
+            usps={
+              provider.kind === "doctor"
+                ? [
+                    { label: tx("NMC verified") },
+                    { label: tx("Digital Prescription") },
+                    { label: tx("Free Followup") },
+                  ]
+                : [
+                    { label: tx("Verified Doctors") },
+                    { label: tx("Digital Prescription") },
+                    { label: tx("Free Followup") },
+                  ]
+            }
             leadingBadges={
               <ReviewCountChip average={provider.rating} count={provider.reviewCount} />
             }

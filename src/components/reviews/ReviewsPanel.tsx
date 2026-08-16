@@ -51,7 +51,7 @@ function ReviewTopicPills({ topics, tx }: { topics: string[]; tx: (s: string) =>
       <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">
         {tx("Review topics")}
       </p>
-      <div className="mt-2.5 flex flex-wrap gap-2">
+      <div className="mt-2.5 flex flex-wrap items-center gap-4">
         {topics.map((t) => (
           <span
             key={t}
@@ -241,9 +241,27 @@ export function ReviewsPanel({
         </div>
       ) : null}
 
-      {!hasReviews && !busy && !mine ? (
+      {!hasReviews && !busy && !mine && !writing ? (
         <p className="mt-4 text-sm text-ink-tertiary">
-          {tx("Be the first to review {name}.").replace("{name}", listingName)}
+          {tx("Be the first to review {name}.").replace("{name}", listingName)}{" "}
+          {canWrite && !owned ? (
+            signedIn ? (
+              <button
+                type="button"
+                className="font-medium text-[color:var(--pp-primary-950)] underline underline-offset-2"
+                onClick={() => setWriting(true)}
+              >
+                {tx("Review Now")}
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="font-medium text-[color:var(--pp-primary-950)] underline underline-offset-2"
+              >
+                {tx("Review Now")}
+              </Link>
+            )
+          ) : null}
         </p>
       ) : null}
 
@@ -253,7 +271,7 @@ export function ReviewsPanel({
         </p>
       ) : null}
 
-      {!writing && (hasReviews || (!busy && (canWrite && !owned))) ? sortAndWrite : null}
+      {!writing && hasReviews ? sortAndWrite : null}
 
       {canWrite && !owned && signedIn && writing ? (
         <div className="mt-4">

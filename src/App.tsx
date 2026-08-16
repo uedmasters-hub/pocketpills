@@ -72,6 +72,7 @@ import { PharmaciesIndex, PharmaciesByRegion } from "@/pages/PharmaciesByRegion"
 import { OrderHistory, OrderDetail } from "@/pages/orders/OrderHistory";
 import { Receipt, Invoice } from "@/pages/orders/Documents";
 import { Appointments } from "@/pages/appointments/Appointments";
+import { AppointmentDetail, AppointmentReceipt } from "@/pages/appointments/AppointmentDetail";
 import { BookAppointment } from "@/pages/appointments/BookAppointment";
 import { ProviderDetail } from "@/pages/appointments/ProviderDetail";
 import { LabDetail } from "@/pages/appointments/LabDetail";
@@ -184,6 +185,7 @@ export default function App() {
           {/* Print-friendly documents (outside app shell) */}
           <Route path="/orders/:id/receipt" element={<RequireAuth><Receipt /></RequireAuth>} />
           <Route path="/orders/:id/invoice" element={<RequireAuth><Invoice /></RequireAuth>} />
+          <Route path="/appointments/visit/:id/receipt" element={<RequireAuth><AppointmentReceipt /></RequireAuth>} />
 
           {/* Provider app */}
           <Route
@@ -239,6 +241,7 @@ export default function App() {
             <Route path="/orders" element={<OrderHistory />} />
             <Route path="/orders/:id" element={<OrderDetail />} />
             <Route path="/appointments" element={<Appointments />} />
+            <Route path="/appointments/visit/:id" element={<AppointmentDetail />} />
             <Route path="/appointments/provider/:id" element={<ProviderDetail />} />
             <Route path="/appointments/book" element={<BookAppointment />} />
             <Route path="/appointments/treatments/:slug" element={<TreatmentHubDetail />} />

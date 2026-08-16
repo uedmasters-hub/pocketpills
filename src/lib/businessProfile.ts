@@ -195,6 +195,9 @@ export const PUBLICATION_KIND_LABELS: Record<ListingPublicationKind, string> = {
   publication: "Publication",
 };
 
+/** Public profile carousel: 3 visible, 3 more on scroll. */
+export const MAX_LISTING_PUBLICATIONS = 6;
+
 export function newListingPublication(kind: ListingPublicationKind = "article"): ListingPublication {
   return {
     id: `pub-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
@@ -225,7 +228,8 @@ export function sanitizePublications(raw: unknown): ListingPublication[] {
         minutes: minutes > 0 ? minutes : undefined,
       };
     })
-    .filter((p): p is ListingPublication => Boolean(p));
+    .filter((p): p is ListingPublication => Boolean(p))
+    .slice(0, MAX_LISTING_PUBLICATIONS);
 }
 
 function demoPub(
@@ -273,6 +277,22 @@ const DEMO_LISTING_PUBLICATIONS: Record<string, ListingPublication[]> = {
       "Screening, lifestyle, and when a follow-up is the right next step.",
       4,
       "/img/Cardiologist.png",
+    ),
+    demoPub(
+      "nmc-6-online",
+      "article",
+      "How an online consult works",
+      "Video visits, prescriptions when appropriate, and follow-up care.",
+      3,
+      "/img/Pediatrician.png",
+    ),
+    demoPub(
+      "nmc-6-prepare",
+      "publication",
+      "How to prepare for your appointment",
+      "ID, medicine list, and notes that help your clinician help you.",
+      3,
+      "/img/Dermatologist.png",
     ),
   ],
   "prov-nmc-5": [
@@ -326,6 +346,22 @@ const DEMO_LISTING_PUBLICATIONS: Record<string, ListingPublication[]> = {
       2,
       "/img/Cardiologist.png",
     ),
+    demoPub(
+      "dda-manab-safe",
+      "article",
+      "How to take medicines safely",
+      "Timing, missed doses, and when to pause and ask for help.",
+      4,
+      "/img/Pediatrician.png",
+    ),
+    demoPub(
+      "dda-manab-ask",
+      "article",
+      "When to ask a pharmacist for help",
+      "Side effects, interactions, and questions that belong with a pharmacist.",
+      3,
+      "/img/Dermatologist.png",
+    ),
   ],
   "prov-dda-3711213090457": [
     demoPub(
@@ -377,6 +413,22 @@ const DEMO_LISTING_PUBLICATIONS: Record<string, ListingPublication[]> = {
       "ID, reports, and questions that help your care team help you.",
       3,
       "/img/treatments/uti.png",
+    ),
+    demoPub(
+      "hf-peoples-online",
+      "article",
+      "How an online consult works",
+      "Video visits, prescriptions when appropriate, and follow-up care.",
+      3,
+      "/img/Pediatrician.png",
+    ),
+    demoPub(
+      "hf-peoples-hours",
+      "news",
+      "Updated visiting hours",
+      "When the outpatient desk is open and how to send reports ahead.",
+      2,
+      "/img/Dermatologist.png",
     ),
   ],
   "prov-hf-3060300122": [
@@ -674,16 +726,18 @@ function normalizeDraft(stored: BusinessProfile): BusinessProfile {
           });
     })(),
     publications: Array.isArray(stored.publications)
-      ? stored.publications.map((row) => ({
-          id: String(row?.id || `pub-${Math.random().toString(36).slice(2, 8)}`),
-          kind:
-            row?.kind === "news" || row?.kind === "publication" ? row.kind : ("article" as const),
-          title: String(row?.title ?? ""),
-          summary: String(row?.summary ?? ""),
-          date: String(row?.date ?? "").trim() || undefined,
-          imageUrl: String(row?.imageUrl ?? "").trim() || undefined,
-          minutes: Number(row?.minutes) > 0 ? Number(row?.minutes) : undefined,
-        }))
+      ? stored.publications
+          .map((row) => ({
+            id: String(row?.id || `pub-${Math.random().toString(36).slice(2, 8)}`),
+            kind:
+              row?.kind === "news" || row?.kind === "publication" ? row.kind : ("article" as const),
+            title: String(row?.title ?? ""),
+            summary: String(row?.summary ?? ""),
+            date: String(row?.date ?? "").trim() || undefined,
+            imageUrl: String(row?.imageUrl ?? "").trim() || undefined,
+            minutes: Number(row?.minutes) > 0 ? Number(row?.minutes) : undefined,
+          }))
+          .slice(0, MAX_LISTING_PUBLICATIONS)
       : [],
   };
 }

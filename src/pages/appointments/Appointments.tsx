@@ -114,7 +114,10 @@ export function Appointments() {
   const specialty = specialtyId ? specialtyById(specialtyId) : undefined;
 
   const allAppts = useMemo(() => getAppointments(), [tick]);
-  const upcomingAppts = allAppts.filter((a) => a.status === "upcoming" && !appointmentIsPast(a));
+  const upcomingAppts = allAppts.filter(
+    (a) => (a.status === "upcoming" || a.status === "pending") && !appointmentIsPast(a),
+  );
+  const pastAppts = allAppts.filter((a) => !upcomingAppts.some((u) => u.id === a.id));
   const upcomingLabs = useMemo(
     () => getLabBookings().filter((b) => b.status === "upcoming" && !labBookingIsPast(b)),
     [tick],
@@ -131,6 +134,7 @@ export function Appointments() {
 
   const railCount = upcomingAppts.length + upcomingLabs.length + upcomingCare.length + openRequests.length;
   const hasUpcoming = railCount > 0;
+  const hasRail = hasUpcoming || pastAppts.length > 0;
   const { slots: collapsedSlots, visible: collapsedVisible } = listCollapse(hasUpcoming ? 3 : 4);
   const listGridClass = hasUpcoming
     ? "grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-4"
@@ -250,24 +254,26 @@ export function Appointments() {
     nav(`/transfer?pharmacy=${encodeURIComponent(p.id)}`);
   };
 
-  const appointmentsAside = hasUpcoming ? (
-    <YourAppointments
-      upcomingAppts={upcomingAppts}
-      upcomingLabs={upcomingLabs}
-      upcomingCare={upcomingCare}
-      openRequests={openRequests}
-      onRefresh={refresh}
-      onMessage={() => nav("/messages")}
-      layout="aside"
-    />
-  ) : null;
+  const appointmentsAside =
+    hasUpcoming || pastAppts.length > 0 ? (
+      <YourAppointments
+        upcomingAppts={upcomingAppts}
+        pastAppts={pastAppts}
+        upcomingLabs={upcomingLabs}
+        upcomingCare={upcomingCare}
+        openRequests={openRequests}
+        onRefresh={refresh}
+        onMessage={() => nav("/messages")}
+        layout="aside"
+      />
+    ) : null;
 
   const withRail = "flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-8";
 
   return (
     <div>
       {!specialty ? (
-        <div className={hasUpcoming ? withRail : undefined}>
+        <div className={hasRail ? withRail : undefined}>
           <div className="min-w-0 flex-1">
             <header className="mb-6">
               <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Care")}</p>
@@ -507,7 +513,7 @@ export function Appointments() {
           {appointmentsAside}
         </div>
       ) : (
-        <div className={hasUpcoming ? withRail : undefined}>
+        <div className={hasRail ? withRail : undefined}>
           <div className="min-w-0 flex-1">
             <header className="mb-6">
               <button
@@ -1086,6 +1092,7 @@ function CareWorkerCard({ worker, onOpen }: { worker: CareWorker; onOpen: () => 
 
 function YourAppointments({
   upcomingAppts,
+  pastAppts,
   upcomingLabs,
   upcomingCare,
   openRequests,
@@ -1094,6 +1101,7 @@ function YourAppointments({
   layout = "stack",
 }: {
   upcomingAppts: Appointment[];
+  pastAppts: Appointment[];
   upcomingLabs: LabBooking[];
   upcomingCare: CareWorkerBooking[];
   openRequests: ServiceRequest[];
@@ -1102,9 +1110,11 @@ function YourAppointments({
   layout?: "stack" | "aside";
 }) {
   const { tx } = useI18n();
+  const nav = useNavigate();
   const total =
     upcomingAppts.length + upcomingLabs.length + upcomingCare.length + openRequests.length;
-  if (total === 0) return null;
+  const pastShown = pastAppts.slice(0, 4);
+  if (total === 0 && pastShown.length === 0) return null;
 
   return (
     <aside
@@ -1115,81 +1125,121 @@ function YourAppointments({
       }
       aria-label={tx("Your appointments")}
     >
-      <div className="mb-5">
-        <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-          {tx("Your appointments")}
-        </h2>
-        <p className="mt-1 text-sm text-ink-tertiary">
-          {tx("{n} upcoming").replace("{n}", String(total))}
-        </p>
-      </div>
+      {total > 0 ? (
+        <>
+          <div className="mb-5">
+            <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
+              {tx("Your appointments")}
+            </h2>
+            <p className="mt-1 text-sm text-ink-tertiary">
+              {tx("{n} upcoming").replace("{n}", String(total))}
+            </p>
+          </div>
 
-      <div className="space-y-3">
-        {upcomingAppts.map((a) => (
-          <ApptCard
-            key={a.id}
-            a={a}
-            onCancel={() => {
-              updateAppointmentStatus(a.id, "cancelled");
-              onRefresh();
-            }}
-            onMessage={onMessage}
-          />
-        ))}
-        {upcomingLabs.map((b) => (
-          <RailItemCard
-            key={b.id}
-            badge={tx("Lab")}
-            title={b.labName}
-            subtitle={b.itemNames}
-            meta={`${b.date} · ${b.time}`}
-            fee={b.fee}
-            confirmationNo={b.confirmationNo}
-            onCancel={() => {
-              updateLabBookingStatus(b.id, "cancelled");
-              if (b.orderId) cancelOrder(b.orderId);
-              onRefresh();
-            }}
-            onMessage={onMessage}
-          />
-        ))}
-        {upcomingCare.map((b) => (
-          <RailItemCard
-            key={b.id}
-            badge={tx(careWorkerKindLabel(b.kind))}
-            title={b.workerName}
-            subtitle={b.service}
-            meta={`${b.date} · ${b.time}`}
-            fee={b.fee}
-            confirmationNo={b.confirmationNo}
-            onCancel={() => {
-              updateCareWorkerBookingStatus(b.id, "cancelled");
-              onRefresh();
-            }}
-            onMessage={onMessage}
-          />
-        ))}
-        {openRequests.map((r) => (
-          <RailItemCard
-            key={r.id}
-            badge={tx(healthServiceCategoryLabel(r.category))}
-            title={r.serviceName}
-            subtitle={r.address}
-            meta={
-              r.etaMinutes != null
-                ? tx("ETA ~{n} min").replace("{n}", String(r.etaMinutes))
-                : tx("Request open")
-            }
-            confirmationNo={r.confirmationNo}
-            cancelLabel={tx("Cancel request")}
-            onCancel={() => {
-              updateServiceRequestStatus(r.id, "cancelled");
-              onRefresh();
-            }}
-            onMessage={onMessage}
-          />
-        ))}
-      </div>
+          <div className="space-y-3">
+            {upcomingAppts.map((a) => (
+              <ApptCard
+                key={a.id}
+                a={a}
+                onCancel={() => {
+                  updateAppointmentStatus(a.id, "cancelled");
+                  onRefresh();
+                }}
+                onMessage={onMessage}
+              />
+            ))}
+            {upcomingLabs.map((b) => (
+              <RailItemCard
+                key={b.id}
+                badge={tx("Lab")}
+                title={b.labName}
+                subtitle={b.itemNames}
+                meta={`${b.date} · ${b.time}`}
+                fee={b.fee}
+                confirmationNo={b.confirmationNo}
+                onCancel={() => {
+                  updateLabBookingStatus(b.id, "cancelled");
+                  if (b.orderId) cancelOrder(b.orderId);
+                  onRefresh();
+                }}
+                onMessage={onMessage}
+              />
+            ))}
+            {upcomingCare.map((b) => (
+              <RailItemCard
+                key={b.id}
+                badge={tx(careWorkerKindLabel(b.kind))}
+                title={b.workerName}
+                subtitle={b.service}
+                meta={`${b.date} · ${b.time}`}
+                fee={b.fee}
+                confirmationNo={b.confirmationNo}
+                onCancel={() => {
+                  updateCareWorkerBookingStatus(b.id, "cancelled");
+                  onRefresh();
+                }}
+                onMessage={onMessage}
+              />
+            ))}
+            {openRequests.map((r) => (
+              <RailItemCard
+                key={r.id}
+                badge={tx(healthServiceCategoryLabel(r.category))}
+                title={r.serviceName}
+                subtitle={r.address}
+                meta={
+                  r.etaMinutes != null
+                    ? tx("ETA ~{n} min").replace("{n}", String(r.etaMinutes))
+                    : tx("Request open")
+                }
+                confirmationNo={r.confirmationNo}
+                cancelLabel={tx("Cancel request")}
+                onCancel={() => {
+                  updateServiceRequestStatus(r.id, "cancelled");
+                  onRefresh();
+                }}
+                onMessage={onMessage}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {pastShown.length ? (
+        <div className={total > 0 ? "mt-8" : undefined}>
+          <div className="mb-4">
+            <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
+              {tx(total > 0 ? "Past visits" : "Your visits")}
+            </h2>
+            <p className="mt-1 text-sm text-ink-tertiary">
+              {tx("Open a visit for tips, follow-up, and the receipt.")}
+            </p>
+          </div>
+          <div className="space-y-2">
+            {pastShown.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => nav(`/appointments/visit/${a.id}`)}
+                className="w-full rounded-2xl border border-line bg-white px-4 py-3 text-left hover:border-[color:var(--pp-violet)]"
+              >
+                <p className="truncate text-sm font-semibold text-[color:var(--pp-primary-950)]">
+                  {a.clinicianName || a.providerName}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-ink-tertiary">
+                  {a.date} · {a.time}
+                  <span className="mx-1.5 text-ink-tertiary/50">·</span>
+                  {a.status === "cancelled"
+                    ? tx("Cancelled")
+                    : a.status === "completed"
+                      ? tx("Completed")
+                      : tx("Past")}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </aside>
   );
 }
@@ -1264,59 +1314,66 @@ function ApptCard({
   onMessage: () => void;
 }) {
   const { tx } = useI18n();
+  const nav = useNavigate();
   const name = a.providerName || a.clinicianName;
   const kind = a.providerKind ? tx(kindLabel(a.providerKind)) : tx("Doctor");
   const provider = getProvider(a.providerId);
   const isVirtual = a.visitType === "virtual";
+  const visitTo = `/appointments/visit/${a.id}`;
 
   return (
     <article className="overflow-hidden rounded-[1.75rem] border border-[#E6E1EF] bg-white">
-      <div className="flex items-center justify-between gap-3 px-5 pt-5">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-wellness-subtle px-2.5 py-1 text-2xs font-semibold text-wellness">
-          {isVirtual ? (
-            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
-              <path d="M2.5 4.25A1.75 1.75 0 0 1 4.25 2.5h5.5A1.75 1.75 0 0 1 11.5 4.25v7.5a1.75 1.75 0 0 1-1.75 1.75h-5.5A1.75 1.75 0 0 1 2.5 11.75v-7.5Zm10.03.72 1.72-1.146a.75.75 0 0 1 1.2.6v6.152a.75.75 0 0 1-1.2.6l-1.72-1.147V4.97Z" />
-            </svg>
-          ) : null}
-          {tx("Upcoming")}
-        </span>
-        <p className="truncate font-mono text-2xs text-ink-tertiary">{a.confirmationNo}</p>
-      </div>
-
-      <div className="flex gap-3 px-5 py-4">
-        {provider ? (
-          <img
-            src={provider.imageUrl}
-            alt=""
-            className="h-16 w-16 shrink-0 rounded-2xl object-cover object-top"
-          />
-        ) : (
-          <div
-            className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[color:var(--pp-primary-100)] text-sm font-semibold text-[color:var(--pp-primary-950)]"
-            aria-hidden
-          >
-            {name.slice(0, 1)}
-          </div>
-        )}
-        <div className="min-w-0 self-center">
-          <p className="pp-caps text-[color:var(--pp-violet)]/70">{kind}</p>
-          <p className="mt-0.5 truncate font-semibold text-[color:var(--pp-primary-950)]">{name}</p>
-          <p className="mt-0.5 truncate text-sm text-ink-tertiary">{tx(a.specialtyLabel)}</p>
+      <button type="button" onClick={() => nav(visitTo)} className="w-full text-left">
+        <div className="flex items-center justify-between gap-3 px-5 pt-5">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-wellness-subtle px-2.5 py-1 text-2xs font-semibold text-wellness">
+            {isVirtual ? (
+              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
+                <path d="M2.5 4.25A1.75 1.75 0 0 1 4.25 2.5h5.5A1.75 1.75 0 0 1 11.5 4.25v7.5a1.75 1.75 0 0 1-1.75 1.75h-5.5A1.75 1.75 0 0 1 2.5 11.75v-7.5Zm10.03.72 1.72-1.146a.75.75 0 0 1 1.2.6v6.152a.75.75 0 0 1-1.2.6l-1.72-1.147V4.97Z" />
+              </svg>
+            ) : null}
+            {a.status === "pending" ? tx("Awaiting doctor") : tx("Upcoming")}
+          </span>
+          <p className="truncate font-mono text-2xs text-ink-tertiary">{a.confirmationNo}</p>
         </div>
-      </div>
 
-      <div className="flex items-center justify-between gap-3 border-y border-line px-5 py-3.5">
-        <p className="min-w-0 truncate text-sm font-semibold text-[color:var(--pp-primary-950)]">
-          {a.date} · {a.time}
-        </p>
-        {a.fee != null && a.fee > 0 ? (
-          <p className="shrink-0 text-sm font-semibold text-[color:var(--pp-primary-950)] tnum">
-            {formatFee(a.fee)}
+        <div className="flex gap-3 px-5 py-4">
+          {provider ? (
+            <img
+              src={provider.imageUrl}
+              alt=""
+              className="h-16 w-16 shrink-0 rounded-2xl object-cover object-top"
+            />
+          ) : (
+            <div
+              className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[color:var(--pp-primary-100)] text-sm font-semibold text-[color:var(--pp-primary-950)]"
+              aria-hidden
+            >
+              {name.slice(0, 1)}
+            </div>
+          )}
+          <div className="min-w-0 self-center">
+            <p className="pp-caps text-[color:var(--pp-violet)]/70">{kind}</p>
+            <p className="mt-0.5 truncate font-semibold text-[color:var(--pp-primary-950)]">{name}</p>
+            <p className="mt-0.5 truncate text-sm text-ink-tertiary">{tx(a.specialtyLabel)}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-y border-line px-5 py-3.5">
+          <p className="min-w-0 truncate text-sm font-semibold text-[color:var(--pp-primary-950)]">
+            {a.date} · {a.time}
           </p>
-        ) : null}
-      </div>
+          {a.fee != null && a.fee > 0 ? (
+            <p className="shrink-0 text-sm font-semibold text-[color:var(--pp-primary-950)] tnum">
+              {formatFee(a.fee)}
+            </p>
+          ) : null}
+        </div>
+      </button>
 
       <div className="flex flex-col items-stretch gap-3 px-5 py-4">
+        <Button size="sm" fullWidth onClick={() => nav(visitTo)}>
+          {tx("View visit")}
+        </Button>
         <Button size="sm" variant="ghost" fullWidth onClick={onMessage}>
           {tx("Message care team")}
         </Button>

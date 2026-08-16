@@ -77,3 +77,96 @@ export function isValidSlotRange(start: string, end: string): boolean {
   const b = timeToMinutes(end);
   return a >= 0 && b > a;
 }
+
+/** Listing clocks use Nepal time, not the browser/OS timezone. */
+export const APP_TIMEZONE = "Asia/Kathmandu";
+const NEPAL_OFFSET = "+05:45";
+
+function zonedParts(at = new Date()) {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: APP_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    weekday: "short",
+    hourCycle: "h23",
+  });
+  const map: Record<string, string> = {};
+  for (const part of fmt.formatToParts(at)) {
+    if (part.type !== "literal") map[part.type] = part.value;
+  }
+  return {
+    date: `${map.year}-${map.month}-${map.day}`,
+    weekday: map.weekday,
+    minutes: Number(map.hour) * 60 + Number(map.minute),
+  };
+}
+
+function nepalNoon(iso: string) {
+  return new Date(`${iso}T12:00:00${NEPAL_OFFSET}`);
+}
+
+export function todayIso(): string {
+  return zonedParts().date;
+}
+
+export function addCalendarDays(iso: string, days: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, (m || 1) - 1, (d || 1) + days));
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
+export function weekdayShort(iso: string): string {
+  return nepalNoon(iso).toLocaleDateString("en-CA", {
+    timeZone: APP_TIMEZONE,
+    weekday: "short",
+  });
+}
+
+export function monthLong(iso: string): string {
+  return nepalNoon(iso).toLocaleDateString("en-CA", {
+    timeZone: APP_TIMEZONE,
+    month: "long",
+  });
+}
+
+export function monthDayShort(iso: string): string {
+  return nepalNoon(iso).toLocaleDateString("en-CA", {
+    timeZone: APP_TIMEZONE,
+    month: "short",
+    day: "numeric",
+  });
+}
+
+export function isPastDate(iso: string, at = new Date()): boolean {
+  return Boolean(iso) && iso < zonedParts(at).date;
+}
+
+/** True when this clock time has already started or passed in Nepal. */
+export function isSlotInPast(iso: string, timeLabel: string, at = new Date()): boolean {
+  if (!iso || !timeLabel) return true;
+  const now = zonedParts(at);
+  if (iso < now.date) return true;
+  if (iso > now.date) return false;
+  const slotMin = timeToMinutes(timeLabel);
+  return slotMin >= 0 && slotMin <= now.minutes;
+}
+
+function utcDayIndex(iso: string): number {
+  const [y, m, d] = iso.split("-").map(Number);
+  return Date.UTC(y, (m || 1) - 1, d || 1) / 86_400_000;
+}
+
+/** Minutes from now (Nepal) until the slot starts. Negative when the slot has begun. */
+export function minutesUntilSlot(iso: string, timeLabel: string, at = new Date()): number | null {
+  if (!iso || !timeLabel) return null;
+  const slotMin = timeToMinutes(timeLabel);
+  if (slotMin < 0) return null;
+  const now = zonedParts(at);
+  return (utcDayIndex(iso) - utcDayIndex(now.date)) * 24 * 60 + slotMin - now.minutes;
+}

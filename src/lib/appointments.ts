@@ -1,11 +1,12 @@
 /** Demo care booking — specialty → nearest providers → book. localStorage-backed. */
 
+import { addCalendarDays, isPastDate, isSlotInPast, monthDayShort, todayIso, weekdayShort } from "@/lib/timeSlots";
 import { getPublishedCareProvider } from "@/lib/businessProfile";
 import { getNmcProvider, listPublishedNmcProviders } from "@/lib/doctorDirectory";
 import type { SpecialisedGroup } from "@/lib/specialisedIn";
 
 export type VisitType = "virtual" | "clinic";
-export type AppointmentStatus = "upcoming" | "completed" | "cancelled";
+export type AppointmentStatus = "pending" | "upcoming" | "completed" | "cancelled";
 export type ProviderKind = "doctor" | "clinic" | "hospital";
 
 export type SpecialtyId =
@@ -885,6 +886,11 @@ export function getAppointments(): Appointment[] {
   return readStore().sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`));
 }
 
+export function getAppointment(id: string | undefined | null): Appointment | undefined {
+  if (!id) return undefined;
+  return readStore().find((a) => a.id === id);
+}
+
 export function getProvider(id: string): CareProvider | undefined {
   const published = getPublishedCareProvider();
   if (published && published.id === id) return published;
@@ -971,33 +977,52 @@ export function filterClinicians(opts: {
   return filterProviders({ ...opts, kind: "doctor" });
 }
 
-export function upcomingDays(count = 7): { date: string; label: string; weekday: string }[] {
+export function upcomingDays(count = 7, startOffset = 0): { date: string; label: string; weekday: string }[] {
   const out: { date: string; label: string; weekday: string }[] = [];
-  const now = new Date();
+  const today = todayIso();
   for (let i = 0; i < count; i++) {
-    const d = new Date(now);
-    d.setDate(now.getDate() + i);
-    const date = d.toISOString().slice(0, 10);
-    const weekday = d.toLocaleDateString("en-CA", { weekday: "short" });
+    const dayOffset = startOffset + i;
+    const date = addCalendarDays(today, dayOffset);
     const label =
-      i === 0 ? "Today" : i === 1 ? "Tomorrow" : d.toLocaleDateString("en-CA", { month: "short", day: "numeric" });
-    out.push({ date, label, weekday });
+      dayOffset === 0 ? "Today" : dayOffset === 1 ? "Tomorrow" : monthDayShort(date);
+    out.push({ date, label, weekday: weekdayShort(date) });
   }
   return out;
 }
 
-const MORNING = ["9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM"];
-const AFTERNOON = ["1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM"];
+export type DaySlots = { morning: string[]; afternoon: string[]; evening: string[] };
 
-export function slotsFor(providerId: string, date: string): { morning: string[]; afternoon: string[] } {
+export const SLOT_BANDS: DaySlots = {
+  morning: ["8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM"],
+  afternoon: [
+    "12:00 PM",
+    "12:30 PM",
+    "1:00 PM",
+    "1:30 PM",
+    "2:00 PM",
+    "2:30 PM",
+    "3:00 PM",
+    "3:30 PM",
+    "4:00 PM",
+    "4:30 PM",
+    "5:00 PM",
+    "5:30 PM",
+  ],
+  evening: ["6:00 PM", "6:30 PM", "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM"],
+};
+
+const SLOT_POOL = [...SLOT_BANDS.morning, ...SLOT_BANDS.afternoon, ...SLOT_BANDS.evening];
+
+export function slotsFor(providerId: string, date: string): DaySlots {
   const seed = [...providerId, ...date].reduce((a, ch) => a + ch.charCodeAt(0), 0);
   const pick = (arr: string[], n: number) => {
     const start = seed % Math.max(1, arr.length - n + 1);
     return arr.slice(start, start + n);
   };
   return {
-    morning: pick(MORNING, 4),
-    afternoon: pick(AFTERNOON, 4),
+    morning: pick(SLOT_BANDS.morning, 5),
+    afternoon: pick(SLOT_BANDS.afternoon, 5),
+    evening: pick(SLOT_BANDS.evening, 4),
   };
 }
 
@@ -1006,25 +1031,69 @@ export function slotsByVisitType(
   providerId: string,
   date: string,
   visitType: VisitType,
-): { morning: string[]; afternoon: string[] } {
+): DaySlots {
   const base = slotsFor(providerId, date);
   if (visitType === "virtual") {
-    /* Offset virtual slots slightly so the two grids read as distinct. */
     const shift = (t: string) => {
-      const i = [...MORNING, ...AFTERNOON].indexOf(t);
-      const pool = [...MORNING, ...AFTERNOON];
-      return pool[(i + 1) % pool.length] ?? t;
+      const i = SLOT_POOL.indexOf(t);
+      return SLOT_POOL[(i + 1) % SLOT_POOL.length] ?? t;
     };
     return {
-      morning: base.morning.map(shift).slice(0, 4),
-      afternoon: base.afternoon.map(shift).slice(0, 4),
+      morning: base.morning.map(shift),
+      afternoon: base.afternoon.map(shift),
+      evening: base.evening.map(shift),
     };
   }
   return base;
 }
 
-export function flattenSlots(slots: { morning: string[]; afternoon: string[] }): string[] {
-  return [...slots.morning, ...slots.afternoon];
+export function firstOpenSlot(
+  providerId: string,
+  date: string,
+  visitType: VisitType,
+): { date: string; time: string } | null {
+  const start = isPastDate(date) || !date ? todayIso() : date;
+  for (let i = 0; i < 14; i++) {
+    const day = addCalendarDays(start, i);
+    const slots = slotsByVisitType(providerId, day, visitType);
+    const enabled = new Set([...slots.morning, ...slots.afternoon, ...slots.evening]);
+    const time = SLOT_POOL.find((t) => enabled.has(t) && !isSlotInPast(day, t));
+    if (time) return { date: day, time };
+  }
+  return null;
+}
+
+export function hasOpenSlot(providerId: string, date: string, visitType: VisitType): boolean {
+  if (!date || isPastDate(date)) return false;
+  return flattenSlots(slotsByVisitType(providerId, date, visitType)).some((t) => !isSlotInPast(date, t));
+}
+
+/** Next bookable times after an expired or unavailable slot, Nepal TZ. */
+export function nextOpenSlots(
+  providerId: string,
+  visitType: VisitType,
+  afterDate = "",
+  afterTime = "",
+  count = 4,
+): { date: string; time: string }[] {
+  const out: { date: string; time: string }[] = [];
+  const start = todayIso();
+  for (let i = 0; i < 14 && out.length < count; i++) {
+    const day = addCalendarDays(start, i);
+    const times = flattenSlots(slotsByVisitType(providerId, day, visitType));
+    for (const time of times) {
+      if (isSlotInPast(day, time)) continue;
+      if (day === afterDate && time === afterTime) continue;
+      if (out.some((s) => s.date === day && s.time === time)) continue;
+      out.push({ date: day, time });
+      if (out.length >= count) break;
+    }
+  }
+  return out;
+}
+
+export function flattenSlots(slots: { morning: string[]; afternoon: string[]; evening?: string[] }): string[] {
+  return [...slots.morning, ...slots.afternoon, ...(slots.evening ?? [])];
 }
 
 /** Demo health reports the member can attach to a visit. */
@@ -1066,6 +1135,7 @@ export function createAppointment(
   input: Omit<Appointment, "id" | "confirmationNo" | "status" | "createdAt" | "clinicianId" | "clinicianName"> & {
     clinicianId?: string;
     clinicianName?: string;
+    status?: AppointmentStatus;
   },
 ): Appointment {
   const appt: Appointment = {
@@ -1074,7 +1144,7 @@ export function createAppointment(
     clinicianName: input.clinicianName ?? input.providerName,
     id: `appt-${Date.now()}`,
     confirmationNo: nextConfirmationNo(),
-    status: "upcoming",
+    status: input.status ?? "upcoming",
     createdAt: new Date().toISOString(),
   };
   const list = readStore();
@@ -1094,8 +1164,7 @@ export function updateAppointmentStatus(id: string, status: AppointmentStatus): 
 
 export function appointmentIsPast(a: Appointment): boolean {
   if (a.status === "completed" || a.status === "cancelled") return true;
-  const today = new Date().toISOString().slice(0, 10);
-  return a.date < today;
+  return isPastDate(a.date);
 }
 
 export function kindLabel(kind: ProviderKind): string {
