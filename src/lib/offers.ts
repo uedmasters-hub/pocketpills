@@ -319,3 +319,272 @@ export function getActiveOffer() {
   const id = loadActiveOfferId();
   return id ? getOffer(id) ?? null : null;
 }
+
+export function subscribeOffers(cb: () => void) {
+  window.addEventListener("storage", cb);
+  window.addEventListener("pp-offers-change", cb);
+  return () => {
+    window.removeEventListener("storage", cb);
+    window.removeEventListener("pp-offers-change", cb);
+  };
+}
+
+export type CheckoutKind = "fill" | "transfer" | "consult";
+
+export type OfferDiscount =
+  | { type: "amount"; amount: number; minSubtotal?: number }
+  | { type: "percent"; percent: number; max?: number }
+  | { type: "waive_fee"; fee: "dispensing" | "sameday" }
+  | { type: "info" };
+
+type CheckoutRule = {
+  appliesTo: CheckoutKind[];
+  discount: OfferDiscount;
+  productSlugs?: string[];
+  specialtyHints?: string[];
+};
+
+const CHECKOUT_RULES: Record<string, CheckoutRule> = {
+  "ozempic-139": {
+    appliesTo: ["fill"],
+    discount: { type: "info" },
+    productSlugs: ["ozempic", "semaglutide", "wegovy"],
+  },
+  "hair-39": { appliesTo: ["consult"], discount: { type: "info" }, specialtyHints: ["hair"] },
+  "bc-free": {
+    appliesTo: ["consult"],
+    discount: { type: "percent", percent: 100 },
+    specialtyHints: ["birth"],
+  },
+  "first-fill": { appliesTo: ["fill"], discount: { type: "amount", amount: 20 } },
+  "card-visa": { appliesTo: ["fill", "transfer"], discount: { type: "percent", percent: 10 } },
+  "card-mc": { appliesTo: ["fill"], discount: { type: "amount", amount: 15, minSubtotal: 75 } },
+  "card-amex": { appliesTo: ["fill", "consult"], discount: { type: "info" } },
+  "card-interac": { appliesTo: ["fill"], discount: { type: "waive_fee", fee: "sameday" } },
+  "bank-td": { appliesTo: ["fill"], discount: { type: "percent", percent: 12, max: 40 } },
+  "bank-rbc": { appliesTo: ["fill"], discount: { type: "info" } },
+  "bank-scotiabank": { appliesTo: ["transfer"], discount: { type: "amount", amount: 25 } },
+  "bank-bmo": { appliesTo: ["consult"], discount: { type: "percent", percent: 8 } },
+  "bank-cibc": { appliesTo: [], discount: { type: "info" } },
+  "other-refer": { appliesTo: ["fill"], discount: { type: "amount", amount: 20 } },
+  "other-student": { appliesTo: ["fill"], discount: { type: "percent", percent: 15, max: 50 } },
+  "other-senior": { appliesTo: ["fill"], discount: { type: "waive_fee", fee: "dispensing" } },
+  "other-employer": { appliesTo: ["fill", "consult"], discount: { type: "info" } },
+};
+
+export type CheckoutContext = {
+  kind: CheckoutKind;
+  /** Amount due today, after insurance, before the offer. */
+  amount: number;
+  /** Full order total before insurance — used for minimum-spend offers. */
+  orderTotal?: number;
+  dispensingFee?: number;
+  sameDay?: boolean;
+  medSlugs?: string[];
+  medNames?: string[];
+  specialty?: string;
+};
+
+export type OfferQuote = {
+  offer: Offer | null;
+  credit: number;
+  due: number;
+  line: string | null;
+  note: string | null;
+};
+
+function ruleFor(offer: Offer): CheckoutRule {
+  return CHECKOUT_RULES[offer.id] ?? { appliesTo: ["fill"], discount: { type: "info" } };
+}
+
+function money(n: number) {
+  return Math.max(0, Math.round(n * 100) / 100);
+}
+
+function haystack(ctx: CheckoutContext): string {
+  return [ctx.specialty, ...(ctx.medSlugs ?? []), ...(ctx.medNames ?? [])]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function productMatch(rule: CheckoutRule, ctx: CheckoutContext): boolean {
+  if (!rule.productSlugs?.length) return false;
+  const hay = haystack(ctx);
+  return rule.productSlugs.some((s) => hay.includes(s.toLowerCase()));
+}
+
+function specialtyMatch(rule: CheckoutRule, ctx: CheckoutContext): boolean {
+  if (!rule.specialtyHints?.length) return false;
+  const hay = haystack(ctx);
+  return rule.specialtyHints.some((h) => hay.includes(h.toLowerCase()));
+}
+
+export function offerFitsCheckout(offer: Offer, kind: CheckoutKind): boolean {
+  return ruleFor(offer).appliesTo.includes(kind);
+}
+
+export function findOfferByCode(raw: string): Offer | null {
+  const code = raw.trim().toUpperCase();
+  if (!code) return null;
+  return OFFERS.find((o) => (o.code ?? "").toUpperCase() === code) ?? null;
+}
+
+/** Save + apply one offer at checkout (only one active). */
+export function applyOffer(id: string) {
+  const claimed = loadClaimed();
+  claimed.add(id);
+  saveClaimed(claimed);
+  saveActiveOfferId(id);
+}
+
+export function applyOfferCode(raw: string): Offer | null {
+  const offer = findOfferByCode(raw);
+  if (!offer) return null;
+  applyOffer(offer.id);
+  return offer;
+}
+
+export function quoteOffer(offer: Offer | null, ctx: CheckoutContext): OfferQuote {
+  const dueBase = money(ctx.amount);
+  if (!offer) return { offer: null, credit: 0, due: dueBase, line: null, note: null };
+
+  const rule = ruleFor(offer);
+  if (!rule.appliesTo.includes(ctx.kind)) {
+    return {
+      offer,
+      credit: 0,
+      due: dueBase,
+      line: null,
+      note: "This offer doesn’t apply to this payment. Choose another, or keep it for a later order.",
+    };
+  }
+
+  if (rule.specialtyHints?.length && !specialtyMatch(rule, ctx)) {
+    return {
+      offer,
+      credit: 0,
+      due: dueBase,
+      line: null,
+      note: "This offer is for a different visit type. It’s saved, but it won’t change today’s total.",
+    };
+  }
+
+  if (rule.productSlugs?.length && !productMatch(rule, ctx)) {
+    return {
+      offer,
+      credit: 0,
+      due: dueBase,
+      line: null,
+      note: "Add the matching medication to use this cash price.",
+    };
+  }
+
+  const d = rule.discount;
+  if (d.type === "info") {
+    return {
+      offer,
+      credit: 0,
+      due: dueBase,
+      line: null,
+      note: "Noted on this order. It may post with your card or after the fill.",
+    };
+  }
+
+  if (d.type === "waive_fee") {
+    if (d.fee === "dispensing") {
+      const credit = money(Math.min(ctx.dispensingFee ?? 0, dueBase));
+      if (!credit) {
+        return { offer, credit: 0, due: dueBase, line: null, note: "No dispensing fee on this order to waive." };
+      }
+      return { offer, credit, due: money(dueBase - credit), line: "Dispensing fee waived", note: null };
+    }
+    if (!ctx.sameDay) {
+      return {
+        offer,
+        credit: 0,
+        due: dueBase,
+        line: null,
+        note: "Applies when you choose same-day delivery.",
+      };
+    }
+    const credit = money(Math.min(5, dueBase));
+    return { offer, credit, due: money(dueBase - credit), line: "Same-day upgrade credit", note: null };
+  }
+
+  if (d.type === "amount") {
+    if (d.minSubtotal && (ctx.orderTotal ?? dueBase) < d.minSubtotal) {
+      return {
+        offer,
+        credit: 0,
+        due: dueBase,
+        line: null,
+        note: `Spend $${d.minSubtotal} to unlock this offer.`,
+      };
+    }
+    const credit = money(Math.min(d.amount, dueBase));
+    if (!credit && ctx.kind === "transfer") {
+      return {
+        offer,
+        credit: 0,
+        due: dueBase,
+        line: null,
+        note: "Credit is applied after the first successful fill from this transfer.",
+      };
+    }
+    return {
+      offer,
+      credit,
+      due: money(dueBase - credit),
+      line: `${offer.title} −$${credit.toFixed(2)}`,
+      note: null,
+    };
+  }
+
+  const raw = dueBase * (d.percent / 100);
+  const credit = money(Math.min(raw, d.max ?? raw, dueBase));
+  return {
+    offer,
+    credit,
+    due: money(dueBase - credit),
+    line: `${offer.savings} −$${credit.toFixed(2)}`,
+    note: null,
+  };
+}
+
+function scoreRelated(offer: Offer, ctx: CheckoutContext, claimed: Set<string>, activeId: string | null): number {
+  const rule = ruleFor(offer);
+  if (!rule.appliesTo.includes(ctx.kind)) return 0;
+  let n = 8;
+  if (offer.id === activeId) n += 1000;
+  if (claimed.has(offer.id)) n += 40;
+  if (productMatch(rule, ctx)) n += 80;
+  if (specialtyMatch(rule, ctx)) n += 70;
+  if (offer.kind === "card" || offer.kind === "bank") n += 12;
+  if (offer.spotlight) n += 6;
+  const q = quoteOffer(offer, ctx);
+  if (q.credit > 0) n += 20;
+  return n;
+}
+
+/** Offers that belong on this payment screen (active first, then saved, then relevant). */
+export function relatedOffers(ctx: CheckoutContext, limit = 4): Offer[] {
+  const claimed = loadClaimed();
+  const activeId = loadActiveOfferId();
+  const ranked = OFFERS.map((o) => ({
+    o,
+    score: scoreRelated(o, ctx, claimed, activeId),
+  }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  const out: Offer[] = [];
+  const seen = new Set<string>();
+  for (const { o } of ranked) {
+    if (seen.has(o.id)) continue;
+    seen.add(o.id);
+    out.push(o);
+    if (out.length >= limit) break;
+  }
+  return out;
+}

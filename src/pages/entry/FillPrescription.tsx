@@ -5,7 +5,8 @@ import { Card, Field, Badge, Switch } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { drugs } from "@/lib/data";
 import { ActiveOfferBanner } from "@/components/offers/ActiveOfferBanner";
-import { getActiveOffer } from "@/lib/offers";
+import { CheckoutOffers, useOfferQuote } from "@/components/offers/CheckoutOffers";
+import type { CheckoutContext } from "@/lib/offers";
 import { useI18n } from "@/lib/i18n";
 import {
   fileToUpload,
@@ -401,6 +402,19 @@ export function FillPrescription() {
   }, [s.meds, hasInsurance, s.useProvincial, s.hasPrivate]);
   const covered = Math.round(withFee * rate * 100) / 100;
   const total$ = Math.max(0, Math.round((withFee - covered) * 100) / 100);
+  const offerCtx = useMemo<CheckoutContext>(
+    () => ({
+      kind: "fill",
+      amount: total$,
+      orderTotal: withFee,
+      dispensingFee: s.meds.length ? DISPENSING_FEE : 0,
+      sameDay: s.speed === "sameday",
+      medSlugs: s.meds.map((m) => m.slug).filter((x): x is string => Boolean(x)),
+      medNames: s.meds.map((m) => m.name),
+    }),
+    [total$, withFee, s.meds, s.speed],
+  );
+  const offerQuote = useOfferQuote(offerCtx);
 
   const eyebrow = tx("Fill your prescription");
   const common = { step: idx + 1, total, onBack: goBack, eyebrow };
@@ -821,7 +835,10 @@ export function FillPrescription() {
           <Row k={tx("Dispensing fee")} v={`$${(s.meds.length ? DISPENSING_FEE : 0).toFixed(2)}`} />
           <Row k={tx("Delivery")} v={tx("FREE")} tone="wellness" />
           {hasInsurance && <Row k={tx("Insurance (~{pct}%)").replace("{pct}", String(Math.round(rate * 100)))} v={`−$${covered.toFixed(2)}`} tone="wellness" />}
-          <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">{tx("Due today")}</span><span className="font-display text-xl font-medium text-ink tnum">${total$.toFixed(2)}</span></div>
+          {offerQuote.credit > 0 && (
+            <Row k={tx("Offer")} v={`−$${offerQuote.credit.toFixed(2)}`} tone="wellness" />
+          )}
+          <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">{tx("Due today")}</span><span className="font-display text-xl font-medium text-ink tnum">${(offerQuote.credit > 0 ? offerQuote.due : total$).toFixed(2)}</span></div>
         </Card>
         <div className="mt-4">
           <ActiveOfferBanner />
@@ -832,12 +849,8 @@ export function FillPrescription() {
 
   /* 9. Payment */
   if (step === "payment") {
-    const activeOffer = getActiveOffer();
-    const offerCredit =
-      activeOffer?.id === "first-fill" || activeOffer?.code === "WELCOME20"
-        ? Math.min(20, total$)
-        : 0;
-    const due = Math.max(0, Math.round((total$ - offerCredit) * 100) / 100);
+    const due = offerQuote.due;
+    const offerCredit = offerQuote.credit;
 
     return (
       <EntryFlow
@@ -846,7 +859,8 @@ export function FillPrescription() {
         onNext={goNext}
         nextLabel={due > 0 ? tx("Place order · {amount}").replace("{amount}", `$${due.toFixed(2)}`) : tx("Place order")}
       >
-        <ActiveOfferBanner />
+        <CheckoutOffers context={offerCtx} />
+        <div className="mt-4">
         {due <= 0 ? (
           <Card className="p-6 text-center">
             <span className="text-3xl" aria-hidden>✅</span>
@@ -874,12 +888,13 @@ export function FillPrescription() {
             <p className="mt-3 text-xs text-ink-tertiary">{tx("🔒 Demo checkout — no real payment is processed.")}</p>
           </Card>
         )}
+        </div>
       </EntryFlow>
     );
   }
 
   /* Confirmation */
-  return <Confirmation state={s} total={total$} onHome={() => nav("/app")} onTrack={() => nav("/pharmacy")} />;
+  return <Confirmation state={s} total={offerQuote.due} onHome={() => nav("/app")} onTrack={() => nav("/pharmacy")} />;
 }
 
 function Confirmation({ state, total, onHome, onTrack }: { state: State; total: number; onHome: () => void; onTrack: () => void }) {

@@ -8,7 +8,7 @@ import { useChromeVisibility } from "@/lib/useChromeVisibility";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
 import { Caret } from "@/components/ui";
 import { FRAME, SURFACE } from "@/components/layout/Grid";
-import { isAlwaysPublicPath, isDualBrowsePath } from "@/lib/marketingPaths";
+import { isAlwaysPublicPath, isDualBrowsePath, isFocusedPatientFlow } from "@/lib/marketingPaths";
 
 const NAVCDN = "https://static.pocketpills.com/acq-web/redesign/navbar";
 
@@ -285,7 +285,7 @@ export type HeaderVariant = "marketing" | "app" | "focused" | "minimal";
 function useVariant(): HeaderVariant {
   const { pathname } = useLocation();
   const { signedIn } = useUser();
-  if (pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer" || pathname === "/delivery-check") return "focused";
+  if (isFocusedPatientFlow(pathname)) return "focused";
   if (pathname === "/login" || pathname === "/get-started") return "minimal";
   if (pathname.startsWith("/provider")) return "minimal";
   /* Homepage + How it works / Support — always marketing nav. */

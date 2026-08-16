@@ -16,6 +16,12 @@ export function isAlwaysPublicPath(pathname: string) {
   return false;
 }
 
+/** Fill / transfer / care — focused chrome, no marketing footer. */
+export function isFocusedPatientFlow(pathname: string) {
+  if (pathname.startsWith("/care/")) return true;
+  return pathname === "/fill" || pathname === "/transfer" || pathname === "/delivery-check";
+}
+
 /** Pharmacy / drug / offers browse: marketing when logged out, AppShell when logged in. */
 export function isDualBrowsePath(pathname: string) {
   if (
@@ -26,7 +32,10 @@ export function isDualBrowsePath(pathname: string) {
   ) {
     return true;
   }
-  if (pathname.startsWith("/drug/")) return true;
+  if (pathname.startsWith("/drug/")) {
+    if (/^\/drug\/[^/]+\/order/.test(pathname)) return false;
+    return true;
+  }
   if (pathname.startsWith("/consult/")) return true;
   if (pathname.startsWith("/treatment/")) return true;
   return false;

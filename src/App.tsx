@@ -66,6 +66,7 @@ import { TransferPrescription } from "@/pages/entry/TransferPrescription";
 import { DeliveryCheck } from "@/pages/entry/DeliveryCheck";
 import { MedicationsIndex } from "@/pages/drug/MedicationsIndex";
 import { DrugDetail } from "@/pages/drug/DrugDetail";
+import { MedicationOrder } from "@/pages/drug/MedicationOrder";
 import { Offers } from "@/pages/Offers";
 import { PharmaciesIndex, PharmaciesByRegion } from "@/pages/PharmaciesByRegion";
 
@@ -252,6 +253,7 @@ export default function App() {
             <Route path="/appointments/services/:id" element={<ServiceDetail />} />
 
             <Route path="/fill" element={<FillPrescription />} />
+            <Route path="/drug/:slug/order" element={<MedicationOrder />} />
             <Route path="/transfer" element={<TransferPrescription />} />
 
             <Route path="/care/eligibility" element={<Eligibility />} />

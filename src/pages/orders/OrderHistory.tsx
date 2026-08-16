@@ -775,7 +775,15 @@ export function OrderDetail() {
                   </span>
                 </p>
               )}
-              {!o.prescriber && !o.pharmacist && (
+              {o.pharmacyName && (
+                <p className={`${o.prescriber || o.pharmacist ? "mt-3" : "mt-2"} text-sm text-ink-secondary`}>
+                  <span className="text-ink-tertiary">{tx("Pharmacy")}</span>
+                  <span className="mt-0.5 block font-medium text-[color:var(--pp-primary-950)]">
+                    {o.pharmacyName}
+                  </span>
+                </p>
+              )}
+              {!o.prescriber && !o.pharmacist && !o.pharmacyName && (
                 <p className="mt-2 text-sm text-ink-secondary">{tx("Your PocketPills care team is on it.")}</p>
               )}
             </div>

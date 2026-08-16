@@ -9,6 +9,7 @@ import { useUser } from "@/lib/user";
 import { getHubPharmacy } from "@/lib/pharmacySearch";
 import { loadSelectedPharmacy } from "@/lib/pharmacies";
 import { useI18n } from "@/lib/i18n";
+import { CheckoutOffers } from "@/components/offers/CheckoutOffers";
 
 /* ── Flow model ─────────────────────────────────────────── */
 const STEPS = [
@@ -769,6 +770,10 @@ export function TransferPrescription() {
               onChange={(e) => setCard((c) => ({ ...c, cvv: e.target.value }))}
             />
           </div>
+        </div>
+
+        <div className="mt-6">
+          <CheckoutOffers context={{ kind: "transfer", amount: 0 }} />
         </div>
       </TransferShell>
     );

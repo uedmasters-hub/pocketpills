@@ -1,22 +1,9 @@
 import { Link } from "react-router-dom";
-import { getActiveOffer, saveActiveOfferId } from "@/lib/offers";
+import { getActiveOffer, saveActiveOfferId, subscribeOffers } from "@/lib/offers";
 import { useSyncExternalStore } from "react";
 import { useI18n } from "@/lib/i18n";
 
-function subscribe(cb: () => void) {
-  window.addEventListener("storage", cb);
-  window.addEventListener("pp-offers-change", cb);
-  return () => {
-    window.removeEventListener("storage", cb);
-    window.removeEventListener("pp-offers-change", cb);
-  };
-}
-
 function getSnapshot() {
-  return loadActiveOfferIdSafe();
-}
-
-function loadActiveOfferIdSafe() {
   try {
     return localStorage.getItem("pp.offers.active");
   } catch {
@@ -24,15 +11,10 @@ function loadActiveOfferIdSafe() {
   }
 }
 
-/** Notify same-tab listeners when the active offer changes. */
-export function notifyOffersChange() {
-  window.dispatchEvent(new Event("pp-offers-change"));
-}
-
 /** Compact checkout banner when an offer is applied from /offers. */
 export function ActiveOfferBanner() {
   const { tx } = useI18n();
-  const activeId = useSyncExternalStore(subscribe, getSnapshot, () => null);
+  const activeId = useSyncExternalStore(subscribeOffers, getSnapshot, () => null);
   const offer = activeId ? getActiveOffer() : null;
   if (!offer) return null;
 
@@ -65,7 +47,6 @@ export function ActiveOfferBanner() {
           className="text-sm font-medium text-ink-tertiary transition-opacity hover:opacity-70"
           onClick={() => {
             saveActiveOfferId(null);
-            notifyOffersChange();
           }}
         >
           {tx("Remove")}

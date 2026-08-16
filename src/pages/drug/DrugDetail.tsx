@@ -139,10 +139,16 @@ export function DrugDetail() {
             </p>
 
             <div className="mt-5 space-y-2">
-              <Button fullWidth onClick={() => nav("/appointments")}>
+              <Button fullWidth onClick={() => nav(`/appointments?drug=${drug.slug}`)}>
                 {tx("Request via consultation")}
               </Button>
-              <Button fullWidth variant="secondary" onClick={() => nav("/fill")}>
+              <Button
+                fullWidth
+                variant="secondary"
+                onClick={() =>
+                  nav(`/drug/${drug.slug}/order?dose=${encodeURIComponent(dosage)}&qty=${qty}`)
+                }
+              >
                 {tx("I have a prescription")}
               </Button>
             </div>

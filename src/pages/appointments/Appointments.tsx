@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { RatingChipSkeleton } from "@/components/ui";
 import { RatingChip } from "@/components/reviews/RatingChip";
 import { PageSearchField } from "@/components/PageSearchField";
-import { type Treatment } from "@/lib/data";
+import { drugs, type Treatment } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import {
   appointmentIsPast,
@@ -112,6 +112,13 @@ export function Appointments() {
   const specialtyParam = params.get("specialty");
   const specialtyId = isSpecialtyId(specialtyParam) ? specialtyParam : null;
   const specialty = specialtyId ? specialtyById(specialtyId) : undefined;
+
+  useEffect(() => {
+    const drugSlug = params.get("drug");
+    if (!drugSlug) return;
+    const d = drugs.find((x) => x.slug === drugSlug);
+    if (d) setQ(d.name);
+  }, [params]);
 
   const allAppts = useMemo(() => getAppointments(), [tick]);
   const upcomingAppts = allAppts.filter(

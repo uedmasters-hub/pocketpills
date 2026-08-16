@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
+import { CheckoutOffers, useOfferQuote } from "@/components/offers/CheckoutOffers";
 import { useI18n } from "@/lib/i18n";
 import { formatFee } from "@/lib/appointments";
 
@@ -42,11 +43,18 @@ export function BookingCheckout({
   const [useSaved, setUseSaved] = useState(Boolean(savedLast4));
   const [confirmation, setConfirmation] = useState<{ no: string; id: string } | null>(null);
   const [sendStep, setSendStep] = useState(0);
+  const offerCtx = useMemo(
+    () => ({ kind: "consult" as const, amount: fee, specialty: specialtyLabel }),
+    [fee, specialtyLabel],
+  );
+  const offerQuote = useOfferQuote(offerCtx);
 
   const digits = card.replace(/\s/g, "");
-  const canPay = useSaved
-    ? Boolean(savedLast4)
-    : digits.length >= 12 && exp.replace(/\s/g, "").length >= 4 && cvc.length >= 3;
+  const canPay =
+    offerQuote.due <= 0 ||
+    (useSaved
+      ? Boolean(savedLast4)
+      : digits.length >= 12 && exp.replace(/\s/g, "").length >= 4 && cvc.length >= 3);
 
   const pay = () => {
     if (!canPay) return;
@@ -118,6 +126,22 @@ export function BookingCheckout({
                 {formatFee(fee)}
               </span>
             </div>
+            {offerQuote.credit > 0 ? (
+              <div className="mt-3 flex items-center justify-between text-sm">
+                <span className="text-ink-secondary">{tx("Offer")}</span>
+                <span className="font-medium text-[color:var(--pp-green)] tnum">
+                  −${offerQuote.credit.toFixed(2)}
+                </span>
+              </div>
+            ) : null}
+            {offerQuote.credit > 0 ? (
+              <div className="mt-2 flex items-center justify-between border-t border-line pt-3">
+                <span className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Due today")}</span>
+                <span className="font-display text-xl font-medium text-[color:var(--pp-primary-950)] tnum">
+                  {formatFee(offerQuote.due)}
+                </span>
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-2xl border border-line bg-white p-5">
@@ -180,8 +204,10 @@ export function BookingCheckout({
             </p>
           </div>
 
+          <CheckoutOffers context={offerCtx} />
+
           <Button fullWidth disabled={!canPay} onClick={pay} className="!rounded-2xl">
-            {tx("Pay {amount}").replace("{amount}", formatFee(fee))}
+            {tx("Pay {amount}").replace("{amount}", formatFee(offerQuote.due))}
           </Button>
         </div>
       ) : null}

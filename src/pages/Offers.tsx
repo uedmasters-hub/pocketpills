@@ -512,7 +512,7 @@ export function Offers() {
           </li>
           <li>
             {tx(
-              "When you fill or transfer, the active code is ready to paste — insurance still bills first.",
+              "On the payment step, related offers appear for that order. Apply one — insurance still bills first.",
             )}
           </li>
         </ol>

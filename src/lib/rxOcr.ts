@@ -294,6 +294,52 @@ export function parsePrescriptionText(raw: string): RxScanResult {
   return { text, meds, catalogHits, prescriber, clinic };
 }
 
+export type DrugMatchStatus = "matched" | "unmatched" | "unreadable";
+
+/** Check whether OCR text/meds refer to a drug the patient already picked. */
+export function matchSelectedDrug(
+  selected: Pick<Drug, "slug" | "name"> & { generic?: string },
+  result: RxScanResult,
+): { status: DrugMatchStatus; hit?: ExtractedMed } {
+  const catalog = drugs.find((d) => d.slug === selected.slug);
+  const tokens = namesFor(
+    catalog ?? {
+      slug: selected.slug,
+      name: selected.name,
+      generic: selected.generic,
+      cls: "Various",
+      forms: [],
+      dosages: [],
+      manufacturer: "",
+      coverage: 0,
+      price: 0,
+      rx: true,
+    },
+  )
+    .map((t) => t.toLowerCase().replace(/-/g, " ").trim())
+    .filter((t) => t.length >= 4);
+
+  const hay = normalizeOcr(`${result.text}\n${result.meds.map((m) => m.name).join("\n")}`).toLowerCase();
+  if (!result.text.trim() && result.meds.length === 0) return { status: "unreadable" };
+
+  const hit = result.meds.find((m) => {
+    if (m.slug && m.slug === selected.slug) return true;
+    const n = `${m.slug ?? ""} ${m.name}`.toLowerCase().replace(/-/g, " ");
+    return tokens.some((t) => n.includes(t) || t.includes(n));
+  });
+  if (hit) return { status: "matched", hit };
+  if (tokens.some((t) => hay.includes(t))) return { status: "matched" };
+
+  const words = hay.split(/[^a-z0-9]+/).filter((w) => w.length >= 5);
+  for (const t of tokens) {
+    for (const p of t.split(/\s+/)) {
+      if (p.length < 6) continue;
+      if (words.some((w) => editDistance(w, p) <= 1)) return { status: "matched" };
+    }
+  }
+  return { status: "unmatched" };
+}
+
 export function isReadableImage(file: File): boolean {
   if (/pdf/i.test(file.type) || /\.pdf$/i.test(file.name)) return false;
   if (file.type.startsWith("image/")) return true;

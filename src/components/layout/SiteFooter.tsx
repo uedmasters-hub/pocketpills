@@ -6,7 +6,7 @@ import { useDismiss } from "@/lib/useDismiss";
 import { LANG_META, type LangCode } from "@/lib/accountPrefs";
 import { LogoMark } from "@/components/Logo";
 import { FRAME, SURFACE, FOOTER_GAP } from "@/components/layout/Grid";
-import { isAlwaysPublicPath, isDualBrowsePath } from "@/lib/marketingPaths";
+import { isAlwaysPublicPath, isDualBrowsePath, isFocusedPatientFlow } from "@/lib/marketingPaths";
 import { FEATURED_DELIVERY_DISTRICTS, pharmacyDirectoryPath } from "@/lib/nepalCities";
 
 const CDN = "https://static.pocketpills.com/acq-web";
@@ -166,7 +166,7 @@ export type FooterVariant = "full" | "compact" | "none";
 function useFooterVariant(): FooterVariant {
   const { pathname } = useLocation();
   const { signedIn } = useUser();
-  if (pathname.startsWith("/care/") || pathname === "/fill" || pathname === "/transfer" || pathname === "/delivery-check") return "none";
+  if (isFocusedPatientFlow(pathname)) return "none";
   if (pathname === "/login" || pathname === "/get-started") return "none";
   if (pathname === "/" || isAlwaysPublicPath(pathname)) return "full";
   /* Treatment / Pharmacy: full footer only for guests. */

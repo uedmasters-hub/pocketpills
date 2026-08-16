@@ -24,6 +24,8 @@ export interface Order {
   pharmacist?: string;
   /** Source pharmacy name — set for transfer orders */
   fromPharmacy?: string;
+  /** Fulfilling pharmacy for a medication fill */
+  pharmacyName?: string;
   /** Lab centre name — set for lab visit orders */
   labName?: string;
   /** Scheduled visit slot for lab / consult-style bookings */
@@ -237,6 +239,41 @@ export function labStepIndex(status: OrderStatus): number {
   if (status === "out_for_delivery") return 2;
   if (status === "delivered") return 3;
   return 0;
+}
+
+export function createMedicationOrder(input: {
+  name: string;
+  strength: string;
+  qty: number;
+  unitPrice: number;
+  dispensingFee: number;
+  insuranceCovered: number;
+  address: string;
+  patient?: string;
+  cardLast4?: string;
+  due: number;
+  pharmacyName?: string;
+}): Order {
+  const n = Math.floor(1000 + Math.random() * 9000);
+  const today = new Date().toISOString().slice(0, 10);
+  return addOrder({
+    id: `PP-MED-${n}`,
+    invoiceNo: `INV-MED-${n}`,
+    date: today,
+    type: "fill",
+    status: "verifying",
+    patient: input.patient ?? "Ramesh Mandal",
+    address: input.address,
+    items: [{ name: input.name, strength: input.strength, qty: input.qty, unitPrice: input.unitPrice }],
+    dispensingFee: input.dispensingFee,
+    insuranceCovered: input.insuranceCovered,
+    payment: {
+      method: input.due <= 0 ? "insurance" : "mixed",
+      cardLast4: input.due <= 0 ? undefined : input.cardLast4 ?? "4242",
+    },
+    pharmacist: input.pharmacyName ? undefined : "Care team",
+    pharmacyName: input.pharmacyName,
+  });
 }
 
 export function createLabOrder(input: {

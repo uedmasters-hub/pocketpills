@@ -217,6 +217,31 @@ const FR: Record<string, string> = {
     "sur une offre enregistrée (une seule active à la fois).",
   "When you fill or transfer, the active code is ready to paste — insurance still bills first.":
     "Quand vous faites remplir ou transférer, le code actif est prêt à coller — l’assurance facture toujours en premier.",
+  "On the payment step, related offers appear for that order. Apply one — insurance still bills first.":
+    "À l’étape du paiement, les offres liées à cette commande s’affichent. Appliquez-en une — l’assurance facture toujours en premier.",
+  "Related offers": "Offres liées",
+  "One offer per payment. Insurance still bills first.":
+    "Une offre par paiement. L’assurance facture toujours en premier.",
+  "Enter a code": "Entrez un code",
+  "Promo code": "Code promo",
+  "Apply": "Appliquer",
+  "That code isn’t on our offers list.": "Ce code n’est pas dans nos offres.",
+  "Code applied.": "Code appliqué.",
+  "Applied": "Appliquée",
+  "−{credit} off today": "−{credit} aujourd’hui",
+  "This offer doesn’t apply to this payment. Choose another, or keep it for a later order.":
+    "Cette offre ne s’applique pas à ce paiement. Choisissez-en une autre, ou gardez-la pour plus tard.",
+  "This offer is for a different visit type. It’s saved, but it won’t change today’s total.":
+    "Cette offre concerne un autre type de visite. Elle est enregistrée, mais ne change pas le total d’aujourd’hui.",
+  "Add the matching medication to use this cash price.":
+    "Ajoutez le médicament correspondant pour ce prix comptant.",
+  "No dispensing fee on this order to waive.": "Aucuns frais de délivrance à annuler sur cette commande.",
+  "Applies when you choose same-day delivery.": "S’applique si vous choisissez la livraison le jour même.",
+  "Noted on this order. It may post with your card or after the fill.":
+    "Noté sur cette commande. Le rabais peut s’afficher sur votre carte ou après la délivrance.",
+  "Credit is applied after the first successful fill from this transfer.":
+    "Le crédit s’applique après la première délivrance réussie de ce transfert.",
+  "Offer": "Offre",
   "Offer applied": "Offre appliquée",
   "Change": "Changer",
   "Remove": "Retirer",
@@ -457,6 +482,29 @@ const FR: Record<string, string> = {
     "Estimation. Le prix final dépend de votre ordonnance et de votre régime.",
   "Request via consultation": "Demander via consultation",
   "I have a prescription": "J’ai une ordonnance",
+  "Selected medication": "Médicament choisi",
+  "How should we get the prescription for {name}?": "Comment obtenir l’ordonnance pour {name} ?",
+  "This order is only for the medication you picked. A pharmacist still reviews before it ships.":
+    "Cette commande concerne uniquement le médicament choisi. Un pharmacien vérifie avant l’expédition.",
+  "Snap the prescription or label for this medication": "Photographiez l’ordonnance ou l’étiquette de ce médicament",
+  "We'll request this medication from your current pharmacy": "Nous demanderons ce médicament à votre pharmacie actuelle",
+  "Checking your prescription": "Vérification de votre ordonnance",
+  "We're looking for {name} on the photo — not building a new medication list.":
+    "Nous cherchons {name} sur la photo — sans créer une nouvelle liste de médicaments.",
+  "We'll check the photo for {name}. If we can't read it, you can still order — the pharmacy will review.":
+    "Nous vérifierons la photo pour {name}. Si la lecture échoue, vous pouvez quand même commander — la pharmacie relira.",
+  "We found {name} on your prescription": "Nous avons trouvé {name} sur votre ordonnance",
+  "We'll confirm {name} when the prescription arrives": "Nous confirmerons {name} à l’arrivée de l’ordonnance",
+  "We couldn't confirm {name} on this photo": "Nous n’avons pas pu confirmer {name} sur cette photo",
+  "The photo will still go to the pharmacy. You can order {name} anyway.":
+    "La photo sera tout de même envoyée à la pharmacie. Vous pouvez commander {name} quand même.",
+  "Continue with {name}": "Continuer avec {name}",
+  "Matched to your selected medication": "Correspond au médicament choisi",
+  "Not confirmed by scan — still send to pharmacy": "Non confirmé par la lecture — envoi à la pharmacie quand même",
+  "We'll only request {name} — this is not a full pharmacy transfer.":
+    "Nous demanderons seulement {name} — ce n’est pas un transfert complet de pharmacie.",
+  "A pharmacist will review the prescription image before this fill is dispensed.":
+    "Un pharmacien examinera l’image de l’ordonnance avant la délivrance.",
   "Licensed Canadian pharmacists review every order before it ships.":
     "Des pharmaciens canadiens autorisés examinent chaque commande avant l’expédition.",
   "Available form": "Forme disponible",
@@ -740,6 +788,31 @@ const NE: Record<string, string> = {
     "एउटा सेभ अफरमा (एक पटकमा एउटा मात्र सक्रिय)।",
   "When you fill or transfer, the active code is ready to paste — insurance still bills first.":
     "भर्दा वा स्थानान्तरण गर्दा सक्रिय कोड पेस्ट गर्न तयार हुन्छ — बीमाले पहिले बिल गर्छ।",
+  "On the payment step, related offers appear for that order. Apply one — insurance still bills first.":
+    "भुक्तानी चरणमा त्यो अर्डरसँग सम्बन्धित अफर देखिन्छन्। एउटा लागू गर्नुहोस् — बीमाले पहिले बिल गर्छ।",
+  "Related offers": "सम्बन्धित अफरहरू",
+  "One offer per payment. Insurance still bills first.":
+    "एक भुक्तानीमा एउटा अफर। बीमाले पहिले बिल गर्छ।",
+  "Enter a code": "कोड लेख्नुहोस्",
+  "Promo code": "प्रोमो कोड",
+  "Apply": "लागू गर्नुहोस्",
+  "That code isn’t on our offers list.": "यो कोड हाम्रा अफरमा छैन।",
+  "Code applied.": "कोड लागू भयो।",
+  "Applied": "लागू भयो",
+  "−{credit} off today": "आज −{credit} छुट",
+  "This offer doesn’t apply to this payment. Choose another, or keep it for a later order.":
+    "यो अफर यो भुक्तानीमा लागू हुँदैन। अर्को छान्नुहोस्, वा पछिका लागि राख्नुहोस्।",
+  "This offer is for a different visit type. It’s saved, but it won’t change today’s total.":
+    "यो अफर अर्को प्रकारको भिजिटका लागि हो। सेभ छ, तर आजको जम्मा बदलिँदैन।",
+  "Add the matching medication to use this cash price.":
+    "यो नगद मूल्य प्रयोग गर्न मिल्ने औषधि थप्नुहोस्।",
+  "No dispensing fee on this order to waive.": "यो अर्डरमा छुट गर्ने डिस्पेन्सिङ शुल्क छैन।",
+  "Applies when you choose same-day delivery.": "सोही दिनको डेलिभरी छान्दा लागू हुन्छ।",
+  "Noted on this order. It may post with your card or after the fill.":
+    "यो अर्डरमा नोट भयो। कार्ड वा भरिसकेपछि देखिन सक्छ।",
+  "Credit is applied after the first successful fill from this transfer.":
+    "यो ट्रान्सफरबाट पहिलो सफल भर्नापछि क्रेडिट लागू हुन्छ।",
+  "Offer": "अफर",
   "Offer applied": "अफर लागू भयो",
   "Change": "बदल्नुहोस्",
   "Remove": "हटाउनुहोस्",
@@ -975,6 +1048,29 @@ const NE: Record<string, string> = {
     "अनुमान। अन्तिम मूल्य तपाईंको प्रिस्क्रिप्शन र योजनामा निर्भर।",
   "Request via consultation": "परामर्श मार्फत अनुरोध",
   "I have a prescription": "मेरोसँग प्रिस्क्रिप्शन छ",
+  "Selected medication": "छानिएको औषधि",
+  "How should we get the prescription for {name}?": "{name} को प्रिस्क्रिप्शन कसरी लिने?",
+  "This order is only for the medication you picked. A pharmacist still reviews before it ships.":
+    "यो अर्डर तपाईंले छानेको औषधिका लागि मात्र हो। पठाउनुअघि फार्मासिस्टले समीक्षा गर्छन्।",
+  "Snap the prescription or label for this medication": "यस औषधिको प्रिस्क्रिप्शन वा लेबलको फोटो खिच्नुहोस्",
+  "We'll request this medication from your current pharmacy": "हामी यो औषधि तपाईंको हालको फार्मेसीबाट माग्नेछौं",
+  "Checking your prescription": "प्रिस्क्रिप्शन जाँच हुँदैछ",
+  "We're looking for {name} on the photo — not building a new medication list.":
+    "फोटोमा {name} खोज्दैछौं — नयाँ औषधि सूची बनाउँदैनौं।",
+  "We'll check the photo for {name}. If we can't read it, you can still order — the pharmacy will review.":
+    "फोटोमा {name} जाँच्छौं। पढ्न नसके पनि अर्डर गर्न सकिन्छ — फार्मेसीले समीक्षा गर्छ।",
+  "We found {name} on your prescription": "प्रिस्क्रिप्शनमा {name} भेटियो",
+  "We'll confirm {name} when the prescription arrives": "प्रिस्क्रिप्शन आएपछि {name} पुष्टि गर्नेछौं",
+  "We couldn't confirm {name} on this photo": "यो फोटोमा {name} पुष्टि गर्न सकिएन",
+  "The photo will still go to the pharmacy. You can order {name} anyway.":
+    "फोटो फार्मेसीमा पठिन्छ। तपाईं {name} अर्डर गर्न सक्नुहुन्छ।",
+  "Continue with {name}": "{name} सँग जारी राख्नुहोस्",
+  "Matched to your selected medication": "छानिएको औषधिसँग मिल्यो",
+  "Not confirmed by scan — still send to pharmacy": "स्क्यानले पुष्टि भएन — फार्मेसीमा पठाउने",
+  "We'll only request {name} — this is not a full pharmacy transfer.":
+    "हामी {name} मात्र माग्नेछौं — यो पूरा फार्मेसी ट्रान्सफर होइन।",
+  "A pharmacist will review the prescription image before this fill is dispensed.":
+    "यो भर्नुअघि फार्मासिस्टले प्रिस्क्रिप्शनको तस्बिर समीक्षा गर्नेछन्।",
   "Licensed Canadian pharmacists review every order before it ships.":
     "इजाजतपत्र प्राप्त क्यानेडियन फार्मासिस्टले पठाउनुअघि हरेक अर्डर समीक्षा गर्छन्।",
   "Available form": "उपलब्ध रूप",

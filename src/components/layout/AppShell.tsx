@@ -14,6 +14,7 @@ import { useDismiss } from "@/lib/useDismiss";
 import { useChromeVisibility } from "@/lib/useChromeVisibility";
 import { FRAME, SURFACE } from "@/components/layout/Grid";
 import { useI18n } from "@/lib/i18n";
+import { isFocusedPatientFlow } from "@/lib/marketingPaths";
 import type { MessageKey } from "@/lib/i18n";
 
 /* ── sidebar icons ─────────────────────────────────────── */
@@ -224,12 +225,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const chromeHidden = useChromeVisibility();
   const { review } = useRightRail();
   const isBookFlow = pathname.startsWith("/appointments/book");
-  const focusedFlow =
-    pathname.startsWith("/care/") ||
-    pathname === "/fill" ||
-    pathname === "/transfer" ||
-    pathname === "/delivery-check" ||
-    isBookFlow;
+  const isMedOrder = /^\/drug\/[^/]+\/order/.test(pathname);
+  const splitJourney = isBookFlow || isMedOrder;
+  const focusedFlow = isFocusedPatientFlow(pathname) || splitJourney;
   /* PDP / focused browse pages own a sticky right column — Activity would collide. */
   const isDrugDetail = /^\/drug\/[^/]+$/.test(pathname);
   const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname);
@@ -261,7 +259,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
       <AnnouncementBar />
       <SiteHeader />
-      {isBookFlow ? (
+      {splitJourney ? (
         <div className={`${FRAME} pb-16 pt-8`}>
           <main id="main" key={pathname} tabIndex={-1} className={`${SURFACE} min-w-0 animate-fade-up`}>
             {children}
