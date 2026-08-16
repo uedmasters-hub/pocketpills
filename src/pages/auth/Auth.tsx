@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { pathFromLocation, peekAuthReturn, consumeAuthReturn, isSafeReturnPath, saveAuthReturn } from "@/lib/authReturn";
 import { Card, Field, Progress, Badge, Switch } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { useUser, newInsuranceId } from "@/lib/user";
@@ -224,11 +225,18 @@ function OtpInput({ value, onChange }: { value: string; onChange: (v: string) =>
 /* ── Log in ─────────────────────────────────────────────── */
 type LoginPhase = "form" | "otp" | "magic";
 
+function resumeDest(preferred?: unknown): string {
+  if (isSafeReturnPath(preferred)) return preferred.trim();
+  return peekAuthReturn() ?? "/app";
+}
+
 export function Login() {
   const { tx } = useI18n();
   const { logIn, signedIn } = useUser();
   const nav = useNavigate();
-  const loc = useLocation() as { state?: { from?: string } };
+  const loc = useLocation();
+  const from = (loc.state as { from?: string } | null)?.from;
+  const dest = resumeDest(from);
   const idField = useId();
   const pwField = useId();
 
@@ -243,13 +251,13 @@ export function Login() {
   const kind = detectId(identifier);
   const isPhone = kind === "phone";
   const isEmail = kind === "email";
-  const dest = loc.state?.from ?? "/app";
 
   if (signedIn) return <Navigate to={dest} replace />;
 
   const finish = (who: string) => {
     logIn(who.includes("@") ? who : `${who.replace(/\D/g, "")}@phone.pocketpills`);
     nav(dest, { replace: true });
+    consumeAuthReturn();
   };
 
   const social = (provider: string) => {
@@ -455,6 +463,7 @@ export function Login() {
             <div className="mt-7 border-t border-line pt-5 text-center">
               <Link
                 to="/get-started"
+                state={{ from: dest }}
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-[color:var(--pp-primary-950)] hover:underline"
               >
                 {tx("New to Pocketpills?")} <span className="underline">{tx("Create account")}</span>
@@ -544,6 +553,9 @@ export function SignUp() {
   const { tx } = useI18n();
   const { signUp, update, user } = useUser();
   const nav = useNavigate();
+  const loc = useLocation();
+  const from = (loc.state as { from?: string } | null)?.from;
+  const dest = resumeDest(from);
   const [step, setStep] = useState(0);
   const [f, setF] = useState({
     email: "", password: "", firstName: "", lastName: "", dob: "", phone: "",
@@ -573,7 +585,8 @@ export function SignUp() {
         : [],
       onboarded: true,
     });
-    nav("/app", { replace: true });
+    consumeAuthReturn();
+    nav(dest, { replace: true });
   };
 
   const stepTitle =
@@ -713,7 +726,7 @@ export function SignUp() {
       {step === 0 && (
         <p className="mt-5 text-center text-sm text-ink-secondary">
           {tx("Already a member?")}{" "}
-          <Link to="/login" className="font-semibold text-[color:var(--pp-violet)] hover:underline">
+          <Link to="/login" state={{ from: dest }} className="font-semibold text-[color:var(--pp-violet)] hover:underline">
             {tx("Sign in")}
           </Link>
         </p>
@@ -726,6 +739,10 @@ export function SignUp() {
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { signedIn } = useUser();
   const loc = useLocation();
-  if (!signedIn) return <Navigate to="/login" state={{ from: loc.pathname }} replace />;
+  if (!signedIn) {
+    const from = pathFromLocation(loc);
+    saveAuthReturn(from);
+    return <Navigate to="/login" state={{ from }} replace />;
+  }
   return <>{children}</>;
 }

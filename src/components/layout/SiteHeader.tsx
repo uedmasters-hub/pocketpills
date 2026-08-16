@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useUser } from "@/lib/user";
+import { pathFromLocation, saveAuthReturn } from "@/lib/authReturn";
 import { useI18n } from "@/lib/i18n";
 import { LogoLink } from "@/components/Logo";
 import { useChromeVisibility } from "@/lib/useChromeVisibility";
@@ -394,7 +395,9 @@ function SupportMenu() {
 export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}) {
   const derived = useVariant();
   const variant = forced ?? derived;
-  const { pathname } = useLocation();
+  const loc = useLocation();
+  const { pathname } = loc;
+  const resume = pathFromLocation(loc);
   const { signedIn } = useUser();
   const { t } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
@@ -493,12 +496,19 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
           <>
             <Link
               to="/login"
+              state={{ from: resume }}
+              onClick={() => saveAuthReturn(resume)}
               className="hidden h-11 items-center gap-1.5 rounded-full px-3 text-base font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)] sm:inline-flex"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><circle cx="12" cy="8" r="3.6" /><path d="M4.5 20c0-3.8 3.4-5.8 7.5-5.8s7.5 2 7.5 5.8" /></svg>
               {t("nav.logIn")}
             </Link>
-            <Link to="/get-started" className={CTA}>
+            <Link
+              to="/get-started"
+              state={{ from: resume }}
+              onClick={() => saveAuthReturn(resume)}
+              className={CTA}
+            >
               {t("nav.join")}
             </Link>
           </>

@@ -9,6 +9,7 @@ import {
   type DeliverySpeed,
 } from "@/lib/postal";
 import { useUser } from "@/lib/user";
+import { saveAuthReturn } from "@/lib/authReturn";
 import { getRegion } from "@/lib/pharmacies";
 import { useI18n } from "@/lib/i18n";
 
@@ -319,10 +320,33 @@ function OptionsPanel({
       </div>
 
       <div className="space-y-2 pt-1">
-        <Button type="button" fullWidth onClick={() => nav(signedIn ? "/transfer" : "/get-started")}>
+        <Button
+          type="button"
+          fullWidth
+          onClick={() => {
+            if (signedIn) {
+              nav("/transfer");
+              return;
+            }
+            saveAuthReturn("/transfer");
+            nav("/get-started", { state: { from: "/transfer" } });
+          }}
+        >
           {signedIn ? tx("Transfer prescriptions here") : tx("Create account to continue")}
         </Button>
-        <Button type="button" fullWidth variant="secondary" onClick={() => nav(signedIn ? "/fill" : "/login")}>
+        <Button
+          type="button"
+          fullWidth
+          variant="secondary"
+          onClick={() => {
+            if (signedIn) {
+              nav("/fill");
+              return;
+            }
+            saveAuthReturn("/fill");
+            nav("/login", { state: { from: "/fill" } });
+          }}
+        >
           {signedIn ? tx("Fill a prescription") : tx("Log in")}
         </Button>
         <button
