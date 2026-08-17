@@ -333,9 +333,6 @@ export function BookAppointment() {
             <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
               {tx("Who is this visit for?")}
             </h2>
-            <p className="mt-1 text-sm text-ink-tertiary">
-              {tx("Choose a patient profile. History and reports are optional.")}
-            </p>
 
             <input
               ref={fileRef}
@@ -405,12 +402,14 @@ export function BookAppointment() {
                     </div>
                     <div className="flex flex-wrap gap-2 pt-1">
                       <Button
+                        size="sm"
                         onClick={addPassenger}
                         disabled={!newName.trim() || Boolean(newDob.trim() && !isValidDob(newDob.trim()))}
                       >
                         {tx("Save patient")}
                       </Button>
                       <Button
+                        size="sm"
                         variant="ghost"
                         onClick={() => {
                           setVisitTab("saved");
@@ -472,7 +471,7 @@ export function BookAppointment() {
                 ) : patients.length === 0 ? (
                   <p className="text-sm text-ink-tertiary">{tx("Add a patient above to continue.")}</p>
                 ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={tx("Saved patient(s)")}>
                     {patients.map((p) => {
                       const on = patientId === p.id;
                       const isPrimary = p.id === "self";
@@ -481,16 +480,17 @@ export function BookAppointment() {
                         <div
                           key={p.id}
                           className={
-                            "relative rounded-2xl border bg-white transition-colors " +
+                            "relative rounded-xl border bg-white transition-colors " +
                             (on
-                              ? "border-[color:var(--pp-primary-950)] shadow-[0_8px_24px_rgba(24,7,48,0.06)]"
-                              : "border-line hover:border-[color:var(--border-strong)]")
+                              ? "border-primary"
+                              : "border-line hover:border-line-strong")
                           }
                         >
                           <button
                             type="button"
+                            role="radio"
+                            aria-checked={on}
                             onClick={() => setPatientId(p.id)}
-                            aria-pressed={on}
                             className={"w-full p-4 text-left " + (isPrimary ? "" : "pr-10")}
                           >
                             <span className="flex items-start justify-between gap-2">

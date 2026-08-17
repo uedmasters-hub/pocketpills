@@ -90,7 +90,11 @@ export function SideTabPanel({
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-white">
       <div className="grid md:grid-cols-[minmax(11rem,15rem)_minmax(0,1fr)]">
-        <div className="border-b border-line md:border-b-0 md:border-r" role="tablist" aria-label={label}>
+        <div
+          className="border-b border-line md:border-b-0 md:border-r md:border-line"
+          role="tablist"
+          aria-label={label}
+        >
           {tabs.map((m) => {
             const on = value === m.id;
             return (
@@ -103,7 +107,7 @@ export function SideTabPanel({
                 className={
                   "flex w-full flex-col items-start border-b border-line px-4 py-3.5 text-left last:border-b-0 " +
                   (on
-                    ? "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]"
+                    ? "bg-primary-subtle font-semibold text-primary"
                     : "bg-white text-ink-secondary hover:bg-[color:var(--state-hover)]")
                 }
               >
@@ -156,7 +160,6 @@ export function ChoosePaymentOption({
       <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
         {tx("Choose payment option")}
       </h2>
-      <p className="mt-1 text-sm text-ink-tertiary">{tx("Choose payment option and continue.")}</p>
 
       <div className="mt-5">
         <SideTabPanel
@@ -174,7 +177,7 @@ export function ChoosePaymentOption({
             savedLast4 && pay.useSaved ? (
               <div>
                 <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Card on file")}</p>
-                <p className="mt-2 rounded-xl bg-[color:var(--pp-primary-100)] px-4 py-3 text-sm font-medium text-[color:var(--pp-primary-950)]">
+                <p className="mt-2 rounded-xl border border-line bg-surface-1 px-4 py-3 text-sm font-medium text-[color:var(--pp-primary-950)]">
                   Visa ····{savedLast4}
                 </p>
                 <button
@@ -271,6 +274,7 @@ export function ChoosePaymentOption({
                     ))}
                   </select>
                   <Button
+                    size="sm"
                     className="!rounded-xl !px-5 shrink-0"
                     disabled={pay.upiName.trim().length < 2 || pay.upiVerified}
                     onClick={verifyUpi}
@@ -301,10 +305,10 @@ export function ChoosePaymentOption({
                       aria-checked={on}
                       onClick={() => pay.setEmiPlan(plan)}
                       className={
-                        "w-full rounded-xl border px-4 py-3 text-left text-sm font-medium " +
+                        "w-full rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors " +
                         (on
-                          ? "border-[color:var(--pp-primary-950)] bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]"
-                          : "border-line text-[color:var(--pp-primary-950)] hover:border-[color:var(--pp-primary-950)]")
+                          ? "border-primary bg-primary-subtle text-primary"
+                          : "border-line bg-white text-[color:var(--pp-primary-950)] hover:border-line-strong")
                       }
                     >
                       {tx(plan)}

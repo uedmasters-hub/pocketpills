@@ -101,10 +101,9 @@ export function BookingReviewSidebar({
         <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
           {tx("Review & confirm")}
         </h2>
-        <p className="mt-1 text-sm text-ink-tertiary">{tx("Confirm details before booking")}</p>
       </div>
-      <div className="flex w-full max-h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-[1.5rem] border border-line bg-white shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-2 pt-6">
+      <div className="flex w-full max-h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-2xl border border-line bg-white">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-1 pt-5">
           <DoctorHead
             name={doctorName}
             imageUrl={doctorImage}
@@ -112,30 +111,34 @@ export function BookingReviewSidebar({
             verified={verified}
           />
 
-          <div className="mt-6 flex items-start justify-between gap-4 border-t border-line pt-6">
-            <div className="min-w-0">
-              <p className="text-2xs text-ink-tertiary">{tx("Time slot")}</p>
-              <p
-                className={
-                  "mt-1.5 whitespace-nowrap text-sm font-medium leading-snug " +
-                  (slotPast
-                    ? "text-ink-tertiary line-through"
-                    : "text-[color:var(--pp-primary-950)]")
-                }
-                title={slotLabel}
-              >
-                {slotLabel}
-              </p>
-            </div>
+          <div className="mt-3 border-t border-line">
+            <FactRow
+              label={tx("Time slot")}
+              value={slotLabel}
+              muted={slotPast}
+              strike={slotPast}
+              className="border-b border-line"
+            />
+            <FactRow
+              label={tx("Patient")}
+              value={patient?.name ?? tx("Choose a patient on the left to continue.")}
+              muted={!patient}
+            />
+            <VisitNotes
+              symptoms={symptoms}
+              onSymptoms={onSymptoms}
+              notes={notes}
+              onNotes={onNotes}
+            />
           </div>
 
           {slotPast ? (
-            <div role="status" className="mt-4 rounded-xl bg-[color:var(--pp-primary-100)] px-3 py-3">
+            <div role="status" className="mt-3 rounded-xl bg-[color:var(--pp-primary-100)] px-3 py-2.5">
               <p className="text-xs text-[color:var(--pp-primary-950)]">
                 {tx("This time is no longer available. Pick a next slot below.")}
               </p>
               {nextSlots.length > 0 ? (
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   {nextSlots.map((s) => (
                     <button
                       key={`${s.date}-${s.time}`}
@@ -148,25 +151,15 @@ export function BookingReviewSidebar({
                   ))}
                 </div>
               ) : (
-                <p className="mt-2 text-xs text-ink-tertiary">
+                <p className="mt-1.5 text-xs text-ink-tertiary">
                   {tx("No later slots this week. Message the care team for help.")}
                 </p>
               )}
             </div>
           ) : null}
 
-          <div className="mt-6 border-t border-line pt-5">
-            <PatientFact patient={patient} />
-            <VisitNotes
-              symptoms={symptoms}
-              onSymptoms={onSymptoms}
-              notes={notes}
-              onNotes={onNotes}
-            />
-          </div>
-
           {reports.length > 0 || findings.length > 0 ? (
-            <div className="mt-2">
+            <div className="mt-1">
               {reports.length > 0 ? (
                 <AttachAccordion title={tx("Reports")} count={reports.length}>
                   {reports.slice(0, LIST_CAP).map((r, i) => (
@@ -208,7 +201,7 @@ export function BookingReviewSidebar({
           ) : null}
         </div>
 
-        <div className="shrink-0 space-y-3 border-t border-line px-6 pb-6 pt-5">
+        <div className="shrink-0 space-y-2.5 border-t border-line px-5 pb-5 pt-4">
           <div className="space-y-1.5 text-sm">
             <PriceRow k={tx("Consultation fee")} v={formatMoney(quote.consultation)} />
             {quote.convenience > 0 ? (
@@ -224,7 +217,7 @@ export function BookingReviewSidebar({
             {offerQuote.credit > 0 ? (
               <PriceRow k={tx("Offer")} v={`−${formatMoney(offerQuote.credit)}`} tone />
             ) : null}
-            <div className="flex items-end justify-between pt-2">
+            <div className="flex items-end justify-between pt-1.5">
               <span className="font-semibold text-[color:var(--pp-primary-950)]">{tx("You pay")}</span>
               <span className="font-display text-2xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
                 {payableDue(quote.beforeOffer, offerQuote.credit) <= 0
@@ -258,6 +251,36 @@ function PriceRow({ k, v, tone }: { k: string; v: string; tone?: boolean }) {
       <span className="text-ink-secondary">{k}</span>
       <span className={(tone ? "font-medium text-[color:var(--pp-green)]" : "text-[color:var(--pp-primary-950)]") + " tnum"}>
         {v}
+      </span>
+    </div>
+  );
+}
+
+function FactRow({
+  label,
+  value,
+  muted,
+  strike,
+  className = "",
+}: {
+  label: string;
+  value: string;
+  muted?: boolean;
+  strike?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={"flex items-baseline justify-between gap-4 py-2.5 " + className}>
+      <span className="shrink-0 text-sm text-ink-tertiary">{label}</span>
+      <span
+        className={
+          "min-w-0 text-right text-sm font-medium leading-snug " +
+          (muted ? "text-ink-tertiary" : "text-[color:var(--pp-primary-950)]") +
+          (strike ? " line-through" : "")
+        }
+        title={value}
+      >
+        {value}
       </span>
     </div>
   );
@@ -297,10 +320,10 @@ function DoctorHead({
           src={imageUrl}
           alt=""
           onError={() => setBroken(true)}
-          className="h-14 w-14 shrink-0 rounded-full object-cover object-[center_20%]"
+          className="h-14 w-14 shrink-0 rounded-2xl object-cover object-[center_20%]"
         />
       ) : (
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-200)] text-sm font-semibold text-[color:var(--pp-primary-950)]">
+        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[color:var(--pp-primary-200)] text-sm font-semibold text-[color:var(--pp-primary-950)]">
           {initial}
         </span>
       )}
@@ -317,33 +340,6 @@ function DoctorHead({
           <p className="mt-0.5 truncate text-sm text-ink-tertiary" title={credentials}>
             {credentials}
           </p>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function PatientFact({ patient }: { patient: ReviewPatient | null }) {
-  const { tx } = useI18n();
-  if (!patient) {
-    return (
-      <p className="text-sm text-ink-tertiary">{tx("Choose a patient on the left to continue.")}</p>
-    );
-  }
-
-  const badge = patient.badge || patient.relation;
-
-  return (
-    <div>
-      <p className="text-2xs text-ink-tertiary">{tx("Patient")}</p>
-      <div className="mt-1 flex items-center gap-2">
-        <p className="min-w-0 flex-1 truncate text-base font-medium leading-snug text-[color:var(--pp-primary-950)]" title={patient.name}>
-          {patient.name}
-        </p>
-        {badge ? (
-          <span className="shrink-0 rounded-full bg-[color:var(--pp-primary-100)] px-2.5 py-0.5 text-2xs font-semibold text-[color:var(--pp-primary-950)]">
-            {tx(badge)}
-          </span>
         ) : null}
       </div>
     </div>
@@ -487,20 +483,18 @@ function VisitNotes({
     fieldRef.current?.focus();
   };
 
-  const boxed = active || settled;
   const fieldText =
     "col-start-1 row-start-1 min-w-0 w-full max-w-full whitespace-pre-wrap break-all [overflow-wrap:anywhere] text-xs font-normal leading-relaxed";
 
   return (
     <div
       className={
-        "mt-2 min-w-0 max-w-full overflow-hidden transition-colors " +
-        (boxed
-          ? "rounded-2xl border px-3 py-2.5 " +
-            (settled
-              ? "cursor-text border-transparent bg-[color:var(--pp-primary-100)]"
-              : "border-line bg-white")
-          : "")
+        "mb-4 min-w-0 max-w-full overflow-hidden transition-colors " +
+        (active
+          ? "rounded-lg border border-line bg-white px-3 py-2.5"
+          : settled
+            ? "cursor-text rounded-lg border border-transparent bg-[color:var(--pp-primary-100)] px-3 py-2.5"
+            : "cursor-text py-2")
       }
       onClick={settled ? activate : undefined}
     >

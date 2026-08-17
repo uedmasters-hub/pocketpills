@@ -751,7 +751,6 @@ export function MedicationOrder() {
         <aside className="w-full min-w-0 space-y-4 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
           <div>
             <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">{tx("Review & confirm")}</h2>
-            <p className="mt-1 text-sm text-ink-tertiary">{tx("Confirm details before booking")}</p>
           </div>
           <div className="flex w-full max-h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-[1.5rem] border border-line bg-white shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-2 pt-6">
