@@ -5,7 +5,7 @@ import {
   voiceLangFromSiteLang,
   type VoiceSearchLang,
 } from "@/lib/specialtySearch";
-import { useBrowserSpeech } from "@/lib/useBrowserSpeech";
+import { useLocalSpeech } from "@/lib/useLocalSpeech";
 
 type Props = {
   /** Limits search UX copy + voice to this page’s domain. */
@@ -42,6 +42,10 @@ function voiceErrorMessage(
       return tx("Mic is busy. Wait a moment, then try again.");
     case "no-speech":
       return tx("Didn’t catch that — tap the mic and try again.");
+    case "model-load-failed":
+      return tx("Couldn’t load the voice model. Check your connection and try again.");
+    case "transcribe-failed":
+      return tx("Couldn’t transcribe that. Try again.");
     case "language-not-supported":
       return tx("That voice language isn’t supported here. Try EN.");
     default:
@@ -72,8 +76,8 @@ export function PageSearchField({
   onChangeRef.current = onChange;
   const restartTimer = useRef<number | null>(null);
 
-  const { supported, listening, transcript, error, start, stop } =
-    useBrowserSpeech(voiceLang);
+  const { supported, listening, transcribing, transcript, error, modelState, modelProgress, start, stop } =
+    useLocalSpeech(voiceLang);
 
   useEffect(() => {
     setVoiceLang(voiceLangFromSiteLang(lang));
@@ -214,14 +218,22 @@ export function PageSearchField({
         </div>
       </label>
 
-      {(listening || voiceError) && (
+      {(listening || transcribing || (modelState === "loading" && !listening) || voiceError) && (
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-tertiary">
+          {modelState === "loading" && !listening && (
+            <p className="font-medium text-[color:var(--pp-violet)]">
+              {tx("Loading voice model…")} {modelProgress > 0 ? `${modelProgress}%` : ""}
+            </p>
+          )}
           {listening && (
             <p className="font-medium text-[color:var(--pp-violet)]">
               {tx(voiceLang === "ne-NP" ? copy.listeningNe : copy.listeningEn)}
             </p>
           )}
-          {voiceError && !listening && (
+          {transcribing && !listening && (
+            <p className="font-medium text-[color:var(--pp-violet)]">{tx("Transcribing…")}</p>
+          )}
+          {voiceError && !listening && !transcribing && (
             <p className="text-[#D97757]" role="alert">
               {voiceError}
             </p>
@@ -244,5 +256,6 @@ export function CareSearchField(
     />
   );
 }
+
 
 
