@@ -594,7 +594,6 @@ const FR: Record<string, string> = {
   "Consultation fee": "Frais de consultation",
   "Convenience fee": "Frais de commodité",
   "Insurance ({pct}%)": "Assurance ({pct} %)",
-  "You pay": "Vous payez",
   "Choose a payment option on the left to continue.": "Choisissez un mode de paiement à gauche pour continuer.",
   "UPI ID": "Identifiant UPI",
   "Scan the code in your UPI app, or enter your UPI ID. Demo checkout — no real payment is processed.":
@@ -620,7 +619,6 @@ const FR: Record<string, string> = {
     "Rien à payer aujourd’hui. Ajoutez un moyen de paiement au cas où un solde resterait.",
   "Scan the code in your UPI app, or enter your UPI ID.":
     "Scannez le code dans votre appli UPI, ou saisissez votre identifiant UPI.",
-  "Partner": "Partenaire",
   "Sibling": "Frère ou sœur",
 };
 
@@ -1201,7 +1199,6 @@ const NE: Record<string, string> = {
   "Consultation fee": "परामर्श शुल्क",
   "Convenience fee": "सुविधा शुल्क",
   "Insurance ({pct}%)": "बीमा ({pct}%)",
-  "You pay": "तपाईं तिर्नुहुन्छ",
   "Choose a payment option on the left to continue.": "अगाडि बढ्न बायाँबाट भुक्तानी विकल्प छान्नुहोस्।",
   "UPI ID": "UPI ID",
   "Scan the code in your UPI app, or enter your UPI ID. Demo checkout — no real payment is processed.":
