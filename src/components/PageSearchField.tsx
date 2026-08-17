@@ -32,6 +32,10 @@ function voiceErrorMessage(
       return tx("No microphone found. Check your input device.");
     case "network":
       return tx("Voice search needs an internet connection.");
+    case "network-brave":
+      return tx(
+        "Voice search doesn’t work in Brave — Shields blocks it by design. Try Chrome or Edge, or turn Shields off for this site.",
+      );
     case "service-not-allowed":
       return tx("Voice search is blocked in this browser. Try Chrome.");
     case "busy":
@@ -240,4 +244,5 @@ export function CareSearchField(
     />
   );
 }
+
 

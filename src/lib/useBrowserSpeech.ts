@@ -68,6 +68,27 @@ async function isMicExplicitlyDenied(): Promise<boolean> {
 }
 
 /**
+ * Brave ships Chrome's SpeechRecognition surface (so `supported` is true and
+ * the UI shows the mic), but Brave doesn't proxy the closed, Google-hosted
+ * speech backend that engine depends on — Shields blocks the call by design,
+ * as part of not routing traffic through Google's infrastructure. The result
+ * is an instant `network` error on every attempt, regardless of whether the
+ * machine actually has internet access, and there's no client-side retry that
+ * fixes it — only a different browser or Shields being turned off for the
+ * site. `navigator.brave.isBrave()` is Brave's own (unofficial but standard)
+ * self-identification hook; feature-detected so it's a no-op everywhere else.
+ */
+async function isBraveBrowser(): Promise<boolean> {
+  try {
+    const brave = (navigator as Navigator & { brave?: { isBrave?: () => Promise<boolean> } }).brave;
+    if (typeof brave?.isBrave !== "function") return false;
+    return await brave.isBrave();
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Web Speech API wrapper for EN / Nepali voice search.
  * - Never opens its own getUserMedia stream — avoids racing SpeechRecognition's
  *   internal capture, which was causing near-instant `no-speech` shutoffs.
@@ -201,6 +222,12 @@ export function useBrowserSpeech(lang: BrowserSpeechLang) {
       // genuinely didn't say anything in time, and they should know that's
       // why listening stopped rather than wonder if it broke.
       if (code === "aborted") return;
+      if (code === "network") {
+        // Distinguish "Brave blocked this" (no client-side fix) from a real
+        // connectivity problem (worth telling the user to check their network).
+        void isBraveBrowser().then((brave) => setError(brave ? "network-brave" : "network"));
+        return;
+      }
       setError(code);
     };
 
@@ -262,4 +289,5 @@ export function useBrowserSpeech(lang: BrowserSpeechLang) {
     stop,
   };
 }
+
 
