@@ -16,3 +16,5 @@ pharmacy_api/**/__pycache__/
 health-facility-api/.git
 health-facility-api/.env
 health-facility-api/node_modules
+.vercel
+.env*

@@ -321,7 +321,7 @@ export function doctorFaqs(
     { q: "Does the doctor offer online consultations?", a: online },
     {
       q: "How long is a consultation?",
-      a: "Visit length is confirmed when you book. Choose a time in Availability, then continue to patient details.",
+      a: "Visit length is confirmed when you book. Choose a time in Availability, then continue to patient details and payment.",
     },
     {
       q: "Can I book a follow-up?",

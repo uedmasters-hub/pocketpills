@@ -252,7 +252,7 @@ export function LabDetail() {
             <p className="mt-3 text-center text-2xs leading-relaxed text-ink-tertiary">
               {selected.length === 0
                 ? tx("Select services, then continue.")
-                : tx("Next: patient details — then you're booked.")}
+                : tx("Next: patient details and payment — then you're booked.")}
             </p>
           </div>
         </div>

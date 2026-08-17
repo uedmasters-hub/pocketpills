@@ -1,8 +1,10 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { CheckoutOffers, useOfferQuote } from "@/components/offers/CheckoutOffers";
+import { consultQuote, formatMoney, payableDue } from "@/lib/bookingQuote";
 import { useI18n } from "@/lib/i18n";
 import { formatFee } from "@/lib/appointments";
+import type { CheckoutContext } from "@/lib/offers";
 import { addCalendarDays, isPastDate, isSlotInPast, monthDayShort, todayIso } from "@/lib/timeSlots";
 import verifiedBadge from "../../../icons/verified badge.svg";
 
@@ -48,8 +50,10 @@ export function BookingReviewSidebar({
   onNotes,
   onConfirm,
   confirmDisabled,
+  confirmHint: confirmHintProp,
   nextSlots = [],
   onPickSlot,
+  offerContext,
 }: {
   doctorName: string;
   doctorImage: string;
@@ -69,25 +73,33 @@ export function BookingReviewSidebar({
   onNotes: (value: string) => void;
   onConfirm: () => void;
   confirmDisabled?: boolean;
+  confirmHint?: string;
   nextSlots?: { date: string; time: string }[];
   onPickSlot?: (date: string, time: string) => void;
+  offerContext?: CheckoutContext;
 }) {
   const { tx } = useI18n();
-  const nav = useNavigate();
+  const quote = consultQuote(fee);
+  const offerQuote = useOfferQuote(
+    offerContext ?? { kind: "consult", amount: quote.beforeOffer },
+  );
   const slotPast = Boolean(date && time) && (isPastDate(date) || isSlotInPast(date, time));
   const noPatient = !patient;
   const canConfirm = !noPatient && !slotPast && !confirmDisabled;
-  const slotLabel = date && time ? `${date} - ${time}` : tx("Pick a time");
+  const slotLabel = date && time ? `${time} - ${date}` : tx("Pick a time");
 
-  let confirmHint = "";
-  if (noPatient) confirmHint = tx("Add a patient on the left to continue.");
-  else if (slotPast) confirmHint = tx("This time is no longer available. Pick a next slot below.");
+  let confirmHint = confirmHintProp ?? "";
+  if (!confirmHint) {
+    if (noPatient) confirmHint = tx("Add a patient on the left to continue.");
+    else if (slotPast) confirmHint = tx("This time is no longer available. Pick a next slot below.");
+    else if (confirmDisabled) confirmHint = tx("Choose a payment option on the left to continue.");
+  }
 
   return (
     <aside className="w-full min-w-0 space-y-4 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
       <div>
         <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
-          {tx("Review visit")}
+          {tx("Review & confirm")}
         </h2>
         <p className="mt-1 text-sm text-ink-tertiary">{tx("Confirm details before booking")}</p>
       </div>
@@ -102,12 +114,6 @@ export function BookingReviewSidebar({
 
           <div className="mt-6 flex items-start justify-between gap-4 border-t border-line pt-6">
             <div className="min-w-0">
-              <p className="text-2xs text-ink-tertiary">{tx("Consultation")}</p>
-              <p className="mt-1.5 font-display text-2xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
-                {formatFee(fee)}
-              </p>
-            </div>
-            <div className="shrink-0 text-right">
               <p className="text-2xs text-ink-tertiary">{tx("Time slot")}</p>
               <p
                 className={
@@ -202,7 +208,31 @@ export function BookingReviewSidebar({
           ) : null}
         </div>
 
-        <div className="shrink-0 space-y-3 px-6 pb-6 pt-5">
+        <div className="shrink-0 space-y-3 border-t border-line px-6 pb-6 pt-5">
+          <div className="space-y-1.5 text-sm">
+            <PriceRow k={tx("Consultation fee")} v={formatMoney(quote.consultation)} />
+            {quote.convenience > 0 ? (
+              <PriceRow k={tx("Convenience fee")} v={formatMoney(quote.convenience)} />
+            ) : null}
+            {quote.insurance > 0 ? (
+              <PriceRow
+                k={tx("Insurance ({pct}%)").replace("{pct}", String(quote.insurancePct))}
+                v={`−${formatMoney(quote.insurance)}`}
+                tone
+              />
+            ) : null}
+            {offerQuote.credit > 0 ? (
+              <PriceRow k={tx("Offer")} v={`−${formatMoney(offerQuote.credit)}`} tone />
+            ) : null}
+            <div className="flex items-end justify-between pt-2">
+              <span className="font-semibold text-[color:var(--pp-primary-950)]">{tx("You pay")}</span>
+              <span className="font-display text-2xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
+                {payableDue(quote.beforeOffer, offerQuote.credit) <= 0
+                  ? formatFee(0)
+                  : formatMoney(payableDue(quote.beforeOffer, offerQuote.credit))}
+              </span>
+            </div>
+          </div>
           <Button
             fullWidth
             onClick={onConfirm}
@@ -210,21 +240,26 @@ export function BookingReviewSidebar({
             className="!rounded-2xl"
             title={canConfirm ? undefined : confirmHint || undefined}
           >
-            {tx("Continue to payment")}
+            {tx("Pay & confirm")}
           </Button>
-          <button
-            type="button"
-            onClick={() => nav("/messages")}
-            className="w-full py-1 text-center text-sm font-medium text-[color:var(--pp-primary-950)] hover:opacity-70"
-          >
-            {tx("Message care team")}
-          </button>
         </div>
       </div>
+      {offerContext ? <CheckoutOffers context={offerContext} /> : null}
       <p className="px-1 text-center text-2xs leading-relaxed text-ink-tertiary">
         {tx("Demo booking — no real visit is scheduled with a clinic.")}
       </p>
     </aside>
+  );
+}
+
+function PriceRow({ k, v, tone }: { k: string; v: string; tone?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-ink-secondary">{k}</span>
+      <span className={(tone ? "font-medium text-[color:var(--pp-green)]" : "text-[color:var(--pp-primary-950)]") + " tnum"}>
+        {v}
+      </span>
+    </div>
   );
 }
 

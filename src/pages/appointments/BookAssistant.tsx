@@ -10,6 +10,7 @@ import {
   type CareVisitType,
 } from "@/lib/careWorkers";
 import { ServiceCtaCard, ServicePageShell } from "@/pages/appointments/ServicePageShell";
+import { ChoosePaymentOption, usePaymentFields } from "@/components/checkout/ChoosePaymentOption";
 
 export function BookAssistant() {
   const { tx } = useI18n();
@@ -23,6 +24,7 @@ export function BookAssistant() {
   const [date, setDate] = useState(days[0]?.date ?? "");
   const [time, setTime] = useState(CARE_TIME_SLOTS[0]);
   const [done, setDone] = useState<string | null>(null);
+  const pay = usePaymentFields();
 
   if (!worker) {
     return (
@@ -72,8 +74,8 @@ export function BookAssistant() {
           priceHint={tx("From")}
           price={formatFee(worker.feeFrom)}
           body={tx(service)}
-          cta={tx("Confirm booking")}
-          ctaDisabled={!service || !date || !time}
+          cta={tx("Pay & confirm")}
+          ctaDisabled={!service || !date || !time || !pay.ready(worker.feeFrom)}
           onCta={() => {
             const b = createCareWorkerBooking({
               workerId: worker.id,
@@ -178,6 +180,10 @@ export function BookAssistant() {
             {t}
           </button>
         ))}
+      </div>
+
+      <div className="mt-10">
+        <ChoosePaymentOption pay={pay} due={worker.feeFrom} />
       </div>
     </ServicePageShell>
   );

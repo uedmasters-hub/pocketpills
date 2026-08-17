@@ -12,6 +12,7 @@ import {
 } from "@/lib/labs";
 import { createLabOrder } from "@/lib/orders";
 import { ServiceCtaCard, ServicePageShell } from "@/pages/appointments/ServicePageShell";
+import { ChoosePaymentOption, usePaymentFields } from "@/components/checkout/ChoosePaymentOption";
 
 export function BookLab() {
   const { tx } = useI18n();
@@ -33,6 +34,7 @@ export function BookLab() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
+  const pay = usePaymentFields();
   const [done, setDone] = useState<{ confirmationNo: string; names: string; date: string; time: string } | null>(
     null,
   );
@@ -127,8 +129,8 @@ export function BookLab() {
           priceHint={tx("Estimated total")}
           price={summary.fee <= 0 ? tx("FREE") : `$${summary.fee.toFixed(2)}`}
           body={tx("{n} services").replace("{n}", String(summary.count))}
-          cta={tx("Confirm booking")}
-          ctaDisabled={!name.trim()}
+          cta={tx("Pay & confirm")}
+          ctaDisabled={!name.trim() || !pay.ready(summary.fee)}
           onCta={() => {
             const b = createLabBooking({
               labId: lab.id,
@@ -246,6 +248,10 @@ export function BookLab() {
             placeholder={tx("Fasting, referral #, preferred arm…")}
           />
         </label>
+      </div>
+
+      <div className="mt-10">
+        <ChoosePaymentOption pay={pay} due={summary.fee} />
       </div>
     </ServicePageShell>
   );

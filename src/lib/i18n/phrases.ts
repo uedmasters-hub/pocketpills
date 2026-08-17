@@ -581,6 +581,47 @@ const FR: Record<string, string> = {
   "Blood pressure": "Tension artérielle",
   "Diabetes": "Diabète",
   "Acid reflux": "Reflux acide",
+  "Pay & confirm": "Payer et confirmer",
+  "Choose payment option": "Choisir un mode de paiement",
+  "Choose payment option and continue.": "Choisissez un mode de paiement et continuez.",
+  "Credit / Debit / ATM Card": "Carte de crédit / débit / guichet",
+  "UPI": "UPI",
+  "Pay by any UPI app": "Payer avec une appli UPI",
+  "EMI": "EMI",
+  "Credit Card EMI": "EMI sur carte de crédit",
+  "Have a health Card?": "Vous avez une carte santé?",
+  "Review & confirm": "Réviser et confirmer",
+  "Consultation fee": "Frais de consultation",
+  "Convenience fee": "Frais de commodité",
+  "Insurance ({pct}%)": "Assurance ({pct} %)",
+  "You pay": "Vous payez",
+  "Choose a payment option on the left to continue.": "Choisissez un mode de paiement à gauche pour continuer.",
+  "UPI ID": "Identifiant UPI",
+  "Scan the code in your UPI app, or enter your UPI ID. Demo checkout — no real payment is processed.":
+    "Scannez le code dans votre appli UPI, ou saisissez votre identifiant UPI. Paiement démo — aucun vrai paiement n’est traité.",
+  "Choose a demo EMI plan. No real charges are made.": "Choisissez un plan EMI démo. Aucun vrai frais n’est facturé.",
+  "3 months · 0% interest": "3 mois · 0 % d’intérêt",
+  "6 months · 0% interest": "6 mois · 0 % d’intérêt",
+  "12 months · from 8%": "12 mois · à partir de 8 %",
+  "We'll bill your provincial plan first. Enter the number on your health card.":
+    "Nous facturerons d’abord votre régime provincial. Saisissez le numéro de votre carte santé.",
+  "Next: patient details and payment — then you're booked.":
+    "Ensuite : coordonnées du patient et paiement — puis c’est réservé.",
+  "Payment method": "Mode de paiement",
+  "Saved patient(s)": "Patients enregistrés",
+  "Past consultations": "Consultations passées",
+  "Verify": "Vérifier",
+  "Verified": "Vérifié",
+  "UPI handle": "Identifiant UPI (banque)",
+  "UPI ID verified": "Identifiant UPI vérifié",
+  "e.g. 1234-567-890": "ex. 1234-567-890",
+  "Save or cancel the new patient to continue.": "Enregistrez ou annulez le nouveau patient pour continuer.",
+  "Nothing due today. Add a method in case a balance remains.":
+    "Rien à payer aujourd’hui. Ajoutez un moyen de paiement au cas où un solde resterait.",
+  "Scan the code in your UPI app, or enter your UPI ID.":
+    "Scannez le code dans votre appli UPI, ou saisissez votre identifiant UPI.",
+  "Partner": "Partenaire",
+  "Sibling": "Frère ou sœur",
 };
 
 const NE: Record<string, string> = {
@@ -1147,6 +1188,45 @@ const NE: Record<string, string> = {
   "Blood pressure": "रक्तचाप",
   "Diabetes": "मधुमेह",
   "Acid reflux": "एसिड रिफ्लक्स",
+  "Pay & confirm": "तिर्नुहोस् र पुष्टि गर्नुहोस्",
+  "Choose payment option": "भुक्तानी विकल्प छान्नुहोस्",
+  "Choose payment option and continue.": "भुक्तानी विकल्प छानेर अगाडि बढ्नुहोस्।",
+  "Credit / Debit / ATM Card": "क्रेडिट / डेबिट / एटीएम कार्ड",
+  "UPI": "UPI",
+  "Pay by any UPI app": "कुनै पनि UPI एपबाट तिर्नुहोस्",
+  "EMI": "EMI",
+  "Credit Card EMI": "क्रेडिट कार्ड EMI",
+  "Have a health Card?": "स्वास्थ्य कार्ड छ?",
+  "Review & confirm": "समीक्षा र पुष्टि",
+  "Consultation fee": "परामर्श शुल्क",
+  "Convenience fee": "सुविधा शुल्क",
+  "Insurance ({pct}%)": "बीमा ({pct}%)",
+  "You pay": "तपाईं तिर्नुहुन्छ",
+  "Choose a payment option on the left to continue.": "अगाडि बढ्न बायाँबाट भुक्तानी विकल्प छान्नुहोस्।",
+  "UPI ID": "UPI ID",
+  "Scan the code in your UPI app, or enter your UPI ID. Demo checkout — no real payment is processed.":
+    "UPI एपमा कोड स्क्यान गर्नुहोस्, वा आफ्नो UPI ID लेख्नुहोस्। डेमो चेकआउट — वास्तविक भुक्तानी हुँदैन।",
+  "Choose a demo EMI plan. No real charges are made.": "डेमो EMI योजना छान्नुहोस्। वास्तविक शुल्क लाग्दैन।",
+  "3 months · 0% interest": "३ महिना · ०% ब्याज",
+  "6 months · 0% interest": "६ महिना · ०% ब्याज",
+  "12 months · from 8%": "१२ महिना · ८% बाट",
+  "We'll bill your provincial plan first. Enter the number on your health card.":
+    "पहिले तपाईंको प्रान्तीय योजनामा बिल गर्छौं। स्वास्थ्य कार्डको नम्बर लेख्नुहोस्।",
+  "Next: patient details and payment — then you're booked.":
+    "अर्को: बिरामी विवरण र भुक्तानी — त्यसपछि बुकिङ हुन्छ।",
+  "Payment method": "भुक्तानी विधि",
+  "Saved patient(s)": "सुरक्षित बिरामीहरू",
+  "Past consultations": "पहिलेका परामर्श",
+  "Verify": "प्रमाणित गर्नुहोस्",
+  "Verified": "प्रमाणित",
+  "UPI handle": "UPI ह्यान्डल",
+  "UPI ID verified": "UPI ID प्रमाणित भयो",
+  "e.g. 1234-567-890": "जस्तै 1234-567-890",
+  "Save or cancel the new patient to continue.": "अगाडि बढ्न नयाँ बिरामी सुरक्षित गर्नुहोस् वा रद्द गर्नुहोस्।",
+  "Nothing due today. Add a method in case a balance remains.":
+    "आज तिर्न बाँकी छैन। बाँकी रकम आएमा भुक्तानी विधि थप्नुहोस्।",
+  "Scan the code in your UPI app, or enter your UPI ID.":
+    "UPI एपमा कोड स्क्यान गर्नुहोस्, वा आफ्नो UPI ID लेख्नुहोस्।",
 };
 
 const CATALOG: Record<LangCode, Record<string, string>> = {

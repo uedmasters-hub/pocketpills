@@ -9,7 +9,6 @@ export const CARE_STEPS = [
   { key: "review", label: "Review", path: "/care/review" },
   { key: "doctor", label: "Doctor review", path: "/care/doctor" },
   { key: "medication", label: "Medication", path: "/care/medication" },
-  { key: "checkout", label: "Checkout", path: "/care/checkout" },
   { key: "confirmation", label: "Confirmed", path: "/care/confirmation" },
 ] as const;
 

@@ -4,6 +4,7 @@ import { Card, Field, Switch } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { CheckoutOffers, useOfferQuote } from "@/components/offers/CheckoutOffers";
+import { ChoosePaymentOption, usePaymentFields } from "@/components/checkout/ChoosePaymentOption";
 import type { CheckoutContext } from "@/lib/offers";
 import { drugs } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
@@ -24,7 +25,7 @@ import {
 } from "@/lib/rxOcr";
 
 const DISPENSING_FEE = 11.99;
-const STEPS = ["source", "capture", "verify", "details", "payment"] as const;
+const STEPS = ["source", "capture", "verify", "details"] as const;
 type Step = (typeof STEPS)[number] | "send" | "done";
 type Method = "upload" | "fax" | "mail" | "transfer";
 type RxCheck = DrugMatchStatus | "pending" | null;
@@ -60,9 +61,7 @@ export function MedicationOrder() {
   const [address, setAddress] = useState("221 King St W, Toronto, ON");
   const [packaging, setPackaging] = useState<"pocketpacks" | "vials">("vials");
   const [useInsurance, setUseInsurance] = useState(true);
-  const [card, setCard] = useState("");
-  const [exp, setExp] = useState("");
-  const [cvc, setCvc] = useState("");
+  const pay = usePaymentFields();
   const [orderId, setOrderId] = useState("");
   const [sendStep, setSendStep] = useState(0);
   const [pharmacyId, setPharmacyId] = useState("");
@@ -141,7 +140,7 @@ export function MedicationOrder() {
     setPharmacyId(p.id);
     saveSelectedPharmacy(p);
   };
-  const visibleSteps = drug.rx ? STEPS : (["details", "payment"] as const);
+  const visibleSteps = drug.rx ? STEPS : (["details"] as const);
   const idx = (visibleSteps as readonly string[]).indexOf(step);
   const total = visibleSteps.length;
   const goNext = () => {
@@ -227,7 +226,7 @@ export function MedicationOrder() {
       insuranceCovered: covered + offerQuote.credit,
       address,
       patient: who === "other" && otherName.trim() ? otherName.trim() : displayName,
-      cardLast4: card.replace(/\s/g, "").slice(-4) || "4242",
+      cardLast4: pay.last4,
       due,
       pharmacyName: selectedPharmacy?.name,
     });
@@ -247,20 +246,17 @@ export function MedicationOrder() {
     step === "capture" ? (method === "upload" ? tx("Upload") : method === "fax" ? tx("Clinic details") : method === "mail" ? tx("Mailing kit") : tx("Transfer")) :
     step === "verify" ? tx("Check prescription") :
     step === "details" ? tx("Delivery details") :
-    step === "payment" ? tx("Payment") :
     step === "send" ? tx("Sending request") :
     tx("Order placed");
 
   const ctaLabel =
-    step === "payment"
-      ? (offerQuote.due > 0 ? tx("Place order · {amount}").replace("{amount}", `$${offerQuote.due.toFixed(2)}`) : tx("Place order"))
-      : step === "details"
-        ? tx("Continue to payment")
-        : step === "verify"
-          ? tx("Continue with {name}").replace("{name}", drug.name)
-          : step === "capture" && method === "upload"
-            ? tx("Check photo")
-            : tx("Continue");
+    step === "details"
+      ? (offerQuote.due > 0 ? tx("Pay & confirm") : tx("Place order"))
+      : step === "verify"
+        ? tx("Continue with {name}").replace("{name}", drug.name)
+        : step === "capture" && method === "upload"
+          ? tx("Check photo")
+          : tx("Continue");
 
   const ctaDisabled =
     scanning ||
@@ -268,12 +264,12 @@ export function MedicationOrder() {
     (step === "capture" && !captureReady) ||
     (step === "verify" && !selectedPharmacy) ||
     (step === "details" && !selectedPharmacy) ||
-    (step === "details" && who === "other" && !otherName.trim());
+    (step === "details" && who === "other" && !otherName.trim()) ||
+    (step === "details" && !pay.ready(offerQuote.due));
 
   const onCta =
     step === "capture" ? () => void runVerify() :
-    step === "payment" ? placeOrder :
-    step === "done" ? () => nav(orderId ? `/orders/${orderId}` : "/orders") :
+    step === "details" ? placeOrder :
     goNext;
 
   const ctaHint =
@@ -285,7 +281,9 @@ export function MedicationOrder() {
           ? tx("Choose a pharmacy on the left to continue.")
           : step === "details" && who === "other" && !otherName.trim()
             ? tx("Add a patient on the left to continue.")
-            : "";
+            : step === "details" && !pay.ready(offerQuote.due)
+              ? tx("Choose a payment option on the left to continue.")
+              : "";
 
   const methodLabel =
     method === "upload" ? tx("Photo upload") :
@@ -662,85 +660,66 @@ export function MedicationOrder() {
 
     if (step === "details") {
       return (
-        <section>
-          <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">{tx("Who is this for?")}</h2>
-          <p className="mt-1 text-sm text-ink-tertiary">
-            {tx("Who this is for, where to send it, and how to pack {name}.").replace("{name}", drug.name)}
-          </p>
-          <div className="mt-5 space-y-4">
-            {!drug.rx ? (
-              <PharmacyList
-                drugName={drug.name}
-                pharmacies={fill.pharmacies}
-                stockById={fill.stockById}
-                recommendedId={fill.recommendedId}
-                selectedId={pharmacyId}
-                onSelect={pickPharmacy}
-              />
-            ) : null}
-            <div className="grid grid-cols-2 gap-3">
-              {(["self", "other"] as const).map((w) => (
-                <button
-                  key={w}
-                  type="button"
-                  onClick={() => setWho(w)}
-                  className={"h-12 rounded-xl border text-sm font-semibold " + (who === w ? "border-primary bg-primary-subtle text-primary" : "border-line bg-white text-ink-secondary")}
-                >
-                  {w === "self" ? tx("Myself") : tx("A family member")}
-                </button>
-              ))}
-            </div>
-            {who === "other" && (
+        <>
+          <section>
+            <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">{tx("Who is this for?")}</h2>
+            <p className="mt-1 text-sm text-ink-tertiary">
+              {tx("Who this is for, where to send it, and how to pack {name}.").replace("{name}", drug.name)}
+            </p>
+            <div className="mt-5 space-y-4">
+              {!drug.rx ? (
+                <PharmacyList
+                  drugName={drug.name}
+                  pharmacies={fill.pharmacies}
+                  stockById={fill.stockById}
+                  recommendedId={fill.recommendedId}
+                  selectedId={pharmacyId}
+                  onSelect={pickPharmacy}
+                />
+              ) : null}
+              <div className="grid grid-cols-2 gap-3">
+                {(["self", "other"] as const).map((w) => (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() => setWho(w)}
+                    className={"h-12 rounded-xl border text-sm font-semibold " + (who === w ? "border-primary bg-primary-subtle text-primary" : "border-line bg-white text-ink-secondary")}
+                  >
+                    {w === "self" ? tx("Myself") : tx("A family member")}
+                  </button>
+                ))}
+              </div>
+              {who === "other" && (
+                <Card className="p-5">
+                  <Field label={tx("Full name")} placeholder={tx("e.g. Jordan Chen")} value={otherName} onChange={(e) => setOtherName(e.target.value)} />
+                </Card>
+              )}
               <Card className="p-5">
-                <Field label={tx("Full name")} placeholder={tx("e.g. Jordan Chen")} value={otherName} onChange={(e) => setOtherName(e.target.value)} />
+                <Field label={tx("Delivery address")} placeholder={tx("Street, city, province, postal code")} value={address} onChange={(e) => setAddress(e.target.value)} />
               </Card>
-            )}
-            <Card className="p-5">
-              <Field label={tx("Delivery address")} placeholder={tx("Street, city, province, postal code")} value={address} onChange={(e) => setAddress(e.target.value)} />
-            </Card>
-            <Card className="space-y-4 p-5">
-              <Switch
-                checked={packaging === "pocketpacks"}
-                onChange={(v) => setPackaging(v ? "pocketpacks" : "vials")}
-                label={tx("PocketPacks")}
-                desc={tx("Pouches sorted by date & time. Turn off for a standard vial.")}
-              />
-              <div className="border-t border-line" />
-              <Switch
-                checked={useInsurance}
-                onChange={setUseInsurance}
-                label={tx("Bill typical insurance")}
-                desc={tx("Estimate only. Your pharmacist confirms coverage.")}
-              />
-            </Card>
-          </div>
-        </section>
+              <Card className="space-y-4 p-5">
+                <Switch
+                  checked={packaging === "pocketpacks"}
+                  onChange={(v) => setPackaging(v ? "pocketpacks" : "vials")}
+                  label={tx("PocketPacks")}
+                  desc={tx("Pouches sorted by date & time. Turn off for a standard vial.")}
+                />
+                <div className="border-t border-line" />
+                <Switch
+                  checked={useInsurance}
+                  onChange={setUseInsurance}
+                  label={tx("Bill typical insurance")}
+                  desc={tx("Estimate only. Your pharmacist confirms coverage.")}
+                />
+              </Card>
+            </div>
+          </section>
+          <ChoosePaymentOption pay={pay} due={offerQuote.due} />
+        </>
       );
     }
 
-    return (
-      <section>
-        <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">{tx("Payment")}</h2>
-        <p className="mt-1 text-sm text-ink-tertiary">{tx("Demo checkout — no real payment is processed.")}</p>
-        <div className="mt-5 space-y-4">
-          <CheckoutOffers context={offerCtx} />
-          {offerQuote.due <= 0 ? (
-            <Card className="p-6 text-center">
-              <p className="font-semibold text-ink">{tx("Nothing due today")}</p>
-              <p className="mt-1 text-sm text-ink-tertiary">{tx("Your plan covers this order. We'll bill your insurance directly.")}</p>
-            </Card>
-          ) : (
-            <Card className="p-5">
-              <Field label={tx("Card number")} placeholder="4242 4242 4242 4242" value={card} onChange={(e) => setCard(e.target.value)} inputMode="numeric" />
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <Field label={tx("Expiry")} placeholder="12 / 27" value={exp} onChange={(e) => setExp(e.target.value)} />
-                <Field label={tx("CVC")} placeholder="123" value={cvc} onChange={(e) => setCvc(e.target.value)} inputMode="numeric" />
-              </div>
-            </Card>
-          )}
-        </div>
-      </section>
-    );
+    return null;
   })();
 
   return (
@@ -771,8 +750,8 @@ export function MedicationOrder() {
 
         <aside className="w-full min-w-0 space-y-4 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
           <div>
-            <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">{tx("Review order")}</h2>
-            <p className="mt-1 text-sm text-ink-tertiary">{tx("Confirm details before continuing")}</p>
+            <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">{tx("Review & confirm")}</h2>
+            <p className="mt-1 text-sm text-ink-tertiary">{tx("Confirm details before booking")}</p>
           </div>
           <div className="flex w-full max-h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-[1.5rem] border border-line bg-white shadow-[0_12px_40px_rgba(24,7,48,0.06)]">
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-2 pt-6">
@@ -865,6 +844,7 @@ export function MedicationOrder() {
           <p className="px-1 text-center text-2xs leading-relaxed text-ink-tertiary">
             {tx("Licensed Canadian pharmacists review every order before it ships.")}
           </p>
+          {step === "details" ? <CheckoutOffers context={offerCtx} /> : null}
         </aside>
       </div>
     </div>

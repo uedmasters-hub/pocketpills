@@ -3,10 +3,13 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui";
 import { BookingReviewSidebar } from "@/components/appointments/BookingReviewSidebar";
-import { BookingCheckout } from "@/components/appointments/BookingCheckout";
+import { BookingRequestStatus } from "@/components/appointments/BookingCheckout";
+import { ChoosePaymentOption, SideTabPanel, usePaymentFields } from "@/components/checkout/ChoosePaymentOption";
+import { consultQuote } from "@/lib/bookingQuote";
 import { useI18n } from "@/lib/i18n";
 import { loadFamily, saveFamily } from "@/lib/accountPrefs";
 import { useUser } from "@/lib/user";
+import type { CheckoutContext } from "@/lib/offers";
 import {
   DEMO_FINDINGS,
   DEMO_REPORTS,
@@ -75,13 +78,10 @@ export function BookAppointment() {
   const [otherPatients, setOtherPatients] = useState<PatientOption[]>(() =>
     seedOtherPatients(user?.phone || user?.email || ""),
   );
-  const [addingPatient, setAddingPatient] = useState(false);
+  const [visitTab, setVisitTab] = useState<"saved" | "new" | "reports" | "consults">("saved");
   const [newName, setNewName] = useState("");
   const [newRelation, setNewRelation] = useState("");
   const [newDob, setNewDob] = useState("");
-
-  const [reportsOpen, setReportsOpen] = useState(false);
-  const [consultsOpen, setConsultsOpen] = useState(false);
   const [dobError, setDobError] = useState("");
 
   const patients: PatientOption[] = useMemo(
@@ -105,7 +105,8 @@ export function BookAppointment() {
   const [findingIds, setFindingIds] = useState<string[]>([]);
   const [symptoms, setSymptoms] = useState("");
   const [notes, setNotes] = useState("");
-  const [checkout, setCheckout] = useState(false);
+  const [confirmation, setConfirmation] = useState<{ no: string; id: string } | null>(null);
+  const pay = usePaymentFields(user?.cardLast4);
 
   const patient = patients.find((p) => p.id === patientId) ?? patients[0];
   const slotReady = !!(date && time && visitType);
@@ -229,7 +230,7 @@ export function BookAppointment() {
     });
 
     setPatientId(id);
-    setAddingPatient(false);
+    setVisitTab("saved");
     setNewName("");
     setNewRelation("");
     setNewDob("");
@@ -247,9 +248,11 @@ export function BookAppointment() {
   };
 
   const goToPayment = () => {
-    if (!specialty || !visitType || !patient) return;
+    if (!specialty || !visitType || !patient || visitTab === "new") return;
     if (isPastDate(date) || isSlotInPast(date, time)) return;
-    setCheckout(true);
+    if (!pay.ready(consultQuote(fee).beforeOffer)) return;
+    const conf = payAndCreate(pay.last4);
+    if (conf.no) setConfirmation(conf);
   };
 
   const payAndCreate = (cardLast4: string) => {
@@ -285,9 +288,9 @@ export function BookAppointment() {
     return { no: appt.confirmationNo, id: appt.id };
   };
 
-  if (checkout) {
+  if (confirmation) {
     return (
-      <BookingCheckout
+      <BookingRequestStatus
         doctorName={provider.name}
         visitLabel={tx(visitType === "virtual" ? "Virtual visit" : "In-clinic visit")}
         date={date}
@@ -295,10 +298,8 @@ export function BookAppointment() {
         patientName={patient.name}
         specialtyLabel={specialty ? tx(specialty.label) : undefined}
         fee={fee}
-        savedLast4={user?.cardLast4}
-        onBack={() => setCheckout(false)}
+        confirmation={confirmation}
         onClose={close}
-        onPay={payAndCreate}
       />
     );
   }
@@ -336,146 +337,6 @@ export function BookAppointment() {
               {tx("Choose a patient profile. History and reports are optional.")}
             </p>
 
-            <div className="mt-5 overflow-hidden rounded-2xl border border-line bg-white">
-              {addingPatient ? (
-                <div className="space-y-4 p-5">
-                  <p className="text-sm font-semibold text-wellness">{tx("New patient")}</p>
-                  <Field
-                    label={tx("Full name")}
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    placeholder={tx("e.g. Jordan Lee")}
-                    className="placeholder:italic"
-                    autoComplete="name"
-                  />
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Field
-                      label={tx("Relationship")}
-                      value={newRelation}
-                      onChange={(e) => setNewRelation(e.target.value)}
-                      placeholder={tx("e.g. Parent, child")}
-                      className="placeholder:italic"
-                    />
-                    <Field
-                      label={tx("Date of birth (optional)")}
-                      value={newDob}
-                      onChange={(e) => {
-                        setNewDob(e.target.value);
-                        setDobError("");
-                      }}
-                      placeholder="YYYY-MM-DD"
-                      className="placeholder:italic"
-                      inputMode="numeric"
-                      error={dobError || undefined}
-                    />
-                  </div>
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <Button
-                      onClick={addPassenger}
-                      disabled={!newName.trim() || Boolean(newDob.trim() && !isValidDob(newDob.trim()))}
-                    >
-                      {tx("Save patient")}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setAddingPatient(false);
-                        setNewName("");
-                        setNewRelation("");
-                        setNewDob("");
-                        setDobError("");
-                      }}
-                    >
-                      {tx("Cancel")}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setAddingPatient(true)}
-                  className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-[color:var(--state-hover)]"
-                >
-                  <span className="text-sm font-medium text-wellness">{tx("New patient")}</span>
-                  <span className="text-lg leading-none text-wellness" aria-hidden>
-                    +
-                  </span>
-                </button>
-              )}
-            </div>
-
-            {patients.length === 0 ? (
-              <p className="mt-4 text-sm text-ink-tertiary">
-                {tx("Add a patient above to continue.")}
-              </p>
-            ) : (
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {patients.map((p) => {
-                  const on = patientId === p.id;
-                  const isPrimary = p.id === "self";
-                  const tag = isPrimary ? "Primary" : p.badge || p.relation;
-                  return (
-                    <div
-                      key={p.id}
-                      className={
-                        "relative rounded-2xl border bg-white transition-colors " +
-                        (on
-                          ? "border-[color:var(--pp-primary-950)] shadow-[0_8px_24px_rgba(24,7,48,0.06)]"
-                          : "border-line hover:border-[color:var(--border-strong)]")
-                      }
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setPatientId(p.id)}
-                        aria-pressed={on}
-                        className={"w-full p-4 text-left " + (isPrimary ? "" : "pr-10")}
-                      >
-                        <span className="flex items-start justify-between gap-2">
-                          <span className="min-w-0">
-                            <span
-                              className="block truncate font-semibold text-[color:var(--pp-primary-950)]"
-                              title={p.name}
-                            >
-                              {p.name}
-                            </span>
-                            <span className="mt-0.5 block truncate text-sm text-ink-tertiary">
-                              {tx(p.relation)}
-                            </span>
-                          </span>
-                          {tag ? (
-                            <span className={"shrink-0 rounded-full px-2.5 py-1 text-2xs font-semibold " + relationTagClass(tag)}>
-                              {tx(tag)}
-                            </span>
-                          ) : null}
-                        </span>
-                      </button>
-                      {isPrimary ? null : (
-                        <button
-                          type="button"
-                          onClick={() => removePatient(p.id)}
-                          className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full text-ink-tertiary hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
-                          aria-label={`${tx("Remove")} ${p.name}`}
-                        >
-                          <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-                            <path d="M3 3l6 6M9 3l-6 6" strokeLinecap="round" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          <section>
-            <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
-              {tx("Share your reports, or follow-ups")}
-            </h2>
-            <p className="mt-1 text-sm text-ink-tertiary">
-              {tx("Make consultant aware of your health condition, simply select to share.")}
-            </p>
-
             <input
               ref={fileRef}
               type="file"
@@ -485,63 +346,194 @@ export function BookAppointment() {
               onChange={(e) => {
                 onUpload(e.target.files);
                 e.target.value = "";
-                setReportsOpen(true);
+                setVisitTab("reports");
               }}
             />
 
-            <div className="mt-5 grid items-start gap-4 lg:grid-cols-2">
-              <ShareBoard
-                title={tx("Reports")}
-                count={DEMO_REPORTS.length + uploads.length}
-                open={reportsOpen}
-                onToggle={() => setReportsOpen((v) => !v)}
-                onUpload={() => fileRef.current?.click()}
-                empty={tx("No reports yet. Upload a file to share.")}
+            <div className="mt-5">
+              <SideTabPanel
+                label={tx("Who is this visit for?")}
+                tabs={[
+                  { id: "saved", title: tx("Saved patient(s)") },
+                  { id: "new", title: tx("New patient") },
+                  { id: "reports", title: tx("Reports") },
+                  { id: "consults", title: tx("Past consultations") },
+                ]}
+                value={visitTab}
+                onChange={(id) => setVisitTab(id as typeof visitTab)}
               >
-                {DEMO_REPORTS.map((r) => (
-                  <ShareRow
-                    key={r.id}
-                    title={tx(r.title)}
-                    detail={`${tx(r.detail)} · ${r.date}`}
-                    checked={attached.some((a) => a.id === r.id)}
-                    onToggle={() => toggleLibraryReport(r.id)}
-                    kind="report"
-                  />
-                ))}
-                {uploads.map((a) => (
-                  <ShareRow
-                    key={a.id}
-                    title={a.title}
-                    detail={tx(a.detail)}
-                    checked={attached.some((x) => x.id === a.id)}
-                    onToggle={() => toggleUpload(a.id)}
-                    onDelete={() => deleteUpload(a.id)}
-                    kind="report"
-                  />
-                ))}
-              </ShareBoard>
-
-              <ShareBoard
-                title={tx("Earlier consultations")}
-                count={DEMO_FINDINGS.length}
-                open={consultsOpen}
-                onToggle={() => setConsultsOpen((v) => !v)}
-                onUpload={() => fileRef.current?.click()}
-                empty={tx("No earlier consultations to share.")}
-              >
-                {DEMO_FINDINGS.map((f) => (
-                  <ShareRow
-                    key={f.id}
-                    title={tx(f.title)}
-                    detail={`${tx(f.detail)} · ${f.date}`}
-                    checked={findingIds.includes(f.id)}
-                    onToggle={() => toggleFinding(f.id)}
-                    kind="finding"
-                  />
-                ))}
-              </ShareBoard>
+                {visitTab === "new" ? (
+                  <div className="space-y-4">
+                    <Field
+                      label={tx("Full name")}
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder={tx("e.g. Jordan Lee")}
+                      className="placeholder:italic"
+                      autoComplete="name"
+                    />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="block">
+                        <span className="mb-1.5 block text-sm font-medium text-ink-secondary">
+                          {tx("Relationship")}
+                        </span>
+                        <select
+                          value={newRelation}
+                          onChange={(e) => setNewRelation(e.target.value)}
+                          className="h-12 w-full rounded-xl border border-line bg-surface-2 px-4 text-base text-ink hover:bg-[color:var(--state-hover)] focus:border-[color:var(--primary-600)]"
+                        >
+                          <option value="">{tx("e.g. Parent, child")}</option>
+                          {["Spouse", "Parent", "Child", "Partner", "Sibling", "Family member"].map((r) => (
+                            <option key={r} value={r}>
+                              {tx(r)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <Field
+                        label={tx("Date of birth (optional)")}
+                        value={newDob}
+                        onChange={(e) => {
+                          setNewDob(e.target.value);
+                          setDobError("");
+                        }}
+                        placeholder="YYYY-MM-DD"
+                        className="placeholder:italic"
+                        inputMode="numeric"
+                        error={dobError || undefined}
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button
+                        onClick={addPassenger}
+                        disabled={!newName.trim() || Boolean(newDob.trim() && !isValidDob(newDob.trim()))}
+                      >
+                        {tx("Save patient")}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setVisitTab("saved");
+                          setNewName("");
+                          setNewRelation("");
+                          setNewDob("");
+                          setDobError("");
+                        }}
+                      >
+                        {tx("Cancel")}
+                      </Button>
+                    </div>
+                  </div>
+                ) : visitTab === "reports" ? (
+                  <ShareList
+                    count={DEMO_REPORTS.length + uploads.length}
+                    onUpload={() => fileRef.current?.click()}
+                    empty={tx("No reports yet. Upload a file to share.")}
+                  >
+                    {DEMO_REPORTS.map((r) => (
+                      <ShareRow
+                        key={r.id}
+                        title={tx(r.title)}
+                        detail={`${tx(r.detail)} · ${r.date}`}
+                        checked={attached.some((a) => a.id === r.id)}
+                        onToggle={() => toggleLibraryReport(r.id)}
+                        kind="report"
+                      />
+                    ))}
+                    {uploads.map((a) => (
+                      <ShareRow
+                        key={a.id}
+                        title={a.title}
+                        detail={tx(a.detail)}
+                        checked={attached.some((x) => x.id === a.id)}
+                        onToggle={() => toggleUpload(a.id)}
+                        onDelete={() => deleteUpload(a.id)}
+                        kind="report"
+                      />
+                    ))}
+                  </ShareList>
+                ) : visitTab === "consults" ? (
+                  <ShareList
+                    count={DEMO_FINDINGS.length}
+                    onUpload={() => fileRef.current?.click()}
+                    empty={tx("No earlier consultations to share.")}
+                  >
+                    {DEMO_FINDINGS.map((f) => (
+                      <ShareRow
+                        key={f.id}
+                        title={tx(f.title)}
+                        detail={`${tx(f.detail)} · ${f.date}`}
+                        checked={findingIds.includes(f.id)}
+                        onToggle={() => toggleFinding(f.id)}
+                        kind="finding"
+                      />
+                    ))}
+                  </ShareList>
+                ) : patients.length === 0 ? (
+                  <p className="text-sm text-ink-tertiary">{tx("Add a patient above to continue.")}</p>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {patients.map((p) => {
+                      const on = patientId === p.id;
+                      const isPrimary = p.id === "self";
+                      const tag = isPrimary ? "Primary" : p.badge || p.relation;
+                      return (
+                        <div
+                          key={p.id}
+                          className={
+                            "relative rounded-2xl border bg-white transition-colors " +
+                            (on
+                              ? "border-[color:var(--pp-primary-950)] shadow-[0_8px_24px_rgba(24,7,48,0.06)]"
+                              : "border-line hover:border-[color:var(--border-strong)]")
+                          }
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setPatientId(p.id)}
+                            aria-pressed={on}
+                            className={"w-full p-4 text-left " + (isPrimary ? "" : "pr-10")}
+                          >
+                            <span className="flex items-start justify-between gap-2">
+                              <span className="min-w-0">
+                                <span
+                                  className="block truncate font-semibold text-[color:var(--pp-primary-950)]"
+                                  title={p.name}
+                                >
+                                  {p.name}
+                                </span>
+                                <span className="mt-0.5 block truncate text-sm text-ink-tertiary">
+                                  {tx(p.relation)}
+                                </span>
+                              </span>
+                              {tag ? (
+                                <span className={"shrink-0 rounded-full px-2.5 py-1 text-2xs font-semibold " + relationTagClass(tag)}>
+                                  {tx(tag)}
+                                </span>
+                              ) : null}
+                            </span>
+                          </button>
+                          {isPrimary ? null : (
+                            <button
+                              type="button"
+                              onClick={() => removePatient(p.id)}
+                              className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full text-ink-tertiary hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
+                              aria-label={`${tx("Remove")} ${p.name}`}
+                            >
+                              <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+                                <path d="M3 3l6 6M9 3l-6 6" strokeLinecap="round" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </SideTabPanel>
             </div>
           </section>
+
+          <ChoosePaymentOption pay={pay} savedLast4={user?.cardLast4} due={consultQuote(fee).beforeOffer} />
         </div>
 
         <BookingReviewSidebar
@@ -575,7 +567,21 @@ export function BookAppointment() {
           notes={notes}
           onNotes={setNotes}
           onConfirm={goToPayment}
-          confirmDisabled={!patient || !specialty}
+          confirmDisabled={!patient || !specialty || visitTab === "new" || !pay.ready(consultQuote(fee).beforeOffer)}
+          confirmHint={
+            visitTab === "new"
+              ? tx("Save or cancel the new patient to continue.")
+              : !pay.ready(consultQuote(fee).beforeOffer)
+                ? tx("Choose a payment option on the left to continue.")
+                : undefined
+          }
+          offerContext={
+            {
+              kind: "consult",
+              amount: consultQuote(fee).beforeOffer,
+              specialty: specialty ? tx(specialty.label) : undefined,
+            } satisfies CheckoutContext
+          }
         />
       </div>
     </div>
@@ -636,41 +642,24 @@ function isValidDob(value: string): boolean {
   return true;
 }
 
-function ShareBoard({
-  title,
+function ShareList({
   count,
-  open,
-  onToggle,
   onUpload,
   empty,
   children,
 }: {
-  title: string;
   count: number;
-  open: boolean;
-  onToggle: () => void;
   onUpload: () => void;
   empty: string;
   children: ReactNode;
 }) {
   const { tx } = useI18n();
-  const id = `share-${title.replace(/\s+/g, "-").toLowerCase()}`;
-
   return (
-    <div className="self-start w-full overflow-hidden rounded-2xl border border-line bg-white">
-      <div className="flex items-center gap-2 px-4 py-3.5">
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls={id}
-          onClick={onToggle}
-          className="min-w-0 flex-1 truncate text-left text-sm font-medium text-[color:var(--pp-primary-950)]"
-        >
-          {title}{" "}
-          <span className="font-normal text-ink-tertiary">
-            {tx("Available")} ({count})
-          </span>
-        </button>
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <p className="text-sm text-ink-tertiary">
+          {tx("Available")} ({count})
+        </p>
         <button
           type="button"
           onClick={onUpload}
@@ -678,31 +667,12 @@ function ShareBoard({
         >
           {tx("Upload")} +
         </button>
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls={id}
-          onClick={onToggle}
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-100)]"
-          aria-label={open ? tx("Collapse") : tx("Expand")}
-        >
-          <svg
-            viewBox="0 0 20 20"
-            className={"h-4 w-4 transition-transform " + (open ? "rotate-180" : "")}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            aria-hidden
-          >
-            <path d="M5 7.5 10 12.5 15 7.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
       </div>
-      {open ? (
-        <div id={id} className="bg-white">
-          {count > 0 ? <ul>{children}</ul> : <p className="px-4 py-6 text-sm text-ink-tertiary">{empty}</p>}
-        </div>
-      ) : null}
+      {count > 0 ? (
+        <ul className="-mx-1">{children}</ul>
+      ) : (
+        <p className="py-4 text-sm text-ink-tertiary">{empty}</p>
+      )}
     </div>
   );
 }
@@ -725,7 +695,7 @@ function ShareRow({
   const { tx } = useI18n();
   return (
     <li className="border-t border-line first:border-t-0">
-      <div className="flex w-full items-start gap-2 px-4 py-3.5">
+      <div className="flex w-full items-start gap-2 py-3">
         <button
           type="button"
           onClick={onToggle}

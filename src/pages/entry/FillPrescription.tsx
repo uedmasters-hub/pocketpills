@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { drugs } from "@/lib/data";
 import { ActiveOfferBanner } from "@/components/offers/ActiveOfferBanner";
 import { CheckoutOffers, useOfferQuote } from "@/components/offers/CheckoutOffers";
+import { ChoosePaymentOption, usePaymentFields } from "@/components/checkout/ChoosePaymentOption";
 import type { CheckoutContext } from "@/lib/offers";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -19,7 +20,7 @@ import {
 } from "@/lib/rxOcr";
 
 const DISPENSING_FEE = 11.99;
-const STEPS = ["method", "capture", "meds", "patient", "packaging", "insurance", "delivery", "review", "payment"] as const;
+const STEPS = ["method", "capture", "meds", "patient", "packaging", "insurance", "delivery", "review"] as const;
 type Step = (typeof STEPS)[number] | "done";
 type Method = "upload" | "fax" | "mail" | "transfer";
 
@@ -291,6 +292,7 @@ export function FillPrescription() {
   const [step, setStep] = useState<Step>("method");
   const [s, setS] = useState<State>(initial);
   const set = (p: Partial<State>) => setS((prev) => ({ ...prev, ...p }));
+  const pay = usePaymentFields();
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -821,7 +823,13 @@ export function FillPrescription() {
       [tx("Delivery"), `${s.speed === "standard" ? tx("Standard") : tx("Same-day")} · ${s.address}`, "delivery"],
     ];
     return (
-      <EntryFlow {...common} title={tx("Review your order")} onNext={goNext} nextLabel={tx("Continue to payment")}>
+      <EntryFlow
+        {...common}
+        title={tx("Review your order")}
+        onNext={goNext}
+        nextLabel={tx("Pay & confirm")}
+        nextDisabled={!pay.ready(offerQuote.due)}
+      >
         <Card className="divide-y divide-line p-0">
           {rows.map(([k, v, to]) => (
             <div key={k} className="flex items-center justify-between gap-4 px-5 py-3.5">
@@ -838,56 +846,16 @@ export function FillPrescription() {
           {offerQuote.credit > 0 && (
             <Row k={tx("Offer")} v={`−$${offerQuote.credit.toFixed(2)}`} tone="wellness" />
           )}
-          <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">{tx("Due today")}</span><span className="font-display text-xl font-medium text-ink tnum">${(offerQuote.credit > 0 ? offerQuote.due : total$).toFixed(2)}</span></div>
+          <div className="mt-2 flex items-center justify-between border-t border-line pt-2"><span className="font-semibold text-ink">{tx("You pay")}</span><span className="font-display text-xl font-medium text-ink tnum">${(offerQuote.credit > 0 ? offerQuote.due : total$).toFixed(2)}</span></div>
         </Card>
         <div className="mt-4">
           <ActiveOfferBanner />
         </div>
-      </EntryFlow>
-    );
-  }
-
-  /* 9. Payment */
-  if (step === "payment") {
-    const due = offerQuote.due;
-    const offerCredit = offerQuote.credit;
-
-    return (
-      <EntryFlow
-        {...common}
-        title={tx("Payment")}
-        onNext={goNext}
-        nextLabel={due > 0 ? tx("Place order · {amount}").replace("{amount}", `$${due.toFixed(2)}`) : tx("Place order")}
-      >
-        <CheckoutOffers context={offerCtx} />
+        <div className="mt-6">
+          <ChoosePaymentOption pay={pay} due={offerQuote.due} />
+        </div>
         <div className="mt-4">
-        {due <= 0 ? (
-          <Card className="p-6 text-center">
-            <span className="text-3xl" aria-hidden>✅</span>
-            <p className="mt-2 font-semibold text-ink">{tx("Nothing due today")}</p>
-            <p className="mt-1 text-sm text-ink-tertiary">
-              {offerCredit > 0
-                ? tx("Your offer covers what’s left after insurance.")
-                : tx("Your plan covers this order. We'll bill your insurance directly.")}
-            </p>
-          </Card>
-        ) : (
-          <Card className="p-5">
-            {offerCredit > 0 && (
-              <div className="mb-4 rounded-xl bg-wellness-subtle px-3.5 py-2.5 text-sm text-wellness">
-                {tx("Offer credit −{credit} applied · due {due}")
-                  .replace("{credit}", `$${offerCredit.toFixed(2)}`)
-                  .replace("{due}", `$${due.toFixed(2)}`)}
-              </div>
-            )}
-            <Field label={tx("Card number")} placeholder="4242 4242 4242 4242" value={s.card} onChange={(e) => set({ card: e.target.value })} inputMode="numeric" />
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <Field label={tx("Expiry")} placeholder="12 / 27" value={s.exp} onChange={(e) => set({ exp: e.target.value })} />
-              <Field label={tx("CVC")} placeholder="123" value={s.cvc} onChange={(e) => set({ cvc: e.target.value })} inputMode="numeric" />
-            </div>
-            <p className="mt-3 text-xs text-ink-tertiary">{tx("🔒 Demo checkout — no real payment is processed.")}</p>
-          </Card>
-        )}
+          <CheckoutOffers context={offerCtx} />
         </div>
       </EntryFlow>
     );

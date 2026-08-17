@@ -1,6 +1,7 @@
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { FlowLayout } from "@/components/layout/FlowLayout";
 import { Card, Badge, Field, Switch } from "@/components/ui";
+import { ChoosePaymentOption, usePaymentFields } from "@/components/checkout/ChoosePaymentOption";
 import { useJourney } from "@/lib/journey";
 import { treatments } from "@/lib/data";
 
@@ -12,20 +13,23 @@ function useTreatment() {
 const LIST_PRICE = 42;
 const INSURANCE_COVERED = 30;
 
-/* ── Medication review + insurance ──────────────────────── */
+/* ── Medication review + insurance + payment ───────────── */
 export function MedicationReview() {
   const nav = useNavigate();
   const t = useTreatment();
   const { useInsurance, setUseInsurance } = useJourney();
+  const pay = usePaymentFields();
+  const total = useInsurance ? LIST_PRICE - INSURANCE_COVERED : LIST_PRICE;
 
   return (
     <FlowLayout
       step="medication"
       title="Your medication"
-      subtitle="Prescribed and ready to fill. Apply insurance to see your covered price."
+      subtitle="Prescribed and ready to fill. Apply insurance, then pay on this page."
       back="/care/doctor"
-      onContinue={() => nav("/care/checkout")}
-      continueLabel="Go to checkout"
+      onContinue={() => nav("/care/confirmation")}
+      continueLabel={`Pay & confirm · $${total.toFixed(2)}`}
+      continueDisabled={!pay.ready(total)}
     >
       <div className="space-y-4">
         <Card className="p-5">
@@ -70,31 +74,11 @@ export function MedicationReview() {
           <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
             <span className="font-semibold text-ink">You pay today</span>
             <span className="font-display text-xl font-medium text-ink tnum">
-              ${(useInsurance ? LIST_PRICE - INSURANCE_COVERED : LIST_PRICE).toFixed(2)}
+              ${total.toFixed(2)}
             </span>
           </div>
         </Card>
-      </div>
-    </FlowLayout>
-  );
-}
 
-/* ── Checkout ───────────────────────────────────────────── */
-export function Checkout() {
-  const nav = useNavigate();
-  const { useInsurance } = useJourney();
-  const total = useInsurance ? LIST_PRICE - INSURANCE_COVERED : LIST_PRICE;
-
-  return (
-    <FlowLayout
-      step="checkout"
-      title="Delivery & payment"
-      subtitle="Free delivery across Canada. You won't be charged until your order ships."
-      back="/care/medication"
-      onContinue={() => nav("/care/confirmation")}
-      continueLabel={`Place order · $${total.toFixed(2)}`}
-    >
-      <div className="space-y-4">
         <Card className="p-5">
           <p className="mb-3 font-semibold text-ink">Deliver to</p>
           <div className="space-y-3">
@@ -103,16 +87,13 @@ export function Checkout() {
           </div>
         </Card>
 
-        <Card className="p-5">
-          <p className="mb-3 font-semibold text-ink">Payment</p>
-          <Field label="Card number" placeholder="4242 4242 4242 4242" defaultValue="4242 4242 4242 4242" inputMode="numeric" />
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <Field label="Expiry" placeholder="12 / 27" defaultValue="12 / 27" />
-            <Field label="CVC" placeholder="123" defaultValue="123" inputMode="numeric" />
-          </div>
-          <p className="mt-3 text-xs text-ink-tertiary">🔒 Demo checkout — no real payment is processed.</p>
-        </Card>
+        <ChoosePaymentOption pay={pay} due={total} />
       </div>
     </FlowLayout>
   );
+}
+
+/** Kept so old /care/checkout links land on the merged medication + pay step. */
+export function Checkout() {
+  return <Navigate to="/care/medication" replace />;
 }

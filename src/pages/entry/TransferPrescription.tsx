@@ -10,6 +10,7 @@ import { getHubPharmacy } from "@/lib/pharmacySearch";
 import { loadSelectedPharmacy } from "@/lib/pharmacies";
 import { useI18n } from "@/lib/i18n";
 import { CheckoutOffers } from "@/components/offers/CheckoutOffers";
+import { ChoosePaymentOption, usePaymentFields } from "@/components/checkout/ChoosePaymentOption";
 
 /* ── Flow model ─────────────────────────────────────────── */
 const STEPS = [
@@ -18,7 +19,6 @@ const STEPS = [
   { key: "review", label: "Review" },
   { key: "trust", label: "Trust" },
   { key: "address", label: "Address" },
-  { key: "payment", label: "Payment" },
   { key: "done", label: "Done" },
 ] as const;
 
@@ -270,7 +270,7 @@ export function TransferPrescription() {
     province: "ON",
     postal: "",
   });
-  const [card, setCard] = useState({ number: "", exp: "", cvv: "" });
+  const pay = usePaymentFields();
 
   /* Prefill from /pharmacies/:region → Transfer from this pharmacy (once). */
   useEffect(() => {
@@ -561,18 +561,35 @@ export function TransferPrescription() {
     );
   }
 
-  /* ── 5. Address ──────────────────────────────────────── */
+  /* ── 5. Address + payment ─────────────────────────────── */
   if (step === "address") {
+    const canPay = pay.ready(1);
+    const submit = () => {
+      if (!canPay) return;
+      const order = createTransferOrder({
+        fromPharmacy: pharmacy?.name ?? "Your pharmacy",
+        address: deliveryAddress,
+        patient: displayName === "there" ? "Ramesh Mandal" : displayName,
+        cardLast4: pay.last4,
+      });
+      setSubmitted(order);
+      setStep("done");
+    };
     return (
       <TransferShell
         stepKey="address"
         onBack={() => setStep("trust")}
         onClose={close}
         footer={
-          <ContinueBar
-            onContinue={() => setStep("payment")}
-            disabled={addingAddress && (!newAddress.line1 || !newAddress.city || !newAddress.postal)}
-          />
+          <>
+            <p className="text-center text-2xs text-ink-tertiary">{tx("Powered by Moneris")}</p>
+            <Button fullWidth disabled={addingAddress && (!newAddress.line1 || !newAddress.city || !newAddress.postal) || !canPay} onClick={submit} className="!rounded-full">
+              {tx("Pay & confirm")}
+            </Button>
+            <p className="text-center text-2xs text-ink-tertiary">
+              {tx("If you have zero copay, your card will not be charged anything.")}
+            </p>
+          </>
         }
       >
         <h2 className="font-display text-[1.65rem] font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)] sm:text-3xl">
@@ -696,83 +713,11 @@ export function TransferPrescription() {
             </button>
           </div>
         )}
-      </TransferShell>
-    );
-  }
 
-  /* ── 6. Payment ──────────────────────────────────────── */
-  if (step === "payment") {
-    const canAdd = card.number.replace(/\s/g, "").length >= 12 && card.exp.length >= 4 && card.cvv.length >= 3;
-    const submit = () => {
-      const order = createTransferOrder({
-        fromPharmacy: pharmacy?.name ?? "Your pharmacy",
-        address: deliveryAddress,
-        patient: displayName === "there" ? "Ramesh Mandal" : displayName,
-        cardLast4: card.number.replace(/\s/g, "").slice(-4) || "4242",
-      });
-      setSubmitted(order);
-      setStep("done");
-    };
-    return (
-      <TransferShell
-        stepKey="payment"
-        onBack={() => setStep("address")}
-        onClose={close}
-        footer={
-          <>
-            <p className="text-center text-2xs text-ink-tertiary">{tx("Powered by Moneris")}</p>
-            <Button fullWidth disabled={!canAdd} onClick={submit} className="!rounded-full">
-              {tx("Add Card")}
-            </Button>
-            <p className="text-center text-2xs text-ink-tertiary">
-              {tx("If you have zero copay, your card will not be charged anything.")}
-            </p>
-          </>
-        }
-      >
-        <h2 className="font-display text-[1.65rem] font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)] sm:text-3xl">
-          {tx("Enter payment method to setup seamless delivery.")}
-        </h2>
-        <p className="mt-3 text-base text-ink-secondary">
-          {tx("We'll bill your insurance first. Your card is only charged for any remaining balance after you approve the order.")}
-        </p>
-
-        <div className="mt-5 flex gap-3 rounded-2xl border border-line bg-[color:var(--pp-primary-200)] px-4 py-3.5 text-sm text-ink-secondary">
-          <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-[10px] font-bold text-white" aria-hidden>
-            !
-          </span>
-          <p>
-            {tx("Transfers are always free and your card will not be charged until you approve the cost of your order.")}
-          </p>
+        <div className="mt-8">
+          <ChoosePaymentOption pay={pay} due={0} />
         </div>
-
-        <div className="mt-6 space-y-4">
-          <Field
-            label={tx("Card Number")}
-            placeholder="•••• •••• •••• ••••"
-            inputMode="numeric"
-            value={card.number}
-            onChange={(e) => setCard((c) => ({ ...c, number: e.target.value }))}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label={tx("Expiry (MMYY)")}
-              placeholder={tx("MMYY")}
-              inputMode="numeric"
-              value={card.exp}
-              onChange={(e) => setCard((c) => ({ ...c, exp: e.target.value }))}
-            />
-            <Field
-              label={tx("CVV")}
-              placeholder={tx("CVV")}
-              inputMode="numeric"
-              value={card.cvv}
-              onChange={(e) => setCard((c) => ({ ...c, cvv: e.target.value }))}
-            />
-          </div>
-        </div>
-
-        <div className="mt-6">
+        <div className="mt-4">
           <CheckoutOffers context={{ kind: "transfer", amount: 0 }} />
         </div>
       </TransferShell>
