@@ -1,6 +1,6 @@
 /** Ambulance / urgent / other on-demand services — request/dispatch demo. */
 
-import { textMatchesQuery } from "@/lib/pageSearch";
+import { fieldsMatchQuery, sortBySearchRank } from "@/lib/searchMatch";
 
 export type HealthServiceCategory = "ambulance" | "urgent-care" | "other";
 
@@ -145,10 +145,15 @@ export function searchHealthServices(
 ): HealthService[] {
   const needle = query.trim();
   if (!needle) return list;
-  return list.filter((s) =>
-    [s.name, s.blurb, s.city, healthServiceCategoryLabel(s.category), s.phone || ""].some((h) =>
-      textMatchesQuery(h, needle),
+  return sortBySearchRank(
+    list.filter((s) =>
+      fieldsMatchQuery(
+        [s.name, s.blurb, s.city, healthServiceCategoryLabel(s.category), s.phone || ""],
+        needle,
+      ),
     ),
+    needle,
+    (s) => [s.name, s.blurb, s.city, healthServiceCategoryLabel(s.category), s.phone || ""],
   );
 }
 

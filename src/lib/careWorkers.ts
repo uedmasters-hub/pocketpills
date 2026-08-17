@@ -1,6 +1,6 @@
 /** Medical assistants, nurses, home care — localStorage bookings. */
 
-import { textMatchesQuery } from "@/lib/pageSearch";
+import { fieldsMatchQuery, sortBySearchRank } from "@/lib/searchMatch";
 import { getPublishedCareWorker } from "@/lib/businessProfile";
 
 export type CareWorkerKind = "medical-assistant" | "nurse" | "home-care";
@@ -190,16 +190,23 @@ export function listCareWorkers(): CareWorker[] {
 export function searchCareWorkers(query: string, list: CareWorker[] = listCareWorkers()): CareWorker[] {
   const needle = query.trim();
   if (!needle) return list;
-  return list.filter((w) =>
-    [
-      w.name,
-      w.subtitle,
-      w.bio,
-      w.city,
-      careWorkerKindLabel(w.kind),
-      ...w.services,
-      ...w.languages,
-    ].some((h) => textMatchesQuery(h, needle)),
+  return sortBySearchRank(
+    list.filter((w) =>
+      fieldsMatchQuery(
+        [
+          w.name,
+          w.subtitle,
+          w.bio,
+          w.city,
+          careWorkerKindLabel(w.kind),
+          ...w.services,
+          ...w.languages,
+        ],
+        needle,
+      ),
+    ),
+    needle,
+    (w) => [w.name, w.subtitle, w.bio, w.city, careWorkerKindLabel(w.kind), ...w.services, ...w.languages],
   );
 }
 

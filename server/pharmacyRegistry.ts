@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { fieldsMatchQuery, sortBySearchRank, textMatchesQuery } from "./searchMatch.js";
 
 export type DdaPharmacy = {
   registrationNo: string;
@@ -123,7 +124,7 @@ function loadRegistry(): Loaded {
 }
 
 function includesInsensitive(hay: string, needle: string) {
-  return hay.toLowerCase().includes(needle.toLowerCase());
+  return textMatchesQuery(hay, needle);
 }
 
 export function localPharmacyRegistryAvailable() {
@@ -179,25 +180,23 @@ export function searchLocalPharmacies(query: {
   let limit = parseInt(query.limit || "20", 10) || 20;
   limit = Math.min(Math.max(limit, 1), 100);
 
-  const rows = pharmacies.filter((p) => {
+  const matched = pharmacies.filter((p) => {
     if (registrationNo && p.registrationNo !== normalizeRegNo(registrationNo)) return false;
     if (district && !includesInsensitive(p.district, district)) return false;
     if (place && !includesInsensitive(p.place, place)) return false;
     if (name && !includesInsensitive(p.name, name)) return false;
     if (
       q &&
-      !(
-        includesInsensitive(p.name, q) ||
-        includesInsensitive(p.place, q) ||
-        includesInsensitive(p.district, q) ||
-        includesInsensitive(p.pranali, q) ||
-        p.registrationNo.includes(q.replace(/\D/g, "") || q)
-      )
+      !fieldsMatchQuery([p.name, p.place, p.district, p.pranali, p.registrationNo], q) &&
+      !p.registrationNo.includes(q.replace(/\D/g, "") || q)
     ) {
       return false;
     }
     return true;
   });
+  const rows = q
+    ? sortBySearchRank(matched, q, (p) => [p.name, p.place, p.district, p.pranali, p.registrationNo])
+    : matched;
 
   const total = rows.length;
   const totalPages = Math.max(1, Math.ceil(total / limit) || 1);

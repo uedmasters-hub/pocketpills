@@ -81,18 +81,9 @@ export const PAGE_SEARCH_COPY: Record<PageSearchScope, PageSearchCopy> = {
   },
 };
 
-export function normalizeSearchQuery(text: string): string {
-  return text
-    .trim()
-    .toLowerCase()
-    .normalize("NFKC")
-    .replace(/\s+/g, " ");
-}
-
-export function textMatchesQuery(haystack: string, query: string): boolean {
-  const needle = normalizeSearchQuery(query);
-  if (!needle) return true;
-  const h = normalizeSearchQuery(haystack);
-  if (h.includes(needle)) return true;
-  return needle.split(" ").every((w) => w.length > 0 && h.includes(w));
-}
+export {
+  compactSearchText,
+  fieldsMatchQuery,
+  normalizeSearchQuery,
+  textMatchesQuery,
+} from "@/lib/searchMatch";

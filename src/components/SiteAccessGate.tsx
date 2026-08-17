@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { Logo } from "@/components/Logo";
 import {
   clearSiteAccessSession,
   passwordUnlock,
@@ -82,10 +81,6 @@ export function SiteAccessGate({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#F5F4F9] px-5 py-14">
-      <div className="mb-9">
-        <Logo />
-      </div>
-
       <div className="w-full max-w-[440px] rounded-[1.75rem] bg-white px-7 py-8 shadow-[0_16px_48px_rgba(40,24,72,0.08)] sm:px-9 sm:py-9">
         <h1 className={`font-display text-[1.75rem] font-semibold tracking-tight ${ink}`}>
           Preview access
@@ -131,16 +126,8 @@ export function SiteAccessGate({ children }: { children: ReactNode }) {
       </div>
 
       <p className={`mt-9 max-w-md text-center text-xs leading-relaxed ${muted}`}>
-        Thanks for taking the time to explore this work. This is a temporary assessment project and
-        will be removed soon. If you’d like access, please use the temporary password or reach out
-        to Ramesh at{" "}
-        <a
-          href="tel:+919538000060"
-          className="underline decoration-[#8A8399]/45 underline-offset-2 transition-colors hover:text-[#3A2A5C]"
-        >
-          +91 95380 00060
-        </a>
-        .
+        This project no longer exists. If you own this domain, please use the domain password to
+        access it.
       </p>
     </div>
   );

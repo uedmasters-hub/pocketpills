@@ -390,8 +390,7 @@ export function AccessGateSkeleton() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#F5F4F9] px-5 py-14" aria-busy="true">
       <ScreenReaderStatus label="Checking access" />
-      <Skeleton className="h-10 w-40" />
-      <div className="mt-9 w-full max-w-[440px] rounded-[1.75rem] bg-white px-7 py-8 shadow-[0_16px_48px_rgba(40,24,72,0.08)] sm:px-9 sm:py-9">
+      <div className="w-full max-w-[440px] rounded-[1.75rem] bg-white px-7 py-8 shadow-[0_16px_48px_rgba(40,24,72,0.08)] sm:px-9 sm:py-9">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="mt-7 h-3.5 w-16" />
         <Skeleton className="mt-2 h-12 w-full" rounded="lg" />

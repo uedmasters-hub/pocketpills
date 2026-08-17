@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/Button";
 import { RatingChipSkeleton } from "@/components/ui";
 import { RatingChip } from "@/components/reviews/RatingChip";
 import { PageSearchField } from "@/components/PageSearchField";
+import { mapSearchHits } from "@/components/AlsoFoundHeading";
+import { HighlightedText } from "@/components/HighlightedText";
 import { drugs, type Treatment } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -331,13 +333,19 @@ export function Appointments() {
                   onShowLess={() => setShowAllSpecialties(false)}
                   gridClass={listGridClass}
                 >
-                  {specialtiesCollapse.visible.map((s) => (
-                    <SpecialtyCard
-                      key={s.id}
-                      specialty={s}
-                      onConsult={() => selectSpecialty(s.id)}
-                    />
-                  ))}
+                  {mapSearchHits(
+                    specialtiesCollapse.visible,
+                    q,
+                    (s) => [s.label, s.blurb, s.id],
+                    (s) => (
+                      <SpecialtyCard
+                        key={s.id}
+                        specialty={s}
+                        highlightQuery={q}
+                        onConsult={() => selectSpecialty(s.id)}
+                      />
+                    ),
+                  )}
                   {specialtiesCollapse.canCollapse && (
                     <ViewAllCard
                       remaining={filteredSpecialties.length - collapsedVisible}
@@ -360,13 +368,19 @@ export function Appointments() {
                   onShowLess={() => setShowAllTreatments(false)}
                   gridClass={listGridClass}
                 >
-                  {treatmentsCollapse.visible.map((t) => (
-                    <TreatmentCard
-                      key={t.slug}
-                      treatment={t}
-                      onOpen={() => nav(`/appointments/treatments/${t.slug}`)}
-                    />
-                  ))}
+                  {mapSearchHits(
+                    treatmentsCollapse.visible,
+                    q,
+                    (t) => [t.name, t.blurb, t.category, t.slug],
+                    (t) => (
+                      <TreatmentCard
+                        key={t.slug}
+                        treatment={t}
+                        highlightQuery={q}
+                        onOpen={() => nav(`/appointments/treatments/${t.slug}`)}
+                      />
+                    ),
+                  )}
                   {treatmentsCollapse.canCollapse && (
                     <ViewAllCard
                       remaining={filteredTreatments.length - collapsedVisible}
@@ -398,15 +412,21 @@ export function Appointments() {
                     </button>
                   }
                 >
-                  {pharmaciesCollapse.visible.map((p) => (
-                    <PharmacyCard
-                      key={p.id}
-                      pharmacy={p}
-                      summary={pharmacyRatings[p.id.replace(/^dda-/, "")]}
-                      ratingPending={!pharmacyRatingsReady}
-                      onOpen={() => openPharmacy(p)}
-                    />
-                  ))}
+                  {mapSearchHits(
+                    pharmaciesCollapse.visible,
+                    q,
+                    (p) => [p.name, p.city, p.address, p.province],
+                    (p) => (
+                      <PharmacyCard
+                        key={p.id}
+                        pharmacy={p}
+                        highlightQuery={q}
+                        summary={pharmacyRatings[p.id.replace(/^dda-/, "")]}
+                        ratingPending={!pharmacyRatingsReady}
+                        onOpen={() => openPharmacy(p)}
+                      />
+                    ),
+                  )}
                   {pharmaciesCollapse.canCollapse && (
                     <ViewAllCard
                       remaining={filteredPharmacies.length - collapsedVisible}
@@ -439,13 +459,19 @@ export function Appointments() {
                     </button>
                   }
                 >
-                  {labsCollapse.visible.map((l) => (
-                    <LabCard
-                      key={l.id}
-                      lab={l}
-                      onOpen={() => nav(`/appointments/labs/${l.id}`)}
-                    />
-                  ))}
+                  {mapSearchHits(
+                    labsCollapse.visible,
+                    q,
+                    (l) => [l.name, l.subtitle, l.city, l.address],
+                    (l) => (
+                      <LabCard
+                        key={l.id}
+                        lab={l}
+                        highlightQuery={q}
+                        onOpen={() => nav(`/appointments/labs/${l.id}`)}
+                      />
+                    ),
+                  )}
                   {labsCollapse.canCollapse && (
                     <ViewAllCard
                       remaining={filteredLabs.length - collapsedVisible}
@@ -468,13 +494,19 @@ export function Appointments() {
                   onShowLess={() => setShowAllAssistants(false)}
                   gridClass={listGridClass}
                 >
-                  {assistantsCollapse.visible.map((w) => (
-                    <CareWorkerCard
-                      key={w.id}
-                      worker={w}
-                      onOpen={() => nav(`/appointments/assistants/${w.id}`)}
-                    />
-                  ))}
+                  {mapSearchHits(
+                    assistantsCollapse.visible,
+                    q,
+                    (w) => [w.name, w.subtitle, w.bio, w.city],
+                    (w) => (
+                      <CareWorkerCard
+                        key={w.id}
+                        worker={w}
+                        highlightQuery={q}
+                        onOpen={() => nav(`/appointments/assistants/${w.id}`)}
+                      />
+                    ),
+                  )}
                   {assistantsCollapse.canCollapse && (
                     <ViewAllCard
                       remaining={filteredAssistants.length - collapsedVisible}
@@ -497,13 +529,19 @@ export function Appointments() {
                   onShowLess={() => setShowAllServices(false)}
                   gridClass={listGridClass}
                 >
-                  {servicesCollapse.visible.map((s) => (
-                    <ServiceCard
-                      key={s.id}
-                      service={s}
-                      onOpen={() => nav(`/appointments/services/${s.id}`)}
-                    />
-                  ))}
+                  {mapSearchHits(
+                    servicesCollapse.visible,
+                    q,
+                    (s) => [s.name, s.blurb, s.city],
+                    (s) => (
+                      <ServiceCard
+                        key={s.id}
+                        service={s}
+                        highlightQuery={q}
+                        onOpen={() => nav(`/appointments/services/${s.id}`)}
+                      />
+                    ),
+                  )}
                   {servicesCollapse.canCollapse && (
                     <ViewAllCard
                       remaining={filteredServices.length - collapsedVisible}
@@ -609,14 +647,20 @@ export function Appointments() {
                     : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                 }
               >
-                {providers.map((p) => (
-                  <ProviderCard
-                    key={p.id}
-                    p={p}
-                    specialty={specialty}
-                    onSelect={() => openDetail(p)}
-                  />
-                ))}
+                {mapSearchHits(
+                  providers,
+                  q,
+                  (p) => [p.name, p.subtitle, p.city, p.bio, p.address || ""],
+                  (p) => (
+                    <ProviderCard
+                      key={p.id}
+                      p={p}
+                      specialty={specialty}
+                      highlightQuery={q}
+                      onSelect={() => openDetail(p)}
+                    />
+                  ),
+                )}
               </div>
             )}
           </div>
@@ -699,9 +743,11 @@ const specialtyCardShell =
 function SpecialtyCard({
   specialty,
   onConsult,
+  highlightQuery = "",
 }: {
   specialty: Specialty;
   onConsult: () => void;
+  highlightQuery?: string;
 }) {
   const { tx } = useI18n();
   return (
@@ -718,7 +764,7 @@ function SpecialtyCard({
         />
       </div>
       <p className="mt-5 text-base font-semibold leading-snug tracking-tight text-[color:var(--pp-primary-950)] sm:text-lg">
-        {tx(specialty.label)}
+        <HighlightedText text={tx(specialty.label)} query={highlightQuery} />
       </p>
       <p className="mt-2 text-sm text-[#8B849C] tnum sm:text-[15px]">
         {formatFee(specialty.feeFrom)}
@@ -792,9 +838,11 @@ function ViewAllCard({
 function TreatmentCard({
   treatment,
   onOpen,
+  highlightQuery = "",
 }: {
   treatment: Treatment;
   onOpen: () => void;
+  highlightQuery?: string;
 }) {
   const { tx } = useI18n();
   return (
@@ -831,7 +879,7 @@ function TreatmentCard({
       <div className="flex flex-1 flex-col p-5">
         <p className="pp-caps text-[color:var(--pp-violet)]">{tx(treatment.category)}</p>
         <h3 className="mt-1.5 font-display text-xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {tx(treatment.name)}
+          <HighlightedText text={tx(treatment.name)} query={highlightQuery} />
         </h3>
         <p className="mt-1.5 line-clamp-2 flex-1 text-sm leading-relaxed text-ink-secondary">
           {tx(treatment.blurb)}
@@ -862,10 +910,12 @@ function ProviderCard({
   p,
   specialty,
   onSelect,
+  highlightQuery = "",
 }: {
   p: CareProvider;
   specialty: Specialty;
   onSelect: () => void;
+  highlightQuery?: string;
 }) {
   const { tx } = useI18n();
   const kind = tx(kindLabel(p.kind));
@@ -917,7 +967,7 @@ function ProviderCard({
         </div>
 
         <h3 className="mt-2 font-display text-xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {p.name}
+          <HighlightedText text={p.name} query={highlightQuery} />
         </h3>
         <p className="mt-1 text-sm text-ink-tertiary">{meta}</p>
         <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-ink-secondary">
@@ -944,7 +994,15 @@ function ProviderCard({
   );
 }
 
-function ServiceCard({ service, onOpen }: { service: HealthService; onOpen: () => void }) {
+function ServiceCard({
+  service,
+  onOpen,
+  highlightQuery = "",
+}: {
+  service: HealthService;
+  onOpen: () => void;
+  highlightQuery?: string;
+}) {
   const { tx } = useI18n();
   return (
     <button
@@ -963,7 +1021,7 @@ function ServiceCard({ service, onOpen }: { service: HealthService; onOpen: () =
         {tx(healthServiceCategoryLabel(service.category))}
       </p>
       <h3 className="mt-1.5 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        {tx(service.name)}
+        <HighlightedText text={tx(service.name)} query={highlightQuery} />
       </h3>
       <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-ink-secondary">{tx(service.blurb)}</p>
       <p className="mt-4 text-sm text-ink-tertiary">
@@ -990,11 +1048,13 @@ function PharmacyCard({
   pharmacy,
   summary,
   ratingPending = false,
+  highlightQuery = "",
   onOpen,
 }: {
   pharmacy: AreaPharmacy;
   summary?: ReviewSummary;
   ratingPending?: boolean;
+  highlightQuery?: string;
   onOpen: () => void;
 }) {
   const { tx } = useI18n();
@@ -1019,7 +1079,7 @@ function PharmacyCard({
         {summary ? <RatingChip summary={summary} /> : ratingPending ? <RatingChipSkeleton /> : null}
       </div>
       <h3 className="mt-2 font-display text-xl font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)]">
-        {pharmacy.name}
+        <HighlightedText text={pharmacy.name} query={highlightQuery} />
       </h3>
       {location ? <p className="mt-1 text-sm text-ink-tertiary">{location}</p> : null}
       {street ? <p className="mt-1.5 text-sm text-ink-secondary">{street}</p> : null}
@@ -1030,7 +1090,15 @@ function PharmacyCard({
   );
 }
 
-function LabCard({ lab, onOpen }: { lab: LabCentre; onOpen: () => void }) {
+function LabCard({
+  lab,
+  onOpen,
+  highlightQuery = "",
+}: {
+  lab: LabCentre;
+  onOpen: () => void;
+  highlightQuery?: string;
+}) {
   const { tx } = useI18n();
   return (
     <button
@@ -1047,7 +1115,7 @@ function LabCard({ lab, onOpen }: { lab: LabCentre; onOpen: () => void }) {
       </span>
       <p className="mt-4 pp-caps text-[color:var(--pp-violet)]">{tx("Lab")}</p>
       <h3 className="mt-1.5 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        {lab.name}
+        <HighlightedText text={lab.name} query={highlightQuery} />
       </h3>
       <p className="mt-1 text-sm text-ink-tertiary">
         {lab.city} · {formatDistance(lab.distanceKm)}
@@ -1060,7 +1128,15 @@ function LabCard({ lab, onOpen }: { lab: LabCentre; onOpen: () => void }) {
   );
 }
 
-function CareWorkerCard({ worker, onOpen }: { worker: CareWorker; onOpen: () => void }) {
+function CareWorkerCard({
+  worker,
+  onOpen,
+  highlightQuery = "",
+}: {
+  worker: CareWorker;
+  onOpen: () => void;
+  highlightQuery?: string;
+}) {
   const { tx } = useI18n();
   return (
     <button
@@ -1079,7 +1155,7 @@ function CareWorkerCard({ worker, onOpen }: { worker: CareWorker; onOpen: () => 
         {tx(careWorkerKindLabel(worker.kind))}
       </p>
       <h3 className="mt-1.5 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        {worker.name}
+        <HighlightedText text={worker.name} query={highlightQuery} />
       </h3>
       <p className="mt-1 text-sm text-ink-tertiary">
         {worker.city} · {formatDistance(worker.distanceKm)}

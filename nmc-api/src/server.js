@@ -339,21 +339,36 @@ app.get(
     const conditions = [];
     const params = {};
 
+    const compactNeedle = (value) =>
+      String(value || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9\u0900-\u097f]+/gi, "");
+
+    const compactCol = (col) =>
+      `REPLACE(REPLACE(REPLACE(REPLACE(LOWER(${col}), ' ', ''), '.', ''), '-', ''), '_', '')`;
+
     if (q) {
+      const qCompact = compactNeedle(q);
       conditions.push(
-        '(name LIKE @q OR address LIKE @q OR degree LIKE @q OR CAST(nmc_number AS TEXT) LIKE @q)'
+        qCompact
+          ? `(${compactCol("name")} LIKE @qCompact OR ${compactCol("address")} LIKE @qCompact OR ${compactCol("degree")} LIKE @qCompact OR CAST(nmc_number AS TEXT) LIKE @q OR name LIKE @q OR address LIKE @q OR degree LIKE @q)`
+          : `(name LIKE @q OR address LIKE @q OR degree LIKE @q OR CAST(nmc_number AS TEXT) LIKE @q)`
       );
       params.q = `%${q}%`;
+      if (qCompact) params.qCompact = `%${qCompact}%`;
     }
 
     if (name) {
-
+      const nameCompact = compactNeedle(name);
       conditions.push(
-        'name LIKE @name'
+        nameCompact
+          ? `(${compactCol("name")} LIKE @nameCompact OR name LIKE @name)`
+          : `name LIKE @name`
       );
 
       params.name =
         `%${name}%`;
+      if (nameCompact) params.nameCompact = `%${nameCompact}%`;
     }
 
     if (gender) {

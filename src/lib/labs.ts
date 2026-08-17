@@ -1,4 +1,4 @@
-import { textMatchesQuery } from "@/lib/pageSearch";
+import { fieldsMatchQuery, sortBySearchRank } from "@/lib/searchMatch";
 import { getPublishedLabCentre } from "@/lib/businessProfile";
 
 export type LabServiceKind = "blood" | "imaging" | "other";
@@ -541,14 +541,15 @@ export function summarizeLabSelection(itemIds: string[]): { names: string; fee: 
 export function searchLabs(query: string, list: LabCentre[] = listLabs()): LabCentre[] {
   const needle = query.trim();
   if (!needle) return list;
-  return list.filter((l) => {
+  const hits = list.filter((l) => {
     const names = [
       ...testsForLab(l).map((t) => `${t.name} ${t.category}`),
       ...imagingForLab(l).map((t) => `${t.name} ${t.category} scan MRI CT`),
       ...bundlesForLab(l).map((b) => `${b.name} ${b.description} package bundle`),
     ].join(" ");
-    return [l.name, l.subtitle, l.city, l.address, names].some((h) => textMatchesQuery(h, needle));
+    return fieldsMatchQuery([l.name, l.subtitle, l.city, l.address, names], needle);
   });
+  return sortBySearchRank(hits, needle, (l) => [l.name, l.subtitle, l.city, l.address]);
 }
 
 export function saveLabDraft(draft: LabDraft) {

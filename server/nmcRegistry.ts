@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { fieldsMatchQuery, sortBySearchRank, textMatchesQuery } from "./searchMatch.js";
 
 export type NmcDoctor = {
   nmcNumber: string;
@@ -130,7 +131,7 @@ function loadRegistry(): Loaded {
 }
 
 function includesInsensitive(hay: string, needle: string) {
-  return hay.toLowerCase().includes(needle.toLowerCase());
+  return textMatchesQuery(hay, needle);
 }
 
 export function localRegistryAvailable() {
@@ -161,14 +162,17 @@ export function searchLocalDoctors(query: {
   let limit = parseInt(query.limit || "20", 10) || 20;
   limit = Math.min(Math.max(limit, 1), 100);
 
-  const rows = doctors.filter((d) => {
-    if (q && !(includesInsensitive(d.name, q) || includesInsensitive(d.address, q) || includesInsensitive(d.degree, q) || d.nmcNumber.includes(q))) {
+  const matched = doctors.filter((d) => {
+    if (q && !fieldsMatchQuery([d.name, d.address, d.degree, d.nmcNumber], q)) {
       return false;
     }
     if (name && !includesInsensitive(d.name, name)) return false;
     if (address && !includesInsensitive(d.address, address)) return false;
     return true;
   });
+  const rows = q
+    ? sortBySearchRank(matched, q, (d) => [d.name, d.address, d.degree, d.nmcNumber])
+    : matched;
 
   const total = rows.length;
   const totalPages = Math.max(1, Math.ceil(total / limit));

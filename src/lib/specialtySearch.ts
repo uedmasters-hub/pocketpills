@@ -1,4 +1,5 @@
 import { SPECIALTIES, type Specialty, type SpecialtyId } from "@/lib/appointments";
+import { fieldsMatchQuery, normalizeSearchQuery, sortBySearchRank } from "@/lib/searchMatch";
 
 /**
  * Symptom / alias keywords for specialty search (English + Nepali).
@@ -234,33 +235,21 @@ export const SPECIALTY_SEARCH_TERMS: Record<SpecialtyId, string[]> = {
   ],
 };
 
-function normalize(text: string): string {
-  return text
-    .trim()
-    .toLowerCase()
-    .normalize("NFKC")
-    .replace(/\s+/g, " ");
-}
-
 /** True when query matches specialty label, blurb, or symptom aliases (EN/NE). */
 export function specialtyMatchesQuery(specialty: Specialty, query: string): boolean {
-  const needle = normalize(query);
-  if (!needle) return true;
-
-  const haystacks = [
-    specialty.label,
-    specialty.blurb,
-    specialty.id,
-    ...(SPECIALTY_SEARCH_TERMS[specialty.id] || []),
-  ].map(normalize);
-
-  return haystacks.some((h) => h.includes(needle) || needle.split(" ").every((w) => w && h.includes(w)));
+  return fieldsMatchQuery(
+    [specialty.label, specialty.blurb, specialty.id, ...(SPECIALTY_SEARCH_TERMS[specialty.id] || [])],
+    query,
+  );
 }
 
 export function searchSpecialties(query: string): Specialty[] {
-  const needle = normalize(query);
-  if (!needle) return SPECIALTIES;
-  return SPECIALTIES.filter((s) => specialtyMatchesQuery(s, needle));
+  if (!normalizeSearchQuery(query)) return SPECIALTIES;
+  return sortBySearchRank(
+    SPECIALTIES.filter((s) => specialtyMatchesQuery(s, query)),
+    query,
+    (s) => [s.label, s.blurb, s.id, ...(SPECIALTY_SEARCH_TERMS[s.id] || [])],
+  );
 }
 
 export type VoiceSearchLang = "en-US" | "ne-NP";

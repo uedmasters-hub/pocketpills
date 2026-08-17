@@ -1,5 +1,5 @@
 import { pharmaciesInRegion, type AreaPharmacy } from "@/lib/pharmacies";
-import { textMatchesQuery } from "@/lib/pageSearch";
+import { fieldsMatchQuery, sortBySearchRank } from "@/lib/searchMatch";
 import {
   displayPharmacyName,
   ensureDemoPublishedPharmacies,
@@ -52,8 +52,10 @@ export function getHubPharmacy(id: string): AreaPharmacy | null {
 export function searchPharmacies(query: string, list: AreaPharmacy[] = nearbyPharmacies()): AreaPharmacy[] {
   const needle = query.trim();
   if (!needle) return list;
-  return list.filter((p) =>
-    [p.name, p.city, p.address, p.province, p.hours].some((h) => textMatchesQuery(h, needle)),
+  return sortBySearchRank(
+    list.filter((p) => fieldsMatchQuery([p.name, p.city, p.address, p.province, p.hours], needle)),
+    needle,
+    (p) => [p.name, p.city, p.address, p.province, p.hours],
   );
 }
 

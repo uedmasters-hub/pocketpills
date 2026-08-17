@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
@@ -6,6 +7,41 @@ from typing import Optional
 import json
 import os
 from pathlib import Path
+
+def normalize_search(text: str) -> str:
+    s = unicodedata.normalize("NFKC", str(text or "")).casefold()
+    s = re.sub(r"[^\w]+", " ", s, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def compact_search(text: str) -> str:
+    return normalize_search(text).replace(" ", "")
+
+
+def matches_flexible(haystack: str, query: str) -> bool:
+    needle = normalize_search(query)
+    if not needle:
+        return True
+    hay = normalize_search(haystack)
+    if not hay:
+        return False
+    if needle in hay:
+        return True
+    compact_hay = compact_search(hay)
+    compact_needle = compact_search(needle)
+    if compact_needle in compact_hay:
+        return True
+    hay_tokens = hay.split()
+    return all(
+        token in compact_hay
+        or any(
+            ht == token
+            or ht.startswith(token)
+            or (len(token) >= 3 and token in ht)
+            for ht in hay_tokens
+        )
+        for token in needle.split()
+    )
 
 DATA_FILE = Path(__file__).parent / "pharmacies.json"
 
@@ -97,28 +133,35 @@ def pharmacies(
     results = PHARMACIES
 
     if district:
-        q = district.casefold()
-        results = [p for p in results if q in str(p.get("District", "")).casefold()]
+        q = district
+        results = [p for p in results if matches_flexible(str(p.get("District", "")), q)]
     if place:
-        q = place.casefold()
-        results = [p for p in results if q in str(p.get("Place", "")).casefold()]
+        q = place
+        results = [p for p in results if matches_flexible(str(p.get("Place", "")), q)]
     if pranali:
-        q = pranali.casefold()
-        results = [p for p in results if q in str(p.get("Pranali", "")).casefold()]
+        q = pranali
+        results = [p for p in results if matches_flexible(str(p.get("Pranali", "")), q)]
     if registration_no:
         results = [p for p in results if str(p.get("Registration No", "")) == registration_no]
     if pharmacy_name:
-        q = pharmacy_name.casefold()
-        results = [p for p in results if q in str(p.get("Pharmacy Name", "")).casefold()]
+        q = pharmacy_name
+        results = [p for p in results if matches_flexible(str(p.get("Pharmacy Name", "")), q)]
     if search:
-        q = search.casefold()
+        q = search
         results = [
             p for p in results
-            if q in str(p.get("Registration No", "")).casefold()
-            or q in str(p.get("Pharmacy Name", "")).casefold()
-            or q in str(p.get("Place", "")).casefold()
-            or q in str(p.get("District", "")).casefold()
-            or q in str(p.get("Pranali", "")).casefold()
+            if matches_flexible(
+                " ".join(
+                    [
+                        str(p.get("Registration No", "")),
+                        str(p.get("Pharmacy Name", "")),
+                        str(p.get("Place", "")),
+                        str(p.get("District", "")),
+                        str(p.get("Pranali", "")),
+                    ]
+                ),
+                q,
+            )
         ]
 
     total = len(results)

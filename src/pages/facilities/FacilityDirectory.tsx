@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type Ref } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type Ref } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AlsoFoundHeading } from "@/components/AlsoFoundHeading";
+import { HighlightedText } from "@/components/HighlightedText";
 import { PageSearchField } from "@/components/PageSearchField";
+import { rankFieldsMatch, sortBySearchRank, textMatchesQuery, type SearchMatchTier } from "@/lib/searchMatch";
 import { DirectoryFilterSelect } from "@/components/DirectoryFilterSelect";
 import { RatingChip } from "@/components/reviews/RatingChip";
 import { DirectoryGridSkeleton, RatingChipSkeleton, ResultCountSkeleton, SkeletonImage } from "@/components/ui";
@@ -218,11 +221,11 @@ export function FacilityDirectory() {
 
   const registeredPool = useMemo(() => {
     const pool = registeredForDistrict(district);
-    const needle = appliedQ.toLowerCase();
-    if (!needle) return pool;
-    return pool.filter((c) =>
-      `${c.name} ${c.district} ${c.facilityLevel} ${c.hfCode}`.toLowerCase().includes(needle),
+    if (!appliedQ.trim()) return pool;
+    const hits = pool.filter((c) =>
+      textMatchesQuery(`${c.name} ${c.district} ${c.facilityLevel} ${c.hfCode}`, appliedQ),
     );
+    return sortBySearchRank(hits, appliedQ, (c) => [c.name, c.district, c.facilityLevel, c.hfCode]);
   }, [district, appliedQ, rev]);
 
   const registeredPages = Math.max(1, Math.ceil(registeredPool.length / PAGE_SIZE));
@@ -232,36 +235,71 @@ export function FacilityDirectory() {
   }, [registeredPool, page]);
 
   type GridItem =
-    | { key: string; facility: HfFacility; activated: boolean }
+    | { key: string; facility: HfFacility; activated: boolean; tier: SearchMatchTier | null }
     | { key: string; viewMore: true };
 
   const gridItems = useMemo((): GridItem[] => {
+    const searching = Boolean(appliedQ.trim());
+    const tierOf = (f: HfFacility): SearchMatchTier | null =>
+      searching ? rankFieldsMatch([f.name, f.district, f.facilityLevel, f.hfCode], appliedQ) : null;
+    const isLive = (hfCode: string) =>
+      Boolean(getFacilityClaim(normalizeHfCode(hfCode) || hfCode)?.published);
     if (registeredOnly) {
       return pagedRegistered.map((c) => ({
         key: c.hfCode,
         facility: claimAsFacility(c),
         activated: true,
+        tier: tierOf(claimAsFacility(c)),
       }));
     }
+    const rankedRows = searching
+      ? sortBySearchRank(
+          rows,
+          appliedQ,
+          (r) => [r.name, r.district, r.facilityLevel, r.hfCode],
+          (r) => isLive(r.hfCode),
+        )
+      : rows;
     const out: GridItem[] = [];
     const shown = new Set<string>();
-    const pinRegistered = page === 1 && !appliedQ;
-    if (pinRegistered && registeredPool.length > 0) {
-      const moreThanFour = registeredPool.length > 4;
-      const featured = registeredPool.slice(0, moreThanFour ? 3 : registeredPool.length);
-      for (const c of featured) {
-        shown.add(normalizeHfCode(c.hfCode) || c.hfCode);
-        out.push({ key: c.hfCode, facility: claimAsFacility(c), activated: true });
+    const pinAvailable = searching ? page === 1 : page === 1 && !appliedQ;
+    if (pinAvailable && registeredPool.length > 0) {
+      if (searching) {
+        for (const c of registeredPool) {
+          const n = normalizeHfCode(c.hfCode) || c.hfCode;
+          shown.add(n);
+          out.push({
+            key: n,
+            facility: claimAsFacility(c),
+            activated: true,
+            tier: tierOf(claimAsFacility(c)),
+          });
+        }
+      } else {
+        const moreThanFour = registeredPool.length > 4;
+        const featured = registeredPool.slice(0, moreThanFour ? 3 : registeredPool.length);
+        for (const c of featured) {
+          shown.add(normalizeHfCode(c.hfCode) || c.hfCode);
+          out.push({
+            key: c.hfCode,
+            facility: claimAsFacility(c),
+            activated: true,
+            tier: tierOf(claimAsFacility(c)),
+          });
+        }
+        if (moreThanFour) out.push({ key: "view-more-registered", viewMore: true });
       }
-      if (moreThanFour) out.push({ key: "view-more-registered", viewMore: true });
+    } else if (searching) {
+      for (const c of registeredPool) shown.add(normalizeHfCode(c.hfCode) || c.hfCode);
     }
-    for (const row of rows) {
+    for (const row of rankedRows) {
       const n = normalizeHfCode(row.hfCode) || String(row.hfCode);
       if (shown.has(n)) continue;
       out.push({
         key: n,
         facility: row,
-        activated: Boolean(getFacilityClaim(n)?.published),
+        activated: isLive(n),
+        tier: tierOf(row),
       });
     }
     return out;
@@ -386,36 +424,51 @@ export function FacilityDirectory() {
 
       {gridItems.length > 0 && (
         <ul className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {gridItems.map((item) =>
-            "viewMore" in item ? (
-              <li key={item.key}>
-                <ViewMoreRegisteredCard
-                  remaining={Math.max(0, registeredPool.length - 3)}
-                  onClick={showRegisteredOnly}
-                />
-              </li>
-            ) : (
-              <li key={item.key}>
-                <DirectoryCard
-                  facility={item.facility}
-                  activated={item.activated}
-                  claimLocked={signedIn && !item.activated}
-                  summary={
-                    reviewSummaries[normalizeHfCode(item.facility.hfCode) || String(item.facility.hfCode)]
-                  }
-                  ratingPending={!reviewsReady}
-                  onOpen={() => {
-                    if (signedIn && !item.activated) return;
-                    nav(
-                      item.activated
-                        ? `/facilities/${item.facility.hfCode}`
-                        : `/facilities/claim?hf=${encodeURIComponent(item.facility.hfCode)}`,
-                    );
-                  }}
-                />
-              </li>
-            ),
-          )}
+          {gridItems.map((item, i) => {
+            if ("viewMore" in item) {
+              return (
+                <li key={item.key}>
+                  <ViewMoreRegisteredCard
+                    remaining={Math.max(0, registeredPool.length - 3)}
+                    onClick={showRegisteredOnly}
+                  />
+                </li>
+              );
+            }
+            const prev = i > 0 ? gridItems[i - 1] : null;
+            const showAlso =
+              Boolean(appliedQ.trim()) &&
+              item.tier === "also" &&
+              (!prev ||
+                !("tier" in prev) ||
+                prev.tier !== "also" ||
+                ("activated" in prev && prev.activated !== item.activated));
+            return (
+              <Fragment key={item.key}>
+                {showAlso && <AlsoFoundHeading as="li" />}
+                <li>
+                  <DirectoryCard
+                    facility={item.facility}
+                    activated={item.activated}
+                    highlightQuery={appliedQ}
+                    claimLocked={signedIn && !item.activated}
+                    summary={
+                      reviewSummaries[normalizeHfCode(item.facility.hfCode) || String(item.facility.hfCode)]
+                    }
+                    ratingPending={!reviewsReady}
+                    onOpen={() => {
+                      if (signedIn && !item.activated) return;
+                      nav(
+                        item.activated
+                          ? `/facilities/${item.facility.hfCode}`
+                          : `/facilities/claim?hf=${encodeURIComponent(item.facility.hfCode)}`,
+                      );
+                    }}
+                  />
+                </li>
+              </Fragment>
+            );
+          })}
         </ul>
       )}
 
@@ -526,6 +579,7 @@ function DirectoryCard({
   claimLocked = false,
   summary,
   ratingPending = false,
+  highlightQuery = "",
   onOpen,
 }: {
   facility: HfFacility;
@@ -533,6 +587,7 @@ function DirectoryCard({
   claimLocked?: boolean;
   summary?: ReviewSummary;
   ratingPending?: boolean;
+  highlightQuery?: string;
   onOpen: () => void;
 }) {
   const { tx } = useI18n();
@@ -595,8 +650,13 @@ function DirectoryCard({
               ) : null
             ) : null}
           </div>
-          <h2 className="mt-2 block w-full truncate font-display text-lg font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)]">
-            {name}
+          <h2
+            className={
+              "mt-2 block w-full min-w-0 overflow-hidden truncate font-display text-lg font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)]" +
+              (live ? "" : " select-none")
+            }
+          >
+            {live ? <HighlightedText text={name} query={highlightQuery} /> : name}
           </h2>
           <p className="mt-0.5 block w-full truncate text-sm leading-snug text-ink-tertiary">
             {kind ? `${kind} • ${district}` : district}

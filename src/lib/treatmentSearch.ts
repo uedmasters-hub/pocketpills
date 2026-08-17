@@ -1,5 +1,5 @@
 import { treatments, type Treatment } from "@/lib/data";
-import { textMatchesQuery } from "@/lib/pageSearch";
+import { fieldsMatchQuery, sortBySearchRank } from "@/lib/searchMatch";
 
 /** Extra symptom / alias terms for treatment search (EN + Nepali). */
 const TREATMENT_ALIASES: Record<string, string[]> = {
@@ -21,9 +21,13 @@ export function searchTreatments(query: string, list: Treatment[] = treatments):
   const needle = query.trim();
   if (!needle) return list;
 
-  return list.filter((t) => {
-    const aliases = TREATMENT_ALIASES[t.slug] || [];
-    const haystacks = [t.name, t.blurb, t.category, t.slug, ...aliases];
-    return haystacks.some((h) => textMatchesQuery(h, needle));
-  });
+  return sortBySearchRank(
+    list.filter((t) => {
+      const aliases = TREATMENT_ALIASES[t.slug] || [];
+      const haystacks = [t.name, t.blurb, t.category, t.slug, ...aliases];
+      return fieldsMatchQuery(haystacks, needle);
+    }),
+    needle,
+    (t) => [t.name, t.blurb, t.category, t.slug, ...(TREATMENT_ALIASES[t.slug] || [])],
+  );
 }

@@ -418,6 +418,7 @@ const FR: Record<string, string> = {
   "No matches in": "Aucun résultat en",
   "Try another city name, or clear the search.": "Essayez un autre nom de ville, ou effacez la recherche.",
   "Clear search": "Effacer la recherche",
+  "Also found": "Également trouvé",
   "Map near": "Carte près de",
 
   /* Medications / drug detail */
@@ -985,6 +986,7 @@ const NE: Record<string, string> = {
   "No matches in": "कुनै मिलान छैन",
   "Try another city name, or clear the search.": "अर्को शहर प्रयास गर्नुहोस्, वा खोज खाली गर्नुहोस्।",
   "Clear search": "खोज खाली गर्नुहोस्",
+  "Also found": "यो पनि भेटियो",
   "Map near": "नक्सा नजिक",
 
   "Online pharmacy": "अनलाइन फार्मेसी",

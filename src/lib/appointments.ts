@@ -3,6 +3,7 @@
 import { addCalendarDays, isPastDate, isSlotInPast, monthDayShort, todayIso, weekdayShort } from "@/lib/timeSlots";
 import { getPublishedCareProvider } from "@/lib/businessProfile";
 import { getNmcProvider, listPublishedNmcProviders } from "@/lib/doctorDirectory";
+import { sortBySearchRank, textMatchesQuery } from "@/lib/searchMatch";
 import type { SpecialisedGroup } from "@/lib/specialisedIn";
 
 export type VisitType = "virtual" | "clinic";
@@ -962,11 +963,21 @@ export function filterProviders(opts: {
       .join(" ")
       .toLowerCase();
 
-    if (haystack.includes(q)) return true;
-    return q.split(/\s+/).every((w) => w.length > 0 && haystack.includes(w));
+    return textMatchesQuery(haystack, q);
   });
-  if (opts.sortByDistance === false) return list;
-  return [...list].sort((a, b) => a.distanceKm - b.distanceKm);
+  const ranked = q
+    ? sortBySearchRank(list, q, (p) => [
+        p.name,
+        p.subtitle,
+        p.city,
+        p.bio,
+        p.address || "",
+        kindLabel(p.kind),
+      ])
+    : list;
+  if (opts.sortByDistance === false) return ranked;
+  if (q) return ranked;
+  return [...ranked].sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
 export function filterClinicians(opts: {

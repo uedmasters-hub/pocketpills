@@ -28,6 +28,36 @@ function requireApiKey(req, res, next) {
   next();
 }
 
+function normalizeSearch(text) {
+  return String(text || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\u0900-\u097f]+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function matchesFlexible(haystack, query) {
+  const needle = normalizeSearch(query);
+  if (!needle) return true;
+  const hay = normalizeSearch(haystack);
+  if (!hay) return false;
+  if (hay.includes(needle)) return true;
+  const compactHay = hay.replace(/\s+/g, "");
+  const compactNeedle = needle.replace(/\s+/g, "");
+  if (compactHay.includes(compactNeedle)) return true;
+  const hayTokens = hay.split(" ").filter(Boolean);
+  return needle.split(" ").filter(Boolean).every((token) => {
+    if (compactHay.includes(token)) return true;
+    return hayTokens.some(
+      (h) =>
+        h === token ||
+        h.startsWith(token) ||
+        (token.length >= 3 && h.includes(token)),
+    );
+  });
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -199,22 +229,16 @@ app.get('/api/v1/facilities', requireApiKey, (req, res) => {
   const filtered = sortedFacilities.filter(facility => {
     if (
       nameQuery &&
-      !facility.hfName.toLowerCase().includes(nameQuery)
+      !matchesFlexible(`${facility.hfName} ${facility.district} ${facility.facilityLevel}`, nameQuery)
     ) {
       return false;
     }
 
-    if (
-      districtQuery &&
-      !facility.district.toLowerCase().includes(districtQuery)
-    ) {
+    if (districtQuery && !matchesFlexible(facility.district, districtQuery)) {
       return false;
     }
 
-    if (
-      levelQuery &&
-      !facility.facilityLevel.toLowerCase().includes(levelQuery)
-    ) {
+    if (levelQuery && !matchesFlexible(facility.facilityLevel, levelQuery)) {
       return false;
     }
 
