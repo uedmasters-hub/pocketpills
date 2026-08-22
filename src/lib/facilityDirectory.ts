@@ -174,6 +174,22 @@ export function displayFacilityLevel(raw: string): string {
   return s;
 }
 
+/** Shared facility hero USPs — public profile and in-app landing stay in sync. */
+export const FACILITY_HERO_USPS = ["Verified Doctors", "Digital Prescription", "Free Followup"] as const;
+
+/** Subtitle used on public and dashboard facility heroes: type • HF #code, once. */
+export function facilityRegistrySubtitle(
+  facilityLevel: string | undefined,
+  kindLabel: string,
+  hfCode?: string | null,
+): string {
+  const level = displayFacilityLevel(facilityLevel || "");
+  const kind = kindLabel.trim();
+  const showLevel = level && level.toLowerCase() !== kind.toLowerCase() ? level : "";
+  const code = String(hfCode || "").trim();
+  return [showLevel, code ? `HF #${code}` : ""].filter(Boolean).join(" • ");
+}
+
 export function shortHfCode(hfCode: string) {
   const n = normalizeHfCode(hfCode) || String(hfCode).replace(/\D/g, "");
   if (n.length <= 6) return n;

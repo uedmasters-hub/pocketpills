@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { DetailSection } from "@/components/DetailSection";
 import { TrustStrip } from "@/components/pharmacy/TrustStrip";
 import { drugs, drugMonograph } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
@@ -175,12 +176,9 @@ export function DrugDetail() {
         <TrustStrip className="lg:col-start-1 lg:row-start-3" />
 
         <section className="min-w-0 lg:col-start-1 lg:row-start-4">
-          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-            {tx("Drug information")}
-          </h2>
-
+          <DetailSection title={tx("Drug information")}>
           <div
-            className="pp-scroll -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1"
+            className="pp-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
             role="tablist"
             aria-label={tx("Drug information sections")}
           >
@@ -194,6 +192,15 @@ export function DrugDetail() {
                 aria-controls={`drug-panel-${i}`}
                 tabIndex={tab === i ? 0 : -1}
                 onClick={() => setTab(i)}
+                onKeyDown={(e) => {
+                  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+                  e.preventDefault();
+                  const next =
+                    e.key === "ArrowRight"
+                      ? (i + 1) % monograph.length
+                      : (i - 1 + monograph.length) % monograph.length;
+                  setTab(next);
+                }}
                 className={
                   "shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors " +
                   (tab === i
@@ -210,7 +217,7 @@ export function DrugDetail() {
             id={`drug-panel-${tab}`}
             role="tabpanel"
             aria-labelledby={`drug-tab-${tab}`}
-            className="mt-5 rounded-2xl border border-line bg-white p-6"
+            className="mt-5 rounded-xl border border-line bg-[color:var(--pp-primary-100)] p-6"
           >
             <h3 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">
               {tx(monograph[tab].section)}
@@ -224,32 +231,29 @@ export function DrugDetail() {
             <span className="font-semibold text-ink-secondary">{tx("Educational summary — not medical advice.")}</span>{" "}
             {tx("Full monographs are reviewed by our pharmacists and cross-referenced with Health Canada.")}
           </p>
+        </DetailSection>
         </section>
       </div>
 
       {similar.length > 0 && (
-        <section className="mt-12 border-t border-line pt-8">
-          <div className="flex flex-wrap items-end justify-between gap-2">
-            <div>
-              <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-                {tx("Similar medications")}
-              </h2>
-              <p className="text-sm text-ink-tertiary">
-                {tx("Others in")} {tx(drug.cls)}.
-              </p>
-            </div>
+        <div className="mt-10">
+        <DetailSection
+          title={tx("Similar medications")}
+          lede={`${tx("Others in")} ${tx(drug.cls)}.`}
+          meta={
             <Link to="/drug" className="text-sm font-medium text-[color:var(--pp-violet)] hover:underline">
               {tx("Browse all")}
             </Link>
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          }
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {similar.map((d) => {
               const est = Math.round(d.price * (1 - d.coverage / 100) * 100) / 100;
               return (
                 <Link
                   key={d.slug}
                   to={`/drug/${d.slug}`}
-                  className="group flex flex-col rounded-2xl border border-line bg-white p-4 transition-colors hover:bg-[color:var(--state-hover)]"
+                  className="group flex flex-col rounded-xl border border-line bg-[color:var(--pp-primary-100)] p-4 transition-colors hover:bg-[color:var(--state-hover)]"
                 >
                   <span className="font-semibold text-[color:var(--pp-primary-950)]">{d.name}</span>
                   {d.generic && d.generic !== d.name && (
@@ -265,7 +269,8 @@ export function DrugDetail() {
               );
             })}
           </div>
-        </section>
+        </DetailSection>
+        </div>
       )}
     </div>
   );

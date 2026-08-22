@@ -5,6 +5,9 @@ import { lookupDoctor, searchDoctors, verifyDoctor } from "./nmcProxy.js";
 import { listPharmacyDistricts, lookupPharmacy, searchPharmacies, verifyPharmacy } from "./pharmacyProxy.js";
 import { listFacilityDistricts, lookupFacility, searchFacilities, verifyFacility } from "./facilityProxy.js";
 import { handleReviews } from "./reviewsApi.js";
+import { handleListings } from "./listingsApi.js";
+import { handleForeignDoctors } from "./foreignDoctorsApi.js";
+import { handleDesignSystem } from "./designSystemApi.js";
 
 function toAccessRequest(req: express.Request): AccessRequest {
   return {
@@ -33,7 +36,7 @@ export function createAccessApp() {
   const app = express();
 
   app.use(cors({ origin: true, credentials: true }));
-  app.use(express.json({ limit: "32kb" }));
+  app.use(express.json({ limit: "2mb" }));
 
   app.all("/api/access/password", (req, res) => run("password", req, res));
   app.all("/api/access/magic-link", (req, res) => run("magic-link", req, res));
@@ -155,6 +158,18 @@ export function createAccessApp() {
     void runReviews(req, res);
   });
 
+  app.use("/api/listings", (req, res) => {
+    void runListings(req, res);
+  });
+
+  app.use("/api/foreign-doctors", (req, res) => {
+    void runForeignDoctors(req, res);
+  });
+
+  app.use("/api/design-system", (req, res) => {
+    void runDesignSystem(req, res);
+  });
+
   return app;
 }
 
@@ -165,6 +180,34 @@ async function runReviews(req: express.Request, res: express.Response) {
     headers: req.headers as Record<string, string | string[] | undefined>,
     body: req.body,
     query: req.query as Record<string, string | string[] | undefined>,
+  });
+  res.status(result.status).json(result.body);
+}
+
+async function runListings(req: express.Request, res: express.Response) {
+  const result = await handleListings({
+    method: req.method,
+    url: req.originalUrl || req.url,
+    body: req.body,
+  });
+  res.status(result.status).json(result.body);
+}
+
+async function runForeignDoctors(req: express.Request, res: express.Response) {
+  const result = await handleForeignDoctors({
+    method: req.method,
+    url: req.originalUrl || req.url,
+    body: req.body,
+  });
+  res.status(result.status).json(result.body);
+}
+
+async function runDesignSystem(req: express.Request, res: express.Response) {
+  const result = await handleDesignSystem({
+    method: req.method,
+    url: req.originalUrl || req.url,
+    headers: req.headers as Record<string, string | string[] | undefined>,
+    body: req.body,
   });
   res.status(result.status).json(result.body);
 }

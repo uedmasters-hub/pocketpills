@@ -7,6 +7,14 @@ import { formatVerifiedOn } from "@/lib/doctorProfileContent";
 import { getPharmacyClaim } from "@/lib/pharmacyDirectory";
 import { inventoryStatus, peekStoredInventory, type InventorySku } from "@/lib/pharmacyOps";
 import { listDelegates } from "@/lib/providerDelegates";
+import type { ListingSection } from "@/lib/listingPage";
+import {
+  listingAwardsFor,
+  listingFaqsFor,
+  listingForHub,
+  listingGalleryFor,
+  listingSectionsFor,
+} from "@/lib/listingOverlay";
 
 export type PharmacyView = {
   id: string;
@@ -27,6 +35,9 @@ export type PharmacyView = {
   awards?: { title: string; org: string; year: string }[];
   gallery?: { src: string; label: string }[];
   updates?: { title: string; summary: string; date: string }[];
+  faqs?: { q: string; a: string }[];
+  pageSections?: ListingSection[];
+  hasListing?: boolean;
 };
 
 export const PHARMACY_REVIEW_TOPICS = [
@@ -86,22 +97,33 @@ export function pharmacyFromListing(input: {
         }))
         .filter((p) => p.name)
     : [];
+  const listing =
+    listingForHub(`prov-dda-${input.registrationNo}`, ownerId) ||
+    listingForHub(`dda-${input.registrationNo}`, ownerId);
+  const hubId = listing?.publishedId || `prov-dda-${input.registrationNo}`;
   return {
     id: `dda-${input.registrationNo}`,
-    name: input.name,
+    name: listing?.name || input.name,
     registrationNo: input.registrationNo,
     place: input.place,
-    district: input.district || "",
+    district: listing?.city || input.district || "",
     kindLabel: input.kindLabel,
-    phone: input.phone,
-    hours: input.live ? input.hours : undefined,
-    about: input.about,
+    phone: listing?.phone || input.phone,
+    hours: listing?.hours || (input.live ? input.hours : undefined),
+    about: listing?.about || input.about,
     live: input.live,
     lastVerified: claim?.publishedAt || claim?.claimedAt,
     ownerId,
-    listedServices: input.listedServices,
+    listedServices: listing?.services?.length
+      ? listing.services.filter((s) => s.kind === "service").map((s) => s.label)
+      : input.listedServices,
     pharmacists,
     inventory: input.live && ownerId ? peekStoredInventory(ownerId) : null,
+    awards: listingAwardsFor(hubId, undefined, ownerId),
+    gallery: listingGalleryFor(hubId, undefined, ownerId),
+    faqs: listingFaqsFor(hubId, [], ownerId),
+    pageSections: listingSectionsFor(hubId, ownerId),
+    hasListing: Boolean(listing),
   };
 }
 

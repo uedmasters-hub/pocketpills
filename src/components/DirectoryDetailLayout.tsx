@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { DetailSection } from "@/components/DetailSection";
+import { ENABLE_FIELD, EnableLine } from "@/components/listingEnable";
 import { SkeletonImage } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import verifiedBadge from "../../icons/verified badge.svg";
@@ -51,6 +53,13 @@ function displaySubtitle(value: string) {
   return value.replace(/\s*·\s*/g, " • ");
 }
 
+export type DirectoryHeroEnable = {
+  name: string;
+  subtitle?: string;
+  imageUrl: string;
+  onChange: (partial: { name?: string; subtitle?: string; imageUrl?: string }) => void;
+};
+
 /** Compact split hero shared by doctor, pharmacy, and hospital public pages. */
 export function DirectoryHeroCard({
   eyebrow,
@@ -62,6 +71,7 @@ export function DirectoryHeroCard({
   leadingBadges,
   usps = [],
   verified = true,
+  enable,
 }: {
   eyebrow: string;
   name: string;
@@ -72,8 +82,13 @@ export function DirectoryHeroCard({
   leadingBadges?: ReactNode;
   usps?: DirectoryHeroUsp[];
   verified?: boolean;
+  enable?: DirectoryHeroEnable;
 }) {
+  const { tx } = useI18n();
   const shownUsps = usps.filter((u) => u.label.trim()).slice(0, 3);
+  const displayName = enable?.name ?? name;
+  const displaySub = enable ? enable.subtitle : subtitle;
+  const displayImage = enable?.imageUrl ?? imageUrl;
   return (
     <header className="min-w-0 overflow-hidden rounded-[1.5rem] border border-line bg-[color:var(--pp-primary-200)] sm:h-[16.5rem]">
       <div className="flex h-full flex-col sm:flex-row sm:items-stretch">
@@ -88,14 +103,30 @@ export function DirectoryHeroCard({
                 </span>
               ) : null}
             </p>
-            <h1
-              title={name}
-              className="mt-1.5 line-clamp-2 font-display text-[1.375rem] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-primary-950)] sm:text-[1.5rem]"
-            >
-              {name}
-            </h1>
-            {subtitle ? (
-              <p className="mt-1.5 truncate text-sm text-ink-secondary">{displaySubtitle(subtitle)}</p>
+            {enable ? (
+              <EnableLine
+                value={displayName}
+                onChange={(v) => enable.onChange({ name: v })}
+                placeholder={tx("Your name")}
+                className="mt-1.5 font-display text-[1.375rem] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-primary-950)] sm:text-[1.5rem]"
+              />
+            ) : (
+              <h1
+                title={displayName}
+                className="mt-1.5 line-clamp-2 font-display text-[1.375rem] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-primary-950)] sm:text-[1.5rem]"
+              >
+                {displayName}
+              </h1>
+            )}
+            {enable ? (
+              <EnableLine
+                value={displaySub || ""}
+                onChange={(v) => enable.onChange({ subtitle: v })}
+                placeholder={tx("One-line intro")}
+                className="mt-1.5 truncate text-sm text-ink-secondary"
+              />
+            ) : displaySub ? (
+              <p className="mt-1.5 truncate text-sm text-ink-secondary">{displaySubtitle(displaySub)}</p>
             ) : null}
             {shownUsps.length ? (
               <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-left">
@@ -124,11 +155,22 @@ export function DirectoryHeroCard({
         </div>
         <div className="relative h-52 w-full shrink-0 overflow-hidden sm:h-auto sm:w-[32%]">
           <SkeletonImage
-            src={imageUrl}
-            alt=""
+            src={displayImage}
+            alt={displayName}
             className="absolute inset-0 h-full w-full"
             imgClassName={"h-full w-full " + imageClassName}
           />
+          {enable ? (
+            <div className="absolute inset-x-3 bottom-3">
+              <input
+                className={ENABLE_FIELD + " bg-white/95"}
+                value={displayImage}
+                onChange={(e) => enable.onChange({ imageUrl: e.target.value })}
+                placeholder={tx("Header image URL")}
+                aria-label={tx("Header image URL")}
+              />
+            </div>
+          ) : null}
           <span
             className="pointer-events-none absolute inset-y-0 left-0 hidden w-16 bg-gradient-to-r from-[color:var(--pp-primary-200)] to-transparent sm:block"
             aria-hidden
@@ -198,6 +240,7 @@ export function DirectoryDetailLayout({
       <Link
         to={backTo}
         className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
+        aria-label={backLabel}
       >
         ← {backLabel}
       </Link>
@@ -222,15 +265,12 @@ export function DirectoryDetailLayout({
         </aside>
 
         <div className="min-w-0 space-y-10 lg:col-span-3 lg:col-start-1 lg:row-start-2">
-          <section>
-            <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-              {tx("About")}
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-ink-secondary">{aboutCopy}</p>
+          <DetailSection title={tx("About")}>
+            <p className="text-sm leading-relaxed text-ink-secondary">{aboutCopy}</p>
             {extras.length > 0 && (
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {extras.map((block) => (
-                  <div key={block.title} className="rounded-2xl border border-line bg-white p-4">
+                  <div key={block.title} className="rounded-xl border border-line bg-[color:var(--pp-primary-100)] p-4">
                     <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
                       {block.title}
                     </p>
@@ -254,30 +294,29 @@ export function DirectoryDetailLayout({
               </div>
             )}
             {afterAbout}
-          </section>
+          </DetailSection>
 
           {children ? <div className="space-y-10">{children}</div> : null}
 
           {details.length > 0 && (
-            <section className="space-y-4">
-              <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-                {tx("Details")}
-              </h2>
-              <dl className="overflow-hidden rounded-2xl border border-line bg-white">
-                {details.map((row, i) => (
-                  <div
-                    key={row.k}
-                    className={"flex justify-between gap-4 px-5 py-3.5 " + (i > 0 ? "border-t border-line" : "")}
-                  >
-                    <dt className="text-sm text-ink-tertiary">{row.k}</dt>
-                    <dd className="max-w-[60%] text-right text-sm font-medium text-[color:var(--pp-primary-950)]">
-                      {row.v}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+            <div className="space-y-4">
+              <DetailSection title={tx("Details")} flush>
+                <dl>
+                  {details.map((row, i) => (
+                    <div
+                      key={row.k}
+                      className={"flex justify-between gap-4 px-5 py-3.5 " + (i > 0 ? "border-t border-line" : "")}
+                    >
+                      <dt className="text-sm text-ink-tertiary">{row.k}</dt>
+                      <dd className="max-w-[60%] text-right text-sm font-medium text-[color:var(--pp-primary-950)]">
+                        {row.v}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </DetailSection>
               {afterDetails}
-            </section>
+            </div>
           )}
           {!details.length && afterDetails ? <div>{afterDetails}</div> : null}
 

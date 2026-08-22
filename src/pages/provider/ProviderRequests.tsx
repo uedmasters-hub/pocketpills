@@ -51,7 +51,7 @@ function GenericRequestsInbox() {
       </header>
 
       <div className="flex flex-wrap gap-2">
-        {(["all", "new", "accepted", "completed", "declined"] as const).map((f) => (
+        {(["all", "new", "accepted", "reschedule", "completed", "declined"] as const).map((f) => (
           <button
             key={f}
             type="button"
@@ -63,7 +63,7 @@ function GenericRequestsInbox() {
                 : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]")
             }
           >
-            {tx(f === "all" ? "All" : f)}
+            {tx(f === "all" ? "All" : f === "reschedule" ? "New times" : f)}
           </button>
         ))}
       </div>
@@ -102,7 +102,7 @@ function RequestRow({
           {r.notes ? <p className="mt-2 text-sm text-ink-tertiary">{r.notes}</p> : null}
         </div>
         <span className="rounded-full bg-[color:var(--pp-primary-100)] px-2.5 py-1 text-2xs font-semibold capitalize text-[color:var(--pp-primary-950)]">
-          {tx(r.status)}
+          {tx(r.status === "reschedule" ? "New times" : r.status)}
         </span>
       </div>
       {r.status === "new" ? (
@@ -110,15 +110,21 @@ function RequestRow({
           <Button size="sm" onClick={() => onStatus(r.id, "accepted")}>
             {tx("Accept")}
           </Button>
+          <Button size="sm" variant="secondary" onClick={() => onStatus(r.id, "reschedule")}>
+            {tx("Offer other times")}
+          </Button>
           <Button size="sm" variant="outline" onClick={() => onStatus(r.id, "declined")}>
             {tx("Decline")}
           </Button>
         </div>
       ) : null}
       {r.status === "accepted" ? (
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button size="sm" variant="secondary" onClick={() => onStatus(r.id, "completed")}>
             {tx("Mark completed")}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => onStatus(r.id, "reschedule")}>
+            {tx("Can't make this slot")}
           </Button>
         </div>
       ) : null}

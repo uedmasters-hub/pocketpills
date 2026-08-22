@@ -178,6 +178,11 @@ export function getServiceRequests(): ServiceRequest[] {
   return readRequests().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+export function getServiceRequest(id: string | undefined | null): ServiceRequest | undefined {
+  if (!id) return undefined;
+  return getServiceRequests().find((r) => r.id === id);
+}
+
 export function createServiceRequest(input: {
   serviceId: string;
   address: string;

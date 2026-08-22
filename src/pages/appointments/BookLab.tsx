@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
+import { useUser } from "@/lib/user";
 import {
   attachLabBookingOrder,
   createLabBooking,
@@ -11,14 +12,22 @@ import {
   summarizeLabSelection,
 } from "@/lib/labs";
 import { createLabOrder } from "@/lib/orders";
-import { ServiceCtaCard, ServicePageShell } from "@/pages/appointments/ServicePageShell";
-import { ChoosePaymentOption, usePaymentFields } from "@/components/checkout/ChoosePaymentOption";
+import { serviceQuote } from "@/lib/bookingQuote";
+import type { CheckoutContext } from "@/lib/offers";
+import { BookingPaymentOption, VisitWhoPanel } from "@/components/appointments/BookingFieldsDraft";
+import { BookingReviewSidebar } from "@/components/appointments/BookingReviewSidebar";
+import { useBookingPatient } from "@/components/appointments/useBookingPatient";
+import { usePaymentFields } from "@/components/checkout/ChoosePaymentOption";
+import { ServicePageShell } from "@/pages/appointments/ServicePageShell";
 
 export function BookLab() {
   const { tx } = useI18n();
+  const { user, update } = useUser();
   const nav = useNavigate();
   const { id = "" } = useParams();
   const lab = getLab(id);
+  const booking = useBookingPatient();
+  const pay = usePaymentFields(user?.cardLast4);
 
   const draft = useMemo(() => {
     const d = readLabDraft();
@@ -30,14 +39,28 @@ export function BookLab() {
     () => (draft ? summarizeLabSelection(draft.itemIds) : { names: "", fee: 0, count: 0 }),
     [draft],
   );
+  const due = serviceQuote(summary.fee).beforeOffer;
 
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [notes, setNotes] = useState("");
-  const pay = usePaymentFields();
-  const [done, setDone] = useState<{ confirmationNo: string; names: string; date: string; time: string } | null>(
-    null,
-  );
+  const lineItems = (draft?.itemIds ?? [])
+    .map((itemId) => resolveLabItem(itemId))
+    .filter((x): x is NonNullable<typeof x> => !!x)
+    .map((r) => ({
+      id: r.item.id,
+      name: r.name,
+      fee: r.fee,
+      collection: r.collection,
+      isPackage: r.type === "bundle",
+    }));
+
+  const grouped = (
+    [
+      { mode: "home" as const, items: lineItems.filter((i) => i.collection === "home") },
+      { mode: "physical" as const, items: lineItems.filter((i) => i.collection === "physical") },
+    ] as const
+  ).filter((g) => g.items.length > 0);
+
+  const visitKindLabel =
+    grouped.length === 1 ? tx(labCollectionModeLabel(grouped[0].mode)) : tx("Lab");
 
   if (!lab) {
     return (
@@ -50,7 +73,7 @@ export function BookLab() {
     );
   }
 
-  if (!draft && !done) {
+  if (!draft) {
     return (
       <div className="py-16 text-center">
         <p className="font-semibold text-[color:var(--pp-primary-950)]">
@@ -69,98 +92,85 @@ export function BookLab() {
     );
   }
 
-  if (done) {
-    return (
-      <ServicePageShell
-        backTo="/appointments"
-        aside={
-          <ServiceCtaCard
-            eyebrow={tx("Confirmed")}
-            body={
-              <span>
-                {done.names}
-                <span className="mt-1 block text-ink-tertiary">
-                  {done.date} · {done.time}
-                </span>
-              </span>
-            }
-            cta={tx("Back to care")}
-            onCta={() => nav("/appointments")}
-            footer={<span className="font-mono">{done.confirmationNo}</span>}
-          />
-        }
-      >
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Lab")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium text-[color:var(--pp-primary-950)]">
-          {tx("Lab visit booked")}
-        </h1>
-        <p className="mt-2 text-ink-secondary">{lab.name}</p>
-        <p className="mt-4 text-sm text-ink-tertiary">
-          {tx("We’ll text a reminder before your visit. Bring your OHIP card and any referral for imaging.")}
-        </p>
-      </ServicePageShell>
-    );
-  }
+  const offerContext = {
+    kind: "lab",
+    amount: due,
+    specialty: "lab",
+  } satisfies CheckoutContext;
 
-  const lineItems = draft!.itemIds
-    .map((itemId) => resolveLabItem(itemId))
-    .filter((x): x is NonNullable<typeof x> => !!x)
-    .map((r) => ({
-      id: r.item.id,
-      name: r.name,
-      fee: r.fee,
-      collection: r.collection,
-      isPackage: r.type === "bundle",
-    }));
-
-  const grouped = (
-    [
-      { mode: "home" as const, items: lineItems.filter((i) => i.collection === "home") },
-      { mode: "physical" as const, items: lineItems.filter((i) => i.collection === "physical") },
-    ] as const
-  ).filter((g) => g.items.length > 0);
+  const confirm = () => {
+    if (!booking.patient || booking.visitTab === "new" || !pay.ready(due)) return;
+    try {
+      update({ paymentOnFile: true, cardLast4: pay.last4 });
+    } catch {
+      /* demo */
+    }
+    const b = createLabBooking({
+      labId: lab.id,
+      itemIds: draft.itemIds,
+      date: draft.date,
+      time: draft.time,
+      patientName: booking.patient.name,
+      patientId: booking.patientId,
+      notes: booking.notes.trim(),
+    });
+    if (b) {
+      const order = createLabOrder({
+        labName: lab.name,
+        labAddress: `${lab.address}, ${lab.city}`,
+        itemNames: b.itemNames,
+        fee: b.fee,
+        date: b.date,
+        time: b.time,
+        patient: booking.patient.name,
+        labBookingId: b.id,
+        confirmationNo: b.confirmationNo,
+      });
+      attachLabBookingOrder(b.id, order.id);
+      nav(`/appointments/labs/visit/${b.id}`);
+    }
+  };
 
   return (
     <ServicePageShell
       backTo={`/appointments/labs/${lab.id}`}
       aside={
-        <ServiceCtaCard
-          eyebrow={`${draft!.date} · ${draft!.time}`}
-          priceHint={tx("Estimated total")}
-          price={summary.fee <= 0 ? tx("FREE") : `$${summary.fee.toFixed(2)}`}
-          body={tx("{n} services").replace("{n}", String(summary.count))}
-          cta={tx("Pay & confirm")}
-          ctaDisabled={!name.trim() || !pay.ready(summary.fee)}
-          onCta={() => {
-            const b = createLabBooking({
-              labId: lab.id,
-              itemIds: draft!.itemIds,
-              date: draft!.date,
-              time: draft!.time,
-              patientName: name.trim(),
-            });
-            if (b) {
-              const order = createLabOrder({
-                labName: lab.name,
-                labAddress: `${lab.address}, ${lab.city}`,
-                itemNames: b.itemNames,
-                fee: b.fee,
-                date: b.date,
-                time: b.time,
-                patient: name.trim(),
-                labBookingId: b.id,
-                confirmationNo: b.confirmationNo,
-              });
-              attachLabBookingOrder(b.id, order.id);
-              setDone({
-                confirmationNo: b.confirmationNo,
-                names: b.itemNames,
-                date: b.date,
-                time: b.time,
-              });
-            }
-          }}
-          footer={phone.trim() ? tx("We'll use your phone for visit reminders.") : undefined}
+        <BookingReviewSidebar
+          doctorName={lab.name}
+          doctorImage=""
+          credentials={lab.subtitle}
+          verified={false}
+          visitKindLabel={visitKindLabel}
+          quoteKind="service"
+          feeLabel={tx("Lab tests")}
+          fee={summary.fee}
+          date={draft.date}
+          time={draft.time}
+          patient={booking.patient}
+          reports={booking.skipReports ? [] : booking.attached}
+          onRemoveReport={booking.detachReport}
+          findings={booking.library.consults
+            .filter((f) => booking.findingIds.includes(f.id))
+            .map((f) => ({ id: f.id, title: f.title, detail: f.detail }))}
+          onRemoveFinding={(id) =>
+            booking.patchShare(booking.patientId, {
+              findingIds: booking.findingIds.filter((x) => x !== id),
+            })
+          }
+          symptoms={booking.symptoms}
+          onSymptoms={booking.setSymptoms}
+          notes={booking.notes}
+          onNotes={booking.setNotes}
+          onConfirm={confirm}
+          confirmDisabled={!booking.patient || booking.visitTab === "new" || !pay.ready(due)}
+          confirmHint={
+            booking.visitTab === "new"
+              ? tx("Save or cancel the new patient to continue.")
+              : !pay.ready(due)
+                ? tx("Choose a payment option on the left to continue.")
+                : undefined
+          }
+          offerContext={offerContext}
         />
       }
     >
@@ -208,50 +218,23 @@ export function BookLab() {
         ))}
       </div>
 
-      <h2 className="mt-10 font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-        {tx("Patient")}
-      </h2>
-      <div className="mt-4 space-y-4">
-        <label className="block">
-          <span className="text-sm font-medium text-[color:var(--pp-primary-950)]">
-            {tx("Full name")} <span className="text-ink-tertiary">*</span>
-          </span>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="name"
-            className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-[color:var(--pp-primary-950)] outline-none focus:border-[color:var(--pp-primary-950)]"
-            placeholder={tx("Name on OHIP card")}
-          />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium text-[color:var(--pp-primary-950)]">{tx("Phone")}</span>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            autoComplete="tel"
-            className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-[color:var(--pp-primary-950)] outline-none focus:border-[color:var(--pp-primary-950)]"
-            placeholder="(416) 555-0100"
-          />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium text-[color:var(--pp-primary-950)]">
-            {tx("Notes")} <span className="font-normal text-ink-tertiary">({tx("optional")})</span>
-          </span>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            className="mt-1.5 w-full resize-y rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-[color:var(--pp-primary-950)] outline-none focus:border-[color:var(--pp-primary-950)]"
-            placeholder={tx("Fasting, referral #, preferred arm…")}
-          />
-        </label>
-      </div>
+      <input
+        ref={booking.fileRef}
+        type="file"
+        accept=".pdf,.png,.jpg,.jpeg,.heic,image/*,application/pdf"
+        multiple
+        hidden
+        className="hidden"
+        onChange={(e) => {
+          booking.onUpload(e.target.files);
+          e.target.value = "";
+          booking.whoPanel.onTab("reports");
+        }}
+      />
 
-      <div className="mt-10">
-        <ChoosePaymentOption pay={pay} due={summary.fee} />
+      <div className="mt-8 space-y-6">
+        <VisitWhoPanel {...booking.whoPanel} />
+        <BookingPaymentOption pay={pay} savedLast4={user?.cardLast4} due={due} />
       </div>
     </ServicePageShell>
   );

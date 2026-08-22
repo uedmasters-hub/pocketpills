@@ -70,7 +70,7 @@ export function Confirmation() {
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Button variant="wellness" onClick={() => finish("/dashboard")}>Go to My Health</Button>
-          <Button variant="secondary" onClick={() => finish("/pharmacy")}>Track this order</Button>
+          <Button variant="secondary" onClick={() => finish("/orders/PP-48210")}>Track this order</Button>
         </div>
 
         <div className="mt-8 rounded-2xl border border-line bg-surface-1 p-5 text-left">

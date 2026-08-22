@@ -5,10 +5,20 @@
 
 import type { CareProvider, SpecialtyId, VisitType } from "@/lib/appointments";
 import { specialtyById } from "@/lib/appointments";
-import { getFacilityClaim } from "@/lib/facilityDirectory";
+import { getFacilityClaim, hfCodeFromId } from "@/lib/facilityDirectory";
 import { formatVerifiedOn, nmcNumberOf } from "@/lib/doctorProfileContent";
 import { procedureHref } from "@/lib/hospitalProfileContent";
 import type { SpecialisedGroup } from "@/lib/specialisedIn";
+import type { ListingSection } from "@/lib/listingPage";
+import {
+  listingAwardsFor,
+  listingDoctorsForFacility,
+  listingFaqsFor,
+  listingForHub,
+  listingGalleryFor,
+  listingSectionsFor,
+  mergeUniqueProviders,
+} from "@/lib/listingOverlay";
 
 export type ClinicView = {
   id: string;
@@ -33,6 +43,9 @@ export type ClinicView = {
   awards?: { title: string; org: string; year: string }[];
   gallery?: { src: string; label: string }[];
   updates?: { title: string; summary: string; date: string }[];
+  faqs?: { q: string; a: string }[];
+  pageSections?: ListingSection[];
+  hasListing?: boolean;
 };
 
 export const CLINIC_REVIEW_TOPICS = [
@@ -82,26 +95,28 @@ export function clinicFromProvider(
   staff: CareProvider[],
   specialisedIn?: SpecialisedGroup[],
 ): ClinicView {
-  const hf = provider.id.startsWith("hf-") ? provider.id.replace(/^hf-/, "") : undefined;
+  const hf = hfCodeFromId(provider.id) ?? (provider.id.startsWith("hf-") ? provider.id.replace(/^hf-/, "") : undefined);
   const claim = hf ? getFacilityClaim(hf) : null;
+  const listing = listingForHub(provider.id);
+  const listingStaff = listingDoctorsForFacility(provider.id, provider.city);
   return {
     id: provider.id,
-    name: provider.name,
+    name: listing?.name || provider.name,
     kindLabel: "Clinic",
     facilityLevel: provider.subtitle,
     registrationNo: hf,
-    address: provider.address,
-    city: provider.city,
-    phone: provider.phone,
-    hours: provider.hours,
-    about: provider.about || provider.bio,
+    address: listing?.address || provider.address,
+    city: listing?.city || provider.city,
+    phone: listing?.phone || provider.phone,
+    hours: listing?.hours || provider.hours,
+    about: listing?.about || provider.about || provider.bio,
     live: true,
     lastVerified: claim?.publishedAt || claim?.claimedAt,
     nextAvailable: provider.nextAvailable,
     visitTypes: provider.visitTypes ?? [],
     specialties: provider.specialties ?? [],
-    specialisedIn: specialisedIn ?? provider.specialisedIn ?? [],
-    staff,
+    specialisedIn: specialisedIn ?? listing?.specialisedIn ?? provider.specialisedIn ?? [],
+    staff: mergeUniqueProviders(listingStaff, staff),
     amenities: provider.amenities ?? [],
     bookable: (provider.services ?? []).map((s) => ({
       id: s.id,
@@ -109,7 +124,11 @@ export function clinicFromProvider(
       label: s.label,
       blurb: s.blurb,
     })),
-    awards: provider.awards,
+    awards: listingAwardsFor(provider.id, provider.awards),
+    gallery: listingGalleryFor(provider.id, undefined),
+    faqs: listingFaqsFor(provider.id, []),
+    pageSections: listingSectionsFor(provider.id),
+    hasListing: Boolean(listing),
   };
 }
 
@@ -126,25 +145,33 @@ export function clinicFromHf(input: {
   kindLabel: string;
 }): ClinicView {
   const claim = getFacilityClaim(input.hfCode);
+  const hubId = `hf-${input.hfCode}`;
+  const listing = listingForHub(hubId, claim?.providerId);
+  const listingStaff = listingDoctorsForFacility(hubId, input.district);
   return {
-    id: `hf-${input.hfCode}`,
-    name: input.name,
+    id: hubId,
+    name: listing?.name || input.name,
     kindLabel: input.kindLabel,
     facilityLevel: input.facilityLevel,
     registrationNo: input.hfCode,
-    address: input.district,
-    city: input.district,
-    phone: input.phone,
-    hours: input.live ? input.hours : undefined,
-    about: input.about,
+    address: listing?.address || input.district,
+    city: listing?.city || input.district,
+    phone: listing?.phone || input.phone,
+    hours: listing?.hours || (input.live ? input.hours : undefined),
+    about: listing?.about || input.about,
     live: input.live,
     lastVerified: claim?.publishedAt || claim?.claimedAt,
     visitTypes: [],
     specialties: [],
-    specialisedIn: input.specialisedIn,
-    staff: [],
+    specialisedIn: listing?.specialisedIn?.length ? listing.specialisedIn : input.specialisedIn,
+    staff: listingStaff,
     amenities: [],
     bookable: [],
+    awards: listingAwardsFor(hubId, undefined, claim?.providerId),
+    gallery: listingGalleryFor(hubId, undefined, claim?.providerId),
+    faqs: listingFaqsFor(hubId, [], claim?.providerId),
+    pageSections: listingSectionsFor(hubId, claim?.providerId),
+    hasListing: Boolean(listing),
   };
 }
 

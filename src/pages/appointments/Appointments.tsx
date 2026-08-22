@@ -51,6 +51,8 @@ import {
   type HealthService,
   type ServiceRequest,
 } from "@/lib/healthServices";
+import { careEventHref } from "@/lib/careJourney";
+import { awaitingStatusLabel, visitPhase } from "@/lib/appointmentGuide";
 import { saveSelectedPharmacy, type AreaPharmacy } from "@/lib/pharmacies";
 import { searchPharmacies } from "@/lib/pharmacySearch";
 import { subscribePharmacyDirectory } from "@/lib/pharmacyDirectory";
@@ -124,26 +126,39 @@ export function Appointments() {
 
   const allAppts = useMemo(() => getAppointments(), [tick]);
   const upcomingAppts = allAppts.filter(
-    (a) => (a.status === "upcoming" || a.status === "pending") && !appointmentIsPast(a),
+    (a) =>
+      (a.status === "upcoming" || a.status === "pending" || a.status === "unavailable") && !appointmentIsPast(a),
   );
   const pastAppts = allAppts.filter((a) => !upcomingAppts.some((u) => u.id === a.id));
   const upcomingLabs = useMemo(
-    () => getLabBookings().filter((b) => b.status === "upcoming" && !labBookingIsPast(b)),
+    () => getLabBookings().filter((b) => b.status === "pending" || (b.status === "upcoming" && !labBookingIsPast(b))),
     [tick],
+  );
+  const pastLabs = useMemo(
+    () => getLabBookings().filter((b) => !upcomingLabs.some((u) => u.id === b.id)),
+    [tick, upcomingLabs],
   );
   const upcomingCare = useMemo(
     () =>
-      getCareWorkerBookings().filter((b) => b.status === "upcoming" && !careWorkerBookingIsPast(b)),
+      getCareWorkerBookings().filter((b) => b.status === "pending" || (b.status === "upcoming" && !careWorkerBookingIsPast(b))),
     [tick],
+  );
+  const pastCare = useMemo(
+    () => getCareWorkerBookings().filter((b) => !upcomingCare.some((u) => u.id === b.id)),
+    [tick, upcomingCare],
   );
   const openRequests = useMemo(
     () => getServiceRequests().filter((r) => r.status === "open"),
     [tick],
   );
+  const pastRequests = useMemo(
+    () => getServiceRequests().filter((r) => r.status !== "open"),
+    [tick],
+  );
 
   const railCount = upcomingAppts.length + upcomingLabs.length + upcomingCare.length + openRequests.length;
   const hasUpcoming = railCount > 0;
-  const hasRail = hasUpcoming || pastAppts.length > 0;
+  const hasRail = hasUpcoming || pastAppts.length > 0 || pastLabs.length > 0 || pastCare.length > 0 || pastRequests.length > 0;
   const { slots: collapsedSlots, visible: collapsedVisible } = listCollapse(hasUpcoming ? 3 : 4);
   const listGridClass = hasUpcoming
     ? "grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-4"
@@ -264,13 +279,16 @@ export function Appointments() {
   };
 
   const appointmentsAside =
-    hasUpcoming || pastAppts.length > 0 ? (
+    hasRail ? (
       <YourAppointments
         upcomingAppts={upcomingAppts}
         pastAppts={pastAppts}
         upcomingLabs={upcomingLabs}
+        pastLabs={pastLabs}
         upcomingCare={upcomingCare}
+        pastCare={pastCare}
         openRequests={openRequests}
+        pastRequests={pastRequests}
         onRefresh={refresh}
         onMessage={() => nav("/messages")}
         layout="aside"
@@ -1177,8 +1195,11 @@ function YourAppointments({
   upcomingAppts,
   pastAppts,
   upcomingLabs,
+  pastLabs,
   upcomingCare,
+  pastCare,
   openRequests,
+  pastRequests,
   onRefresh,
   onMessage,
   layout = "stack",
@@ -1186,8 +1207,11 @@ function YourAppointments({
   upcomingAppts: Appointment[];
   pastAppts: Appointment[];
   upcomingLabs: LabBooking[];
+  pastLabs: LabBooking[];
   upcomingCare: CareWorkerBooking[];
+  pastCare: CareWorkerBooking[];
   openRequests: ServiceRequest[];
+  pastRequests: ServiceRequest[];
   onRefresh: () => void;
   onMessage: () => void;
   layout?: "stack" | "aside";
@@ -1196,8 +1220,42 @@ function YourAppointments({
   const nav = useNavigate();
   const total =
     upcomingAppts.length + upcomingLabs.length + upcomingCare.length + openRequests.length;
-  const pastShown = pastAppts.slice(0, 4);
-  if (total === 0 && pastShown.length === 0) return null;
+  const pastRows = [
+    ...pastAppts.map((a) => ({
+      id: a.id,
+      title: a.providerName || a.clinicianName,
+      meta: [
+        a.clinicianName && a.clinicianName !== a.providerName ? a.clinicianName : null,
+        `${a.date} · ${a.time}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      status: visitPhase(a) === "missed" ? "not_attempted" : a.status,
+      href: careEventHref("visit", a.id),
+    })),
+    ...pastLabs.map((b) => ({
+      id: b.id,
+      title: b.labName,
+      meta: `${b.date} · ${b.time}`,
+      status: b.status,
+      href: careEventHref("lab", b.id),
+    })),
+    ...pastCare.map((b) => ({
+      id: b.id,
+      title: b.workerName,
+      meta: `${b.date} · ${b.time}`,
+      status: b.status,
+      href: careEventHref("care", b.id),
+    })),
+    ...pastRequests.map((r) => ({
+      id: r.id,
+      title: r.serviceName,
+      meta: r.confirmationNo,
+      status: r.status,
+      href: careEventHref("service", r.id),
+    })),
+  ].slice(0, 6);
+  if (total === 0 && pastRows.length === 0) return null;
 
   return (
     <aside
@@ -1234,12 +1292,14 @@ function YourAppointments({
             {upcomingLabs.map((b) => (
               <RailItemCard
                 key={b.id}
-                badge={tx("Lab")}
+                badge={b.status === "pending" ? tx("Awaiting lab") : tx("Lab")}
                 title={b.labName}
                 subtitle={b.itemNames}
                 meta={`${b.date} · ${b.time}`}
                 fee={b.fee}
                 confirmationNo={b.confirmationNo}
+                awaiting={b.status === "pending"}
+                onOpen={() => nav(careEventHref("lab", b.id))}
                 onCancel={() => {
                   updateLabBookingStatus(b.id, "cancelled");
                   if (b.orderId) cancelOrder(b.orderId);
@@ -1251,12 +1311,14 @@ function YourAppointments({
             {upcomingCare.map((b) => (
               <RailItemCard
                 key={b.id}
-                badge={tx(careWorkerKindLabel(b.kind))}
+                badge={b.status === "pending" ? tx("Awaiting confirmation") : tx(careWorkerKindLabel(b.kind))}
                 title={b.workerName}
                 subtitle={b.service}
                 meta={`${b.date} · ${b.time}`}
                 fee={b.fee}
                 confirmationNo={b.confirmationNo}
+                awaiting={b.status === "pending"}
+                onOpen={() => nav(careEventHref("care", b.id))}
                 onCancel={() => {
                   updateCareWorkerBookingStatus(b.id, "cancelled");
                   onRefresh();
@@ -1277,6 +1339,7 @@ function YourAppointments({
                 }
                 confirmationNo={r.confirmationNo}
                 cancelLabel={tx("Cancel request")}
+                onOpen={() => nav(careEventHref("service", r.id))}
                 onCancel={() => {
                   updateServiceRequestStatus(r.id, "cancelled");
                   onRefresh();
@@ -1288,7 +1351,7 @@ function YourAppointments({
         </>
       ) : null}
 
-      {pastShown.length ? (
+      {pastRows.length ? (
         <div className={total > 0 ? "mt-8" : undefined}>
           <div className="mb-4">
             <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
@@ -1299,24 +1362,26 @@ function YourAppointments({
             </p>
           </div>
           <div className="space-y-2">
-            {pastShown.map((a) => (
+            {pastRows.map((row) => (
               <button
-                key={a.id}
+                key={row.id}
                 type="button"
-                onClick={() => nav(`/appointments/visit/${a.id}`)}
+                onClick={() => nav(row.href)}
                 className="w-full rounded-2xl border border-line bg-white px-4 py-3 text-left hover:border-[color:var(--pp-violet)]"
               >
                 <p className="truncate text-sm font-semibold text-[color:var(--pp-primary-950)]">
-                  {a.clinicianName || a.providerName}
+                  {row.title}
                 </p>
                 <p className="mt-0.5 truncate text-xs text-ink-tertiary">
-                  {a.date} · {a.time}
+                  {row.meta}
                   <span className="mx-1.5 text-ink-tertiary/50">·</span>
-                  {a.status === "cancelled"
+                  {row.status === "cancelled"
                     ? tx("Cancelled")
-                    : a.status === "completed"
+                    : row.status === "completed"
                       ? tx("Completed")
-                      : tx("Past")}
+                      : row.status === "not_attempted"
+                        ? tx("Not attempted")
+                        : tx("Past")}
                 </p>
               </button>
             ))}
@@ -1334,9 +1399,11 @@ function RailItemCard({
   meta,
   fee,
   confirmationNo,
+  onOpen,
   onCancel,
   onMessage,
   cancelLabel,
+  awaiting,
 }: {
   badge: string;
   title: string;
@@ -1344,33 +1411,42 @@ function RailItemCard({
   meta: string;
   fee?: number;
   confirmationNo: string;
+  onOpen: () => void;
   onCancel: () => void;
   onMessage: () => void;
   cancelLabel?: string;
+  awaiting?: boolean;
 }) {
   const { tx } = useI18n();
   return (
     <article className="overflow-hidden rounded-[1.75rem] border border-[#E6E1EF] bg-white">
-      <div className="flex items-center justify-between gap-3 px-5 pt-5">
-        <span className="inline-flex items-center rounded-full bg-wellness-subtle px-2.5 py-1 text-2xs font-semibold text-wellness">
-          {badge}
-        </span>
-        <p className="truncate font-mono text-2xs text-ink-tertiary">{confirmationNo}</p>
-      </div>
-      <div className="px-5 py-4">
-        <p className="font-semibold text-[color:var(--pp-primary-950)]">{title}</p>
-        <p className="mt-0.5 text-sm text-ink-tertiary">{subtitle}</p>
-      </div>
-      <div className="flex items-center justify-between gap-3 border-y border-line px-5 py-3.5">
-        <p className="min-w-0 truncate text-sm font-semibold text-[color:var(--pp-primary-950)]">
-          {meta}
-        </p>
-        {fee != null && fee > 0 ? (
-          <p className="shrink-0 text-sm font-semibold text-[color:var(--pp-primary-950)] tnum">
-            {formatFee(fee)}
+      <button type="button" onClick={onOpen} className="w-full text-left">
+        <div className="flex items-center justify-between gap-3 px-5 pt-5">
+          <span
+            className={
+              "inline-flex items-center rounded-full px-2.5 py-1 text-2xs font-semibold " +
+              (awaiting ? "bg-info-subtle text-info" : "bg-wellness-subtle text-wellness")
+            }
+          >
+            {badge}
+          </span>
+          <p className="truncate font-mono text-2xs text-ink-tertiary">{confirmationNo}</p>
+        </div>
+        <div className="px-5 py-4">
+          <p className="font-semibold text-[color:var(--pp-primary-950)]">{title}</p>
+          <p className="mt-0.5 text-sm text-ink-tertiary">{subtitle}</p>
+        </div>
+        <div className="flex items-center justify-between gap-3 border-y border-line px-5 py-3.5">
+          <p className="min-w-0 truncate text-sm font-semibold text-[color:var(--pp-primary-950)]">
+            {meta}
           </p>
-        ) : null}
-      </div>
+          {fee != null && fee > 0 ? (
+            <p className="shrink-0 text-sm font-semibold text-[color:var(--pp-primary-950)] tnum">
+              {formatFee(fee)}
+            </p>
+          ) : null}
+        </div>
+      </button>
       <div className="flex flex-col items-stretch gap-3 px-5 py-4">
         <Button size="sm" variant="ghost" fullWidth onClick={onMessage}>
           {tx("Message care team")}
@@ -1408,13 +1484,26 @@ function ApptCard({
     <article className="overflow-hidden rounded-[1.75rem] border border-[#E6E1EF] bg-white">
       <button type="button" onClick={() => nav(visitTo)} className="w-full text-left">
         <div className="flex items-center justify-between gap-3 px-5 pt-5">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-wellness-subtle px-2.5 py-1 text-2xs font-semibold text-wellness">
+          <span
+            className={
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-semibold " +
+              (a.status === "pending"
+                ? "bg-info-subtle text-info"
+                : a.status === "unavailable"
+                  ? "bg-warning-subtle text-warning"
+                  : "bg-wellness-subtle text-wellness")
+            }
+          >
             {isVirtual ? (
               <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
                 <path d="M2.5 4.25A1.75 1.75 0 0 1 4.25 2.5h5.5A1.75 1.75 0 0 1 11.5 4.25v7.5a1.75 1.75 0 0 1-1.75 1.75h-5.5A1.75 1.75 0 0 1 2.5 11.75v-7.5Zm10.03.72 1.72-1.146a.75.75 0 0 1 1.2.6v6.152a.75.75 0 0 1-1.2.6l-1.72-1.147V4.97Z" />
               </svg>
             ) : null}
-            {a.status === "pending" ? tx("Awaiting doctor") : tx("Upcoming")}
+            {a.status === "pending"
+              ? tx(awaitingStatusLabel(a.providerKind))
+              : a.status === "unavailable"
+                ? tx("Needs a new slot")
+                : tx("Upcoming")}
           </span>
           <p className="truncate font-mono text-2xs text-ink-tertiary">{a.confirmationNo}</p>
         </div>
@@ -1437,7 +1526,11 @@ function ApptCard({
           <div className="min-w-0 self-center">
             <p className="pp-caps text-[color:var(--pp-violet)]/70">{kind}</p>
             <p className="mt-0.5 truncate font-semibold text-[color:var(--pp-primary-950)]">{name}</p>
-            <p className="mt-0.5 truncate text-sm text-ink-tertiary">{tx(a.specialtyLabel)}</p>
+            <p className="mt-0.5 truncate text-sm text-ink-tertiary">
+              {a.clinicianName && a.clinicianName !== a.providerName
+                ? `${a.clinicianName} · ${tx(a.specialtyLabel)}`
+                : tx(a.specialtyLabel)}
+            </p>
           </div>
         </div>
 

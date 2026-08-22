@@ -1,7 +1,7 @@
 /** Medical assistants, nurses, home care — localStorage bookings. */
 
 import { fieldsMatchQuery, sortBySearchRank } from "@/lib/searchMatch";
-import { getPublishedCareWorker } from "@/lib/businessProfile";
+import { businessAsCareWorker, getPublishedByHubId, listPublishedCareWorkers } from "@/lib/businessProfile";
 
 export type CareWorkerKind = "medical-assistant" | "nurse" | "home-care";
 export type CareVisitType = "home" | "clinic" | "virtual";
@@ -25,7 +25,7 @@ export interface CareWorker {
   imageUrl?: string;
 }
 
-export type CareWorkerBookingStatus = "upcoming" | "completed" | "cancelled";
+export type CareWorkerBookingStatus = "pending" | "upcoming" | "completed" | "cancelled";
 
 export interface CareWorkerBooking {
   id: string;
@@ -38,6 +38,9 @@ export interface CareWorkerBooking {
   date: string;
   time: string;
   fee: number;
+  patientName?: string;
+  patientId?: string;
+  notes?: string;
   status: CareWorkerBookingStatus;
   createdAt: string;
 }
@@ -176,15 +179,16 @@ export function careWorkerKindLabel(kind: CareWorkerKind): string {
 }
 
 export function getCareWorker(id: string): CareWorker | undefined {
-  const published = getPublishedCareWorker();
-  if (published && published.id === id) return published;
+  const published = getPublishedByHubId(id);
+  const asWorker = published ? businessAsCareWorker(published) : undefined;
+  if (asWorker) return asWorker;
   return CARE_WORKERS.find((w) => w.id === id);
 }
 
 export function listCareWorkers(): CareWorker[] {
-  const published = getPublishedCareWorker();
-  if (!published) return CARE_WORKERS;
-  return [published, ...CARE_WORKERS.filter((w) => w.id !== published.id)];
+  const published = listPublishedCareWorkers();
+  const seen = new Set(published.map((w) => w.id));
+  return [...published, ...CARE_WORKERS.filter((w) => !seen.has(w.id))];
 }
 
 export function searchCareWorkers(query: string, list: CareWorker[] = listCareWorkers()): CareWorker[] {
@@ -231,12 +235,20 @@ export function getCareWorkerBookings(): CareWorkerBooking[] {
   return readBookings().sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`));
 }
 
+export function getCareWorkerBooking(id: string | undefined | null): CareWorkerBooking | undefined {
+  if (!id) return undefined;
+  return getCareWorkerBookings().find((b) => b.id === id);
+}
+
 export function createCareWorkerBooking(input: {
   workerId: string;
   visitType: CareVisitType;
   service: string;
   date: string;
   time: string;
+  patientName?: string;
+  patientId?: string;
+  notes?: string;
 }): CareWorkerBooking | null {
   const worker = getCareWorker(input.workerId);
   if (!worker || !worker.visitTypes.includes(input.visitType)) return null;
@@ -251,7 +263,10 @@ export function createCareWorkerBooking(input: {
     date: input.date,
     time: input.time,
     fee: worker.feeFrom,
-    status: "upcoming",
+    patientName: input.patientName,
+    patientId: input.patientId,
+    notes: input.notes,
+    status: "pending",
     createdAt: new Date().toISOString(),
   };
   writeBookings([booking, ...readBookings()]);
@@ -278,22 +293,8 @@ function normalizeTime(time: string): string {
   return `${String(h).padStart(2, "0")}:${min}:00`;
 }
 
-export function careAvailabilityDays(count = 5): { date: string; label: string }[] {
-  const out: { date: string; label: string }[] = [];
-  const start = new Date();
-  for (let i = 0; out.length < count; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    const date = d.toISOString().slice(0, 10);
-    const label =
-      i === 0
-        ? "Today"
-        : i === 1
-          ? "Tomorrow"
-          : d.toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" });
-    out.push({ date, label });
-  }
-  return out;
+export function careVisitTypeLabel(v: CareVisitType): string {
+  if (v === "home") return "Home";
+  if (v === "virtual") return "Virtual";
+  return "In person";
 }
-
-export const CARE_TIME_SLOTS = ["9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "5:00 PM", "6:30 PM"];

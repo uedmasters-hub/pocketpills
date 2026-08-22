@@ -14,6 +14,8 @@ export type PageSearchScope =
   | "pharmacies"
   | "doctors"
   | "facilities"
+  | "orders"
+  | "facility-services"
   /** Reserved — not wired yet. */
   | "universal";
 
@@ -70,6 +72,18 @@ export const PAGE_SEARCH_COPY: Record<PageSearchScope, PageSearchCopy> = {
   facilities: {
     placeholder: "Name or district",
     ariaLabel: "Search hospitals, clinics, and labs",
+    listeningEn: "Listening in English… speak, then pause",
+    listeningNe: "Listening in Nepali… speak, then pause",
+  },
+  orders: {
+    placeholder: 'Try a medicine, lab, or "transfer"…',
+    ariaLabel: "Search live orders",
+    listeningEn: "Listening in English… speak, then pause",
+    listeningNe: "Listening in Nepali… speak, then pause",
+  },
+  "facility-services": {
+    placeholder: 'Try "fever", "acne", "pharmacy", or "ambulance".',
+    ariaLabel: "Search consultants, labs, and hospital services",
     listeningEn: "Listening in English… speak, then pause",
     listeningNe: "Listening in Nepali… speak, then pause",
   },

@@ -5,6 +5,9 @@ import type {
   ReactNode,
 } from "react";
 
+export { Modal, ConfirmModal } from "./Modal";
+export { Tooltip } from "./Tooltip";
+
 export {
   AccessGateSkeleton,
   ClaimLookupSkeleton,

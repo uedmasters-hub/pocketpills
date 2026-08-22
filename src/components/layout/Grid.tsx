@@ -25,8 +25,8 @@ export const SECTION_GAP_Y = "mt-8 md:mt-10";
 /** @deprecated Prefer SECTION_GAP — kept for in-app Section rhythm. */
 export const SECTION_Y = "py-12 md:py-16";
 
-/** Gap above the full-bleed white footer — same as section island gap. */
-export const FOOTER_GAP = "mt-8 md:mt-10";
+/** Gap above the full-bleed white footer — same as the scroll-to-top inset. */
+export const FOOTER_GAP = "mt-10";
 
 /** Shared inner padding for white / colored landing islands. */
 export const ISLAND_PAD = "px-6 py-12 sm:px-8 md:px-10 md:py-16";

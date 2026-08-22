@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { DetailSection } from "@/components/DetailSection";
 import { Caret } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -43,99 +44,117 @@ export function SpecialisedInSection({
   variant,
   compact = false,
   staff,
+  title,
+  onTitleChange,
+  onChange,
 }: {
   groups: SpecialisedGroup[];
   variant: SpecialisedVariant;
   compact?: boolean;
   staff?: { specialisedIn?: SpecialisedGroup[]; specialties: string[]; subtitle: string; focusAreas?: string[]; name: string }[];
+  title?: string;
+  onTitleChange?: (title: string) => void;
+  onChange?: (next: SpecialisedGroup[]) => void;
 }) {
   const { tx } = useI18n();
   const baseId = useId();
   const [open, setOpen] = useState<string | null>(null);
   const copy = specialisedCopy(variant);
+
+  if (onChange) {
+    return (
+      <DetailSection
+        title={title || tx(copy.title)}
+        onTitleChange={onTitleChange}
+        lede={tx(copy.editorHint)}
+        flush
+      >
+        <SpecialisedInEditor value={groups} variant={variant} flush onChange={onChange} />
+      </DetailSection>
+    );
+  }
+
   if (!groups.length) return null;
 
-  return (
-    <section className={compact ? "min-w-0" : "min-w-0 scroll-mt-28"}>
-      <h2
-        className={
-          compact
-            ? "text-sm font-semibold text-[color:var(--pp-primary-950)]"
-            : "font-display text-xl font-medium text-[color:var(--pp-primary-950)]"
-        }
-      >
-        {tx(copy.title)}
-      </h2>
-      {!compact ? (
-        <>
-          <p className="mt-1 text-sm text-ink-tertiary">{tx(copy.lede)}</p>
-          <p className="mt-3 text-sm leading-relaxed text-ink-secondary">
-            {groups.map((g) => tx(g.specialty)).join(" · ")}
-          </p>
-        </>
-      ) : null}
-
-      <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-white">
-        {groups.map((group, i) => {
-          const expanded = open === group.specialty;
-          const btnId = `${baseId}-${i}-btn`;
-          const panelId = `${baseId}-${i}-panel`;
-          return (
-            <div key={group.specialty} className={i > 0 ? "border-t border-line" : ""}>
-              <button
-                id={btnId}
-                type="button"
-                aria-expanded={expanded}
-                aria-controls={panelId}
-                onClick={() => setOpen(expanded ? null : group.specialty)}
-                className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)] sm:px-5"
-              >
-                <span className="min-w-0">
-                  <span className="block font-semibold text-[color:var(--pp-primary-950)]">
-                    {tx(group.specialty)}
-                  </span>
-                  <span className="mt-0.5 block text-2xs text-ink-tertiary">
-                    {specialistCount(staff, group.specialty) > 0
-                      ? tx(
-                          `${specialistCount(staff, group.specialty)} specialists · ${procedureCount(group.procedures.length)}`,
-                        )
-                      : tx(procedureCount(group.procedures.length))}
-                  </span>
+  const list = (
+    <div>
+      {groups.map((group, i) => {
+        const expanded = open === group.specialty;
+        const btnId = `${baseId}-${i}-btn`;
+        const panelId = `${baseId}-${i}-panel`;
+        return (
+          <div key={group.specialty} className={i > 0 ? "border-t border-line" : ""}>
+            <button
+              id={btnId}
+              type="button"
+              aria-expanded={expanded}
+              aria-controls={panelId}
+              onClick={() => setOpen(expanded ? null : group.specialty)}
+              className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)] sm:px-5"
+            >
+              <span className="min-w-0">
+                <span className="block font-semibold text-[color:var(--pp-primary-950)]">
+                  {tx(group.specialty)}
                 </span>
-                <Caret open={expanded} className="text-ink-tertiary" />
-              </button>
-              <div id={panelId} role="region" aria-labelledby={btnId} hidden={!expanded}>
-                {expanded ? (
-                  <div className="px-4 pb-4 sm:px-5">
-                    <ul className="space-y-1.5">
-                      {group.procedures.map((item) => (
-                        <li
-                          key={item}
-                          className="flex gap-2 text-sm text-[color:var(--pp-primary-950)]"
-                        >
-                          <span className="text-wellness" aria-hidden>
-                            ✓
-                          </span>
-                          {tx(item)}
-                        </li>
-                      ))}
-                    </ul>
-                    {specialistCount(staff, group.specialty) > 0 ? (
-                      <a
-                        href="#hospital-doctors"
-                        className="mt-3 inline-block text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
+                <span className="mt-0.5 block text-2xs text-ink-tertiary">
+                  {specialistCount(staff, group.specialty) > 0
+                    ? tx(
+                        `${specialistCount(staff, group.specialty)} specialists · ${procedureCount(group.procedures.length)}`,
+                      )
+                    : tx(procedureCount(group.procedures.length))}
+                </span>
+              </span>
+              <Caret open={expanded} className="text-ink-tertiary" />
+            </button>
+            <div id={panelId} role="region" aria-labelledby={btnId} hidden={!expanded}>
+              {expanded ? (
+                <div className="px-4 pb-4 sm:px-5">
+                  <ul className="space-y-1.5">
+                    {group.procedures.map((item) => (
+                      <li
+                        key={item}
+                        className="flex gap-2 text-sm text-[color:var(--pp-primary-950)]"
                       >
-                        {tx("View doctors")} →
-                      </a>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
+                        <span className="text-wellness" aria-hidden>
+                          ✓
+                        </span>
+                        {tx(item)}
+                      </li>
+                    ))}
+                  </ul>
+                  {specialistCount(staff, group.specialty) > 0 ? (
+                    <a
+                      href="#hospital-doctors"
+                      className="mt-3 inline-block text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
+                    >
+                      {tx("View doctors")} →
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
-          );
-        })}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  if (compact) {
+    return (
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx(copy.title)}</p>
+        <div className="mt-2 overflow-hidden rounded-xl border border-line bg-white">{list}</div>
       </div>
-    </section>
+    );
+  }
+
+  return (
+    <DetailSection title={tx(copy.title)} lede={tx(copy.lede)} flush>
+      <p className="border-b border-line px-5 py-3 text-sm leading-relaxed text-ink-secondary">
+        {groups.map((g) => tx(g.specialty)).join(" · ")}
+      </p>
+      {list}
+    </DetailSection>
   );
 }
 
@@ -143,10 +162,12 @@ export function SpecialisedInEditor({
   value,
   variant,
   onChange,
+  flush = false,
 }: {
   value: SpecialisedGroup[];
   variant: SpecialisedVariant;
   onChange: (next: SpecialisedGroup[]) => void;
+  flush?: boolean;
 }) {
   const { tx } = useI18n();
   const baseId = useId();
@@ -156,9 +177,13 @@ export function SpecialisedInEditor({
 
   return (
     <div>
-      <p className="mb-1.5 block text-sm font-medium text-ink-secondary">{tx(copy.title)}</p>
-      <p className="mb-3 text-sm text-ink-tertiary">{tx(copy.editorHint)}</p>
-      <div className="overflow-hidden rounded-2xl border border-line bg-white">
+      {!flush ? (
+        <>
+          <p className="mb-1.5 block text-sm font-medium text-ink-secondary">{tx(copy.title)}</p>
+          <p className="mb-3 text-sm text-ink-tertiary">{tx(copy.editorHint)}</p>
+        </>
+      ) : null}
+      <div className={flush ? "" : "overflow-hidden rounded-2xl border border-line bg-white"}>
         {ALL_SPECIALISED_OPTIONS.map((opt, i) => {
           const current = selected.get(opt.specialty);
           const on = Boolean(current);

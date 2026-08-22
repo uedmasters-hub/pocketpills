@@ -329,7 +329,7 @@ export function subscribeOffers(cb: () => void) {
   };
 }
 
-export type CheckoutKind = "fill" | "transfer" | "consult";
+export type CheckoutKind = "fill" | "transfer" | "consult" | "lab" | "care" | "service";
 
 export type OfferDiscount =
   | { type: "amount"; amount: number; minSubtotal?: number }
@@ -359,17 +359,17 @@ const CHECKOUT_RULES: Record<string, CheckoutRule> = {
   "first-fill": { appliesTo: ["fill"], discount: { type: "amount", amount: 20 } },
   "card-visa": { appliesTo: ["fill", "transfer"], discount: { type: "percent", percent: 10 } },
   "card-mc": { appliesTo: ["fill"], discount: { type: "amount", amount: 15, minSubtotal: 75 } },
-  "card-amex": { appliesTo: ["fill", "consult"], discount: { type: "info" } },
+  "card-amex": { appliesTo: ["fill", "consult", "lab", "care"], discount: { type: "info" } },
   "card-interac": { appliesTo: ["fill"], discount: { type: "waive_fee", fee: "sameday" } },
   "bank-td": { appliesTo: ["fill"], discount: { type: "percent", percent: 12, max: 40 } },
   "bank-rbc": { appliesTo: ["fill"], discount: { type: "info" } },
   "bank-scotiabank": { appliesTo: ["transfer"], discount: { type: "amount", amount: 25 } },
-  "bank-bmo": { appliesTo: ["consult"], discount: { type: "percent", percent: 8 } },
+  "bank-bmo": { appliesTo: ["consult", "care"], discount: { type: "percent", percent: 8 } },
   "bank-cibc": { appliesTo: [], discount: { type: "info" } },
   "other-refer": { appliesTo: ["fill"], discount: { type: "amount", amount: 20 } },
   "other-student": { appliesTo: ["fill"], discount: { type: "percent", percent: 15, max: 50 } },
   "other-senior": { appliesTo: ["fill"], discount: { type: "waive_fee", fee: "dispensing" } },
-  "other-employer": { appliesTo: ["fill", "consult"], discount: { type: "info" } },
+  "other-employer": { appliesTo: ["fill", "consult", "lab", "care", "service"], discount: { type: "info" } },
 };
 
 export type CheckoutContext = {

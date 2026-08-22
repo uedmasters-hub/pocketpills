@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { AvailabilityBoard, AvailabilityLocationSelect } from "@/components/appointments/AvailabilityBoard";
+import { useAvailabilityPicker } from "@/components/appointments/useAvailabilityPicker";
+import { DetailSection } from "@/components/DetailSection";
 import { DetailPageSkeleton, RatingChipSkeleton, useEnterSkeleton } from "@/components/ui";
 import { DirectoryDetailLayout, DirectoryHeroCard, DIRECTORY_SIDEBAR_CARD } from "@/components/DirectoryDetailLayout";
 import { RatingChip, ReviewCountChip } from "@/components/reviews/RatingChip";
@@ -25,7 +28,6 @@ import {
 } from "@/components/clinic/ClinicDetailExtras";
 import {
   HospitalAboutFacts,
-  HospitalDoctorsSection,
   HospitalProfileAfterReviews,
   HospitalProfileMid,
   HospitalRelatedSection,
@@ -34,32 +36,32 @@ import { DirectorySidebarMap } from "@/components/MapEmbed";
 import { CLINIC_REVIEW_TOPICS, clinicFromProvider, clinicMapsQuery } from "@/lib/clinicProfileContent";
 import { DOCTOR_REVIEW_TOPICS } from "@/lib/doctorProfileContent";
 import { HOSPITAL_REVIEW_TOPICS, hospitalFromProvider, hospitalMapsQuery } from "@/lib/hospitalProfileContent";
+import { resolveAvailabilityBranch } from "@/lib/availabilityLocations";
+import { FACILITY_HERO_USPS, facilityRegistrySubtitle } from "@/lib/facilityDirectory";
 import { useI18n } from "@/lib/i18n";
-import { addCalendarDays, isPastDate, isSlotInPast, monthLong, todayIso } from "@/lib/timeSlots";
+import { isPastDate, isSlotInPast } from "@/lib/timeSlots";
 import {
   defaultDoctorSpecialised,
   defaultFacilitySpecialised,
   sanitizeSpecialisedIn,
 } from "@/lib/specialisedIn";
+import { ListingCustomSections } from "@/components/ListingCustomSections";
+import { listingForHub, listingShows } from "@/lib/listingOverlay";
 import type { ReviewSummary } from "@/lib/reviewsApi";
 import {
-  firstOpenSlot,
-  formatDistance,
+  facilityCatalogue,
+  facilityServiceHref,
+  facilityServicesHref,
   formatFee,
   getAffiliatedFacilities,
   getFacilityStaff,
+  getHostFacility,
   getProvider,
-  hasOpenSlot,
   isSpecialtyId,
   kindLabel,
   serviceKindLabel,
-  slotsByVisitType,
   specialtyById,
-  upcomingDays,
-  SLOT_BANDS,
   type CareProvider,
-  type DaySlots,
-  type FacilityService,
   type SpecialtyId,
   type VisitType,
 } from "@/lib/appointments";
@@ -128,254 +130,6 @@ function bookHref(opts: {
    Doctor — micro consultant site + sticky booking column
    ═══════════════════════════════════════════════════════════ */
 
-function monthTitle(iso: string) {
-  return monthLong(iso).toUpperCase();
-}
-
-function DoctorAvailabilityBoard({
-  provider,
-  facilities,
-  date,
-  days,
-  weekOffset,
-  visitType,
-  time,
-  clinicId,
-  onSelectDay,
-  onSelectVisit,
-  onSelectTime,
-  onShiftWeek,
-  onSelectClinic,
-}: {
-  provider: CareProvider;
-  facilities: CareProvider[];
-  date: string;
-  days: { date: string; label: string; weekday: string }[];
-  weekOffset: number;
-  visitType: VisitType;
-  time: string;
-  clinicId: string;
-  onSelectDay: (date: string) => void;
-  onSelectVisit: (v: VisitType) => void;
-  onSelectTime: (t: string) => void;
-  onShiftWeek: (delta: number) => void;
-  onSelectClinic: (id: string) => void;
-}) {
-  const { tx } = useI18n();
-  const slots: DaySlots = useMemo(
-    () => slotsByVisitType(provider.id, date, visitType),
-    [provider.id, date, visitType],
-  );
-  const available = new Set([...slots.morning, ...slots.afternoon, ...slots.evening]);
-  const clinicOptions =
-    facilities.length > 0
-      ? facilities.map((f) => ({
-          id: f.id,
-          label: f.city || f.name,
-        }))
-      : provider.city
-        ? [{ id: "", label: provider.city }]
-        : [];
-  const showClinic = visitType === "clinic" && clinicOptions.length > 0;
-  const dayLabel = (d: { label: string }) =>
-    d.label === "Today" || d.label === "Tomorrow" ? tx(d.label) : d.label;
-
-  return (
-    <section id="availability" className="min-w-0 scroll-mt-28">
-      <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        {tx("Availability")}
-      </h2>
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-        {provider.visitTypes.length ? (
-          <div
-            className="inline-flex rounded-full bg-[color:var(--pp-primary-200)] p-1"
-            role="group"
-            aria-label={tx("Visit type")}
-          >
-            {provider.visitTypes.includes("clinic") ? (
-              <button
-                type="button"
-                onClick={() => onSelectVisit("clinic")}
-                className={
-                  "rounded-full px-5 py-2 text-sm font-medium transition-colors " +
-                  (visitType === "clinic"
-                    ? "bg-white text-[color:var(--pp-primary-950)] shadow-[0_1px_4px_rgba(24,7,48,0.08)] ring-1 ring-[color:var(--pp-primary-950)]"
-                    : "text-ink-tertiary")
-                }
-              >
-                {tx("In person")}
-              </button>
-            ) : null}
-            {provider.visitTypes.includes("virtual") ? (
-              <button
-                type="button"
-                onClick={() => onSelectVisit("virtual")}
-                className={
-                  "rounded-full px-5 py-2 text-sm font-medium transition-colors " +
-                  (visitType === "virtual"
-                    ? "bg-white text-[color:var(--pp-primary-950)] shadow-[0_1px_4px_rgba(24,7,48,0.08)] ring-1 ring-[color:var(--pp-primary-950)]"
-                    : "text-ink-tertiary")
-                }
-              >
-                {tx("Virtual")}
-              </button>
-            ) : null}
-          </div>
-        ) : (
-          <span />
-        )}
-
-        {showClinic ? (
-          clinicOptions.length > 1 ? (
-            <label className="relative inline-flex min-w-[10rem] items-center">
-              <span className="sr-only">{tx("Clinic address")}</span>
-              <select
-                value={clinicId}
-                onChange={(e) => onSelectClinic(e.target.value)}
-                className="h-10 appearance-none rounded-full border border-line bg-white py-2 pl-4 pr-9 text-sm font-medium text-[color:var(--pp-primary-950)] outline-none"
-              >
-                {clinicOptions.map((opt) => (
-                  <option key={opt.id || opt.label} value={opt.id}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-ink-tertiary">
-                <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                  <path d="M5 7.5 10 12.5 15 7.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-            </label>
-          ) : (
-            <span className="inline-flex h-10 items-center rounded-full border border-line bg-white px-4 text-sm font-medium text-[color:var(--pp-primary-950)]">
-              {clinicOptions[0]?.label || tx("Clinic address")}
-            </span>
-          )
-        ) : null}
-      </div>
-
-      <div className="mt-4 rounded-[1.5rem] border border-line bg-[color:var(--pp-primary-200)] p-5">
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => onShiftWeek(-7)}
-            disabled={weekOffset <= 0}
-            className="grid h-8 w-8 place-items-center rounded-full text-[color:var(--pp-primary-950)] disabled:opacity-30"
-            aria-label={tx("Previous week")}
-          >
-            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-              <path d="M12.5 5 7.5 10l5 5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <p className="text-sm font-semibold tracking-[0.14em] text-[color:var(--pp-primary-950)]">
-            {monthTitle(date || days[0]?.date || "")}
-          </p>
-          <button
-            type="button"
-            onClick={() => onShiftWeek(7)}
-            className="grid h-8 w-8 place-items-center rounded-full text-[color:var(--pp-primary-950)]"
-            aria-label={tx("Next week")}
-          >
-            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-              <path d="M7.5 5 12.5 10l-5 5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
-
-        <div
-          className="mt-4 grid grid-cols-7 gap-3"
-          role="group"
-          aria-label={tx("Choose a day")}
-        >
-          {days.map((d) => {
-                const past = isPastDate(d.date);
-                const on = d.date === date;
-                return (
-                  <button
-                    key={d.date}
-                    type="button"
-                    disabled={past}
-                    onClick={() => {
-                      if (!past) onSelectDay(d.date);
-                    }}
-                    className={
-                      "min-w-0 rounded-2xl border bg-white px-1 py-3 text-center " +
-                      (past
-                        ? "cursor-default border-line text-[color:var(--text-disabled)]"
-                        : on
-                          ? "border-[color:var(--pp-primary-950)]"
-                          : "border-transparent")
-                    }
-                  >
-                    <span className={"block truncate text-2xs " + (past ? "text-[color:var(--text-disabled)]" : "text-ink-tertiary")}>
-                      {d.weekday}
-                    </span>
-                    <span
-                      className={
-                        "mt-1 block truncate text-sm font-semibold " +
-                        (past ? "text-[color:var(--text-disabled)]" : "text-[color:var(--pp-primary-950)]")
-                      }
-                    >
-                      {dayLabel(d)}
-                    </span>
-                  </button>
-                );
-          })}
-        </div>
-
-        <div className="mt-5 space-y-4">
-          {(
-            [
-              ["Morning", SLOT_BANDS.morning],
-              ["Afternoon", SLOT_BANDS.afternoon],
-              ["Evening", SLOT_BANDS.evening],
-            ] as const
-          ).map(([label, band]) => (
-            <div key={label}>
-              <p className="text-2xs font-medium text-ink-tertiary">{tx(label)}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-3">
-                {band.map((t) => {
-                  const open = available.has(t) && !isSlotInPast(date, t);
-                  const on = time === t;
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      disabled={!open}
-                      onClick={() => open && onSelectTime(t)}
-                      className={
-                        "rounded-full border bg-white px-3.5 py-2 text-sm tnum " +
-                        (on
-                          ? "border-[color:var(--pp-primary-950)] font-medium text-[color:var(--pp-primary-950)]"
-                          : open
-                            ? "border-line text-[color:var(--pp-primary-950)]"
-                            : "cursor-default border-line text-[color:var(--text-disabled)]")
-                      }
-                    >
-                      {t}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function weekOffsetFor(iso: string): number {
-  const today = todayIso();
-  for (let w = 0; w < 8; w++) {
-    for (let d = 0; d < 7; d++) {
-      if (addCalendarDays(today, w * 7 + d) === iso) return w;
-    }
-  }
-  return 0;
-}
-
 function DoctorDetailPage({ provider }: { provider: CareProvider }) {
   return <DoctorProfilePage provider={provider} />;
 }
@@ -406,6 +160,8 @@ export function DoctorProfilePage({
   const specialty = specialtyId ? specialtyById(specialtyId) : undefined;
   const [params] = useSearchParams();
   const facilityId = params.get("facility") || undefined;
+  const host = getHostFacility(facilityId);
+  const inFacilityFlow = Boolean(host);
   const facilities = getAffiliatedFacilities(provider.id);
 
   const fee =
@@ -416,42 +172,10 @@ export function DoctorProfilePage({
   const defaultVisit: VisitType = provider.visitTypes.includes("clinic")
     ? "clinic"
     : provider.visitTypes[0] ?? "clinic";
-  const firstOpen = firstOpenSlot(provider.id, todayIso(), defaultVisit);
-  const [weekOffset, setWeekOffset] = useState(() => (firstOpen ? weekOffsetFor(firstOpen.date) : 0));
-  const days = useMemo(() => upcomingDays(7, weekOffset), [weekOffset]);
-  const [date, setDate] = useState(() => firstOpen?.date ?? todayIso());
   const [visitType, setVisitType] = useState<VisitType>(defaultVisit);
-  const [time, setTime] = useState("");
-  const [clinicId, setClinicId] = useState(facilityId || facilities[0]?.id || "");
-  const [holdEmpty, setHoldEmpty] = useState(false);
-  const [clock, setClock] = useState(0);
-
-  useEffect(() => {
-    const id = window.setInterval(() => setClock((n) => n + 1), 30_000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    if (isPastDate(date)) {
-      setHoldEmpty(false);
-      const next = firstOpenSlot(provider.id, todayIso(), visitType);
-      setDate(next?.date ?? todayIso());
-      setWeekOffset(next ? weekOffsetFor(next.date) : 0);
-      setTime("");
-      return;
-    }
-    if (time && isSlotInPast(date, time)) setTime("");
-  }, [date, time, provider.id, visitType]);
-
-  useEffect(() => {
-    if (holdEmpty) return;
-    if (hasOpenSlot(provider.id, date, visitType)) return;
-    const next = firstOpenSlot(provider.id, date, visitType);
-    if (!next || next.date === date) return;
-    setDate(next.date);
-    setWeekOffset(weekOffsetFor(next.date));
-    setTime("");
-  }, [clock, date, visitType, provider.id, holdEmpty]);
+  const avail = useAvailabilityPicker(provider.id, visitType);
+  const { date, time, days, weekOffset, slots, selectDay, selectTime, shiftWeek } = avail;
+  const [clinicId, setClinicId] = useState(host?.id || facilityId || facilities[0]?.id || "");
 
   const next =
     provider.nextAvailable === "Today" ||
@@ -463,30 +187,30 @@ export function DoctorProfilePage({
   const dayLabel = (d: { label: string }) =>
     d.label === "Today" || d.label === "Tomorrow" ? tx(d.label) : d.label;
 
-  const selectDay = (d: string) => {
-    if (isPastDate(d)) return;
-    setDate(d);
-    setTime("");
-    setHoldEmpty(!hasOpenSlot(provider.id, d, visitType));
-  };
+  const visitOptions = (
+    [
+      provider.visitTypes.includes("clinic") ? { id: "clinic" as const, label: tx("In person") } : null,
+      provider.visitTypes.includes("virtual") ? { id: "virtual" as const, label: tx("Virtual") } : null,
+    ] as const
+  ).filter((x): x is { id: VisitType; label: string } => !!x);
 
-  const selectVisit = (v: VisitType) => {
-    setVisitType(v);
-    setTime("");
-    setHoldEmpty(false);
-  };
-
-  const shiftWeek = (delta: number) => {
-    const nextOffset = Math.max(0, weekOffset + delta);
-    setWeekOffset(nextOffset);
-    setHoldEmpty(false);
-    const nextDays = upcomingDays(7, nextOffset);
-    const start = nextDays[0]?.date ?? todayIso();
-    const next = firstOpenSlot(provider.id, start, visitType);
-    setDate(next?.date ?? start);
-    if (next) setWeekOffset(weekOffsetFor(next.date));
-    setTime("");
-  };
+  const clinicOptions =
+    inFacilityFlow && host
+      ? [
+          {
+            id: host.id,
+            label: resolveAvailabilityBranch(host.id)?.label || host.name || host.city || tx("Clinic"),
+          },
+        ]
+      : facilities.length > 0
+        ? facilities.map((f) => ({
+            id: f.id,
+            label: resolveAvailabilityBranch(f.id)?.label || f.name || f.city || f.id,
+          }))
+        : provider.city
+          ? [{ id: "", label: provider.city }]
+          : [];
+  const showClinic = visitType === "clinic" && clinicOptions.length > 0;
 
   const startBook = () => {
     if (!date || !time) return;
@@ -505,13 +229,13 @@ export function DoctorProfilePage({
 
   const backHref = backTo
     ? backTo
-    : facilityId
-      ? `/appointments/provider/${facilityId}${specialtyId ? `?specialty=${specialtyId}` : ""}`
+    : host
+      ? facilityServicesHref(host.id)
       : backToList(specialtyId);
   const backText = backLabel
     ? backLabel
-    : facilityId
-      ? tx("Back to facility")
+    : host
+      ? tx("Back")
       : specialty
         ? tx(specialty.label)
         : tx("Book an appointment");
@@ -579,19 +303,31 @@ export function DoctorProfilePage({
     <DirectoryDetailLayout
       backTo={backHref}
       backLabel={backText}
-      eyebrow={tx("Doctor")}
+      eyebrow={host ? host.name : tx("Doctor")}
       name={provider.name}
       subtitle={tx(provider.subtitle)}
       bio={tx(provider.bio)}
       about={tx(provider.about || provider.bio)}
       imageUrl={provider.imageUrl}
-      usps={[
-        { label: tx("NMC verified") },
-        { label: tx("Digital Prescription") },
-        { label: tx("Free Followup") },
-      ]}
+      usps={
+        host
+          ? [
+              { label: tx("Consultant") },
+              { label: tx("Digital Prescription") },
+              { label: tx("Free Followup") },
+            ]
+          : [
+              { label: tx("NMC verified") },
+              { label: tx("Digital Prescription") },
+              { label: tx("Free Followup") },
+            ]
+      }
       leadingBadges={
-        reviewSummary == null ? (
+        inFacilityFlow ? (
+          provider.reviewCount ? (
+            <ReviewCountChip average={provider.rating} count={provider.reviewCount} />
+          ) : null
+        ) : reviewSummary == null ? (
           <RatingChipSkeleton variant="badge" />
         ) : reviewSummary.count ? (
           <RatingChip summary={reviewSummary} variant="badge" />
@@ -602,12 +338,16 @@ export function DoctorProfilePage({
         <>
           {bookingSidebar}
           <DirectorySidebarMap
-            query={[provider.name, provider.address, provider.city].filter(Boolean).join(", ")}
+            query={
+              host
+                ? [host.name, host.address, host.city].filter(Boolean).join(", ")
+                : [provider.name, provider.address, provider.city].filter(Boolean).join(", ")
+            }
           />
         </>
       }
       reviews={
-        canWrite || owned ? (
+        inFacilityFlow ? undefined : canWrite || owned ? (
           <ReviewsPanel
             kind="doctor"
             subjectId={reviewSubjectId}
@@ -619,43 +359,50 @@ export function DoctorProfilePage({
           />
         ) : undefined
       }
-      afterPage={<DoctorRelatedSection provider={provider} />}
+      afterPage={inFacilityFlow ? null : <DoctorRelatedSection provider={provider} />}
     >
         <DoctorHighlightsSection provider={provider} facilities={facilities} />
         {!hideAvailability && (
-          <DoctorAvailabilityBoard
-            provider={provider}
-            facilities={facilities}
+          <AvailabilityBoard
+            visitOptions={visitOptions}
+            visitType={visitType}
+            onSelectVisit={(id) => setVisitType(id as VisitType)}
+            location={
+              showClinic ? (
+                <AvailabilityLocationSelect
+                  options={clinicOptions}
+                  value={clinicId}
+                  onChange={setClinicId}
+                />
+              ) : null
+            }
             date={date}
             days={days}
             weekOffset={weekOffset}
-            visitType={visitType}
             time={time}
-            clinicId={clinicId}
+            slots={slots}
             onSelectDay={selectDay}
-            onSelectVisit={selectVisit}
-            onSelectTime={setTime}
+            onSelectTime={selectTime}
             onShiftWeek={shiftWeek}
-            onSelectClinic={setClinicId}
           />
         )}
-        <DoctorSpecialisationsGrid provider={provider} specialisedIn={specialisedIn} />
-        {facilities.length ? (
+        {listingShows(provider.id, "specialised") ? (
+          <DoctorSpecialisationsGrid provider={provider} specialisedIn={specialisedIn} />
+        ) : null}
+        {facilities.length && !inFacilityFlow ? (
           <DoctorPracticeSection
             provider={provider}
             facilities={facilities}
             specialtyId={specialtyId}
           />
         ) : null}
-        {provider.awards?.length ? (
-          <section className="min-w-0 scroll-mt-28">
-            <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-              {tx("Awards & achievements")}
-            </h2>
-            <p className="mt-1 text-sm text-ink-tertiary">
-              {tx("Verified recognitions listed on this profile.")}
-            </p>
-            <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-white">
+        {provider.awards?.length && !inFacilityFlow && listingShows(provider.id, "awards") ? (
+          <DetailSection
+            title={tx("Awards & achievements")}
+            lede={tx("Verified recognitions listed on this profile.")}
+            flush
+          >
+            <div>
               {provider.awards.map((a, i) => (
                 <div
                   key={a.title + a.year}
@@ -669,10 +416,14 @@ export function DoctorProfilePage({
                 </div>
               ))}
             </div>
-          </section>
+          </DetailSection>
         ) : null}
-        <DoctorArticlesSection provider={provider} />
+        {inFacilityFlow ? null : <DoctorArticlesSection provider={provider} />}
         <DoctorFaqSection provider={provider} specialisedIn={specialisedIn} />
+        <ListingCustomSections
+          sections={listingForHub(provider.id)?.pageSections}
+          fallbackQuery={[provider.address, provider.city, provider.name].filter(Boolean).join(", ")}
+        />
     </DirectoryDetailLayout>
   );
 }
@@ -686,8 +437,9 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
   const nav = useNavigate();
   const specialtyId = useSpecialtyFromQuery();
   const specialty = specialtyId ? specialtyById(specialtyId) : undefined;
+  const [reviewSummary, setReviewSummary] = useState<ReviewSummary | null>(null);
   const staff = getFacilityStaff(provider.id);
-  const services = provider.services ?? [];
+  const services = facilityCatalogue(provider);
   const specialisedIn = (() => {
     const stored = sanitizeSpecialisedIn(provider.specialisedIn);
     return stored.length
@@ -702,33 +454,17 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
   const hospital = hospitalFromProvider(provider, staff, specialisedIn);
   const clinic = clinicFromProvider(provider, staff, specialisedIn);
   const isClinic = provider.kind === "clinic";
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
-  const selected = services.find((s) => s.id === selectedServiceId) ?? null;
-
-  const selectService = (s: FacilityService) => {
-    setSelectedServiceId((cur) => (cur === s.id ? null : s.id));
-  };
-
-  const bookFacilityService = () => {
-    if (!selected) return;
-    if (selected.kind === "consult") {
-      /* Scroll to consultants — booking happens after doctor pick */
-      document.getElementById(isClinic ? "clinic-doctors" : "hospital-doctors")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-    const next = firstOpenSlot(provider.id, todayIso(), "clinic");
-    if (!next) return;
-    nav(
-      bookHref({
-        providerId: provider.id,
-        specialtyId: specialtyId ?? provider.specialties[0],
-        serviceId: selected.id,
-        date: next.date,
-        time: next.time,
-        visitType: "clinic",
-      }),
-    );
-  };
+  const hfCode = (isClinic ? clinic.registrationNo : hospital.registrationNo)?.trim();
+  const fromFee = services.length
+    ? Math.min(...services.map((s) => s.feeFrom))
+    : provider.consultationFee || 0;
+  const next =
+    provider.nextAvailable === "Today" ||
+    provider.nextAvailable === "Tomorrow" ||
+    provider.nextAvailable === "In 2 days"
+      ? tx(provider.nextAvailable)
+      : provider.nextAvailable;
+  const kindLabelText = tx(kindLabel(provider.kind));
 
   return (
     <div>
@@ -742,106 +478,106 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
       <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <DirectoryHeroCard
-            eyebrow={tx(kindLabel(provider.kind))}
+            eyebrow={kindLabelText}
             name={provider.name}
-            subtitle={tx(provider.subtitle)}
+            subtitle={facilityRegistrySubtitle(provider.subtitle, kindLabelText, hfCode)}
             imageUrl={provider.imageUrl}
-            usps={
-              provider.kind === "doctor"
-                ? [
-                    { label: tx("NMC verified") },
-                    { label: tx("Digital Prescription") },
-                    { label: tx("Free Followup") },
-                  ]
-                : [
-                    { label: tx("Verified Doctors") },
-                    { label: tx("Digital Prescription") },
-                    { label: tx("Free Followup") },
-                  ]
-            }
+            usps={FACILITY_HERO_USPS.map((label) => ({ label: tx(label) }))}
             leadingBadges={
-              <ReviewCountChip average={provider.rating} count={provider.reviewCount} />
+              reviewSummary == null ? (
+                <RatingChipSkeleton variant="badge" />
+              ) : reviewSummary.count ? (
+                <RatingChip summary={reviewSummary} variant="badge" />
+              ) : null
             }
             badges={[
-              provider.distanceKm > 0
-                ? { label: `${formatDistance(provider.distanceKm)} ${tx("away")}` }
-                : null,
-              provider.hours ? { label: tx(provider.hours) } : null,
+              hfCode ? { label: tx("Health facility registry"), strong: true } : null,
+              next ? { label: `${tx("Next")}: ${next}` } : null,
             ].filter(Boolean) as { label: string }[]}
           />
         </div>
 
         <aside className="space-y-3 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
-          {selected ? (
-            <div className={DIRECTORY_SIDEBAR_CARD}>
-              <p className="text-sm font-semibold leading-snug text-[color:var(--pp-primary-950)]">{tx("Book service")}</p>
-              <p className="mt-2 text-sm leading-snug text-ink-tertiary">{tx(selected.label)}</p>
-
-              <div className="mt-4 flex items-end justify-between gap-3 border-t border-line pt-4">
-                <span>
-                  <span className="block text-2xs text-ink-tertiary">
-                    {selected.feeFrom === 0 ? tx("Coverage") : tx("From")}
-                  </span>
-                  <span className="font-display text-2xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
-                    {formatFee(selected.feeFrom)}
-                  </span>
+          <div className={DIRECTORY_SIDEBAR_CARD}>
+            {provider.hours ? (
+              <>
+                <p className="text-sm font-semibold leading-snug text-[color:var(--pp-primary-950)]">
+                  {tx("Working hours")}
+                </p>
+                <p className="mt-2 text-sm leading-snug text-ink-secondary">{tx(provider.hours)}</p>
+              </>
+            ) : (
+              <p className="text-sm font-semibold leading-snug text-[color:var(--pp-primary-950)]">
+                {tx("Book visit")}
+              </p>
+            )}
+            <p className="mt-3 text-sm leading-snug text-ink-tertiary">
+              {tx("Choose a service — consultants, diagnostic services, pharmacy, rehab, and more.")}
+            </p>
+            <div className="mt-4 flex items-end justify-between gap-3 border-t border-line pt-4">
+              <span>
+                <span className="block text-2xs text-ink-tertiary">{tx("From")}</span>
+                <span className="font-display text-2xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
+                  {formatFee(fromFee)}
                 </span>
-                <span className="inline-flex h-7 items-center rounded-full bg-[color:var(--pp-primary-100)] px-3 text-xs font-semibold leading-none text-[color:var(--pp-primary-950)]">
-                  {tx(serviceKindLabel(selected.kind))}
+              </span>
+              {next ? (
+                <span className="inline-flex h-7 items-center rounded-full bg-wellness-subtle px-3 text-xs font-semibold leading-none text-wellness">
+                  {next}
                 </span>
-              </div>
-
-              <p className="mt-3 text-sm leading-snug text-ink-secondary">{tx(selected.blurb)}</p>
-
-              <div className="mt-4 space-y-2">
-                {selected.kind === "consult" ? (
-                  <>
-                    <Button fullWidth size="sm" onClick={bookFacilityService}>
-                      {tx("Choose a consultant")}
-                    </Button>
-                    <p className="text-center text-2xs text-ink-tertiary">
-                      {tx("Pick a doctor below to open their booking page.")}
-                    </p>
-                  </>
-                ) : (
-                  <Button fullWidth size="sm" onClick={bookFacilityService}>
-                    {tx("Book appointment")}
-                  </Button>
-                )}
-                <Button fullWidth size="sm" variant="ghost" onClick={() => setSelectedServiceId(null)}>
-                  {tx("Change service")}
-                </Button>
-              </div>
+              ) : null}
             </div>
-          ) : null}
+            <div className="mt-4 space-y-2">
+              {provider.phone ? (
+                <Button
+                  fullWidth
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    window.location.href = `tel:${provider.phone}`;
+                  }}
+                >
+                  {tx("Call")}
+                </Button>
+              ) : null}
+              <Button fullWidth size="sm" onClick={() => nav(facilityServicesHref(provider.id))}>
+                {tx("Book appointment")}
+              </Button>
+            </div>
+          </div>
           <DirectorySidebarMap
             query={isClinic ? clinicMapsQuery(clinic) : hospitalMapsQuery(hospital)}
           />
         </aside>
 
         <div className="min-w-0 space-y-10 lg:col-start-1 lg:row-start-2">
-        <section>
-          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-            {tx("About")}
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-ink-secondary">
+        <DetailSection title={tx("About")}>
+          <p className="text-sm leading-relaxed text-ink-secondary">
             {tx(provider.about || provider.bio)}
           </p>
           {isClinic ? <ClinicAboutFacts clinic={clinic} /> : <HospitalAboutFacts hospital={hospital} />}
-          {(provider.address || provider.phone) && (
-            <dl className="mt-4 overflow-hidden rounded-2xl border border-line bg-white">
-              {provider.address && (
+          {(hfCode || provider.address || provider.phone || provider.hours) && (
+            <dl className="mt-4 overflow-hidden rounded-xl border border-line bg-[color:var(--pp-primary-100)]">
+              {hfCode ? (
                 <div className="flex justify-between gap-4 px-5 py-3.5">
+                  <dt className="text-sm text-ink-tertiary">{tx("Facility code")}</dt>
+                  <dd className="text-sm font-medium text-[color:var(--pp-primary-950)] tnum">#{hfCode}</dd>
+                </div>
+              ) : null}
+              {provider.subtitle ? (
+                <div className={"flex justify-between gap-4 px-5 py-3.5" + (hfCode ? " border-t border-line" : "")}>
+                  <dt className="text-sm text-ink-tertiary">{tx("Type")}</dt>
+                  <dd className="max-w-[60%] text-right text-sm font-medium text-[color:var(--pp-primary-950)]">
+                    {tx(provider.subtitle)}
+                  </dd>
+                </div>
+              ) : null}
+              {provider.address && (
+                <div className="flex justify-between gap-4 border-t border-line px-5 py-3.5">
                   <dt className="text-sm text-ink-tertiary">{tx("Location")}</dt>
                   <dd className="max-w-[60%] text-right text-sm font-medium text-[color:var(--pp-primary-950)]">
                     {provider.address}
                   </dd>
-                </div>
-              )}
-              {provider.phone && (
-                <div className="flex justify-between gap-4 border-t border-line px-5 py-3.5">
-                  <dt className="text-sm text-ink-tertiary">{tx("Phone")}</dt>
-                  <dd className="text-sm font-medium text-[color:var(--pp-primary-950)]">{provider.phone}</dd>
                 </div>
               )}
               {provider.hours && (
@@ -852,108 +588,101 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
                   </dd>
                 </div>
               )}
+              {provider.phone && (
+                <div className="flex justify-between gap-4 border-t border-line px-5 py-3.5">
+                  <dt className="text-sm text-ink-tertiary">{tx("Phone")}</dt>
+                  <dd className="text-sm font-medium text-[color:var(--pp-primary-950)]">{provider.phone}</dd>
+                </div>
+              )}
             </dl>
           )}
-        </section>
-
-          <SpecialisedInSection groups={specialisedIn} variant="facility" staff={staff} />
-
-          <section className="min-w-0">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-                {tx("Services")}
-              </h2>
-              {!selected && (
-                <p className="text-sm text-ink-tertiary">{tx("Select a service to book")}</p>
-              )}
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {services.map((s) => {
-                const on = selected?.id === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => selectService(s)}
-                    aria-pressed={on}
-                    className={
-                      "rounded-2xl border p-4 text-left transition-colors " +
-                      (on
-                        ? "border-[color:var(--pp-primary-950)] bg-[color:var(--pp-primary-100)]"
-                        : "border-line bg-white hover:bg-[color:var(--state-hover)]")
-                    }
-                  >
-                    <span className="flex items-start justify-between gap-3">
-                      <span>
-                        <span className="block text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
-                          {tx(serviceKindLabel(s.kind))}
-                        </span>
-                        <span className="mt-1 block font-semibold text-[color:var(--pp-primary-950)]">
-                          {tx(s.label)}
-                        </span>
-                        <span className="mt-1 block text-sm text-ink-secondary">{tx(s.blurb)}</span>
-                      </span>
-                      <span className="shrink-0 text-sm font-semibold text-[color:var(--pp-primary-950)] tnum">
-                        {formatFee(s.feeFrom)}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          {isClinic ? <ClinicTreatmentsSection clinic={clinic} /> : null}
-
-          {staff.length ? (
-            isClinic ? (
-              <ClinicDoctorsSection clinic={clinic} />
-            ) : (
-              <HospitalDoctorsSection hospital={hospital} />
-            )
-          ) : (
-            <section
-              id={isClinic ? "clinic-doctors" : "hospital-doctors"}
-              className="min-w-0 scroll-mt-28"
-            >
-              <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-                {tx(isClinic ? "Doctors & practitioners" : "Doctors & specialists")}
-              </h2>
-              <p className="mt-1 text-sm text-ink-tertiary">
-                {tx("Doctors and clinicians practicing at this {kind}.")
-                  .replace("{kind}", tx(kindLabel(provider.kind)).toLowerCase())}
-              </p>
-              <p className="mt-4 rounded-2xl border border-dashed border-line bg-white px-5 py-8 text-center text-sm text-ink-tertiary">
-                {tx("No consultants listed yet.")}
-              </p>
-            </section>
-          )}
+        </DetailSection>
 
           {isClinic ? (
-            <ClinicProfileMid clinic={clinic} includeDoctors={false} />
+            <>
+              <SpecialisedInSection groups={specialisedIn} variant="facility" staff={staff} />
+              <DetailSection
+                title={tx("Services")}
+                meta={
+                  <button
+                    type="button"
+                    onClick={() => nav(facilityServicesHref(provider.id))}
+                    className="text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
+                  >
+                    {tx("Book a service")}
+                  </button>
+                }
+              >
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {services.map((s) => (
+                    <Link
+                      key={s.id}
+                      to={facilityServiceHref(provider.id, s.id)}
+                      className="rounded-xl border border-line bg-[color:var(--pp-primary-100)] p-4 text-left transition-colors hover:bg-[color:var(--state-hover)]"
+                    >
+                      <span className="flex items-start justify-between gap-3">
+                        <span>
+                          <span className="block text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
+                            {tx(serviceKindLabel(s.kind))}
+                          </span>
+                          <span className="mt-1 block font-semibold text-[color:var(--pp-primary-950)]">
+                            {tx(s.label)}
+                          </span>
+                          <span className="mt-1 block text-sm text-ink-secondary">{tx(s.blurb)}</span>
+                        </span>
+                        <span className="shrink-0 text-sm font-semibold text-[color:var(--pp-primary-950)] tnum">
+                          {formatFee(s.feeFrom)}
+                        </span>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </DetailSection>
+              <ClinicTreatmentsSection clinic={clinic} />
+              {clinic.hasListing ? null : staff.length ? (
+                <ClinicDoctorsSection clinic={clinic} listedOnly />
+              ) : (
+                <DetailSection
+                  id="clinic-doctors"
+                  title={tx("Our doctors")}
+                  lede={tx("Doctors and clinicians practicing at this {kind}.").replace(
+                    "{kind}",
+                    tx(kindLabel(provider.kind)).toLowerCase(),
+                  )}
+                >
+                  <p className="rounded-xl border border-dashed border-line bg-[color:var(--pp-primary-100)] px-5 py-8 text-center text-sm text-ink-tertiary">
+                    {tx("No consultants listed yet.")}
+                  </p>
+                </DetailSection>
+              )}
+              <ClinicProfileMid clinic={clinic} includeDoctors={!!clinic.hasListing} />
+            </>
           ) : (
-            <HospitalProfileMid hospital={hospital} includeDoctors={false} />
+            <HospitalProfileMid hospital={hospital} />
           )}
 
           <ReviewsPanel
             kind="facility"
             subjectId={provider.id.startsWith("hf-") ? provider.id.replace(/^hf-/, "") : provider.id}
             listingName={provider.name}
+            onSummary={setReviewSummary}
             topics={[...(isClinic ? CLINIC_REVIEW_TOPICS : HOSPITAL_REVIEW_TOPICS)]}
           />
 
           {isClinic ? (
-            <>
-              <ClinicProfileAfterReviews clinic={clinic} />
-              <ClinicRelatedSection clinic={clinic} />
-            </>
+            <ClinicProfileAfterReviews clinic={clinic} />
           ) : (
-            <>
-              <HospitalProfileAfterReviews hospital={hospital} />
-              <HospitalRelatedSection hospital={hospital} />
-            </>
+            <HospitalProfileAfterReviews hospital={hospital} />
           )}
         </div>
+      </div>
+
+      <div className="mt-10">
+        {isClinic ? (
+          <ClinicRelatedSection clinic={clinic} />
+        ) : (
+          <HospitalRelatedSection hospital={hospital} />
+        )}
       </div>
     </div>
   );

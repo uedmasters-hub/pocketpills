@@ -22,6 +22,12 @@
     },
     "api/reviews/[...path].ts": {
       "maxDuration": 10
+    },
+    "api/foreign-doctors/[...path].ts": {
+      "maxDuration": 10
+    },
+    "api/design-system/[...path].ts": {
+      "maxDuration": 10
     }
   },
   "rewrites": [

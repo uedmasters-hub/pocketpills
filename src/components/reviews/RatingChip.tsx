@@ -88,6 +88,7 @@ export function RatingChip({
 
 /** Hero-row rating pill — same white bordered chip as registry / next. */
 export function ReviewCountChip({ average, count }: { average: number; count: number }) {
+  if (count < 1) return null;
   const label = `${average.toFixed(1)} • ${count} ${count === 1 ? "review" : "reviews"}`;
   return (
     <span

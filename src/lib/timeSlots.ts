@@ -63,6 +63,23 @@ export function endOptionsAfter(start: string): string[] {
   return TIME_OPTIONS.filter((t) => timeToMinutes(t) > startMin);
 }
 
+export function plusMinutes(label: string, mins: number): string | null {
+  const start = timeToMinutes(label);
+  if (start < 0) return null;
+  const next = TIME_OPTIONS.find((t) => timeToMinutes(t) === start + mins);
+  return next ?? null;
+}
+
+/** Starts that have a following 30-minute end (never 11:30 PM). */
+export function startTimeOptions(): string[] {
+  return TIME_OPTIONS.filter((t) => plusMinutes(t, 30));
+}
+
+/** When a start is chosen, the matching "to" is the next 30-minute mark. */
+export function nextSlotEnd(start: string): string {
+  return plusMinutes(start, 30) || endOptionsAfter(start)[0] || start;
+}
+
 export function defaultEndFor(start: string): string {
   const opts = endOptionsAfter(start);
   // Prefer +3 hours when possible
@@ -121,11 +138,55 @@ export function addCalendarDays(iso: string, days: number): string {
   return `${yy}-${mm}-${dd}`;
 }
 
+/** Every ISO date in the calendar month of `iso` (UTC date parts). */
+export function isoDatesInMonth(iso: string): string[] {
+  const [y, m] = iso.split("-").map(Number);
+  if (!y || !m) return [];
+  const out: string[] = [];
+  for (let d = 1; d <= 31; d++) {
+    const next = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const [ny, nm] = next.split("-").map(Number);
+    if (ny !== y || nm !== m) break;
+    out.push(next);
+  }
+  return out;
+}
+
+export function monthKey(iso: string): string {
+  return iso.slice(0, 7);
+}
+
 export function weekdayShort(iso: string): string {
   return nepalNoon(iso).toLocaleDateString("en-CA", {
     timeZone: APP_TIMEZONE,
     weekday: "short",
   });
+}
+
+export function weekdayLong(iso: string): string {
+  return nepalNoon(iso).toLocaleDateString("en-CA", {
+    timeZone: APP_TIMEZONE,
+    weekday: "long",
+  });
+}
+
+/** Visual grouping only — Morning until noon, Afternoon until 5:00 PM, Evening from 5:00 PM. */
+export function availabilitySlotBands(): { morning: string[]; afternoon: string[]; evening: string[] } {
+  const starts = startTimeOptions();
+  return {
+    morning: starts.filter((t) => {
+      const m = timeToMinutes(t);
+      return m >= 6 * 60 && m < 12 * 60;
+    }),
+    afternoon: starts.filter((t) => {
+      const m = timeToMinutes(t);
+      return m >= 12 * 60 && m < 17 * 60;
+    }),
+    evening: starts.filter((t) => {
+      const m = timeToMinutes(t);
+      return m >= 17 * 60 && m <= 21 * 60 + 30;
+    }),
+  };
 }
 
 export function monthLong(iso: string): string {

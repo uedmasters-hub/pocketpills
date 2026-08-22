@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { ProviderShell } from "@/components/layout/ProviderShell";
@@ -8,9 +8,13 @@ import { UserProvider } from "@/lib/user";
 import { ProviderAuthProvider } from "@/lib/providerAuth";
 import { I18nProvider } from "@/lib/i18n";
 import { RightRailProvider } from "@/lib/rightRail";
+import { hydratePublishedListings } from "@/lib/businessProfile";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ScrollToTopFab } from "@/components/ScrollToTopFab";
 import { SiteAccessGate } from "@/components/SiteAccessGate";
+import { DesignSystemLiveProvider } from "@/lib/designSystemLive";
+import { DesignSystemShell } from "@/pages/design/DesignSystemShell";
+import { DesignDocPage, DesignHomeRedirect } from "@/pages/design/DesignDocPage";
 import { SignUp, Login, RequireAuth } from "@/pages/auth/Auth";
 import { ProviderLogin, ProviderSignUp, RequireProvider } from "@/pages/provider/ProviderAuth";
 import { ProviderDashboard } from "@/pages/provider/ProviderDashboard";
@@ -76,12 +80,14 @@ import { Appointments } from "@/pages/appointments/Appointments";
 import { AppointmentDetail, AppointmentReceipt } from "@/pages/appointments/AppointmentDetail";
 import { BookAppointment } from "@/pages/appointments/BookAppointment";
 import { ProviderDetail } from "@/pages/appointments/ProviderDetail";
+import { FacilityServiceDetail, FacilityServicesPage } from "@/pages/appointments/FacilityServices";
 import { LabDetail } from "@/pages/appointments/LabDetail";
 import { BookLab } from "@/pages/appointments/BookLab";
 import { AssistantDetail } from "@/pages/appointments/AssistantDetail";
 import { BookAssistant } from "@/pages/appointments/BookAssistant";
 import { ServiceDetail } from "@/pages/appointments/ServiceDetail";
 import { TreatmentHubDetail } from "@/pages/appointments/TreatmentHubDetail";
+import { CareJourneyPage } from "@/pages/care/CareJourneyPage";
 import { DoctorDirectory } from "@/pages/doctors/DoctorDirectory";
 import { ClaimDoctor } from "@/pages/doctors/ClaimDoctor";
 import { DoctorPublic } from "@/pages/doctors/DoctorPublic";
@@ -97,6 +103,13 @@ function ScrollToTop() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+  return null;
+}
+
+function ListingsHydrate() {
+  useEffect(() => {
+    void hydratePublishedListings();
+  }, []);
   return null;
 }
 
@@ -128,21 +141,37 @@ function TreatmentRedirect() {
   return <Navigate to={`/appointments/treatments/${slug ?? ""}`} replace />;
 }
 
+/** Draft book URL now serves the live booking page. */
+function BookDraftRedirect() {
+  const [params] = useSearchParams();
+  const qs = params.toString();
+  return <Navigate to={qs ? `/appointments/book?${qs}` : "/appointments/book"} replace />;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
       <SiteAccessGate>
+      <DesignSystemLiveProvider>
       <I18nProvider>
       <UserProvider>
       <ProviderAuthProvider>
         <RightRailProvider>
         <JourneyProvider>
           <ScrollToTop />
+          <ListingsHydrate />
           <ScrollToTopFab />
           <Routes>
           {/* Marketing homepage — own chrome */}
           <Route path="/" element={<Landing />} />
+
+          {/* Design system docs (HIG-style) — versions managed in-header */}
+          <Route path="/design/versions" element={<Navigate to="/design" replace />} />
+          <Route path="/design" element={<DesignSystemShell />}>
+            <Route index element={<DesignHomeRedirect />} />
+            <Route path=":section/:slug" element={<DesignDocPage />} />
+          </Route>
 
           {/* Always public — How it works + Support (even when signed in) */}
           <Route element={<PublicMarketingLayout />}>
@@ -228,6 +257,7 @@ export default function App() {
           <Route element={<RequireAuth><ShellLayout /></RequireAuth>}>
             <Route path="/app" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/draft" element={<Navigate to="/dashboard" replace />} />
             <Route path="/pharmacy" element={<Pharmacy />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/profile" element={<Profile />} />
@@ -243,13 +273,19 @@ export default function App() {
             <Route path="/orders/:id" element={<OrderDetail />} />
             <Route path="/appointments" element={<Appointments />} />
             <Route path="/appointments/visit/:id" element={<AppointmentDetail />} />
+            <Route path="/appointments/provider/:id/services/:serviceId" element={<FacilityServiceDetail />} />
+            <Route path="/appointments/provider/:id/services" element={<FacilityServicesPage />} />
             <Route path="/appointments/provider/:id" element={<ProviderDetail />} />
             <Route path="/appointments/book" element={<BookAppointment />} />
+            <Route path="/appointments/book/draft" element={<BookDraftRedirect />} />
             <Route path="/appointments/treatments/:slug" element={<TreatmentHubDetail />} />
             <Route path="/appointments/labs/:id" element={<LabDetail />} />
             <Route path="/appointments/labs/:id/book" element={<BookLab />} />
+            <Route path="/appointments/labs/visit/:id" element={<CareJourneyPage kind="lab" />} />
             <Route path="/appointments/assistants/:id" element={<AssistantDetail />} />
             <Route path="/appointments/assistants/:id/book" element={<BookAssistant />} />
+            <Route path="/appointments/assistants/visit/:id" element={<CareJourneyPage kind="care" />} />
+            <Route path="/appointments/services/request/:id" element={<CareJourneyPage kind="service" />} />
             <Route path="/appointments/services/:id" element={<ServiceDetail />} />
 
             <Route path="/fill" element={<FillPrescription />} />
@@ -272,6 +308,7 @@ export default function App() {
       </ProviderAuthProvider>
       </UserProvider>
       </I18nProvider>
+      </DesignSystemLiveProvider>
       </SiteAccessGate>
       </BrowserRouter>
     </ErrorBoundary>

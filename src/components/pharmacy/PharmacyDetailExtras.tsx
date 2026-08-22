@@ -2,10 +2,13 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
+import { DetailSection } from "@/components/DetailSection";
 import { DirectorySidebarMap } from "@/components/MapEmbed";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { RecentArticlesSection } from "@/components/RecentArticles";
 import { RelatedHealthcareOptions } from "@/components/RelatedHealthcareOptions";
+import { ListingCustomSections } from "@/components/ListingCustomSections";
+import { enabledSectionsInOrder, listingSectionEnabled } from "@/lib/listingPage";
 import {
   pharmacyAboutFacts,
   pharmacyAvailabilityRows,
@@ -18,19 +21,7 @@ import {
   type PharmacyView,
 } from "@/lib/pharmacyProfileContent";
 
-const CARD = "rounded-2xl border border-line bg-white p-4";
-const H2 = "font-display text-xl font-medium text-[color:var(--pp-primary-950)]";
-const LEDE = "mt-1 text-sm text-ink-tertiary";
-
-function SectionHead({ title, lede }: { title: string; lede?: string }) {
-  const { tx } = useI18n();
-  return (
-    <>
-      <h2 className={H2}>{tx(title)}</h2>
-      {lede ? <p className={LEDE}>{tx(lede)}</p> : null}
-    </>
-  );
-}
+const CARD = "rounded-xl border border-line bg-[color:var(--pp-primary-100)] p-4";
 
 export function PharmacyAboutFacts({ pharmacy }: { pharmacy: PharmacyView }) {
   const { tx } = useI18n();
@@ -49,13 +40,16 @@ export function PharmacyAboutFacts({ pharmacy }: { pharmacy: PharmacyView }) {
 }
 
 export function PharmacyServicesSection({ pharmacy }: { pharmacy: PharmacyView }) {
+  if (pharmacy.hasListing && !listingSectionEnabled(pharmacy.pageSections, "services")) return null;
   const { tx } = useI18n();
   const items = pharmacyServices(pharmacy);
   if (!items.length) return null;
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead title="Pharmacy services" lede="Services listed on this profile and on PocketPills." />
-      <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+    <DetailSection
+      title={tx("Pharmacy services")}
+      lede={tx("Services listed on this profile and on PocketPills.")}
+    >
+      <ul className="grid gap-3 sm:grid-cols-2">
         {items.map((s) => (
           <li key={s.id} className={CARD + " flex flex-col"}>
             <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx(s.label)}</p>
@@ -68,7 +62,7 @@ export function PharmacyServicesSection({ pharmacy }: { pharmacy: PharmacyView }
           </li>
         ))}
       </ul>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -77,22 +71,24 @@ export function PharmacyOrderingSection({ pharmacy }: { pharmacy: PharmacyView }
   const steps = pharmacyOrderSteps(pharmacy);
   if (!steps.length) return null;
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead
-        title="Prescription & medicine ordering"
-        lede="A valid prescription is required for prescription medicines. This is not a way to buy them without authorization."
-      />
-      <ol className="mt-4 overflow-hidden rounded-2xl border border-line bg-white">
-        {steps.map((s, i) => (
-          <li key={s.k} className={"px-5 py-3.5 " + (i > 0 ? "border-t border-line" : "")}>
-            <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
-              {i + 1}. {tx(s.k)}
-            </p>
-            <p className="mt-1 text-sm leading-relaxed text-[color:var(--pp-primary-950)]">{tx(s.v)}</p>
-          </li>
-        ))}
-      </ol>
-      <div className="mt-4 flex flex-wrap gap-2">
+    <div className="space-y-3">
+      <DetailSection
+        title={tx("Prescription & medicine ordering")}
+        lede={tx("A valid prescription is required for prescription medicines. This is not a way to buy them without authorization.")}
+        flush
+      >
+        <ol>
+          {steps.map((s, i) => (
+            <li key={s.k} className={"px-5 py-3.5 " + (i > 0 ? "border-t border-line" : "")}>
+              <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
+                {i + 1}. {tx(s.k)}
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-[color:var(--pp-primary-950)]">{tx(s.v)}</p>
+            </li>
+          ))}
+        </ol>
+      </DetailSection>
+      <div className="flex flex-wrap gap-2">
         <Link to="/fill">
           <Button size="sm">{tx("Upload prescription")}</Button>
         </Link>
@@ -102,7 +98,7 @@ export function PharmacyOrderingSection({ pharmacy }: { pharmacy: PharmacyView }
           </Button>
         </Link>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -110,12 +106,11 @@ export function PharmacyPharmacistsSection({ pharmacy }: { pharmacy: PharmacyVie
   const { tx } = useI18n();
   if (!pharmacy.pharmacists.length) return null;
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead
-        title="Pharmacists & professional support"
-        lede="People listed on this pharmacy’s PocketPills account — not a substitute for a clinic visit."
-      />
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+    <DetailSection
+      title={tx("Pharmacists & professional support")}
+      lede={tx("People listed on this pharmacy’s PocketPills account — not a substitute for a clinic visit.")}
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
         {pharmacy.pharmacists.map((person) => (
           <div key={person.id} className={CARD}>
             <p className="font-semibold text-[color:var(--pp-primary-950)]">{person.name}</p>
@@ -132,7 +127,7 @@ export function PharmacyPharmacistsSection({ pharmacy }: { pharmacy: PharmacyVie
           </div>
         ))}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -144,18 +139,20 @@ export function PharmacyAvailabilitySection({ pharmacy }: { pharmacy: PharmacyVi
   const query = q.trim().toLowerCase();
   const shown = query ? rows.filter((r) => `${r.name} ${r.form}`.toLowerCase().includes(query)) : rows;
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead
-        title="Medicine availability"
-        lede="Listed stock from this pharmacy’s inventory — confirm when you order. Not a live shelf count."
-      />
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder={tx("Search medicines")}
-        className="mt-4 h-11 w-full rounded-xl border border-line bg-white px-4 text-sm text-[color:var(--pp-primary-950)] outline-none placeholder:text-ink-tertiary focus:border-[color:var(--pp-primary-950)]"
-      />
-      <ul className="mt-3 overflow-hidden rounded-2xl border border-line bg-white">
+    <DetailSection
+      title={tx("Medicine availability")}
+      lede={tx("Listed stock from this pharmacy’s inventory — confirm when you order. Not a live shelf count.")}
+    >
+      <label className="block">
+        <span className="sr-only">{tx("Search medicines")}</span>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={tx("Search medicines")}
+          className="h-11 w-full rounded-xl border border-line bg-white px-4 text-sm text-[color:var(--pp-primary-950)] outline-none placeholder:text-ink-tertiary focus:border-[color:var(--pp-primary-950)]"
+        />
+      </label>
+      <ul className="mt-3 overflow-hidden rounded-xl border border-line bg-white">
         {shown.map((row, i) => (
           <li key={row.id} className={"flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 " + (i > 0 ? "border-t border-line" : "")}>
             <span>
@@ -174,7 +171,7 @@ export function PharmacyAvailabilitySection({ pharmacy }: { pharmacy: PharmacyVi
           <li className="px-5 py-6 text-sm text-ink-tertiary">{tx("No matching medicines in listed stock.")}</li>
         ) : null}
       </ul>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -183,12 +180,12 @@ export function PharmacyDeliverySection({ pharmacy }: { pharmacy: PharmacyView }
   const rows = pharmacyDeliveryRows(pharmacy);
   if (!rows.length) return null;
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead
-        title="Delivery & pickup"
-        lede="PocketPills shipping for this live listing — not a custom courier promise from this store."
-      />
-      <dl className="mt-4 overflow-hidden rounded-2xl border border-line bg-white">
+    <DetailSection
+      title={tx("Delivery & pickup")}
+      lede={tx("PocketPills shipping for this live listing — not a custom courier promise from this store.")}
+      flush
+    >
+      <dl>
         {rows.map((row, i) => (
           <div key={row.k} className={"flex justify-between gap-4 px-5 py-3.5 " + (i > 0 ? "border-t border-line" : "")}>
             <dt className="text-sm text-ink-tertiary">{tx(row.k)}</dt>
@@ -196,7 +193,7 @@ export function PharmacyDeliverySection({ pharmacy }: { pharmacy: PharmacyView }
           </div>
         ))}
       </dl>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -204,12 +201,11 @@ export function PharmacySafetySection() {
   const { tx } = useI18n();
   const items = pharmacySafetyGuides();
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead
-        title="Medicine safety & patient information"
-        lede="General guidance from PocketPills — not a diagnosis. Ask a pharmacist or clinician when you are unsure."
-      />
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+    <DetailSection
+      title={tx("Medicine safety & patient information")}
+      lede={tx("General guidance from PocketPills — not a diagnosis. Ask a pharmacist or clinician when you are unsure.")}
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
         {items.map((item) => (
           <div key={item.k} className={CARD}>
             <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx(item.k)}</p>
@@ -217,7 +213,7 @@ export function PharmacySafetySection() {
           </div>
         ))}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -225,23 +221,25 @@ export function PharmacyNewsSection({ pharmacy }: { pharmacy: PharmacyView }) {
   const { tx } = useI18n();
   if (!pharmacy.updates?.length) return null;
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead title="Pharmacy news & updates" lede="Announcements from this listing — not generic health articles." />
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+    <DetailSection
+      title={tx("Pharmacy news & updates")}
+      lede={tx("Announcements from this listing — not generic health articles.")}
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
         {pharmacy.updates.map((u) => (
           <article key={u.title} className={CARD}>
             <p className="text-2xs text-ink-tertiary">{u.date}</p>
             <h3 className="mt-1.5 font-semibold text-[color:var(--pp-primary-950)]">{tx(u.title)}</h3>
             <p className="mt-1.5 text-sm leading-relaxed text-ink-secondary">{tx(u.summary)}</p>
-            <p className="mt-3 text-xs font-medium text-[color:var(--pp-violet)]">{tx("Read more")}</p>
           </article>
         ))}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
 export function PharmacyArticlesSection({ pharmacy }: { pharmacy: PharmacyView }) {
+  if (pharmacy.hasListing && !listingSectionEnabled(pharmacy.pageSections, "publications")) return null;
   return (
     <RecentArticlesSection
       ownerId={pharmacy.ownerId}
@@ -252,11 +250,15 @@ export function PharmacyArticlesSection({ pharmacy }: { pharmacy: PharmacyView }
 
 export function PharmacyAwardsSection({ pharmacy }: { pharmacy: PharmacyView }) {
   const { tx } = useI18n();
+  if (pharmacy.hasListing && !listingSectionEnabled(pharmacy.pageSections, "awards")) return null;
   if (!pharmacy.awards?.length) return null;
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead title="Pharmacy achievements & certifications" lede="Verified recognitions listed on this profile." />
-      <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-white">
+    <DetailSection
+      title={tx("Pharmacy achievements & certifications")}
+      lede={tx("Verified recognitions listed on this profile.")}
+      flush
+    >
+      <div>
         {pharmacy.awards.map((a, i) => (
           <div key={a.title + a.year} className={"px-5 py-3.5 " + (i > 0 ? "border-t border-line" : "")}>
             <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx(a.title)}</p>
@@ -267,29 +269,32 @@ export function PharmacyAwardsSection({ pharmacy }: { pharmacy: PharmacyView }) 
           </div>
         ))}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
 export function PharmacyFaqSection({ pharmacy }: { pharmacy: PharmacyView }) {
-  return <FaqAccordion items={pharmacyFaqs(pharmacy)} />;
+  if (pharmacy.hasListing && !listingSectionEnabled(pharmacy.pageSections, "faq")) return null;
+  const items = pharmacy.faqs?.length ? pharmacy.faqs : pharmacyFaqs(pharmacy);
+  if (!items.length) return null;
+  return <FaqAccordion items={items} />;
 }
 
 export function PharmacyGallerySection({ pharmacy }: { pharmacy: PharmacyView }) {
+  if (pharmacy.hasListing && !listingSectionEnabled(pharmacy.pageSections, "gallery")) return null;
   const { tx } = useI18n();
   if (!pharmacy.gallery?.length) return null;
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead title="Pharmacy photos" lede="Verified images of this pharmacy." />
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <DetailSection title={tx("Pharmacy photos")} lede={tx("Verified images of this pharmacy.")}>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {pharmacy.gallery.map((g) => (
-          <figure key={g.src + g.label} className="overflow-hidden rounded-2xl border border-line bg-white">
+          <figure key={g.src + g.label} className="overflow-hidden rounded-xl border border-line bg-[color:var(--pp-primary-100)]">
             <img src={g.src} alt={g.label} className="aspect-[4/3] w-full object-cover" />
             <figcaption className="px-3 py-2 text-2xs text-ink-tertiary">{tx(g.label)}</figcaption>
           </figure>
         ))}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -307,22 +312,58 @@ export function PharmacyRelatedSection({ pharmacy }: { pharmacy: PharmacyView })
 }
 
 export function PharmacyProfileMid({ pharmacy }: { pharmacy: PharmacyView }) {
+  if (pharmacy.hasListing && pharmacy.pageSections?.length) {
+    return (
+      <>
+        {enabledSectionsInOrder(pharmacy.pageSections).map((section) => {
+          if (section.kind === "services") return <PharmacyServicesSection key={section.id} pharmacy={pharmacy} />;
+          if (section.kind === "hours") return <PharmacyAvailabilitySection key={section.id} pharmacy={pharmacy} />;
+          if (section.kind === "publications") return <PharmacyArticlesSection key={section.id} pharmacy={pharmacy} />;
+          if (section.kind === "awards") return <PharmacyAwardsSection key={section.id} pharmacy={pharmacy} />;
+          if (section.kind === "faq") return <PharmacyFaqSection key={section.id} pharmacy={pharmacy} />;
+          if (section.kind === "gallery") return <PharmacyGallerySection key={section.id} pharmacy={pharmacy} />;
+          if (section.kind === "custom") {
+            return (
+              <ListingCustomSections
+                key={section.id}
+                sections={[section]}
+                fallbackQuery={[pharmacy.place, pharmacy.district, pharmacy.name].filter(Boolean).join(", ")}
+              />
+            );
+          }
+          return null;
+        })}
+        <PharmacyOrderingSection pharmacy={pharmacy} />
+        <PharmacyPharmacistsSection pharmacy={pharmacy} />
+        <PharmacyDeliverySection pharmacy={pharmacy} />
+        <PharmacySafetySection />
+      </>
+    );
+  }
+
+  const show = (kind: Parameters<typeof listingSectionEnabled>[1]) =>
+    !pharmacy.hasListing || listingSectionEnabled(pharmacy.pageSections, kind);
   return (
     <>
-      <PharmacyServicesSection pharmacy={pharmacy} />
+      {show("services") ? <PharmacyServicesSection pharmacy={pharmacy} /> : null}
       <PharmacyOrderingSection pharmacy={pharmacy} />
       <PharmacyPharmacistsSection pharmacy={pharmacy} />
-      <PharmacyAvailabilitySection pharmacy={pharmacy} />
+      {show("hours") ? <PharmacyAvailabilitySection pharmacy={pharmacy} /> : null}
       <PharmacyDeliverySection pharmacy={pharmacy} />
       <PharmacySafetySection />
       <PharmacyNewsSection pharmacy={pharmacy} />
-      <PharmacyArticlesSection pharmacy={pharmacy} />
-      <PharmacyAwardsSection pharmacy={pharmacy} />
+      {show("publications") ? <PharmacyArticlesSection pharmacy={pharmacy} /> : null}
+      {show("awards") ? <PharmacyAwardsSection pharmacy={pharmacy} /> : null}
+      <ListingCustomSections
+        sections={pharmacy.pageSections}
+        fallbackQuery={[pharmacy.place, pharmacy.district, pharmacy.name].filter(Boolean).join(", ")}
+      />
     </>
   );
 }
 
 export function PharmacyProfileAfterReviews({ pharmacy }: { pharmacy: PharmacyView }) {
+  if (pharmacy.hasListing) return null;
   return (
     <>
       <PharmacyFaqSection pharmacy={pharmacy} />

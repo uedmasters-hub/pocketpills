@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { DetailSection } from "@/components/DetailSection";
 import { useI18n } from "@/lib/i18n";
 import {
   kindLabel,
@@ -18,8 +19,6 @@ import {
 } from "@/lib/facilityDirectory";
 import { useReviewSummaries } from "@/lib/useReviewSummaries";
 import type { ReviewKind, ReviewSummary } from "@/lib/reviewsApi";
-
-const H2 = "font-display text-xl font-medium text-[color:var(--pp-primary-950)]";
 
 const HOSPITAL_PHOTOS = [
   "https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=640&h=400&fit=crop",
@@ -132,12 +131,12 @@ function collectFacilities(
     seen.add(row.href);
     merged.push(row);
   }
-  return pickNearby(merged, city, (row) => row.place);
+  return pickNearby(merged, city, (row) => row.place, 4);
 }
 
 function collectDoctors(city: string | undefined, excludeId?: string): CareProvider[] {
   const rows = listPublishedNmcProviders().filter((d) => !isExcluded(d.id, excludeId));
-  return pickNearby(rows, city, (d) => d.city);
+  return pickNearby(rows, city, (d) => d.city, 4);
 }
 
 function RatingBadge({ summary }: { summary?: ReviewSummary }) {
@@ -190,10 +189,13 @@ export function RelatedHealthcareOptions({
   city,
   excludeId,
   excludeHfCode,
+  only,
 }: {
   city?: string;
   excludeId?: string;
   excludeHfCode?: string;
+  /** When set, hide tabs and show only this kind (hospital landing → hospitals, etc.). */
+  only?: TabId;
 }) {
   const { tx } = useI18n();
   const hospitals = useMemo(
@@ -210,16 +212,29 @@ export function RelatedHealthcareOptions({
     hospital: hospitals,
     clinic: clinics,
   };
-  const available = TABS.filter((tab) => (tab.id === "doctor" ? doctors.length : facilityByTab[tab.id].length));
-  const [tab, setTab] = useState<TabId>(available[0]?.id ?? "hospital");
-  const active: TabId =
-    tab === "doctor"
+  const available = TABS.filter((tab) => {
+    if (only && tab.id !== only) return false;
+    return tab.id === "doctor" ? doctors.length : facilityByTab[tab.id].length;
+  });
+  const [tab, setTab] = useState<TabId>(only ?? available[0]?.id ?? "hospital");
+  const active: TabId = only
+    ? only
+    : tab === "doctor"
       ? doctors.length
         ? "doctor"
         : available[0]?.id ?? "hospital"
       : facilityByTab[tab]?.length
         ? tab
         : available[0]?.id ?? "hospital";
+
+  const title =
+    only === "hospital"
+      ? "Related hospitals"
+      : only === "clinic"
+        ? "Related clinics"
+        : only === "doctor"
+          ? "Related doctors"
+          : "Related healthcare options";
 
   const facilityIds = useMemo(
     () => [...hospitals, ...clinics].map((row) => row.subjectId),
@@ -235,31 +250,47 @@ export function RelatedHealthcareOptions({
   if (!available.length) return null;
 
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <h2 className={H2}>{tx("Related healthcare options")}</h2>
-      <div className="mt-4 flex flex-wrap items-center gap-1" role="tablist" aria-label={tx("Related healthcare options")}>
-        {available.map((item) => {
-          const on = item.id === active;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={on}
-              onClick={() => setTab(item.id)}
-              className={
-                "rounded-full px-4 py-2 text-sm transition-colors " +
-                (on
-                  ? "bg-white font-medium text-[color:var(--pp-primary-950)] shadow-[0_1px_2px_rgba(24,7,48,0.06)]"
-                  : "text-ink-tertiary hover:text-[color:var(--pp-primary-950)]")
-              }
-            >
-              {tx(item.label)}
-            </button>
-          );
-        })}
-      </div>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <DetailSection title={tx(title)}>
+      {only ? null : (
+        <div className="flex flex-wrap items-center gap-1" role="tablist" aria-label={tx("Related healthcare options")}>
+          {available.map((item) => {
+            const on = item.id === active;
+            const i = available.indexOf(item);
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                id={`related-tab-${item.id}`}
+                aria-selected={on}
+                aria-controls={`related-panel-${item.id}`}
+                tabIndex={on ? 0 : -1}
+                onClick={() => setTab(item.id)}
+                onKeyDown={(e) => {
+                  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+                  e.preventDefault();
+                  const next = e.key === "ArrowRight" ? (i + 1) % available.length : (i - 1 + available.length) % available.length;
+                  setTab(available[next].id);
+                }}
+                className={
+                  "rounded-full px-4 py-2 text-sm transition-colors " +
+                  (on
+                    ? "bg-[color:var(--pp-primary-200)] font-medium text-[color:var(--pp-primary-950)]"
+                    : "text-ink-tertiary hover:text-[color:var(--pp-primary-950)]")
+                }
+              >
+                {tx(item.label)}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <div
+        id={`related-panel-${active}`}
+        role="tabpanel"
+        aria-labelledby={only ? undefined : `related-tab-${active}`}
+        className={(only ? "" : "mt-4 ") + "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"}
+      >
         {active === "doctor"
           ? doctors.map((d) => {
               const id = nmcNumberOf(d) || d.id.replace(/^nmc-/, "");
@@ -276,6 +307,6 @@ export function RelatedHealthcareOptions({
               <OptionCard key={item.id} item={item} summary={facilityRatings.map[item.subjectId]} />
             ))}
       </div>
-    </section>
+    </DetailSection>
   );
 }

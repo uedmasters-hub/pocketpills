@@ -1,5 +1,5 @@
 import { fieldsMatchQuery, sortBySearchRank } from "@/lib/searchMatch";
-import { getPublishedLabCentre } from "@/lib/businessProfile";
+import { businessAsLabCentre, getPublishedByHubId, listPublishedLabCentres } from "@/lib/businessProfile";
 
 export type LabServiceKind = "blood" | "imaging" | "other";
 
@@ -49,7 +49,7 @@ export type LabCentre = {
   emoji: string;
 };
 
-export type LabBookingStatus = "upcoming" | "completed" | "cancelled";
+export type LabBookingStatus = "pending" | "upcoming" | "completed" | "cancelled";
 
 export type LabBooking = {
   id: string;
@@ -63,6 +63,8 @@ export type LabBooking = {
   time: string;
   fee: number;
   patientName?: string;
+  patientId?: string;
+  notes?: string;
   /** Linked row in order history / Activity */
   orderId?: string;
   status: LabBookingStatus;
@@ -444,15 +446,16 @@ export const LAB_CENTRES: LabCentre[] = [
 ];
 
 export function getLab(id: string): LabCentre | undefined {
-  const published = getPublishedLabCentre();
-  if (published && published.id === id) return published;
+  const published = getPublishedByHubId(id);
+  const asLab = published ? businessAsLabCentre(published) : undefined;
+  if (asLab) return asLab;
   return LAB_CENTRES.find((l) => l.id === id);
 }
 
 export function listLabs(): LabCentre[] {
-  const published = getPublishedLabCentre();
-  if (!published) return LAB_CENTRES;
-  return [published, ...LAB_CENTRES.filter((l) => l.id !== published.id)];
+  const published = listPublishedLabCentres();
+  const seen = new Set(published.map((l) => l.id));
+  return [...published, ...LAB_CENTRES.filter((l) => !seen.has(l.id))];
 }
 
 export function getLabTest(id: string): LabTest | undefined {
@@ -600,12 +603,19 @@ export function getLabBookings(): LabBooking[] {
   return readLabBookings().sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`));
 }
 
+export function getLabBooking(id: string | undefined | null): LabBooking | undefined {
+  if (!id) return undefined;
+  return getLabBookings().find((b) => b.id === id);
+}
+
 export function createLabBooking(input: {
   labId: string;
   itemIds: string[];
   date: string;
   time: string;
   patientName?: string;
+  patientId?: string;
+  notes?: string;
   orderId?: string;
 }): LabBooking | null {
   const lab = getLab(input.labId);
@@ -623,8 +633,10 @@ export function createLabBooking(input: {
     time: input.time,
     fee: summary.fee,
     patientName: input.patientName,
+    patientId: input.patientId,
+    notes: input.notes,
     orderId: input.orderId,
-    status: "upcoming",
+    status: "pending",
     createdAt: new Date().toISOString(),
   };
   writeLabBookings([booking, ...readLabBookings()]);
@@ -659,23 +671,3 @@ export function labBookingIsPast(b: LabBooking): boolean {
   return b.date < localDateISO();
 }
 
-export function labAvailabilityDays(count = 5): { date: string; label: string }[] {
-  const out: { date: string; label: string }[] = [];
-  const start = new Date();
-  for (let i = 0; out.length < count; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    if (d.getDay() === 0) continue;
-    const date = localDateISO(d);
-    const label =
-      i === 0
-        ? "Today"
-        : i === 1
-          ? "Tomorrow"
-          : d.toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" });
-    out.push({ date, label });
-  }
-  return out;
-}
-
-export const LAB_TIME_SLOTS = ["7:30 AM", "8:00 AM", "8:30 AM", "9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM"];

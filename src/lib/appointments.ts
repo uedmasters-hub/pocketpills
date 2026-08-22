@@ -1,13 +1,23 @@
 /** Demo care booking — specialty → nearest providers → book. localStorage-backed. */
 
-import { addCalendarDays, isPastDate, isSlotInPast, monthDayShort, todayIso, weekdayShort } from "@/lib/timeSlots";
-import { getPublishedCareProvider } from "@/lib/businessProfile";
+import { addCalendarDays, availabilitySlotBands, isPastDate, isSlotInPast, minutesUntilSlot, monthDayShort, todayIso, weekdayShort } from "@/lib/timeSlots";
+import { businessAsCareProvider, getPublishedByHubId, listPublishedCareProviders } from "@/lib/businessProfile";
 import { getNmcProvider, listPublishedNmcProviders } from "@/lib/doctorDirectory";
+import {
+  displayFacilityLevel,
+  displayFacilityName,
+  facilityHours,
+  getFacilityClaim,
+  getVerifiedFacility,
+  hfCodeFromId,
+  hfProfileId,
+  vendorFromFacilityLevel,
+} from "@/lib/facilityDirectory";
 import { sortBySearchRank, textMatchesQuery } from "@/lib/searchMatch";
 import type { SpecialisedGroup } from "@/lib/specialisedIn";
 
 export type VisitType = "virtual" | "clinic";
-export type AppointmentStatus = "pending" | "upcoming" | "completed" | "cancelled";
+export type AppointmentStatus = "pending" | "upcoming" | "completed" | "cancelled" | "unavailable" | "not_attempted";
 export type ProviderKind = "doctor" | "clinic" | "hospital";
 
 export type SpecialtyId =
@@ -46,10 +56,15 @@ export interface Specialty {
 export type FacilityServiceKind =
   | "consult"
   | "lab"
+  | "emergency"
   | "surgery"
   | "diagnostics"
   | "imaging"
-  | "pharmacy";
+  | "pharmacy"
+  | "inward"
+  | "ambulance"
+  | "executive"
+  | "rehab";
 
 export interface FacilityService {
   id: string;
@@ -121,6 +136,8 @@ export interface Appointment {
   time: string;
   patientName: string;
   patientRelation: string;
+  /** Family / self folder id when reports are mapped per patient */
+  patientId?: string;
   contact: string;
   notes: string;
   symptoms: string;
@@ -131,6 +148,9 @@ export interface Appointment {
   findingIds?: string[];
   clinicName?: string;
   clinicAddress?: string;
+  /** Hospital / clinic catalogue item when booked from a facility service. */
+  facilityServiceKind?: FacilityServiceKind;
+  facilityServiceLabel?: string;
   status: AppointmentStatus;
   createdAt: string;
 }
@@ -477,6 +497,120 @@ export const PROVIDERS: CareProvider[] = [
     address: "250 University Ave, Toronto, ON M5H 3E5",
     bio: "Adult psychiatry with same-week virtual follow-ups.",
   },
+  {
+    id: "dr-joshi",
+    kind: "doctor",
+    name: "Dr. Geeta Joshi",
+    subtitle: "MD · Internal medicine",
+    imageUrl: img.doctorF3,
+    specialties: ["general", "endocrinologist", "cardiologist"],
+    languages: ["English", "Hindi", "Nepali"],
+    rating: 4.7,
+    reviewCount: 156,
+    distanceKm: 2.1,
+    consultationFee: 79,
+    experienceYears: 10,
+    nextAvailable: "Today",
+    visitTypes: ["virtual", "clinic"],
+    city: "Toronto, ON",
+    address: "76 Grenville St, Toronto, ON M5S 1B2",
+    bio: "Internist for diabetes, thyroid, and everyday adult medicine.",
+  },
+  {
+    id: "dr-nair",
+    kind: "doctor",
+    name: "Dr. Priya Nair",
+    subtitle: "MD, FRCPC · Cardiology",
+    imageUrl: img.doctorF1,
+    specialties: ["cardiologist", "general"],
+    languages: ["English", "Malayalam"],
+    rating: 4.8,
+    reviewCount: 221,
+    distanceKm: 4.4,
+    consultationFee: 99,
+    experienceYears: 13,
+    nextAvailable: "Tomorrow",
+    visitTypes: ["clinic"],
+    city: "Toronto, ON",
+    address: "30 Bond St, Toronto, ON M5B 1W8",
+    bio: "Heart-health consults and follow-up for blood pressure and cholesterol.",
+  },
+  {
+    id: "dr-okonkwo",
+    kind: "doctor",
+    name: "Dr. James Okonkwo",
+    subtitle: "MD, FRCSC · Orthopedics",
+    imageUrl: img.doctorM2,
+    specialties: ["orthopedist", "physiotherapist"],
+    languages: ["English"],
+    rating: 4.6,
+    reviewCount: 184,
+    distanceKm: 5.0,
+    consultationFee: 89,
+    experienceYears: 14,
+    nextAvailable: "In 2 days",
+    visitTypes: ["clinic"],
+    city: "Toronto, ON",
+    address: "2075 Bayview Ave, Toronto, ON M4N 3M5",
+    bio: "Joint pain, sports injury, and pre-surgical orthopedic assessment.",
+  },
+  {
+    id: "dr-rahman",
+    kind: "doctor",
+    name: "Dr. Sofia Rahman",
+    subtitle: "MD · Pediatrics",
+    imageUrl: img.doctorF2,
+    specialties: ["pediatrician", "general", "immunologist"],
+    languages: ["English", "Bengali"],
+    rating: 4.9,
+    reviewCount: 298,
+    distanceKm: 3.6,
+    consultationFee: 79,
+    experienceYears: 9,
+    nextAvailable: "Today",
+    visitTypes: ["virtual", "clinic"],
+    city: "Toronto, ON",
+    address: "555 University Ave, Toronto, ON M5G 1X8",
+    bio: "Child and teen visits, including fever, asthma, and well-child follow-up.",
+  },
+  {
+    id: "dr-zhang",
+    kind: "doctor",
+    name: "Dr. Wei Zhang",
+    subtitle: "MD, FRCSC · Ophthalmology",
+    imageUrl: img.doctorM1,
+    specialties: ["ophthalmologist", "general"],
+    languages: ["English", "Mandarin"],
+    rating: 4.7,
+    reviewCount: 142,
+    distanceKm: 6.1,
+    consultationFee: 89,
+    experienceYears: 12,
+    nextAvailable: "Tomorrow",
+    visitTypes: ["clinic"],
+    city: "Toronto, ON",
+    address: "60 Murray St, Toronto, ON M5T 3L9",
+    bio: "Eye exams, dry eye, and cataract assessment.",
+  },
+  {
+    id: "dr-karki",
+    kind: "doctor",
+    name: "Dr. Anil Karki",
+    subtitle: "MD · ENT",
+    imageUrl: img.doctorM3,
+    specialties: ["ent", "general"],
+    languages: ["English", "Nepali"],
+    rating: 4.8,
+    reviewCount: 175,
+    distanceKm: 2.9,
+    consultationFee: 85,
+    experienceYears: 11,
+    nextAvailable: "Today",
+    visitTypes: ["virtual", "clinic"],
+    city: "Toronto, ON",
+    address: "190 Elizabeth St, Toronto, ON M5G 2C4",
+    bio: "Sinus, ear, and throat concerns for adults and older children.",
+  },
 
   /* ── Clinics ─────────────────────────────────────────── */
   {
@@ -778,9 +912,12 @@ const DETAIL: Record<string, Partial<CareProvider>> = {
     services: [
       { id: "consult", kind: "consult", label: "Specialty consult", blurb: "Outpatient appointments with hospital-affiliated clinicians.", feeFrom: 0 },
       { id: "lab", kind: "lab", label: "Hospital labs", blurb: "Full laboratory services with requisition.", feeFrom: 0 },
+      { id: "emergency", kind: "emergency", label: "Emergency desk", blurb: "Urgent assessment at this hospital. Call 911 for life-threatening symptoms.", feeFrom: 0 },
       { id: "surgery", kind: "surgery", label: "Day surgery", blurb: "Book ambulatory / day-surgery assessments.", feeFrom: 0 },
       { id: "imaging", kind: "imaging", label: "Imaging", blurb: "X-ray, ultrasound, and outpatient imaging bookings.", feeFrom: 0 },
       { id: "diagnostics", kind: "diagnostics", label: "Diagnostics", blurb: "Specialist diagnostic clinics and testing.", feeFrom: 0 },
+      { id: "inward", kind: "inward", label: "In-patient bed", blurb: "Planned admission and in-patient bed booking.", feeFrom: 0 },
+      { id: "ambulance", kind: "ambulance", label: "Ambulance", blurb: "Emergency or transfer transport arranged by this hospital.", feeFrom: 45 },
     ],
   },
   "hosp-sinai": {
@@ -793,8 +930,11 @@ const DETAIL: Record<string, Partial<CareProvider>> = {
     services: [
       { id: "consult", kind: "consult", label: "Ambulatory consult", blurb: "Book outpatient clinicians including women’s health.", feeFrom: 0 },
       { id: "lab", kind: "lab", label: "Labs", blurb: "Hospital laboratory services.", feeFrom: 0 },
+      { id: "emergency", kind: "emergency", label: "Urgent ambulatory", blurb: "Same-day urgent desk for non-life-threatening needs.", feeFrom: 0 },
       { id: "surgery", kind: "surgery", label: "Ambulatory surgery", blurb: "Day procedures and pre-op assessments.", feeFrom: 0 },
       { id: "diagnostics", kind: "diagnostics", label: "Diagnostics", blurb: "Outpatient diagnostic clinics.", feeFrom: 0 },
+      { id: "inward", kind: "inward", label: "Bed", blurb: "Planned admission when an overnight stay is needed.", feeFrom: 0 },
+      { id: "ambulance", kind: "ambulance", label: "Ambulance", blurb: "Transfer and emergency transport from this campus.", feeFrom: 45 },
     ],
   },
   "hosp-toronto-general": {
@@ -807,8 +947,11 @@ const DETAIL: Record<string, Partial<CareProvider>> = {
     services: [
       { id: "consult", kind: "consult", label: "Outpatient consult", blurb: "Book specialty outpatient appointments.", feeFrom: 0 },
       { id: "lab", kind: "lab", label: "Labs", blurb: "Comprehensive hospital labs.", feeFrom: 0 },
+      { id: "emergency", kind: "emergency", label: "Emergency desk", blurb: "Urgent assessment at this hospital. Call 911 for life-threatening symptoms.", feeFrom: 0 },
       { id: "surgery", kind: "surgery", label: "Surgery assessment", blurb: "Pre-operative and day-surgery pathways.", feeFrom: 0 },
       { id: "imaging", kind: "imaging", label: "Imaging", blurb: "Advanced imaging bookings with requisition.", feeFrom: 0 },
+      { id: "inward", kind: "inward", label: "In-patient bed", blurb: "Planned admission and overnight ward booking.", feeFrom: 0 },
+      { id: "ambulance", kind: "ambulance", label: "Ambulance", blurb: "Emergency or transfer transport from this campus.", feeFrom: 45 },
     ],
   },
   "hosp-camh": {
@@ -820,8 +963,13 @@ const DETAIL: Record<string, Partial<CareProvider>> = {
     amenities: ["Quiet waiting spaces", "Virtual visit pods", "Pharmacy", "Peer support desk", "Accessible campus"],
     services: [
       { id: "consult", kind: "consult", label: "Psychiatry consult", blurb: "Outpatient psychiatry appointments and virtual follow-ups.", feeFrom: 0 },
+      { id: "lab", kind: "lab", label: "Labs", blurb: "Hospital laboratory services for this campus.", feeFrom: 0 },
+      { id: "emergency", kind: "emergency", label: "Crisis desk", blurb: "Urgent mental-health assessment. Call 911 or a crisis line if you are in immediate danger.", feeFrom: 0 },
       { id: "diagnostics", kind: "diagnostics", label: "Assessments", blurb: "Structured mental-health assessments.", feeFrom: 0 },
+      { id: "inward", kind: "inward", label: "Bed", blurb: "Planned admission when an overnight stay is needed.", feeFrom: 0 },
+      { id: "surgery", kind: "surgery", label: "Procedure assessment", blurb: "Pre-procedure planning with the care team.", feeFrom: 0 },
       { id: "pharmacy", kind: "pharmacy", label: "On-site pharmacy", blurb: "Medication support after your visit.", feeFrom: 0 },
+      { id: "ambulance", kind: "ambulance", label: "Ambulance", blurb: "Transfer transport arranged with this campus.", feeFrom: 45 },
     ],
   },
 };
@@ -833,10 +981,36 @@ for (const p of PROVIDERS) {
 
 export function getFacilityStaff(facilityId: string): CareProvider[] {
   const facility = getProvider(facilityId);
-  if (!facility?.staffIds?.length) return [];
-  return facility.staffIds
+  const fromIds = (facility?.staffIds ?? [])
     .map((id) => getProvider(id))
     .filter((x): x is CareProvider => !!x && x.kind === "doctor");
+  const affiliated = listPublishedCareProviders().filter(
+    (p) => p.kind === "doctor" && (p.affiliatedFacilityIds ?? []).includes(facilityId),
+  );
+  const seen = new Set<string>();
+  const out: CareProvider[] = [];
+  for (const row of [...fromIds, ...affiliated]) {
+    if (seen.has(row.id)) continue;
+    seen.add(row.id);
+    out.push(row);
+  }
+  return out;
+}
+
+/** Staff first, then other doctors (same city / overlapping specialties) so a 4×2 consultant grid can paginate. */
+export function listFacilityConsultants(facilityId: string): CareProvider[] {
+  const facility = getProvider(facilityId);
+  const staff = getFacilityStaff(facilityId);
+  const seen = new Set(staff.map((d) => d.id));
+  const extras = listProviders()
+    .filter((p) => p.kind === "doctor" && !seen.has(p.id))
+    .sort((a, b) => {
+      const sameCity = (p: CareProvider) => (facility && p.city === facility.city ? 0 : 1);
+      const overlap = (p: CareProvider) =>
+        facility ? p.specialties.filter((s) => facility.specialties.includes(s)).length : 0;
+      return sameCity(a) - sameCity(b) || overlap(b) - overlap(a);
+    });
+  return [...staff, ...extras];
 }
 
 export function getAffiliatedFacilities(doctorId: string): CareProvider[] {
@@ -850,9 +1024,11 @@ export function getAffiliatedFacilities(doctorId: string): CareProvider[] {
 export function serviceKindLabel(kind: FacilityServiceKind): string {
   switch (kind) {
     case "consult":
-      return "Consult";
+      return "Consultant";
     case "lab":
-      return "Lab";
+      return "Diagnostic Services";
+    case "emergency":
+      return "Emergency";
     case "surgery":
       return "Surgery";
     case "diagnostics":
@@ -860,8 +1036,61 @@ export function serviceKindLabel(kind: FacilityServiceKind): string {
     case "imaging":
       return "Imaging";
     case "pharmacy":
-      return "Pharmacy";
+      return "Pharmacy & Medication";
+    case "inward":
+      return "Bed";
+    case "ambulance":
+      return "Ambulance";
+    case "executive":
+      return "Medical executive";
+    case "rehab":
+      return "Rehabilitation";
   }
+}
+
+const HOSPITAL_CORE_SERVICES: FacilityService[] = [
+  { id: "consult", kind: "consult", label: "Consultant", blurb: "Outpatient appointments with hospital-affiliated clinicians.", feeFrom: 0 },
+  { id: "lab", kind: "lab", label: "Diagnostic Services", blurb: "Laboratory, imaging, and diagnostic testing with requisition.", feeFrom: 0 },
+  { id: "pharmacy", kind: "pharmacy", label: "Pharmacy & Medication", blurb: "Hospital pharmacy, counselling, and discharge prescriptions.", feeFrom: 0 },
+  { id: "rehab", kind: "rehab", label: "Rehabilitation", blurb: "Physiotherapy and recovery programmes after illness or surgery.", feeFrom: 0 },
+  { id: "surgery", kind: "surgery", label: "Surgery", blurb: "Day-surgery and pre-operative assessments.", feeFrom: 0 },
+  { id: "executive", kind: "executive", label: "Medical executive", blurb: "Executive health assessment and corporate medicals at this hospital.", feeFrom: 0 },
+  { id: "ambulance", kind: "ambulance", label: "Ambulance", blurb: "Emergency or transfer transport arranged by this hospital.", feeFrom: 45 },
+];
+
+const HIDDEN_BOOKING_KINDS = new Set<FacilityServiceKind>(["emergency", "inward"]);
+
+/** Hospital book flow: consultant, diagnostic services, pharmacy, rehab, specialized care, packages. */
+export function facilityCatalogue(provider: CareProvider): FacilityService[] {
+  const existing = (provider.services ?? []).filter((s) => !HIDDEN_BOOKING_KINDS.has(s.kind));
+  if (provider.kind !== "hospital") return existing;
+  const byKind = new Map(existing.map((s) => [s.kind, s]));
+  const core = HOSPITAL_CORE_SERVICES.map((d) => byKind.get(d.kind) ?? d);
+  const extra = existing.filter((s) => !HOSPITAL_CORE_SERVICES.some((d) => d.kind === s.kind));
+  return [...core, ...extra];
+}
+
+export function getFacilityService(provider: CareProvider, serviceId: string): FacilityService | undefined {
+  return facilityCatalogue(provider).find((s) => s.id === serviceId || s.kind === serviceId);
+}
+
+export function facilityServicesHref(facilityId: string) {
+  return `/appointments/provider/${facilityId}/services`;
+}
+
+export function facilityServiceHref(facilityId: string, serviceId: string) {
+  return `/appointments/provider/${facilityId}/services/${encodeURIComponent(serviceId)}`;
+}
+
+export function consultantAtFacilityHref(doctorId: string, facilityId: string) {
+  return `/appointments/provider/${doctorId}?facility=${encodeURIComponent(facilityId)}`;
+}
+
+/** Hospital or clinic hosting this booking — never a standalone doctor listing. */
+export function getHostFacility(facilityId?: string | null): CareProvider | undefined {
+  if (!facilityId) return undefined;
+  const p = getProvider(facilityId);
+  return p && p.kind !== "doctor" ? p : undefined;
 }
 
 export const CLINICIANS: CareProvider[] = PROVIDERS.filter((p) => p.kind === "doctor");
@@ -893,18 +1122,56 @@ export function getAppointment(id: string | undefined | null): Appointment | und
 }
 
 export function getProvider(id: string): CareProvider | undefined {
-  const published = getPublishedCareProvider();
-  if (published && published.id === id) return published;
+  const published = getPublishedByHubId(id);
+  const asCare = published ? businessAsCareProvider(published) : undefined;
+  if (asCare) return asCare;
   const nmc = getNmcProvider(id);
   if (nmc) return nmc;
-  return PROVIDERS.find((p) => p.id === id);
+  const listed = PROVIDERS.find((p) => p.id === id);
+  if (listed) return listed;
+  return careProviderFromHf(id);
+}
+
+function careProviderFromHf(id: string): CareProvider | undefined {
+  const code = hfCodeFromId(id);
+  if (!code) return undefined;
+  const claim = getFacilityClaim(code);
+  const verified = getVerifiedFacility(code);
+  const rawName = claim?.name || verified?.name || "";
+  if (!rawName && !claim && !verified) return undefined;
+  const level = claim?.facilityLevel || verified?.facilityLevel || "Hospital";
+  const vendor = vendorFromFacilityLevel(level);
+  const kind: ProviderKind = vendor === "hospital" ? "hospital" : "clinic";
+  const name = displayFacilityName(rawName) || (kind === "hospital" ? "Hospital" : "Clinic");
+  const place = claim?.district || verified?.district || "";
+  return {
+    id: hfProfileId(code),
+    kind,
+    name,
+    subtitle: displayFacilityLevel(level) || (kind === "hospital" ? "Hospital" : "Clinic"),
+    imageUrl: "/img/treatments/blood-pressure.png",
+    specialties: ["general"],
+    languages: ["English"],
+    rating: 4.8,
+    reviewCount: 0,
+    distanceKm: 0,
+    consultationFee: 0,
+    nextAvailable: "Today",
+    visitTypes: ["clinic"],
+    city: place,
+    address: place || undefined,
+    phone: claim?.phone || undefined,
+    hours: facilityHours(),
+    bio: `${name} is accepting visits through PocketPills.`,
+    about: `${name} is accepting visits through PocketPills.`,
+  };
 }
 
 /** Seed + published business overlay (published first) + claimed NMC doctors. */
 export function listProviders(): CareProvider[] {
-  const published = getPublishedCareProvider();
+  const published = listPublishedCareProviders();
   const nmc = listPublishedNmcProviders();
-  const extra = [published, ...nmc].filter((p): p is CareProvider => Boolean(p));
+  const extra = [...published, ...nmc];
   const seen = new Set(extra.map((p) => p.id));
   return [...extra, ...PROVIDERS.filter((p) => !seen.has(p.id))];
 }
@@ -1001,26 +1268,24 @@ export function upcomingDays(count = 7, startOffset = 0): { date: string; label:
   return out;
 }
 
+export function weekOffsetFor(iso: string): number {
+  const today = todayIso();
+  for (let w = 0; w < 8; w++) {
+    for (let d = 0; d < 7; d++) {
+      if (addCalendarDays(today, w * 7 + d) === iso) return w;
+    }
+  }
+  return 0;
+}
+
+/** Map care/lab visit modes onto the two slot grids (in-person vs virtual). */
+export function asSlotVisitType(visit: string): VisitType {
+  return visit === "virtual" ? "virtual" : "clinic";
+}
+
 export type DaySlots = { morning: string[]; afternoon: string[]; evening: string[] };
 
-export const SLOT_BANDS: DaySlots = {
-  morning: ["8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM"],
-  afternoon: [
-    "12:00 PM",
-    "12:30 PM",
-    "1:00 PM",
-    "1:30 PM",
-    "2:00 PM",
-    "2:30 PM",
-    "3:00 PM",
-    "3:30 PM",
-    "4:00 PM",
-    "4:30 PM",
-    "5:00 PM",
-    "5:30 PM",
-  ],
-  evening: ["6:00 PM", "6:30 PM", "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM"],
-};
+export const SLOT_BANDS: DaySlots = availabilitySlotBands();
 
 const SLOT_POOL = [...SLOT_BANDS.morning, ...SLOT_BANDS.afternoon, ...SLOT_BANDS.evening];
 
@@ -1173,8 +1438,25 @@ export function updateAppointmentStatus(id: string, status: AppointmentStatus): 
   return list[i];
 }
 
+export function updateAppointmentSlot(
+  id: string,
+  date: string,
+  time: string,
+  status: AppointmentStatus = "upcoming",
+): Appointment | null {
+  const list = readStore();
+  const i = list.findIndex((a) => a.id === id);
+  if (i < 0) return null;
+  list[i] = { ...list[i], date, time, status };
+  writeStore(list);
+  return list[i];
+}
+
 export function appointmentIsPast(a: Appointment): boolean {
-  if (a.status === "completed" || a.status === "cancelled") return true;
+  if (a.status === "completed" || a.status === "cancelled" || a.status === "not_attempted") return true;
+  if (a.status === "unavailable") return false;
+  const until = minutesUntilSlot(a.date, a.time);
+  if (until != null && until < -45) return true;
   return isPastDate(a.date);
 }
 

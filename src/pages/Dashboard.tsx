@@ -1,9 +1,14 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
+import { DetailMeta, DetailSection } from "@/components/DetailSection";
 import { useUser } from "@/lib/user";
 import { treatments, type Treatment } from "@/lib/data";
 import { pendingRows } from "@/lib/profile";
+import { appointmentIsPast, getAppointments } from "@/lib/appointments";
+import { mergeActiveOrders, statusMeta, typeMeta } from "@/lib/orders";
+import { careEventHref } from "@/lib/careJourney";
+import { monthDayShort } from "@/lib/timeSlots";
 import { useI18n } from "@/lib/i18n";
 
 /* ── shared bits ───────────────────────────────────────── */
@@ -274,20 +279,39 @@ function ActionIcon({ id }: { id: ActionId }) {
   }
 }
 
-function ActionRow({ id, title, sub, onClick }: { id: ActionId; title: string; sub: string; onClick: () => void }) {
+function ActionRow({
+  id,
+  title,
+  sub,
+  onClick,
+  flush,
+}: {
+  id: ActionId;
+  title: string;
+  sub: string;
+  onClick: () => void;
+  flush?: boolean;
+}) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-4 rounded-2xl border border-line bg-white p-4 text-left transition-colors hover:bg-[color:var(--state-hover)]"
+      className={
+        flush
+          ? "flex w-full items-start gap-4 px-5 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
+          : "flex w-full items-start gap-4 rounded-2xl border border-line bg-white p-4 text-left transition-colors hover:bg-[color:var(--state-hover)]"
+      }
     >
       <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: ACTION_ICON[id].bg }}>
         <ActionIcon id={id} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-base font-semibold text-[color:var(--pp-primary-950)]">{title}</span>
-        <span className="block truncate text-sm text-ink-tertiary">{sub}</span>
+        <span className="mt-0.5 block text-sm leading-snug whitespace-normal break-words text-ink-tertiary">{sub}</span>
       </span>
-      <span className="shrink-0 text-lg text-ink-tertiary" aria-hidden>›</span>
+      <span className="shrink-0 text-lg text-ink-tertiary" aria-hidden>
+        ›
+      </span>
     </button>
   );
 }
@@ -465,7 +489,7 @@ function FaxCard() {
 export function Dashboard() {
   const { tx } = useI18n();
   const nav = useNavigate();
-  const { user } = useUser();
+  const { user, displayName } = useUser();
   const promoRef = useRef<HTMLDivElement>(null);
   const treatRef = useRef<HTMLDivElement>(null);
   const [showAllTreatments, setShowAllTreatments] = useState(false);
@@ -473,6 +497,12 @@ export function Dashboard() {
   const [treatAtEnd, setTreatAtEnd] = useState(false);
 
   const pending = pendingRows(user);
+  const nextVisit = useMemo(() => {
+    return getAppointments()
+      .filter((a) => !appointmentIsPast(a) && a.status !== "cancelled")
+      .sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`))[0];
+  }, []);
+  const nextOrder = useMemo(() => mergeActiveOrders()[0], []);
   const canCollapseTreatments = treatments.length > TREAT_COLLAPSED + 1;
   const treatCollapsed = canCollapseTreatments && !showAllTreatments;
   const treatExpanded = canCollapseTreatments && showAllTreatments;
@@ -510,7 +540,7 @@ export function Dashboard() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {pending.length > 0 && (
         <button
           type="button"
@@ -525,6 +555,62 @@ export function Dashboard() {
           <span aria-hidden>›</span>
         </button>
       )}
+
+      <header>
+        <p className="font-display text-3xl font-medium text-[color:var(--pp-primary-950)]">
+          {tx("Hi")}, {displayName}
+        </p>
+        <p className="mt-1 text-sm text-ink-tertiary">{tx("Your visits, fills, and care in one place.")}</p>
+      </header>
+
+      {nextVisit || nextOrder ? (
+        <DetailSection title={tx("Up next")} meta={<DetailMeta>{tx("Open to continue")}</DetailMeta>} flush>
+          <ul className="divide-y divide-line">
+            {nextVisit ? (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => nav(careEventHref("visit", nextVisit.id))}
+                  className="flex w-full items-start justify-between gap-4 px-5 py-3.5 text-left hover:bg-[color:var(--state-hover)]"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-[color:var(--pp-primary-950)]">
+                      {tx(nextVisit.specialtyLabel)} · {nextVisit.clinicianName}
+                    </span>
+                    <span className="mt-0.5 block text-sm leading-snug text-ink-tertiary">
+                      {monthDayShort(nextVisit.date)} · {nextVisit.time} · {tx(nextVisit.visitType === "virtual" ? "Virtual" : "In clinic")}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-lg text-ink-tertiary" aria-hidden>
+                    ›
+                  </span>
+                </button>
+              </li>
+            ) : null}
+            {nextOrder ? (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => nav(`/orders/${nextOrder.id}`)}
+                  className="flex w-full items-start justify-between gap-4 px-5 py-3.5 text-left hover:bg-[color:var(--state-hover)]"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-[color:var(--pp-primary-950)]">
+                      {tx(typeMeta[nextOrder.type].label)}
+                    </span>
+                    <span className="mt-0.5 block text-sm leading-snug text-ink-tertiary">
+                      {tx(statusMeta[nextOrder.status].label)} · {nextOrder.id}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-lg text-ink-tertiary" aria-hidden>
+                    ›
+                  </span>
+                </button>
+              </li>
+            ) : null}
+          </ul>
+        </DetailSection>
+      ) : null}
 
       {/* treatments */}
       <section>
@@ -589,20 +675,23 @@ export function Dashboard() {
         </div>
       </section>
 
-      {/* actions */}
-      <section className="space-y-2">
-        <ActionRow
-          id="appointment"
-          title={tx("Book a doctor appointment")}
-          sub={tx("Virtual or in-clinic with a licensed clinician")}
-          onClick={() => nav("/appointments")}
-        />
-        <ActionRow id="transfer" title={tx("Transfer my prescriptions")} sub={tx("Switch to PocketPills")} onClick={() => nav("/transfer")} />
-        <ActionRow id="order" title={tx("Start a new order")} sub={tx("Refill an active prescription")} onClick={() => nav("/pharmacy")} />
-        <ActionRow id="renew" title={tx("Renew my prescription")} sub={tx("Renew an expired prescription")} onClick={() => nav("/fill")} />
-        <ActionRow id="treatments" title={tx("Explore treatments")} sub={tx("Get care from healthcare practitioners")} onClick={() => nav("/appointments")} />
-        <ActionRow id="prices" title={tx("See drug prices")} sub={tx("Look up pricing details")} onClick={() => nav("/drug")} />
-      </section>
+      <DetailSection title={tx("Quick actions")} flush>
+        <div className="divide-y divide-line">
+          <ActionRow
+            flush
+            id="appointment"
+            title={tx("Book a doctor appointment")}
+            sub={tx("Virtual or in-clinic with a licensed clinician")}
+            onClick={() => nav("/appointments")}
+          />
+          <ActionRow flush id="transfer" title={tx("Transfer my prescriptions")} sub={tx("Switch to PocketPills")} onClick={() => nav("/transfer")} />
+          <ActionRow flush id="order" title={tx("Start a new order")} sub={tx("Refill an active prescription")} onClick={() => nav("/pharmacy")} />
+          <ActionRow flush id="renew" title={tx("Renew my prescription")} sub={tx("Renew an expired prescription")} onClick={() => nav("/fill")} />
+          <ActionRow flush id="treatments" title={tx("Explore treatments")} sub={tx("Get care from healthcare practitioners")} onClick={() => nav("/appointments")} />
+          <ActionRow flush id="prices" title={tx("See drug prices")} sub={tx("Look up pricing details")} onClick={() => nav("/drug")} />
+          <ActionRow flush id="family" title={tx("Add family member")} sub={tx("Manage your loved ones' meds")} onClick={() => nav("/account/family")} />
+        </div>
+      </DetailSection>
 
       {/* Offers sit directly above the get-the-app / QR block */}
       <section aria-label="Promotions">
@@ -628,8 +717,6 @@ export function Dashboard() {
       </section>
 
       <AppCard />
-
-      <ActionRow id="family" title={tx("Add family member")} sub={tx("Manage your loved ones' meds")} onClick={() => nav("/account/family")} />
 
       <FaxCard />
     </div>

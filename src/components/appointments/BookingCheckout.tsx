@@ -14,9 +14,11 @@ export function BookingRequestStatus({
   time,
   patientName,
   specialtyLabel,
+  consultantName,
   fee,
   confirmation,
   onClose,
+  awaitingParty = "doctor",
 }: {
   doctorName: string;
   visitLabel: string;
@@ -24,9 +26,11 @@ export function BookingRequestStatus({
   time: string;
   patientName: string;
   specialtyLabel?: string;
+  consultantName?: string;
   fee: number;
   confirmation: { no: string; id: string };
   onClose: () => void;
+  awaitingParty?: "doctor" | "hospital" | "clinic";
 }) {
   const { tx } = useI18n();
   const nav = useNavigate();
@@ -45,6 +49,18 @@ export function BookingRequestStatus({
     };
   }, []);
 
+  const waitTitle =
+    awaitingParty === "hospital"
+      ? tx("Waiting for the hospital")
+      : awaitingParty === "clinic"
+        ? tx("Waiting for the clinic")
+        : tx("Waiting for the doctor");
+  const requestStep =
+    awaitingParty === "hospital"
+      ? tx("Request sent to hospital")
+      : awaitingParty === "clinic"
+        ? tx("Request sent to clinic")
+        : tx("Request sent to doctor");
   const title = phase === "send" ? tx("Sending request") : tx("Request sent");
 
   return (
@@ -80,7 +96,7 @@ export function BookingRequestStatus({
             {tx("Your request is being sent to {name} for approval.").replace("{name}", doctorName)}
           </p>
           <ol className="mx-auto mt-8 max-w-xs space-y-3 text-left">
-            {[tx("Payment received"), tx("Request sent to doctor"), tx("Waiting for approval")].map((label, i) => (
+            {[tx("Payment received"), requestStep, tx("Waiting for approval")].map((label, i) => (
               <li key={label} className="flex items-center gap-3 text-sm">
                 <span
                   className={
@@ -109,7 +125,7 @@ export function BookingRequestStatus({
             </span>
             <p className="pp-caps mt-4 text-[color:var(--pp-violet)]">{tx("Request sent")}</p>
             <h2 className="mt-2 font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
-              {tx("Waiting for the doctor")}
+              {waitTitle}
             </h2>
             <p className="mt-2 text-sm text-ink-secondary">
               {tx("We’ll notify you when {name} approves your visit.").replace("{name}", doctorName)}
@@ -121,6 +137,7 @@ export function BookingRequestStatus({
 
           <div className="space-y-2 rounded-2xl border border-line bg-white p-5">
             <CheckoutRow k={tx("Provider")} v={doctorName} />
+            {consultantName ? <CheckoutRow k={tx("Consultant")} v={consultantName} /> : null}
             <CheckoutRow k={tx("Date & time")} v={`${date} · ${time}`} />
             <CheckoutRow k={tx("Visit")} v={visitLabel} />
             <CheckoutRow k={tx("Patient")} v={patientName} />

@@ -20,6 +20,18 @@ export function consultQuote(fee: number) {
   };
 }
 
+/** Lab, home care, and on-demand services — billed as the service total, no consult insurance. */
+export function serviceQuote(fee: number) {
+  const billed = money(fee);
+  return {
+    consultation: billed,
+    convenience: 0,
+    insurance: 0,
+    insurancePct: 0,
+    beforeOffer: billed,
+  };
+}
+
 export function payableDue(beforeOffer: number, offerCredit: number) {
   return money(beforeOffer - money(Math.min(offerCredit, beforeOffer)));
 }

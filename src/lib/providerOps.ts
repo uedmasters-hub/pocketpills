@@ -3,12 +3,12 @@
  * Seeded demo data + live rows linked to the published business profile id.
  */
 
-import { getAppointments } from "@/lib/appointments";
-import { getPublishedBusiness } from "@/lib/businessProfile";
-import { getCareWorkerBookings } from "@/lib/careWorkers";
-import { getLabBookings } from "@/lib/labs";
+import { appointmentIsPast, getAppointment, getAppointments, updateAppointmentStatus } from "@/lib/appointments";
+import { getPublishedForOwner, hubPathForProfile } from "@/lib/businessProfile";
+import { getCareWorkerBooking, getCareWorkerBookings, updateCareWorkerBookingStatus } from "@/lib/careWorkers";
+import { getLabBooking, getLabBookings, updateLabBookingStatus } from "@/lib/labs";
 
-export type ProviderRequestStatus = "new" | "accepted" | "completed" | "declined";
+export type ProviderRequestStatus = "new" | "accepted" | "completed" | "declined" | "reschedule";
 
 export type ProviderRequest = {
   id: string;
@@ -91,8 +91,20 @@ function writeExtra(list: ProviderRequest[]) {
   localStorage.setItem(REQ_KEY, JSON.stringify(list));
 }
 
+function sessionOwnerId(): string | undefined {
+  try {
+    const raw = localStorage.getItem("pp.provider.v1");
+    if (!raw) return undefined;
+    const p = JSON.parse(raw) as { id?: string; ownerOrgId?: string };
+    return String(p.ownerOrgId || p.id || "") || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function liveRequestsFromHub(): ProviderRequest[] {
-  const pub = getPublishedBusiness();
+  const ownerId = sessionOwnerId();
+  const pub = ownerId ? getPublishedForOwner(ownerId) : null;
   if (!pub?.publishedId) return [];
   const id = pub.publishedId;
   const out: ProviderRequest[] = [];
@@ -104,7 +116,7 @@ function liveRequestsFromHub(): ProviderRequest[] {
       patientName: b.patientName || "Patient",
       service: b.itemNames,
       channel: "hub",
-      status: b.status === "completed" ? "completed" : "accepted",
+      status: b.status === "completed" ? "completed" : b.status === "pending" ? "new" : "accepted",
       requestedAt: b.createdAt,
       slot: `${b.date} · ${b.time}`,
       fee: b.fee,
@@ -118,7 +130,7 @@ function liveRequestsFromHub(): ProviderRequest[] {
       patientName: "Patient",
       service: b.service,
       channel: "hub",
-      status: b.status === "completed" ? "completed" : "accepted",
+      status: b.status === "completed" ? "completed" : b.status === "pending" ? "new" : "accepted",
       requestedAt: b.createdAt,
       slot: `${b.date} · ${b.time}`,
       fee: b.fee,
@@ -127,13 +139,21 @@ function liveRequestsFromHub(): ProviderRequest[] {
 
   for (const a of getAppointments()) {
     if (a.providerId !== id && a.clinicianId !== id) continue;
-    if (a.status === "cancelled") continue;
+    if (a.status === "cancelled" || a.status === "not_attempted") continue;
+    if (a.status !== "unavailable" && appointmentIsPast(a)) continue;
     out.push({
       id: `appt-${a.id}`,
       patientName: a.patientName || "Patient",
       service: a.specialtyLabel || "Consult",
       channel: "hub",
-      status: a.status === "completed" ? "completed" : a.status === "pending" ? "new" : "accepted",
+      status:
+        a.status === "completed"
+          ? "completed"
+          : a.status === "pending"
+            ? "new"
+            : a.status === "unavailable"
+              ? "reschedule"
+              : "accepted",
       requestedAt: a.createdAt || `${a.date}T12:00:00`,
       slot: `${a.date} · ${a.time}`,
       fee: a.fee,
@@ -145,13 +165,73 @@ function liveRequestsFromHub(): ProviderRequest[] {
 
 export function getProviderRequests(): ProviderRequest[] {
   const extra = readExtra();
-  const ids = new Set(extra.map((r) => r.id));
+  const live = liveRequestsFromHub();
+  const liveIds = new Set(live.map((r) => r.id));
+  const extraOnly = extra.filter((r) => !liveIds.has(r.id));
+  const ids = new Set([...extraOnly, ...live].map((r) => r.id));
   const seed = SEED_REQUESTS.filter((r) => !ids.has(r.id));
-  const live = liveRequestsFromHub().filter((r) => !ids.has(r.id));
-  return [...extra, ...live, ...seed].sort((a, b) => b.requestedAt.localeCompare(a.requestedAt));
+  return [...extraOnly, ...live, ...seed].sort((a, b) => b.requestedAt.localeCompare(a.requestedAt));
+}
+
+function applyLiveBookingStatus(id: string, status: ProviderRequestStatus): boolean {
+  if (id.startsWith("appt-")) {
+    const appointmentId = id.slice("appt-".length);
+    if (!getAppointment(appointmentId)) return false;
+    const next =
+      status === "accepted"
+        ? "upcoming"
+        : status === "declined"
+          ? "cancelled"
+          : status === "reschedule"
+            ? "unavailable"
+            : status === "completed"
+              ? "completed"
+              : status === "new"
+                ? "pending"
+                : null;
+    if (next) updateAppointmentStatus(appointmentId, next);
+    return true;
+  }
+  if (id.startsWith("lab-")) {
+    const labId = id.slice("lab-".length);
+    if (!getLabBooking(labId)) return false;
+    const next =
+      status === "accepted"
+        ? "upcoming"
+        : status === "declined"
+          ? "cancelled"
+          : status === "completed"
+            ? "completed"
+            : status === "new"
+              ? "pending"
+              : null;
+    if (next) updateLabBookingStatus(labId, next);
+    return true;
+  }
+  if (id.startsWith("cw-")) {
+    const careId = id.slice("cw-".length);
+    if (!getCareWorkerBooking(careId)) return false;
+    const next =
+      status === "accepted"
+        ? "upcoming"
+        : status === "declined"
+          ? "cancelled"
+          : status === "completed"
+            ? "completed"
+            : status === "new"
+              ? "pending"
+              : null;
+    if (next) updateCareWorkerBookingStatus(careId, next);
+    return true;
+  }
+  return false;
 }
 
 export function updateProviderRequestStatus(id: string, status: ProviderRequestStatus) {
+  if (applyLiveBookingStatus(id, status)) {
+    writeExtra(readExtra().filter((r) => r.id !== id));
+    return;
+  }
   const all = getProviderRequests();
   const row = all.find((r) => r.id === id);
   if (!row) return;
@@ -195,10 +275,12 @@ export type ProviderDashboardStats = {
 };
 
 export function getProviderDashboardStats(): ProviderDashboardStats {
-  const pub = getPublishedBusiness();
+  const ownerId = sessionOwnerId();
+  const pub = ownerId ? getPublishedForOwner(ownerId) : null;
   const draftServices = (() => {
+    if (!ownerId) return pub?.services.length ?? 0;
     try {
-      const raw = localStorage.getItem("pp.businessProfile.v1");
+      const raw = localStorage.getItem(`pp.businessProfile.${ownerId}`);
       if (!raw) return pub?.services.length ?? 0;
       const d = JSON.parse(raw) as { services?: unknown[] };
       return Array.isArray(d.services) ? d.services.length : pub?.services.length ?? 0;
@@ -218,12 +300,6 @@ export function getProviderDashboardStats(): ProviderDashboardStats {
     customersServed: customers.length,
     listingLive: pub?.status === "published",
     listingName: pub?.name || "",
-    hubPath: pub?.publishedId
-      ? pub.type === "lab"
-        ? `/appointments/labs/${pub.publishedId}`
-        : pub.type === "doctor" || pub.type === "hospital"
-          ? `/appointments/provider/${pub.publishedId}`
-          : `/appointments/assistants/${pub.publishedId}`
-      : null,
+    hubPath: pub ? hubPathForProfile(pub) : null,
   };
 }

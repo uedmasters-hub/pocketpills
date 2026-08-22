@@ -8,7 +8,10 @@ import {
 } from "@/lib/appointments";
 import { getFacilityClaim } from "@/lib/facilityDirectory";
 import { ownerIdForListing } from "@/lib/businessProfile";
-import { providerProfileHref } from "@/lib/doctorProfileContent";
+import { providerProfileHref, nmcNumberOf } from "@/lib/doctorProfileContent";
+import { HospitalFacilitiesGrid } from "@/components/hospital/HospitalFacilitiesGrid";
+import { DetailSection } from "@/components/DetailSection";
+import { Lightbox } from "@/components/ui/Lightbox";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { RecentArticlesSection } from "@/components/RecentArticles";
 import { RelatedHealthcareOptions } from "@/components/RelatedHealthcareOptions";
@@ -21,20 +24,13 @@ import {
   splitAmenities,
   type HospitalView,
 } from "@/lib/hospitalProfileContent";
+import { DoctorPhoto } from "@/components/DoctorPhoto";
+import { ListingCustomSections } from "@/components/ListingCustomSections";
+import { enabledSectionsInOrder, listingSectionEnabled } from "@/lib/listingPage";
+import { SpecialisedInSection } from "@/components/SpecialisedIn";
+import { DEFAULT_HOSPITAL_GALLERY } from "@/lib/hospitalLandingFacilities";
 
-const CARD = "rounded-2xl border border-line bg-white p-4";
-const H2 = "font-display text-xl font-medium text-[color:var(--pp-primary-950)]";
-const LEDE = "mt-1 text-sm text-ink-tertiary";
-
-function SectionHead({ title, lede }: { title: string; lede?: string }) {
-  const { tx } = useI18n();
-  return (
-    <>
-      <h2 className={H2}>{tx(title)}</h2>
-      {lede ? <p className={LEDE}>{tx(lede)}</p> : null}
-    </>
-  );
-}
+const CARD = "rounded-xl border border-line bg-[color:var(--pp-primary-100)] p-4";
 
 export function HospitalAboutFacts({ hospital }: { hospital: HospitalView }) {
   const { tx } = useI18n();
@@ -52,9 +48,34 @@ export function HospitalAboutFacts({ hospital }: { hospital: HospitalView }) {
   );
 }
 
-export function HospitalDoctorsSection({ hospital }: { hospital: HospitalView }) {
+export function HospitalDoctorsSection({
+  hospital,
+  listedOnly = false,
+}: {
+  hospital: HospitalView;
+  listedOnly?: boolean;
+}) {
+  if (hospital.hasListing && !listingSectionEnabled(hospital.pageSections, "doctors")) return null;
   const { tx } = useI18n();
-  if (!hospital.staff.length) return null;
+  const doctors = listedOnly ? hospital.staff.slice(0, 8) : hospital.staff;
+  if (!doctors.length) return null;
+
+  if (listedOnly) {
+    return (
+      <DetailSection
+        id="hospital-doctors"
+        title={tx("Our doctors")}
+        lede={tx("Clinicians practising at this hospital. Open a doctor’s profile from the doctors directory to book.")}
+      >
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {doctors.map((d) => (
+            <ListedDoctorCard key={d.id} doctor={d} />
+          ))}
+        </div>
+      </DetailSection>
+    );
+  }
+
   const groups = hospital.specialisedIn
     .map((g) => ({ specialty: g.specialty, doctors: doctorsInDepartment(hospital.staff, g.specialty) }))
     .filter((g) => g.doctors.length > 0);
@@ -66,25 +87,41 @@ export function HospitalDoctorsSection({ hospital }: { hospital: HospitalView })
   ].filter(Boolean) as { specialty: string; doctors: CareProvider[] }[];
 
   return (
-    <section id="hospital-doctors" className="min-w-0 scroll-mt-28">
+    <DetailSection
+      id="hospital-doctors"
+      title={tx("Doctors & specialists")}
+      lede={tx("Clinicians listed as practising at this facility.")}
+    >
       <span id="consultants" className="sr-only" />
-      <SectionHead
-        title="Doctors & specialists"
-        lede="Clinicians listed as practising at this facility."
-      />
-      {blocks.map((block) => (
-        <div key={block.specialty} className="mt-4">
-          <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
-            {tx(block.specialty)}
-          </p>
-          <div className="mt-2 grid gap-3 sm:grid-cols-3">
-            {block.doctors.map((d) => (
-              <DoctorMiniCard key={d.id} doctor={d} facilityId={hospital.id} />
-            ))}
+      <div className="space-y-4">
+        {blocks.map((block) => (
+          <div key={block.specialty}>
+            <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
+              {tx(block.specialty)}
+            </p>
+            <div className="mt-2 grid gap-3 sm:grid-cols-3">
+              {block.doctors.map((d) => (
+                <DoctorMiniCard key={d.id} doctor={d} facilityId={hospital.id} />
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
-    </section>
+        ))}
+      </div>
+    </DetailSection>
+  );
+}
+
+function ListedDoctorCard({ doctor }: { doctor: CareProvider }) {
+  const spec = doctor.subtitle || (doctor.education?.[0] ?? "");
+  const nmc = nmcNumberOf(doctor);
+  return (
+    <div className="flex flex-col items-center rounded-2xl border border-line bg-white px-4 py-5 text-center">
+      <DoctorPhoto src={doctor.imageUrl} className="h-20 w-20" />
+      <p className="mt-3 line-clamp-2 text-sm font-semibold text-[color:var(--pp-primary-950)]">{doctor.name}</p>
+      {spec ? <p className="mt-1 line-clamp-2 text-xs text-ink-tertiary">{spec}</p> : null}
+      {doctor.about ? <p className="mt-1 line-clamp-3 text-xs text-ink-tertiary">{doctor.about}</p> : null}
+      {nmc ? <p className="mt-1 text-[0.65rem] uppercase tracking-wide text-ink-tertiary">NMC #{nmc}</p> : null}
+    </div>
   );
 }
 
@@ -100,7 +137,7 @@ function DoctorMiniCard({ doctor, facilityId }: { doctor: CareProvider; facility
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-line bg-white p-3">
       <div className="flex gap-3">
-        <img src={doctor.imageUrl} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover object-top" />
+        <DoctorPhoto src={doctor.imageUrl} className="h-14 w-14 shrink-0" rounded="xl" />
         <div className="min-w-0">
           <p className="truncate font-semibold text-[color:var(--pp-primary-950)]">{doctor.name}</p>
           <p className="mt-0.5 truncate text-xs text-ink-tertiary">{spec}</p>
@@ -154,17 +191,19 @@ export function HospitalTreatmentsSection({ hospital }: { hospital: HospitalView
   }
 
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead
-        title="Treatments & procedures"
-        lede="Procedures listed for this facility’s departments."
-      />
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder={tx("Search procedures")}
-        className="mt-4 h-11 w-full rounded-xl border border-line bg-white px-4 text-sm text-[color:var(--pp-primary-950)] outline-none placeholder:text-ink-tertiary focus:border-[color:var(--pp-primary-950)]"
-      />
+    <DetailSection
+      title={tx("Treatments & procedures")}
+      lede={tx("Procedures listed for this facility’s departments.")}
+    >
+      <label className="block">
+        <span className="sr-only">{tx("Search procedures")}</span>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={tx("Search procedures")}
+          className="h-11 w-full rounded-xl border border-line bg-white px-4 text-sm text-[color:var(--pp-primary-950)] outline-none placeholder:text-ink-tertiary focus:border-[color:var(--pp-primary-950)]"
+        />
+      </label>
       <div className="mt-4 space-y-4">
         {[...byDept.entries()].map(([dept, items]) => (
           <div key={dept} className={CARD}>
@@ -196,7 +235,7 @@ export function HospitalTreatmentsSection({ hospital }: { hospital: HospitalView
           <p className="text-sm text-ink-tertiary">{tx("No matching procedures on this profile.")}</p>
         ) : null}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -205,9 +244,8 @@ export function HospitalServicesFacilities({ hospital }: { hospital: HospitalVie
   const { medical, patient } = splitAmenities(hospital);
   if (!medical.length && !patient.length) return null;
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead title="Services & facilities" lede="Only items listed on this profile." />
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+    <DetailSection title={tx("Services & facilities")} lede={tx("Only items listed on this profile.")}>
+      <div className="grid gap-4 sm:grid-cols-2">
         {medical.length ? (
           <div className={CARD}>
             <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">{tx("Medical services")}</p>
@@ -235,7 +273,7 @@ export function HospitalServicesFacilities({ hospital }: { hospital: HospitalVie
           </div>
         ) : null}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -245,14 +283,16 @@ export function HospitalEmergencySection({ hospital }: { hospital: HospitalView 
   if (!data) return null;
   const roundTheClock = data.notes.some((n) => /24\/7/.test(n));
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead title="Emergency care" lede="Shown only when emergency or urgent care is listed on this profile." />
+    <DetailSection
+      title={tx("Emergency care")}
+      lede={tx("Shown only when emergency or urgent care is listed on this profile.")}
+    >
       <div
         className={
-          "mt-4 rounded-2xl border p-5 " +
+          "rounded-xl border p-5 " +
           (roundTheClock
             ? "border-[color:var(--pp-violet)] bg-[color:var(--pp-primary-100)]"
-            : "border-line bg-white")
+            : "border-line bg-[color:var(--pp-primary-100)]")
         }
       >
         {roundTheClock ? (
@@ -288,7 +328,7 @@ export function HospitalEmergencySection({ hospital }: { hospital: HospitalView 
           </ul>
         ) : null}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -305,9 +345,12 @@ export function HospitalGuideSection({ hospital }: { hospital: HospitalView }) {
     { k: "Reports and follow-up", v: "Collect reports from the listed lab/diagnostics desk, then book follow-up from the doctor’s page." },
   ];
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead title="Patient guide / what to expect" lede="A typical visit through PocketPills at a listed facility." />
-      <ol className="mt-4 overflow-hidden rounded-2xl border border-line bg-white">
+    <DetailSection
+      title={tx("Patient guide / what to expect")}
+      lede={tx("A typical visit through PocketPills at a listed facility.")}
+      flush
+    >
+      <ol>
         {steps.map((s, i) => (
           <li key={s.k} className={"px-5 py-3.5 " + (i > 0 ? "border-t border-line" : "")}>
             <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
@@ -317,7 +360,7 @@ export function HospitalGuideSection({ hospital }: { hospital: HospitalView }) {
           </li>
         ))}
       </ol>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -325,23 +368,25 @@ export function HospitalNewsSection({ hospital }: { hospital: HospitalView }) {
   const { tx } = useI18n();
   if (!hospital.updates?.length) return null;
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead title="Hospital news & updates" lede="Announcements from this listing — not generic health articles." />
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+    <DetailSection
+      title={tx("Hospital news & updates")}
+      lede={tx("Announcements from this listing — not generic health articles.")}
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
         {hospital.updates.map((u) => (
           <article key={u.title} className={CARD}>
             <p className="text-2xs text-ink-tertiary">{u.date}</p>
             <h3 className="mt-1.5 font-semibold text-[color:var(--pp-primary-950)]">{tx(u.title)}</h3>
             <p className="mt-1.5 text-sm leading-relaxed text-ink-secondary">{tx(u.summary)}</p>
-            <p className="mt-3 text-xs font-medium text-[color:var(--pp-violet)]">{tx("Read more")}</p>
           </article>
         ))}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
 export function HospitalArticlesSection({ hospital }: { hospital: HospitalView }) {
+  if (hospital.hasListing && !listingSectionEnabled(hospital.pageSections, "publications")) return null;
   const ownerId = ownerIdForListing(
     hospital.id,
     hospital.registrationNo ? getFacilityClaim(hospital.registrationNo)?.providerId : undefined,
@@ -356,11 +401,15 @@ export function HospitalArticlesSection({ hospital }: { hospital: HospitalView }
 
 export function HospitalAwardsSection({ hospital }: { hospital: HospitalView }) {
   const { tx } = useI18n();
+  if (hospital.hasListing && !listingSectionEnabled(hospital.pageSections, "awards")) return null;
   if (!hospital.awards?.length) return null;
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead title="Accreditations, achievements & milestones" lede="Verified recognitions listed on this profile." />
-      <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-white">
+    <DetailSection
+      title={tx("Accreditations, achievements & milestones")}
+      lede={tx("Verified recognitions listed on this profile.")}
+      flush
+    >
+      <div>
         {hospital.awards.map((a, i) => (
           <div key={a.title + a.year} className={"px-5 py-3.5 " + (i > 0 ? "border-t border-line" : "")}>
             <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx(a.title)}</p>
@@ -371,29 +420,52 @@ export function HospitalAwardsSection({ hospital }: { hospital: HospitalView }) 
           </div>
         ))}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
 export function HospitalFaqSection({ hospital }: { hospital: HospitalView }) {
-  return <FaqAccordion items={hospitalFaqs(hospital)} />;
+  if (hospital.hasListing && !listingSectionEnabled(hospital.pageSections, "faq")) return null;
+  const items = hospital.faqs?.length ? hospital.faqs : hospitalFaqs(hospital);
+  if (!items.length) return null;
+  return <FaqAccordion items={items} />;
 }
 
 export function HospitalGallerySection({ hospital }: { hospital: HospitalView }) {
   const { tx } = useI18n();
-  if (!hospital.gallery?.length) return null;
+  if (hospital.hasListing && !listingSectionEnabled(hospital.pageSections, "gallery")) return null;
+  const photos = hospital.gallery?.length
+    ? hospital.gallery
+    : hospital.hasListing
+      ? []
+      : DEFAULT_HOSPITAL_GALLERY;
+  if (!photos.length) return null;
+  const [index, setIndex] = useState<number | null>(null);
+
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead title="Hospital photos / facilities gallery" lede="Verified images of this facility." />
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {hospital.gallery.map((g) => (
-          <figure key={g.src + g.label} className="overflow-hidden rounded-2xl border border-line bg-white">
+    <DetailSection title={tx("Gallery")} lede={tx("Campus and care-area photos.")}>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {photos.map((g, i) => (
+          <button
+            key={g.src + g.label}
+            type="button"
+            onClick={() => setIndex(i)}
+            className="overflow-hidden rounded-xl border border-line bg-[color:var(--pp-primary-100)] text-left"
+          >
             <img src={g.src} alt={g.label} className="aspect-[4/3] w-full object-cover" />
-            <figcaption className="px-3 py-2 text-2xs text-ink-tertiary">{tx(g.label)}</figcaption>
-          </figure>
+            {g.label ? <span className="block px-3 py-2 text-2xs text-ink-tertiary">{tx(g.label)}</span> : null}
+          </button>
         ))}
       </div>
-    </section>
+      <Lightbox
+        open={index != null}
+        images={photos}
+        index={index ?? 0}
+        onClose={() => setIndex(null)}
+        onPrev={() => setIndex((i) => (i == null ? 0 : (i - 1 + photos.length) % photos.length))}
+        onNext={() => setIndex((i) => (i == null ? 0 : (i + 1) % photos.length))}
+      />
+    </DetailSection>
   );
 }
 
@@ -404,6 +476,7 @@ export function HospitalRelatedSection({ hospital }: { hospital: HospitalView })
       city={hospital.city || hospital.address}
       excludeId={hospital.id}
       excludeHfCode={hospital.registrationNo}
+      only="hospital"
     />
   );
 }
@@ -415,25 +488,59 @@ export function HospitalProfileMid({
   hospital: HospitalView;
   includeDoctors?: boolean;
 }) {
+  if (hospital.hasListing && hospital.pageSections?.length) {
+    return (
+      <>
+        {enabledSectionsInOrder(hospital.pageSections).map((section) => {
+          if (section.kind === "facilities") return <HospitalFacilitiesGrid key={section.id} hospital={hospital} />;
+          if (section.kind === "doctors" && includeDoctors) {
+            return <HospitalDoctorsSection key={section.id} hospital={hospital} listedOnly />;
+          }
+          if (section.kind === "gallery") return <HospitalGallerySection key={section.id} hospital={hospital} />;
+          if (section.kind === "faq") return <HospitalFaqSection key={section.id} hospital={hospital} />;
+          if (section.kind === "publications") return <HospitalArticlesSection key={section.id} hospital={hospital} />;
+          if (section.kind === "awards") return <HospitalAwardsSection key={section.id} hospital={hospital} />;
+          if (section.kind === "specialised" && hospital.specialisedIn.length) {
+            return (
+              <SpecialisedInSection
+                key={section.id}
+                groups={hospital.specialisedIn}
+                variant="facility"
+                staff={hospital.staff}
+              />
+            );
+          }
+          if (section.kind === "custom") {
+            return (
+              <ListingCustomSections
+                key={section.id}
+                sections={[section]}
+                fallbackQuery={[hospital.address, hospital.city, hospital.name].filter(Boolean).join(", ")}
+              />
+            );
+          }
+          return null;
+        })}
+      </>
+    );
+  }
+
+  const show = (kind: Parameters<typeof listingSectionEnabled>[1]) =>
+    !hospital.hasListing || listingSectionEnabled(hospital.pageSections, kind);
   return (
     <>
-      {includeDoctors ? <HospitalDoctorsSection hospital={hospital} /> : null}
-      <HospitalTreatmentsSection hospital={hospital} />
-      <HospitalServicesFacilities hospital={hospital} />
-      <HospitalEmergencySection hospital={hospital} />
-      <HospitalGuideSection hospital={hospital} />
-      <HospitalNewsSection hospital={hospital} />
-      <HospitalArticlesSection hospital={hospital} />
-      <HospitalAwardsSection hospital={hospital} />
+      {show("facilities") ? <HospitalFacilitiesGrid hospital={hospital} /> : null}
+      {includeDoctors && show("doctors") ? <HospitalDoctorsSection hospital={hospital} listedOnly /> : null}
+      {show("gallery") ? <HospitalGallerySection hospital={hospital} /> : null}
+      {show("faq") ? <HospitalFaqSection hospital={hospital} /> : null}
+      <ListingCustomSections
+        sections={hospital.pageSections}
+        fallbackQuery={[hospital.address, hospital.city, hospital.name].filter(Boolean).join(", ")}
+      />
     </>
   );
 }
 
-export function HospitalProfileAfterReviews({ hospital }: { hospital: HospitalView }) {
-  return (
-    <>
-      <HospitalFaqSection hospital={hospital} />
-      <HospitalGallerySection hospital={hospital} />
-    </>
-  );
+export function HospitalProfileAfterReviews({ hospital: _hospital }: { hospital: HospitalView }) {
+  return null;
 }

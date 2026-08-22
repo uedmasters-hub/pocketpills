@@ -10,6 +10,7 @@ import {
 const COLUMNS: { status: ProviderRequestStatus; title: string }[] = [
   { status: "new", title: "New" },
   { status: "accepted", title: "In progress" },
+  { status: "reschedule", title: "New times" },
   { status: "completed", title: "Done" },
   { status: "declined", title: "Declined" },
 ];
@@ -37,7 +38,7 @@ export function ProviderMonitor() {
         </p>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-4">
+      <div className="grid gap-4 lg:grid-cols-5">
         {COLUMNS.map((col) => {
           const cards = requests.filter((r) => r.status === col.status);
           return (
@@ -58,11 +59,15 @@ export function ProviderMonitor() {
                       {col.status === "new" ? (
                         <>
                           <Tiny onClick={() => move(r, "accepted")}>{tx("Accept")}</Tiny>
+                          <Tiny onClick={() => move(r, "reschedule")}>{tx("Offer times")}</Tiny>
                           <Tiny onClick={() => move(r, "declined")}>{tx("Decline")}</Tiny>
                         </>
                       ) : null}
                       {col.status === "accepted" ? (
-                        <Tiny onClick={() => move(r, "completed")}>{tx("Complete")}</Tiny>
+                        <>
+                          <Tiny onClick={() => move(r, "completed")}>{tx("Complete")}</Tiny>
+                          <Tiny onClick={() => move(r, "reschedule")}>{tx("Can't make this slot")}</Tiny>
+                        </>
                       ) : null}
                     </div>
                   </li>

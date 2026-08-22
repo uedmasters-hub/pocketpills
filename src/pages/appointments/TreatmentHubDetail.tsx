@@ -3,6 +3,7 @@ import { treatments } from "@/lib/data";
 import { useJourney } from "@/lib/journey";
 import { useI18n } from "@/lib/i18n";
 import { ServiceCtaCard, ServicePageShell } from "@/pages/appointments/ServicePageShell";
+import { DetailSection } from "@/components/DetailSection";
 
 const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => {
   e.currentTarget.style.display = "none";
@@ -122,7 +123,7 @@ export function TreatmentHubDetail() {
             {treatment.img ? (
               <img
                 src={treatment.img}
-                alt=""
+                alt={tx(treatment.name)}
                 onError={hideOnError}
                 className="absolute inset-0 h-full w-full object-contain object-bottom"
               />
@@ -135,56 +136,52 @@ export function TreatmentHubDetail() {
         </div>
       </div>
 
-      <h2 className="mt-10 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        {tx("What to expect")}
-      </h2>
-      <ol className="mt-4 space-y-0 overflow-hidden rounded-2xl border border-line bg-white">
-        {STEPS.map((step, i) => (
-          <li
-            key={step.title}
-            className={"flex gap-4 px-5 py-4 " + (i > 0 ? "border-t border-line" : "")}
-          >
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-100)] text-2xs font-bold text-[color:var(--pp-primary-950)] tnum">
-              {i + 1}
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold text-[color:var(--pp-primary-950)]">
-                {tx(step.title)}
+      <div className="mt-10 space-y-10">
+      <DetailSection title={tx("What to expect")} flush>
+        <ol>
+          {STEPS.map((step, i) => (
+            <li
+              key={step.title}
+              className={"flex gap-4 px-5 py-4 " + (i > 0 ? "border-t border-line" : "")}
+            >
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-100)] text-2xs font-bold text-[color:var(--pp-primary-950)] tnum">
+                {i + 1}
               </span>
-              <span className="mt-0.5 block text-sm text-ink-secondary">{tx(step.detail)}</span>
-            </span>
-          </li>
-        ))}
-      </ol>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-[color:var(--pp-primary-950)]">
+                  {tx(step.title)}
+                </span>
+                <span className="mt-0.5 block text-sm text-ink-secondary">{tx(step.detail)}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </DetailSection>
 
-      <h2 className="mt-10 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        {tx("Included with care")}
-      </h2>
-      <ul className="mt-4 space-y-3">
-        {INCLUDED.map((item) => (
-          <li
-            key={item}
-            className="flex items-start gap-2.5 rounded-2xl border border-line bg-white px-4 py-3.5 text-sm text-[color:var(--pp-primary-950)]"
-          >
-            <span className="mt-0.5 text-wellness" aria-hidden>
-              ✓
-            </span>
-            {tx(item)}
-          </li>
-        ))}
-      </ul>
+      <DetailSection title={tx("Included with care")}>
+        <ul className="space-y-3">
+          {INCLUDED.map((item) => (
+            <li
+              key={item}
+              className="flex items-start gap-2.5 rounded-xl border border-line bg-[color:var(--pp-primary-100)] px-4 py-3.5 text-sm text-[color:var(--pp-primary-950)]"
+            >
+              <span className="mt-0.5 text-wellness" aria-hidden>
+                ✓
+              </span>
+              {tx(item)}
+            </li>
+          ))}
+        </ul>
+      </DetailSection>
 
       {similar.length > 0 && (
-        <section className="mt-10">
-          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-            {tx("More in")} {tx(treatment.category)}
-          </h2>
-          <div className="mt-4 space-y-3">
+        <DetailSection title={`${tx("More in")} ${tx(treatment.category)}`}>
+          <div className="space-y-3">
             {similar.map((s) => (
               <Link
                 key={s.slug}
                 to={`/appointments/treatments/${s.slug}`}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-white px-4 py-3.5 transition-colors hover:bg-[color:var(--state-hover)]"
+                className="flex items-center justify-between gap-3 rounded-xl border border-line bg-[color:var(--pp-primary-100)] px-4 py-3.5 transition-colors hover:bg-[color:var(--state-hover)]"
               >
                 <span>
                   <span className="block font-semibold text-[color:var(--pp-primary-950)]">
@@ -194,12 +191,15 @@ export function TreatmentHubDetail() {
                     {s.from === 0 ? tx("Covered by most plans") : `${tx("From")} $${s.from}${tx("/mo")}`}
                   </span>
                 </span>
-                <span className="text-sm font-medium text-[color:var(--pp-violet)]">→</span>
+                <span className="text-sm font-medium text-[color:var(--pp-violet)]" aria-hidden>
+                  →
+                </span>
               </Link>
             ))}
           </div>
-        </section>
+        </DetailSection>
       )}
+      </div>
     </ServicePageShell>
   );
 }

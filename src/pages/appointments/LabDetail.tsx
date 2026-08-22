@@ -2,15 +2,19 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { MapEmbed } from "@/components/MapEmbed";
 import { Button } from "@/components/ui/Button";
+import {
+  AvailabilityBoard,
+  AvailabilityLocationPill,
+  availabilityDayLabel,
+} from "@/components/appointments/AvailabilityBoard";
+import { useAvailabilityPicker } from "@/components/appointments/useAvailabilityPicker";
 import { useI18n } from "@/lib/i18n";
 import { formatDistance, formatFee } from "@/lib/appointments";
 import {
-  LAB_TIME_SLOTS,
   bundlesForLab,
   getLab,
   getLabTest,
   imagingForLab,
-  labAvailabilityDays,
   labCollectionModeForBundle,
   labCollectionModeLabel,
   labMapEmbedSrc,
@@ -22,6 +26,8 @@ import {
   type LabCollectionMode,
   type LabTest,
 } from "@/lib/labs";
+import { DetailSection } from "@/components/DetailSection";
+import { ListingLandingExtras } from "@/components/ListingCustomSections";
 import { ServicePageShell } from "@/pages/appointments/ServicePageShell";
 
 function priceLabel(fee: number, covered?: boolean) {
@@ -53,7 +59,8 @@ export function LabDetail() {
   const bundles = useMemo(() => (lab ? bundlesForLab(lab) : []), [lab]);
   const tests = useMemo(() => (lab ? testsForLab(lab) : []), [lab]);
   const imaging = useMemo(() => (lab ? imagingForLab(lab) : []), [lab]);
-  const days = useMemo(() => labAvailabilityDays(5), []);
+  const avail = useAvailabilityPicker(lab?.id ?? id, "clinic");
+  const { date, time } = avail;
 
   const homeBundles = useMemo(
     () => bundles.filter((b) => labCollectionModeForBundle(b) === "home"),
@@ -65,8 +72,6 @@ export function LabDetail() {
   );
 
   const [selected, setSelected] = useState<string[]>([]);
-  const [date, setDate] = useState(days[0]?.date ?? "");
-  const [time, setTime] = useState(LAB_TIME_SLOTS[0]);
   const [openPackages, setOpenPackages] = useState<Record<string, boolean>>({});
 
   const summary = useMemo(() => summarizeLabSelection(selected), [selected]);
@@ -117,48 +122,13 @@ export function LabDetail() {
         <div className="rounded-[1.75rem] border border-[#E6E1EF] bg-white p-5 shadow-[0_12px_40px_rgba(24,7,48,0.05)]">
           <div className="flex items-start justify-between gap-3">
             <p className="text-sm text-ink-tertiary tnum">
-              {date} · {time}
+              {time
+                ? `${availabilityDayLabel(avail.days.find((d) => d.date === date) ?? { label: date }, tx)} · ${time}`
+                : tx("Select a date and time below")}
             </p>
             <p className="shrink-0 text-sm text-ink-tertiary">
               ★ {lab.rating.toFixed(1)} · {tx(lab.nextAvailable)}
             </p>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <label className="block min-w-0">
-              <span className="mb-1.5 block text-xs text-ink-tertiary">{tx("Date")}</span>
-              <select
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="h-10 w-full appearance-none rounded-xl border border-[color:var(--color-wellness)] bg-white bg-[length:1rem] bg-[right_0.65rem_center] bg-no-repeat px-3 pr-8 text-sm font-medium text-[color:var(--pp-primary-950)] outline-none focus:ring-1 focus:ring-[color:var(--color-wellness)]"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2354c7da'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
-                }}
-              >
-                {days.map((d) => (
-                  <option key={d.date} value={d.date}>
-                    {tx(d.label)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block min-w-0">
-              <span className="mb-1.5 block text-xs text-ink-tertiary">{tx("Time")}</span>
-              <select
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="h-10 w-full appearance-none rounded-xl border border-[color:var(--color-wellness)] bg-white bg-[length:1rem] bg-[right_0.65rem_center] bg-no-repeat px-3 pr-8 text-sm font-medium text-[color:var(--pp-primary-950)] outline-none focus:ring-1 focus:ring-[color:var(--color-wellness)]"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2354c7da'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
-                }}
-              >
-                {LAB_TIME_SLOTS.map((slot) => (
-                  <option key={slot} value={slot}>
-                    {slot}
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
 
           <div className="mt-5 border-t border-line pt-4">
@@ -308,6 +278,20 @@ export function LabDetail() {
         </div>
       </div>
 
+      <div className="mt-10">
+        <AvailabilityBoard
+          location={lab.city ? <AvailabilityLocationPill>{lab.city}</AvailabilityLocationPill> : null}
+          date={avail.date}
+          days={avail.days}
+          weekOffset={avail.weekOffset}
+          time={avail.time}
+          slots={avail.slots}
+          onSelectDay={avail.selectDay}
+          onSelectTime={avail.selectTime}
+          onShiftWeek={avail.shiftWeek}
+        />
+      </div>
+
       {(homeBundles.length > 0 || tests.length > 0) ? (
         <CollectionSection
           mode="home"
@@ -389,6 +373,8 @@ export function LabDetail() {
           ) : null}
         </CollectionSection>
       ) : null}
+
+      <ListingLandingExtras hubId={lab.id} />
     </ServicePageShell>
   );
 }
@@ -405,14 +391,15 @@ function CollectionSection({
   const { tx } = useI18n();
 
   return (
-    <section className="mt-10">
-      <p className="pp-caps text-[color:var(--pp-violet)]">{tx(labCollectionModeLabel(mode))}</p>
-      <h2 className="mt-1 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        {mode === "home" ? tx("Home collection services") : tx("Physical visit services")}
-      </h2>
-      <p className="mt-1 text-sm text-ink-tertiary">{blurb}</p>
-      <div className="mt-5 space-y-8">{children}</div>
-    </section>
+    <div className="mt-10">
+    <DetailSection
+      title={mode === "home" ? tx("Home collection services") : tx("Physical visit services")}
+      lede={blurb}
+      meta={<span className="pp-caps text-[color:var(--pp-violet)]">{tx(labCollectionModeLabel(mode))}</span>}
+    >
+      <div className="space-y-8">{children}</div>
+    </DetailSection>
+    </div>
   );
 }
 

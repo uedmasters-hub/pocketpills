@@ -1,7 +1,16 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  AvailabilityBoard,
+  AvailabilityLocationPill,
+  availabilityDayLabel,
+} from "@/components/appointments/AvailabilityBoard";
+import { useAvailabilityPicker } from "@/components/appointments/useAvailabilityPicker";
+import { DetailSection } from "@/components/DetailSection";
+import { ListingLandingExtras } from "@/components/ListingCustomSections";
 import { useI18n } from "@/lib/i18n";
 import { formatDistance, formatFee } from "@/lib/appointments";
-import { careWorkerKindLabel, getCareWorker } from "@/lib/careWorkers";
+import { careVisitTypeLabel, careWorkerKindLabel, getCareWorker, type CareVisitType } from "@/lib/careWorkers";
 import { ServiceCtaCard, ServicePageShell } from "@/pages/appointments/ServicePageShell";
 
 export function AssistantDetail() {
@@ -9,6 +18,9 @@ export function AssistantDetail() {
   const nav = useNavigate();
   const { id = "" } = useParams();
   const worker = getCareWorker(id);
+  const [visitType, setVisitType] = useState<CareVisitType>(worker?.visitTypes[0] ?? "clinic");
+  const [service, setService] = useState(worker?.services[0] ?? "");
+  const avail = useAvailabilityPicker(worker?.id ?? id, visitType);
 
   if (!worker) {
     return (
@@ -21,6 +33,25 @@ export function AssistantDetail() {
     );
   }
 
+  const visitOptions = worker.visitTypes.map((v) => ({
+    id: v,
+    label: tx(careVisitTypeLabel(v)),
+  }));
+  const slotLabel = avail.time
+    ? `${availabilityDayLabel(avail.days.find((d) => d.date === avail.date) ?? { label: avail.date }, tx)} · ${avail.time} · ${tx(careVisitTypeLabel(visitType))}`
+    : tx("Select a date and time below");
+
+  const startBook = () => {
+    if (!avail.date || !avail.time || !service) return;
+    const qs = new URLSearchParams({
+      visit: visitType,
+      date: avail.date,
+      time: avail.time,
+      service,
+    });
+    nav(`/appointments/assistants/${worker.id}/book?${qs.toString()}`);
+  };
+
   return (
     <ServicePageShell
       aside={
@@ -32,9 +63,10 @@ export function AssistantDetail() {
           }
           priceHint={tx("From")}
           price={formatFee(worker.feeFrom)}
-          body={tx("Book a home, clinic, or virtual visit.")}
+          body={slotLabel}
           cta={tx("Book visit")}
-          onCta={() => nav(`/appointments/assistants/${worker.id}/book`)}
+          ctaDisabled={!avail.date || !avail.time || !service}
+          onCta={startBook}
         />
       }
     >
@@ -50,19 +82,53 @@ export function AssistantDetail() {
       </p>
       <p className="mt-1 text-sm text-ink-tertiary">{worker.languages.join(" · ")}</p>
 
-      <h2 className="mt-10 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        {tx("Services")}
-      </h2>
-      <ul className="mt-4 space-y-3">
-        {worker.services.map((s) => (
-          <li key={s} className="rounded-2xl border border-line bg-white px-4 py-3.5">
-            <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx(s)}</p>
-            <p className="mt-0.5 text-sm text-ink-tertiary">
-              {worker.visitTypes.map((v) => tx(v === "home" ? "Home" : v === "clinic" ? "Clinic" : "Virtual")).join(" · ")}
-            </p>
-          </li>
-        ))}
-      </ul>
+      <div className="mt-10">
+        <DetailSection title={tx("Services")}>
+          <ul className="space-y-3">
+            {worker.services.map((s) => {
+              const on = service === s;
+              return (
+                <li key={s}>
+                  <button
+                    type="button"
+                    onClick={() => setService(s)}
+                    className={
+                      "w-full rounded-xl border px-4 py-3.5 text-left transition-colors " +
+                      (on
+                        ? "border-[color:var(--pp-primary-950)] bg-[color:var(--pp-primary-100)]"
+                        : "border-line bg-white hover:bg-[color:var(--state-hover)]")
+                    }
+                  >
+                    <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx(s)}</p>
+                    <p className="mt-0.5 text-sm text-ink-tertiary">
+                      {worker.visitTypes.map((v) => tx(careVisitTypeLabel(v))).join(" · ")}
+                    </p>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </DetailSection>
+      </div>
+
+      <div className="mt-10">
+        <AvailabilityBoard
+          visitOptions={visitOptions}
+          visitType={visitType}
+          onSelectVisit={(id) => setVisitType(id as CareVisitType)}
+          location={worker.city ? <AvailabilityLocationPill>{worker.city}</AvailabilityLocationPill> : null}
+          date={avail.date}
+          days={avail.days}
+          weekOffset={avail.weekOffset}
+          time={avail.time}
+          slots={avail.slots}
+          onSelectDay={avail.selectDay}
+          onSelectTime={avail.selectTime}
+          onShiftWeek={avail.shiftWeek}
+        />
+      </div>
+
+      <ListingLandingExtras hubId={worker.id} />
     </ServicePageShell>
   );
 }

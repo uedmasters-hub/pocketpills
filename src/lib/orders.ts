@@ -163,6 +163,45 @@ export function getOrders(): Order[] {
   return [...extra, ...SEED.filter((o) => !ids.has(o.id))];
 }
 
+export function isActiveOrder(o: Order): boolean {
+  return o.status !== "delivered" && o.status !== "cancelled";
+}
+
+/** Collapse repeat demo fills / labs / transfers into one live row. Newest wins. */
+export function normalizeLiveSlot(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[•·⋅]/g, " ")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function liveOrderKey(o: Order): string {
+  if (o.type === "lab") {
+    return ["lab", (o.labName || "").toLowerCase(), normalizeLiveSlot(o.visitSlot || "")].join("|");
+  }
+  if (o.type === "transfer") {
+    return ["transfer", (o.fromPharmacy || "").toLowerCase()].join("|");
+  }
+  const name = (o.items[0]?.name || typeMeta[o.type].label).toLowerCase();
+  const kind = o.type === "refill" ? "fill" : o.type;
+  return [kind, name, o.status].join("|");
+}
+
+export function mergeActiveOrders(list: Order[] = getOrders()): Order[] {
+  const seen = new Set<string>();
+  const out: Order[] = [];
+  for (const o of list) {
+    if (!isActiveOrder(o)) continue;
+    const key = liveOrderKey(o);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(o);
+  }
+  return out;
+}
+
 export function getOrder(id: string | undefined): Order | undefined {
   if (!id) return undefined;
   return getOrders().find((o) => o.id === id);
@@ -197,6 +236,13 @@ export function createTransferOrder(input: {
   patient?: string;
   cardLast4?: string;
 }): Order {
+  const existing = getOrders().find(
+    (o) =>
+      isActiveOrder(o) &&
+      o.type === "transfer" &&
+      (o.fromPharmacy || "").toLowerCase() === input.fromPharmacy.trim().toLowerCase(),
+  );
+  if (existing) return existing;
   const n = Math.floor(1000 + Math.random() * 9000);
   const today = new Date().toISOString().slice(0, 10);
   return addOrder({
@@ -254,6 +300,15 @@ export function createMedicationOrder(input: {
   due: number;
   pharmacyName?: string;
 }): Order {
+  const existing = getOrders().find(
+    (o) =>
+      isActiveOrder(o) &&
+      (o.type === "fill" || o.type === "refill") &&
+      o.status === "verifying" &&
+      (o.items[0]?.name || "").toLowerCase() === input.name.trim().toLowerCase() &&
+      (o.items[0]?.strength || "") === input.strength,
+  );
+  if (existing) return existing;
   const n = Math.floor(1000 + Math.random() * 9000);
   const today = new Date().toISOString().slice(0, 10);
   return addOrder({
@@ -287,6 +342,13 @@ export function createLabOrder(input: {
   labBookingId?: string;
   confirmationNo?: string;
 }): Order {
+  const slot = `${input.date} · ${input.time}`;
+  const existing = getOrders().find((o) => {
+    if (!isActiveOrder(o) || o.type !== "lab") return false;
+    if (input.labBookingId && o.labBookingId === input.labBookingId) return true;
+    return (o.labName || "") === input.labName && o.visitSlot === slot;
+  });
+  if (existing) return existing;
   const n = Math.floor(1000 + Math.random() * 9000);
   const id = input.confirmationNo?.replace("PP-LAB-", "PP-LAB-") ?? `PP-LAB-${n}`;
   const orderId = id.startsWith("PP-") ? id : `PP-LAB-${n}`;

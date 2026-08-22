@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { CheckoutOffers, useOfferQuote } from "@/components/offers/CheckoutOffers";
-import { consultQuote, formatMoney, payableDue } from "@/lib/bookingQuote";
+import { consultQuote, formatMoney, payableDue, serviceQuote } from "@/lib/bookingQuote";
 import { useI18n } from "@/lib/i18n";
-import { formatFee } from "@/lib/appointments";
+import { formatFee, type VisitType } from "@/lib/appointments";
 import type { CheckoutContext } from "@/lib/offers";
 import { addCalendarDays, isPastDate, isSlotInPast, monthDayShort, todayIso } from "@/lib/timeSlots";
 import verifiedBadge from "../../../icons/verified badge.svg";
@@ -36,6 +36,7 @@ export function BookingReviewSidebar({
   doctorImage,
   credentials,
   verified = true,
+  visitType,
   fee,
   date,
   time,
@@ -54,11 +55,17 @@ export function BookingReviewSidebar({
   nextSlots = [],
   onPickSlot,
   offerContext,
+  quoteKind = "consult",
+  feeLabel,
+  visitKindLabel,
+  slotLabel: slotLabelProp,
 }: {
   doctorName: string;
   doctorImage: string;
   credentials: string;
   verified?: boolean;
+  visitType?: VisitType | null;
+  locationLabel?: string;
   fee: number;
   date: string;
   time: string;
@@ -77,16 +84,24 @@ export function BookingReviewSidebar({
   nextSlots?: { date: string; time: string }[];
   onPickSlot?: (date: string, time: string) => void;
   offerContext?: CheckoutContext;
+  quoteKind?: "consult" | "service";
+  feeLabel?: string;
+  visitKindLabel?: string;
+  slotLabel?: string;
 }) {
   const { tx } = useI18n();
-  const quote = consultQuote(fee);
+  const quote = quoteKind === "service" ? serviceQuote(fee) : consultQuote(fee);
   const offerQuote = useOfferQuote(
-    offerContext ?? { kind: "consult", amount: quote.beforeOffer },
+    offerContext ?? { kind: quoteKind === "service" ? "service" : "consult", amount: quote.beforeOffer },
   );
   const slotPast = Boolean(date && time) && (isPastDate(date) || isSlotInPast(date, time));
   const noPatient = !patient;
   const canConfirm = !noPatient && !slotPast && !confirmDisabled;
-  const slotLabel = date && time ? `${time} - ${date}` : tx("Pick a time");
+  const due = payableDue(quote.beforeOffer, offerQuote.credit);
+  const visitKind =
+    visitKindLabel ||
+    (visitType === "virtual" ? tx("Virtual") : visitType === "clinic" ? tx("In clinic") : "");
+  const slotLabel = slotLabelProp || (date && time ? `${time} - ${date}` : tx("Pick a time"));
 
   let confirmHint = confirmHintProp ?? "";
   if (!confirmHint) {
@@ -97,147 +112,131 @@ export function BookingReviewSidebar({
 
   return (
     <aside className="w-full min-w-0 space-y-4 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
-      <div>
-        <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
-          {tx("Review & confirm")}
-        </h2>
-      </div>
-      <div className="flex w-full max-h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-2xl border border-line bg-white">
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-1 pt-5">
-          <DoctorHead
-            name={doctorName}
-            imageUrl={doctorImage}
-            credentials={credentials}
-            verified={verified}
-          />
-
-          <div className="mt-3 border-t border-line">
-            <FactRow
-              label={tx("Time slot")}
-              value={slotLabel}
-              muted={slotPast}
-              strike={slotPast}
-              className="border-b border-line"
-            />
-            <FactRow
-              label={tx("Patient")}
-              value={patient?.name ?? tx("Choose a patient on the left to continue.")}
-              muted={!patient}
-            />
-            <VisitNotes
-              symptoms={symptoms}
-              onSymptoms={onSymptoms}
-              notes={notes}
-              onNotes={onNotes}
-            />
+      <section className="overflow-hidden rounded-2xl border border-line bg-white">
+        <div className="flex items-start justify-between gap-3 px-5 py-4">
+          <div className="min-w-0">
+            <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
+              {tx("Your visit")}
+            </h2>
+            <p className="mt-1 text-sm text-ink-tertiary">{tx("Confirm, then send the request.")}</p>
           </div>
-
-          {slotPast ? (
-            <div role="status" className="mt-3 rounded-xl bg-[color:var(--pp-primary-100)] px-3 py-2.5">
-              <p className="text-xs text-[color:var(--pp-primary-950)]">
-                {tx("This time is no longer available. Pick a next slot below.")}
-              </p>
-              {nextSlots.length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {nextSlots.map((s) => (
-                    <button
-                      key={`${s.date}-${s.time}`}
-                      type="button"
-                      onClick={() => onPickSlot?.(s.date, s.time)}
-                      className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--pp-primary-950)] hover:border-[color:var(--pp-primary-950)]"
-                    >
-                      {slotChipLabel(s.date, s.time, tx)}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-1.5 text-xs text-ink-tertiary">
-                  {tx("No later slots this week. Message the care team for help.")}
-                </p>
-              )}
-            </div>
-          ) : null}
-
-          {reports.length > 0 || findings.length > 0 ? (
-            <div className="mt-1">
-              {reports.length > 0 ? (
-                <AttachAccordion title={tx("Reports")} count={reports.length}>
-                  {reports.slice(0, LIST_CAP).map((r, i) => (
-                    <AttachRow
-                      key={r.id}
-                      index={i + 1}
-                      title={r.title}
-                      tooltip={sourceHint(r.source, tx)}
-                      kind="report"
-                      onRemove={() => onRemoveReport(r.id)}
-                    />
-                  ))}
-                  {reports.length > LIST_CAP ? (
-                    <li className="px-1 py-1.5 text-2xs text-ink-tertiary">
-                      +{reports.length - LIST_CAP} {tx("more attached")}
-                    </li>
-                  ) : null}
-                </AttachAccordion>
-              ) : null}
-              {findings.length > 0 ? (
-                <AttachAccordion title={tx("Findings")} count={findings.length}>
-                  {findings.slice(0, LIST_CAP).map((f, i) => (
-                    <AttachRow
-                      key={f.id}
-                      index={i + 1}
-                      title={f.title}
-                      kind="finding"
-                      onRemove={() => onRemoveFinding(f.id)}
-                    />
-                  ))}
-                  {findings.length > LIST_CAP ? (
-                    <li className="px-1 py-1.5 text-2xs text-ink-tertiary">
-                      +{findings.length - LIST_CAP} {tx("more shared")}
-                    </li>
-                  ) : null}
-                </AttachAccordion>
-              ) : null}
-            </div>
+          {visitKind ? (
+            <span className="shrink-0 rounded-full bg-[color:var(--pp-primary-100)] px-2.5 py-1 text-2xs font-semibold text-[color:var(--pp-primary-950)]">
+              {visitKind}
+            </span>
           ) : null}
         </div>
 
-        <div className="shrink-0 space-y-2.5 border-t border-line px-5 pb-5 pt-4">
-          <div className="space-y-1.5 text-sm">
-            <PriceRow k={tx("Consultation fee")} v={formatMoney(quote.consultation)} />
-            {quote.convenience > 0 ? (
-              <PriceRow k={tx("Convenience fee")} v={formatMoney(quote.convenience)} />
+        <div className="border-t border-line px-5 py-4">
+          <ProviderBlock name={doctorName} imageUrl={doctorImage} credentials={credentials} verified={verified} />
+        </div>
+
+        <dl>
+          <FactRow
+            label={tx("Time slot")}
+            value={slotLabel}
+            muted={slotPast || !(date && time)}
+            strike={slotPast}
+          />
+          <FactRow
+            label={tx("Patient")}
+            value={patient ? patient.name : tx("Choose a patient")}
+            muted={!patient}
+          />
+        </dl>
+
+        <div className="px-5">
+          <VisitNotes
+            symptoms={symptoms}
+            onSymptoms={onSymptoms}
+            notes={notes}
+            onNotes={onNotes}
+          />
+        </div>
+
+        {slotPast ? (
+          <div role="status" className="border-t border-line bg-[color:var(--pp-primary-100)] px-5 py-3">
+            <p className="text-sm text-[color:var(--pp-primary-950)]">
+              {tx("This time is no longer available. Pick a next slot below.")}
+            </p>
+            {nextSlots.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {nextSlots.map((s) => (
+                  <button
+                    key={`${s.date}-${s.time}`}
+                    type="button"
+                    onClick={() => onPickSlot?.(s.date, s.time)}
+                    className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-[color:var(--pp-primary-950)] hover:border-[color:var(--pp-primary-950)]"
+                  >
+                    {nextSlotLabel(s.date, s.time, tx)}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-1.5 text-xs text-ink-tertiary">
+                {tx("No later slots this week. Message the care team for help.")}
+              </p>
+            )}
+          </div>
+        ) : null}
+
+        <div className="border-t border-line">
+          <AttachAccordion title={tx("Reports")} count={reports.length}>
+            {reports.slice(0, LIST_CAP).map((r, i) => (
+              <AttachRow key={r.id} index={i + 1} title={r.title} onRemove={() => onRemoveReport(r.id)} />
+            ))}
+            {reports.length > LIST_CAP ? (
+              <li className="px-5 py-1.5 text-2xs text-ink-tertiary">
+                +{reports.length - LIST_CAP} {tx("more")}
+              </li>
             ) : null}
-            {quote.insurance > 0 ? (
-              <PriceRow
-                k={tx("Insurance ({pct}%)").replace("{pct}", String(quote.insurancePct))}
-                v={`−${formatMoney(quote.insurance)}`}
-                tone
-              />
+          </AttachAccordion>
+          <AttachAccordion title={tx("Findings")} count={findings.length}>
+            {findings.slice(0, LIST_CAP).map((f, i) => (
+              <AttachRow key={f.id} index={i + 1} title={f.title} onRemove={() => onRemoveFinding(f.id)} />
+            ))}
+            {findings.length > LIST_CAP ? (
+              <li className="px-5 py-1.5 text-2xs text-ink-tertiary">
+                +{findings.length - LIST_CAP} {tx("more")}
+              </li>
             ) : null}
-            {offerQuote.credit > 0 ? (
-              <PriceRow k={tx("Offer")} v={`−${formatMoney(offerQuote.credit)}`} tone />
-            ) : null}
-            <div className="flex items-end justify-between pt-1.5">
-              <span className="font-semibold text-[color:var(--pp-primary-950)]">{tx("You pay")}</span>
-              <span className="font-display text-2xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
-                {payableDue(quote.beforeOffer, offerQuote.credit) <= 0
-                  ? formatFee(0)
-                  : formatMoney(payableDue(quote.beforeOffer, offerQuote.credit))}
-              </span>
+          </AttachAccordion>
+        </div>
+
+        <div className="border-t border-line px-5 py-4">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">{tx("You pay")}</p>
+              <p className="mt-1 font-display text-3xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
+                {due <= 0 ? formatFee(0) : formatMoney(due)}
+              </p>
             </div>
+            <PriceToggle
+              rows={[
+                [tx(feeLabel || (quoteKind === "service" ? "Service fee" : "Consultation fee")), formatMoney(quote.consultation), false],
+                quote.convenience > 0 ? [tx("Convenience fee"), formatMoney(quote.convenience), false] : null,
+                quote.insurance > 0
+                  ? [tx("Insurance ({pct}%)").replace("{pct}", String(quote.insurancePct)), `−${formatMoney(quote.insurance)}`, true]
+                  : null,
+                offerQuote.credit > 0 ? [tx("Offer"), `−${formatMoney(offerQuote.credit)}`, true] : null,
+              ].filter(Boolean) as [string, string, boolean][]}
+            />
           </div>
           <Button
             fullWidth
+            className="mt-4"
             onClick={onConfirm}
             disabled={!canConfirm}
-            className="!rounded-2xl"
             title={canConfirm ? undefined : confirmHint || undefined}
           >
-            {tx("Pay & confirm")}
+            {tx("Pay & send request")}
           </Button>
+          {canConfirm ? null : <p className="mt-2 text-center text-xs text-ink-tertiary">{confirmHint}</p>}
         </div>
-      </div>
+      </section>
+
       {offerContext ? <CheckoutOffers context={offerContext} /> : null}
+
       <p className="px-1 text-center text-2xs leading-relaxed text-ink-tertiary">
         {tx("Demo booking — no real visit is scheduled with a clinic.")}
       </p>
@@ -245,61 +244,14 @@ export function BookingReviewSidebar({
   );
 }
 
-function PriceRow({ k, v, tone }: { k: string; v: string; tone?: boolean }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-ink-secondary">{k}</span>
-      <span className={(tone ? "font-medium text-[color:var(--pp-green)]" : "text-[color:var(--pp-primary-950)]") + " tnum"}>
-        {v}
-      </span>
-    </div>
-  );
-}
-
-function FactRow({
-  label,
-  value,
-  muted,
-  strike,
-  className = "",
-}: {
-  label: string;
-  value: string;
-  muted?: boolean;
-  strike?: boolean;
-  className?: string;
-}) {
-  return (
-    <div className={"flex items-baseline justify-between gap-4 py-2.5 " + className}>
-      <span className="shrink-0 text-sm text-ink-tertiary">{label}</span>
-      <span
-        className={
-          "min-w-0 text-right text-sm font-medium leading-snug " +
-          (muted ? "text-ink-tertiary" : "text-[color:var(--pp-primary-950)]") +
-          (strike ? " line-through" : "")
-        }
-        title={value}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function sourceHint(source: ReviewReport["source"], tx: (s: string) => string) {
-  if (source === "upload") return tx("Uploaded from device");
-  if (source === "lab") return tx("Connected lab");
-  return tx("From your library");
-}
-
-function slotChipLabel(date: string, time: string, tx: (s: string) => string) {
+function nextSlotLabel(date: string, time: string, tx: (s: string) => string) {
   const today = todayIso();
   const tomorrow = addCalendarDays(today, 1);
   const day = date === today ? tx("Today") : date === tomorrow ? tx("Tomorrow") : monthDayShort(date);
   return `${day} · ${time}`;
 }
 
-function DoctorHead({
+function ProviderBlock({
   name,
   imageUrl,
   credentials,
@@ -320,10 +272,10 @@ function DoctorHead({
           src={imageUrl}
           alt=""
           onError={() => setBroken(true)}
-          className="h-14 w-14 shrink-0 rounded-2xl object-cover object-[center_20%]"
+          className="h-14 w-14 shrink-0 rounded-full object-cover object-[center_20%]"
         />
       ) : (
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[color:var(--pp-primary-200)] text-sm font-semibold text-[color:var(--pp-primary-950)]">
+        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-200)] text-sm font-semibold text-[color:var(--pp-primary-950)]">
           {initial}
         </span>
       )}
@@ -332,9 +284,7 @@ function DoctorHead({
           <span className="truncate" title={name}>
             {name}
           </span>
-          {verified ? (
-            <img src={verifiedBadge} alt="" className="h-3.5 w-3.5 shrink-0" />
-          ) : null}
+          {verified ? <img src={verifiedBadge} alt="" className="h-3.5 w-3.5 shrink-0" /> : null}
         </p>
         {credentials ? (
           <p className="mt-0.5 truncate text-sm text-ink-tertiary" title={credentials}>
@@ -346,91 +296,31 @@ function DoctorHead({
   );
 }
 
-function AttachAccordion({
-  title,
-  count,
-  children,
+function FactRow({
+  label,
+  value,
+  muted,
+  strike,
 }: {
-  title: string;
-  count: number;
-  children: ReactNode;
+  label: string;
+  value: string;
+  muted?: boolean;
+  strike?: boolean;
 }) {
-  const { tx } = useI18n();
-  const id = useId();
-  const [open, setOpen] = useState(false);
-
   return (
-    <div className={open ? "pb-3" : undefined}>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={id}
-        onClick={() => setOpen((v) => !v)}
-        className="-mx-2 flex w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-xl px-2 py-1 text-left text-ink-tertiary transition-colors hover:bg-[color:var(--pp-primary-100)] hover:text-[color:var(--pp-primary-950)]"
+    <div className="flex items-baseline justify-between gap-4 border-t border-line px-5 py-2.5">
+      <dt className="shrink-0 text-sm text-ink-tertiary">{label}</dt>
+      <dd
+        className={
+          "min-w-0 text-right text-sm font-medium leading-snug " +
+          (muted ? "text-ink-tertiary" : "text-[color:var(--pp-primary-950)]") +
+          (strike ? " line-through" : "")
+        }
+        title={value}
       >
-        <span className="text-2xs font-normal">
-          {title} ({count})
-        </span>
-        <span className="grid h-4 w-4 shrink-0 place-items-center">
-          <Chevron open={open} />
-        </span>
-      </button>
-      <div id={id} hidden={!open} className="mt-1 pb-1">
-        {open ? <ul className="max-h-44 overflow-y-auto">{children}</ul> : null}
-        <p className="sr-only">{tx("Remove an item to drop it from this visit.")}</p>
-      </div>
+        {value}
+      </dd>
     </div>
-  );
-}
-
-function AttachRow({
-  index,
-  title,
-  tooltip,
-  kind,
-  onRemove,
-}: {
-  index: number;
-  title: string;
-  tooltip?: string;
-  kind: "report" | "finding";
-  onRemove: () => void;
-}) {
-  const { tx } = useI18n();
-  const full = tooltip ? `${title} · ${tooltip}` : title;
-  return (
-    <li className="-mx-2 flex items-center gap-2 px-2 py-1.5">
-      <span className="w-4 shrink-0 text-xs text-ink-tertiary tnum">{index}.</span>
-      {kind === "report" ? <FileCheckGlyph /> : null}
-      <span className="min-w-0 flex-1 truncate text-sm text-[color:var(--pp-primary-950)]" title={full}>
-        {title}
-      </span>
-      <button
-        type="button"
-        onClick={onRemove}
-        className="grid h-4 w-4 shrink-0 place-items-center rounded-full text-ink-tertiary hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
-        aria-label={`${tx("Remove")} ${title}`}
-      >
-        <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-          <path d="M3 3l6 6M9 3l-6 6" strokeLinecap="round" />
-        </svg>
-      </button>
-    </li>
-  );
-}
-
-function FileCheckGlyph() {
-  return (
-    <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-ink-tertiary" fill="none" aria-hidden>
-      <path
-        d="M5 2.5h4.2L12.5 6v7.2A1.3 1.3 0 0 1 11.2 14.5H5A1.3 1.3 0 0 1 3.7 13.2V3.8A1.3 1.3 0 0 1 5 2.5Z"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinejoin="round"
-      />
-      <path d="M9 2.5V6h3.5" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-      <path d="M5.6 10.1 7 11.5l3.2-3.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }
 
@@ -463,11 +353,16 @@ function VisitNotes({
     settleRef.current = window.setTimeout(() => {
       if (!valueRef.current.trim()) return;
       setActive(false);
-      fieldRef.current?.blur();
     }, 3000);
   };
 
   useEffect(() => () => clearSettle(), []);
+
+  const wake = () => {
+    clearSettle();
+    setActive(true);
+    if (valueRef.current.trim()) armSettle();
+  };
 
   const setValue = (next: string) => {
     const clipped = next.slice(0, NOTES_MAX);
@@ -477,26 +372,20 @@ function VisitNotes({
     armSettle();
   };
 
-  const activate = () => {
-    clearSettle();
-    setActive(true);
-    fieldRef.current?.focus();
-  };
-
   const fieldText =
-    "col-start-1 row-start-1 min-w-0 w-full max-w-full whitespace-pre-wrap break-all [overflow-wrap:anywhere] text-xs font-normal leading-relaxed";
+    "col-start-1 row-start-1 min-w-0 w-full max-w-full whitespace-pre-wrap break-all [overflow-wrap:anywhere] text-xs font-normal leading-relaxed text-[color:var(--pp-primary-950)]";
 
   return (
     <div
       className={
-        "mb-4 min-w-0 max-w-full overflow-hidden transition-colors " +
-        (active
-          ? "rounded-lg border border-line bg-white px-3 py-2.5"
-          : settled
-            ? "cursor-text rounded-lg border border-transparent bg-[color:var(--pp-primary-100)] px-3 py-2.5"
-            : "cursor-text py-2")
+        "mb-4 min-w-0 max-w-full overflow-hidden rounded-lg " +
+        "transition-[background-color,padding] duration-300 ease-out motion-reduce:transition-none " +
+        (settled
+          ? "bg-[color:var(--pp-primary-100)] px-3 py-2.5"
+          : "bg-transparent px-0 py-2")
       }
-      onClick={settled ? activate : undefined}
+      onPointerDown={wake}
+      onClick={() => fieldRef.current?.focus()}
     >
       <div className="grid min-w-0">
         <textarea
@@ -504,21 +393,17 @@ function VisitNotes({
           value={value}
           rows={1}
           onChange={(e) => setValue(e.target.value)}
-          onFocus={() => {
-            clearSettle();
-            setActive(true);
-          }}
+          onFocus={wake}
+          onKeyDown={wake}
           onBlur={() => {
             clearSettle();
             setActive(false);
           }}
           placeholder={tx("Describe your symptoms (optional)")}
           maxLength={NOTES_MAX}
-          readOnly={settled}
           className={
             fieldText +
-            " h-full resize-none overflow-hidden bg-transparent p-0 outline-none placeholder:truncate placeholder:whitespace-nowrap placeholder:italic placeholder:text-ink-tertiary/55 " +
-            (settled ? "cursor-text text-ink-tertiary" : "text-[color:var(--pp-primary-950)]")
+            " h-full resize-none overflow-hidden bg-transparent p-0 outline-none placeholder:truncate placeholder:whitespace-nowrap placeholder:italic placeholder:text-ink-tertiary/55"
           }
         />
         <span aria-hidden className={fieldText + " invisible pointer-events-none"}>
@@ -529,17 +414,97 @@ function VisitNotes({
   );
 }
 
-function Chevron({ open }: { open: boolean }) {
+function AttachAccordion({
+  title,
+  count,
+  children,
+}: {
+  title: string;
+  count: number;
+  children: ReactNode;
+}) {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+
   return (
-    <svg
-      viewBox="0 0 20 20"
-      className={"h-4 w-4 shrink-0 transition-transform " + (open ? "rotate-180" : "")}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      aria-hidden
-    >
-      <path d="M5 7.5 10 12.5 15 7.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <div className="border-t border-line first:border-t-0">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 px-5 py-2.5 text-left text-sm text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
+      >
+        <span>
+          {title} ({count})
+        </span>
+        <svg
+          viewBox="0 0 12 12"
+          className={"h-3.5 w-3.5 shrink-0 transition-transform " + (open ? "rotate-180" : "")}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          aria-hidden
+        >
+          <path d="M2.5 4.5 6 8l3.5-3.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open ? (
+        <ul id={id} className="max-h-44 overflow-y-auto pb-2">
+          {count ? children : (
+            <li className="px-5 pb-2 text-xs text-ink-tertiary">—</li>
+          )}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+function AttachRow({ index, title, onRemove }: { index: number; title: string; onRemove: () => void }) {
+  const { tx } = useI18n();
+  return (
+    <li className="flex items-center gap-2 px-5 py-1.5">
+      <span className="w-4 shrink-0 text-xs text-ink-tertiary tnum">{index}.</span>
+      <span className="min-w-0 flex-1 truncate text-sm text-[color:var(--pp-primary-950)]">{title}</span>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-ink-tertiary hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
+        aria-label={`${tx("Remove")} ${title}`}
+      >
+        ✕
+      </button>
+    </li>
+  );
+}
+
+function PriceToggle({ rows }: { rows: [string, string, boolean][] }) {
+  const { tx } = useI18n();
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="text-right">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((v) => !v)}
+        className="text-xs font-medium text-[color:var(--pp-violet)] hover:opacity-70"
+      >
+        {open ? tx("Hide breakdown") : tx("Show breakdown")}
+      </button>
+      {open ? (
+        <dl id={id} className="mt-2 space-y-1 text-xs">
+          {rows.map(([k, v, tone]) => (
+            <div key={k} className="flex justify-end gap-3">
+              <dt className="text-ink-tertiary">{k}</dt>
+              <dd className={"tnum " + (tone ? "font-medium text-[color:var(--pp-green)]" : "text-[color:var(--pp-primary-950)]")}>
+                {v}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+    </div>
   );
 }

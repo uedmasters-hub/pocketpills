@@ -8,6 +8,7 @@ import {
   listProviders,
   type Appointment,
   type CareProvider,
+  type ProviderKind,
   type SpecialtyId,
   type VisitType,
 } from "@/lib/appointments";
@@ -28,7 +29,8 @@ export type VisitPhase =
   | "in-progress"
   | "completed"
   | "cancelled"
-  | "missed";
+  | "missed"
+  | "unavailable";
 
 export type GuideStep = {
   title: string;
@@ -61,6 +63,8 @@ export function visitEmergencyNote(): string {
 export function visitPhase(a: Appointment, at = new Date()): VisitPhase {
   if (a.status === "cancelled") return "cancelled";
   if (a.status === "completed") return "completed";
+  if (a.status === "unavailable") return "unavailable";
+  if (a.status === "not_attempted") return "missed";
 
   const until = minutesUntilSlot(a.date, a.time, at);
   if (until == null) {
@@ -79,10 +83,22 @@ export function visitPhase(a: Appointment, at = new Date()): VisitPhase {
   return "upcoming";
 }
 
-export function phaseLabel(phase: VisitPhase): string {
+export function awaitingPartyNoun(kind?: ProviderKind): string {
+  if (kind === "hospital") return "hospital";
+  if (kind === "clinic") return "clinic";
+  return "doctor";
+}
+
+export function awaitingStatusLabel(kind?: ProviderKind): string {
+  if (kind === "hospital") return "Awaiting hospital";
+  if (kind === "clinic") return "Awaiting clinic";
+  return "Awaiting doctor";
+}
+
+export function phaseLabel(phase: VisitPhase, kind?: ProviderKind): string {
   switch (phase) {
     case "pending":
-      return "Awaiting doctor";
+      return awaitingStatusLabel(kind);
     case "upcoming":
       return "Upcoming";
     case "today":
@@ -96,13 +112,16 @@ export function phaseLabel(phase: VisitPhase): string {
     case "cancelled":
       return "Cancelled";
     case "missed":
-      return "Time passed";
+      return "Not attempted";
+    case "unavailable":
+      return kind === "hospital" ? "Hospital unavailable" : kind === "clinic" ? "Clinic unavailable" : "Doctor unavailable";
   }
 }
 
 export function phaseLede(a: Appointment, phase: VisitPhase): string {
   const when = formatVisitWhen(a.date, a.time);
-  const name = a.clinicianName || a.providerName;
+  const facilityVisit = a.providerKind === "hospital" || a.providerKind === "clinic";
+  const name = facilityVisit ? a.providerName : a.clinicianName || a.providerName;
   switch (phase) {
     case "pending":
       return `Your request is with ${name}. Use this time to gather notes and reports — do not travel or join until they accept.`;
@@ -121,9 +140,11 @@ export function phaseLede(a: Appointment, phase: VisitPhase): string {
     case "completed":
       return "This visit is complete. Use the follow-up notes below if you need a refill, a message, or another booking.";
     case "cancelled":
-      return "This visit was cancelled. You can rebook the same clinician or browse related care below.";
+      return "This visit was cancelled. You can rebook the same clinician or browse related care below. Your receipt stays on this page.";
     case "missed":
-      return "This time is no longer available. Rebook a new slot — your notes and reports are still on file for the next request.";
+      return "This visit was not attempted — the clock time passed without a consult. Pick a new slot or message the care team. Your notes and receipt stay on this page.";
+    case "unavailable":
+      return `${name} cannot make the booked time. Choose one of the next openings below, or message the care team.`;
   }
 }
 
@@ -133,7 +154,7 @@ export function formatVisitWhen(date: string, time: string): string {
 }
 
 export function visitCountdown(a: Appointment, phase: VisitPhase): string | null {
-  if (phase === "cancelled" || phase === "completed" || phase === "missed") return null;
+  if (phase === "cancelled" || phase === "completed" || phase === "missed" || phase === "unavailable") return null;
   const until = minutesUntilSlot(a.date, a.time);
   if (until == null) return null;
   if (until <= 0) return phase === "in-progress" ? "Started" : null;
@@ -145,7 +166,7 @@ export function visitCountdown(a: Appointment, phase: VisitPhase): string | null
 }
 
 export function canCancelVisit(phase: VisitPhase): boolean {
-  return phase === "pending" || phase === "upcoming" || phase === "today";
+  return phase === "pending" || phase === "upcoming" || phase === "today" || phase === "unavailable";
 }
 
 export function canJoinVirtual(a: Appointment, phase: VisitPhase): boolean {
@@ -167,6 +188,12 @@ export function mapsQueryForVisit(a: Appointment, provider?: CareProvider): stri
 
 export function rebookHref(a: Appointment): string {
   if (!a.providerId) return "/appointments";
+  if (a.providerKind === "hospital" || a.providerKind === "clinic") {
+    if (a.clinicianId && a.clinicianId !== a.providerId) {
+      return `/appointments/provider/${a.clinicianId}?facility=${encodeURIComponent(a.providerId)}`;
+    }
+    return `/appointments/provider/${a.providerId}/services`;
+  }
   const qs = new URLSearchParams();
   if (a.specialtyId) qs.set("specialty", a.specialtyId);
   const suffix = qs.toString();
@@ -181,14 +208,27 @@ export function receiptHref(id: string): string {
   return `/appointments/visit/${id}/receipt`;
 }
 
+export function offeredSlotsFor(fromDate = todayIso(), count = 3): { date: string; time: string; label: string }[] {
+  const times = ["9:30 AM", "11:00 AM", "2:30 PM"];
+  const out: { date: string; time: string; label: string }[] = [];
+  for (let d = 1; out.length < count && d < 16; d++) {
+    const date = addCalendarDays(fromDate, d);
+    const weekday = new Date(`${date}T12:00:00`).getDay();
+    if (weekday === 0) continue;
+    const time = times[out.length % times.length];
+    out.push({ date, time, label: formatVisitWhen(date, time) });
+  }
+  return out;
+}
+
 export function nextSteps(a: Appointment, phase: VisitPhase): GuideStep[] {
   const virtual = a.visitType === "virtual";
   switch (phase) {
     case "pending":
       return [
         {
-          title: "Wait for the doctor to accept",
-          detail: "You’ll get a notification when the visit is confirmed. Nothing to travel or join yet.",
+          title: `Wait for the ${awaitingPartyNoun(a.providerKind)} to accept`,
+          detail: "You’ll get a notification when they confirm. Nothing to travel or join yet.",
         },
         {
           title: "Prepare your history",
@@ -316,11 +356,22 @@ export function nextSteps(a: Appointment, phase: VisitPhase): GuideStep[] {
       return [
         {
           title: "Request a new slot",
-          detail: "This clock time has passed. Open the clinician’s availability and choose a current time.",
+          detail: "This visit was not attempted. Open availability and choose a current time — notes from this request can come along.",
         },
         {
           title: "Message the care team if you still need today’s visit",
           detail: "They can tell you whether a same-day opening exists.",
+        },
+      ];
+    case "unavailable":
+      return [
+        {
+          title: "Pick one of the next openings",
+          detail: "The clinician cannot make the original time. Offered slots are on this page — one tap confirms.",
+        },
+        {
+          title: "Or browse all availability",
+          detail: "If none of the suggested times work, rebook from the clinician’s calendar.",
         },
       ];
   }
@@ -480,47 +531,263 @@ export function healthTips(specialtyId: SpecialtyId): GuideTip[] {
   return [...specific, ...DEFAULT_TIPS].slice(0, 4);
 }
 
-const QUESTIONS: Partial<Record<SpecialtyId, string[]>> = {
+export type AskPrompt = { q: string; why: string };
+export type AskTopic = { title: string; items: AskPrompt[] };
+
+const QUESTIONS: Partial<Record<SpecialtyId, AskPrompt[]>> = {
   general: [
-    "What is the most likely cause of this, and what else should we rule out?",
-    "What should I watch for at home, and when should I come back sooner?",
-    "Do I need a test, a medicine, or only observation for now?",
+    {
+      q: "What is the most likely cause of this, and what else should we rule out?",
+      why: "You leave with a working theory, not only a label.",
+    },
+    {
+      q: "What should I watch for at home, and when should I come back sooner?",
+      why: "Turns the visit into a safety plan you can follow tonight.",
+    },
+    {
+      q: "Do I need a test, a medicine, or only observation for now?",
+      why: "Stops you guessing whether today was ‘wait’ or ‘treat’.",
+    },
   ],
   dermatologist: [
-    "Is this likely infectious, inflammatory, or something else?",
-    "What should I apply, and for how long before we review?",
-    "Which products should I stop in the meantime?",
+    {
+      q: "Is this likely infectious, inflammatory, or something else?",
+      why: "The next step (cream, test, or wait) depends on that bucket.",
+    },
+    {
+      q: "What should I apply, and for how long before we review?",
+      why: "A stop date keeps you from using a steroid or cream too long.",
+    },
+    {
+      q: "Which products should I stop in the meantime?",
+      why: "New soaps and actives often keep a rash going.",
+    },
   ],
   gynecologist: [
-    "Are these symptoms expected, or do they need investigation?",
-    "What are the options, and what are the trade-offs of each?",
-    "When should I follow up if nothing changes?",
+    {
+      q: "Are these symptoms expected, or do they need investigation?",
+      why: "You want to know if this is typical — or a reason to test.",
+    },
+    {
+      q: "What are the options, and what are the trade-offs of each?",
+      why: "Helps you choose, instead of leaving with only one path.",
+    },
+    {
+      q: "When should I follow up if nothing changes?",
+      why: "A review date is the plan if this slot does not settle it.",
+    },
   ],
   pediatrician: [
-    "What can we manage at home, and what is a reason to return tonight?",
-    "How should we give medicine, and what dose for this weight?",
-    "When is the next review if they are not settling?",
+    {
+      q: "What can we manage at home, and what is a reason to return tonight?",
+      why: "Parents need a clear line between watchful waiting and urgent care.",
+    },
+    {
+      q: "How should we give medicine, and what dose for this weight?",
+      why: "Dose by weight is easy to get wrong without writing it down.",
+    },
+    {
+      q: "When is the next review if they are not settling?",
+      why: "You leave knowing when ‘still unwell’ means come back.",
+    },
   ],
   psychiatrist: [
-    "What are we treating first, and how will we know it is helping?",
-    "What are the common side effects of any medicine you suggest?",
-    "Who do I contact if things worsen before the next visit?",
+    {
+      q: "What are we treating first, and how will we know it is helping?",
+      why: "A target (sleep, mood, panic) makes the next visit useful.",
+    },
+    {
+      q: "What are the common side effects of any medicine you suggest?",
+      why: "You can decide with eyes open, and know what is expected.",
+    },
+    {
+      q: "Who do I contact if things worsen before the next visit?",
+      why: "Crisis and after-hours paths should be on paper, not assumed.",
+    },
   ],
 };
 
-const DEFAULT_QUESTIONS = [
-  "What is the next step after today — test, medicine, or watchful waiting?",
-  "What should I do if this gets worse before the follow-up?",
-  "Is there anything I should avoid until we speak again?",
+const DEFAULT_QUESTIONS: AskPrompt[] = [
+  {
+    q: "What is the next step after today — test, medicine, or watchful waiting?",
+    why: "You should leave knowing exactly what happens next.",
+  },
+  {
+    q: "What should I do if this gets worse before the follow-up?",
+    why: "A worse-case plan is more useful than hoping it will wait.",
+  },
+  {
+    q: "Is there anything I should avoid until we speak again?",
+    why: "Work, sport, or a medicine pause is easy to miss if you do not ask.",
+  },
+];
+
+const ASK_LIFESTYLE: AskTopic[] = [
+  {
+    title: "Eating",
+    items: [
+      {
+        q: "What should I eat more of, and what should I skip for now?",
+        why: "Food is often part of the plan — not only a prescription. A short list is easier to follow than ‘eat better’.",
+      },
+      {
+        q: "Does this medicine need food, an empty stomach, or no alcohol?",
+        why: "Timing with meals changes how well a dose works and how sick you feel.",
+      },
+      {
+        q: "How much fluid is enough — and is caffeine, grapefruit, or a ‘health’ drink a problem?",
+        why: "A few juices and supplements interact with common medicines.",
+      },
+      {
+        q: "If my appetite is off, what is still okay to keep down?",
+        why: "You want a fallback (toast, yoghurt, oral rehydration) before you leave, not a guess at 2 a.m.",
+      },
+    ],
+  },
+  {
+    title: "Hygiene",
+    items: [
+      {
+        q: "How should I wash, bathe, or care for skin around this?",
+        why: "The wrong soap, soak, or scrub can slow healing or keep a rash going.",
+      },
+      {
+        q: "Can I use my usual products — deodorant, makeup, lotion, or mouthwash?",
+        why: "Fragrance, alcohol, and ‘actives’ are a common reason something does not settle.",
+      },
+      {
+        q: "What is safe for hands, wound dressing, or oral hygiene if I am nauseated?",
+        why: "Dry mouth, vomiting, and dressings each need a simple do / don’t.",
+      },
+      {
+        q: "When can I swim, gym-shower, or share towels again?",
+        why: "Infection and irritation risk is easy to miss if you only ask about medicine.",
+      },
+    ],
+  },
+  {
+    title: "Medicines at home",
+    items: [
+      {
+        q: "What do I take if I miss a dose — skip, double, or take when I remember?",
+        why: "Guessing a missed dose is how people over- or under-treat.",
+      },
+      {
+        q: "Which pharmacy or OTC products should I pause (painkillers, cold meds, vitamins)?",
+        why: "A ‘harmless’ tablet can clash with a new prescription.",
+      },
+      {
+        q: "What side effects are expected, and which mean I should message or stop?",
+        why: "You need a line between uncomfortable and unsafe.",
+      },
+    ],
+  },
+  {
+    title: "Sleep, work, and activity",
+    items: [
+      {
+        q: "Can I work, drive, exercise, or lift as usual?",
+        why: "A clear yes/no for the next few days prevents a flare or a crash.",
+      },
+      {
+        q: "Will this medicine make me drowsy or wired — and when should I take it?",
+        why: "Morning vs night is often the difference between a usable day and a wasted one.",
+      },
+      {
+        q: "What should I do about sleep if pain or worry is keeping me up?",
+        why: "Sleep advice belongs in the plan, not as an afterthought at the door.",
+      },
+    ],
+  },
+  {
+    title: "When to get help",
+    items: [
+      {
+        q: "What should I watch for at home, and when should I come back sooner?",
+        why: "Turns the visit into a safety plan you can follow tonight.",
+      },
+      {
+        q: "Who do I message on PocketPills vs when should I use urgent care or 911?",
+        why: "Chat is for the plan. Emergencies are not.",
+      },
+    ],
+  },
 ];
 
 export function questionsToAsk(specialtyId: SpecialtyId): string[] {
-  return QUESTIONS[specialtyId] ?? DEFAULT_QUESTIONS;
+  return questionsToAskWithWhy(specialtyId).map((p) => p.q);
+}
+
+export function questionsToAskWithWhy(specialtyId?: SpecialtyId): AskPrompt[] {
+  return visitAskGuide(specialtyId).flatMap((t) => t.items);
+}
+
+export function visitAskGuide(specialtyId?: SpecialtyId): AskTopic[] {
+  const plan: AskTopic = {
+    title: "The visit plan",
+    items: (specialtyId && QUESTIONS[specialtyId]) || DEFAULT_QUESTIONS,
+  };
+  return [plan, ...ASK_LIFESTYLE];
+}
+
+export function lifestyleAskTopics(): AskTopic[] {
+  return ASK_LIFESTYLE;
 }
 
 export function visitFaqs(a: Appointment, phase: VisitPhase): { q: string; a: string }[] {
   const virtual = a.visitType === "virtual";
   const items: { q: string; a: string }[] = [];
+
+  if (phase === "cancelled") {
+    return [
+      {
+        q: "Was I charged?",
+        a: "Open View receipt on this page. Demo bookings are not a real clinic charge; a live receipt would show the same booking ID.",
+      },
+      {
+        q: "Can I use the same notes again?",
+        a: "Yes. Story, medicines, and documents stay on this visit. Attach them again when you rebook.",
+      },
+      {
+        q: "How do I get another slot?",
+        a: "Use Rebook on this page for the same clinician, or browse nearby care in the same specialisation.",
+      },
+    ];
+  }
+
+  if (phase === "missed") {
+    return [
+      {
+        q: "Why does it say not attempted?",
+        a: "The booked clock time passed without a consult. That is different from a completed visit — there is no after-visit plan yet.",
+      },
+      {
+        q: "Can I still be seen today?",
+        a: "Message the care team. If a same-day opening exists they will say so; otherwise confirm one of the next openings on this page.",
+      },
+      {
+        q: "Where is the receipt?",
+        a: "View receipt stays on this page for the original booking, even though the consult did not happen.",
+      },
+    ];
+  }
+
+  if (phase === "unavailable") {
+    return [
+      {
+        q: "Did my booking fail?",
+        a: "No. The request was received; the clinician cannot make that clock time. Confirm a suggested slot or browse the full calendar.",
+      },
+      {
+        q: "Will the fee change?",
+        a: "Confirming a new slot keeps this booking ID. Open the receipt if you need the confirmation number for later.",
+      },
+      {
+        q: "What if none of the times work?",
+        a: "Message the care team, or use See all times to pick from the clinician’s calendar.",
+      },
+    ];
+  }
 
   if (phase === "pending") {
     items.push({
@@ -560,6 +827,10 @@ export function visitFaqs(a: Appointment, phase: VisitPhase): { q: string; a: st
   items.push({
     q: "Can I add more reports later?",
     a: "Message the care team with the extra file, or mention it at the start of the visit. Reports already attached are listed on this page.",
+  });
+  items.push({
+    q: "Where is my receipt?",
+    a: "View receipt on this page. It uses the same booking ID shown next to the status badge.",
   });
   items.push({
     q: "How do I reschedule?",

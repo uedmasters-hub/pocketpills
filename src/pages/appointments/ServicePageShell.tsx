@@ -16,7 +16,7 @@ export function ServicePageShell({
   backTo?: string;
   backLabel?: string;
   children: ReactNode;
-  aside: ReactNode;
+  aside?: ReactNode;
 }) {
   const { tx } = useI18n();
   const nav = useNavigate();
@@ -26,14 +26,21 @@ export function ServicePageShell({
       <button
         type="button"
         onClick={() => nav(backTo)}
+        aria-label={backLabel ?? tx("Back")}
         className="text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
       >
         ‹ {backLabel ?? tx("Back")}
       </button>
 
-      <div className="mt-4 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
+      <div
+        className={
+          aside
+            ? "mt-4 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] lg:gap-x-8 xl:gap-x-10"
+            : "mt-4"
+        }
+      >
         <div className="min-w-0">{children}</div>
-        <aside className="h-fit lg:sticky lg:top-28">{aside}</aside>
+        {aside ? <aside className="h-fit lg:sticky lg:top-28">{aside}</aside> : null}
       </div>
     </div>
   );

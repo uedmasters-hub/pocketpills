@@ -5,16 +5,15 @@ import { pendingRows, profileChecklist } from "@/lib/profile";
 import { useRightRail } from "@/lib/rightRail";
 import { useI18n } from "@/lib/i18n";
 import { Caret } from "@/components/ui";
+import { PageSearchField } from "@/components/PageSearchField";
+import { DetailMeta, DetailSection } from "@/components/DetailSection";
 import {
-  getOrders,
   statusMeta,
   transferStatusLabel,
-  transferStepIndex,
-  TRANSFER_TRACK_STEPS,
   labStatusLabel,
-  labStepIndex,
-  LAB_TRACK_STEPS,
   typeMeta,
+  mergeActiveOrders,
+  normalizeLiveSlot,
   type Order,
 } from "@/lib/orders";
 import {
@@ -22,20 +21,150 @@ import {
   labBookingIsPast,
   type LabBooking,
 } from "@/lib/labs";
-import { formatFee } from "@/lib/appointments";
+import { careEventHref } from "@/lib/careJourney";
+import { fieldsMatchQuery } from "@/lib/searchMatch";
 
-function isActiveOrder(o: Order) {
-  return o.status !== "delivered" && o.status !== "cancelled";
+const LIVE_SEARCH_AFTER = 7;
+
+type LiveKind = "pharmacy" | "labs" | "transfer";
+
+type LiveRow = {
+  id: string;
+  kind: LiveKind;
+  title: string;
+  sub?: string;
+  cue: string;
+  accent: string;
+  hay: string;
+  href: string;
+};
+
+function liveLabKey(name: string, slot: string) {
+  return `lab|${name.toLowerCase()}|${normalizeLiveSlot(slot)}`;
 }
 
-const FILL_TRACK_STEPS = ["Placed", "Processing", "Out for delivery", "Delivered"] as const;
+function collectLiveRows(): LiveRow[] {
+  const orders = mergeActiveOrders();
+  const coveredLabs = new Set(
+    orders
+      .filter((o) => o.type === "lab")
+      .map((o) => liveLabKey(o.labName || "", o.visitSlot || "")),
+  );
+  const seenLab = new Set<string>();
+  const labs: LabBooking[] = [];
+  for (const b of getLabBookings()) {
+    if (b.status !== "pending" && b.status !== "upcoming") continue;
+    if (labBookingIsPast(b)) continue;
+    const key = liveLabKey(b.labName, `${b.date} ${b.time}`);
+    if (b.orderId || coveredLabs.has(key) || seenLab.has(key)) continue;
+    seenLab.add(key);
+    labs.push(b);
+  }
 
-function fillStepIndex(status: Order["status"]) {
-  if (status === "verifying") return 0;
-  if (status === "processing") return 1;
-  if (status === "out_for_delivery") return 2;
-  if (status === "delivered") return 3;
-  return 0;
+  const orderRows: LiveRow[] = orders.map((o) => {
+    const isTransfer = o.type === "transfer";
+    const isLab = o.type === "lab";
+    const cue = isTransfer
+      ? transferStatusLabel(o.status)
+      : isLab
+        ? labStatusLabel(o.status)
+        : statusMeta[o.status].label;
+    const title = isLab
+      ? (o.labName ?? "Lab visit")
+      : (o.items[0]?.name ?? (isTransfer ? "Prescription transfer" : typeMeta[o.type].label));
+    const href =
+      isLab && o.labBookingId ? careEventHref("lab", o.labBookingId) : `/orders/${o.id}`;
+    return {
+      id: o.id,
+      kind: isLab ? "labs" : isTransfer ? "transfer" : "pharmacy",
+      title,
+      sub: isLab ? o.visitSlot : o.items.length > 1 ? o.items.map((i) => i.name).join(" · ") : undefined,
+      cue,
+      accent: orderAccent(o),
+      href,
+      hay: [title, cue, o.id, o.labName, o.visitSlot, o.fromPharmacy, typeMeta[o.type].label, ...o.items.map((i) => `${i.name} ${i.strength}`)].join(" "),
+    };
+  });
+
+  const labRows: LiveRow[] = labs.map((b) => ({
+    id: b.id,
+    kind: "labs",
+    title: b.labName,
+    sub: `${b.date} · ${b.time}`,
+    cue: "Visit scheduled",
+    accent: "var(--pp-green)",
+    href: careEventHref("lab", b.id),
+    hay: [b.labName, b.itemNames, b.date, b.time, "lab visit", "visit scheduled"].join(" "),
+  }));
+
+  return [...orderRows, ...labRows];
+}
+
+const GROUP_ORDER: LiveKind[] = ["pharmacy", "labs", "transfer"];
+const GROUP_LABEL: Record<LiveKind, string> = {
+  pharmacy: "Pharmacy",
+  labs: "Labs",
+  transfer: "Transfers",
+};
+
+function groupLiveRows(rows: LiveRow[]): { id: LiveKind; label: string; rows: LiveRow[] }[] {
+  return GROUP_ORDER.map((id) => ({
+    id,
+    label: GROUP_LABEL[id],
+    rows: rows.filter((r) => r.kind === id),
+  })).filter((g) => g.rows.length);
+}
+
+function LiveKindTabs({
+  tabs,
+  active,
+  onChange,
+}: {
+  tabs: { id: LiveKind; label: string; count: number }[];
+  active: LiveKind;
+  onChange: (id: LiveKind) => void;
+}) {
+  const { tx } = useI18n();
+  return (
+    <div
+      className="flex items-stretch rounded-full border border-line bg-[color:var(--pp-primary-100)] p-0.5"
+      role="tablist"
+      aria-label={tx("Live order type")}
+    >
+      {tabs.map((t, i) => {
+        const on = t.id === active;
+        return (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            id={`live-tab-${t.id}`}
+            aria-selected={on}
+            aria-controls={`live-panel-${t.id}`}
+            tabIndex={on ? 0 : -1}
+            onClick={() => onChange(t.id)}
+            onKeyDown={(e) => {
+              if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+              e.preventDefault();
+              const next = e.key === "ArrowRight" ? (i + 1) % tabs.length : (i - 1 + tabs.length) % tabs.length;
+              onChange(tabs[next].id);
+            }}
+            className={
+              "flex min-w-0 flex-1 items-center justify-center rounded-full p-2.5 text-[11px] font-semibold leading-none transition-colors " +
+              (on
+                ? "bg-[color:var(--pp-primary-950)] text-white"
+                : "text-ink-tertiary hover:bg-white/70 hover:text-[color:var(--pp-primary-950)]")
+            }
+          >
+            <span className="block truncate">
+              {tx(t.label)}{" "}
+              <span className={"tnum " + (on ? "text-white/75" : "")}>{t.count}</span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function orderAccent(o: Order) {
@@ -45,96 +174,40 @@ function orderAccent(o: Order) {
   return "var(--pp-primary-950)";
 }
 
-function TrackSegments({
-  steps,
-  step,
-  accent,
+function LiveRowButton({
+  row,
+  onClick,
 }: {
-  steps: readonly string[];
-  step: number;
-  accent: string;
+  row: LiveRow;
+  onClick: () => void;
 }) {
-  return (
-    <ol className="mt-2.5 flex gap-1" aria-hidden>
-      {steps.map((label, i) => (
-        <li key={label} className="min-w-0 flex-1">
-          <span
-            className="block h-1 rounded-full"
-            style={{
-              background: i <= step ? accent : "var(--pp-primary-300)",
-            }}
-          />
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-function LiveOrderCard({ o, onClick }: { o: Order; onClick: () => void }) {
   const { tx } = useI18n();
-  const isTransfer = o.type === "transfer";
-  const isLab = o.type === "lab";
-  const accent = orderAccent(o);
-  const steps = isTransfer ? TRANSFER_TRACK_STEPS : isLab ? LAB_TRACK_STEPS : FILL_TRACK_STEPS;
-  const step = isTransfer
-    ? transferStepIndex(o.status)
-    : isLab
-      ? labStepIndex(o.status)
-      : fillStepIndex(o.status);
-  const cue = isTransfer
-    ? transferStatusLabel(o.status)
-    : isLab
-      ? labStatusLabel(o.status)
-      : statusMeta[o.status].label;
-  const title = isLab
-    ? (o.labName ?? tx("Lab visit"))
-    : (o.items[0]?.name ?? (isTransfer ? tx("Prescription transfer") : tx(typeMeta[o.type].label)));
-
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-2xl border border-line bg-white px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
+      className="flex w-full items-start gap-3 px-5 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
     >
-      <span className="flex items-center justify-between gap-2">
-        <span className="truncate text-sm font-medium text-[color:var(--pp-primary-950)]">{title}</span>
-        <span className="shrink-0 text-ink-tertiary" aria-hidden>
-          ›
+      <span className="min-w-0 flex-1">
+        <span className="flex items-start justify-between gap-2">
+          <span className="min-w-0 text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx(row.title)}</span>
+          <span className="shrink-0 text-lg leading-none text-ink-tertiary" aria-hidden>
+            ›
+          </span>
         </span>
-      </span>
-
-      {isLab && o.visitSlot ? (
-        <span className="mt-1 block truncate text-xs text-ink-tertiary">{o.visitSlot}</span>
-      ) : null}
-
-      <TrackSegments steps={steps} step={step} accent={accent} />
-
-      <span className="mt-2 block text-xs font-medium" style={{ color: accent }}>
-        {tx(cue)}
-      </span>
-    </button>
-  );
-}
-
-function UpcomingLabCard({ b, onClick }: { b: LabBooking; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full rounded-2xl border border-line bg-white px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
-    >
-      <span className="flex items-center justify-between gap-2">
-        <span className="truncate text-sm font-medium text-[color:var(--pp-primary-950)]">{b.labName}</span>
-        <span className="shrink-0 text-ink-tertiary" aria-hidden>
-          ›
+        {row.sub ? (
+          <span className="mt-0.5 block text-sm leading-snug text-ink-tertiary">{row.sub}</span>
+        ) : null}
+        <span
+          className="mt-1.5 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-2xs font-semibold"
+          style={{
+            color: row.accent,
+            background: `color-mix(in srgb, ${row.accent} 12%, white)`,
+          }}
+        >
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: row.accent }} aria-hidden />
+          {tx("Live")} · {tx(row.cue)}
         </span>
-      </span>
-      <span className="mt-1 block truncate text-xs text-ink-tertiary">{b.itemNames}</span>
-      <span className="mt-2 flex items-center justify-between gap-2 text-xs">
-        <span className="font-medium text-[color:var(--pp-green)]">
-          {b.date} · {b.time}
-        </span>
-        <span className="text-ink-tertiary tnum">{formatFee(b.fee)}</span>
       </span>
     </button>
   );
@@ -144,16 +217,23 @@ function ActivityBody() {
   const { tx } = useI18n();
   const nav = useNavigate();
   const { user } = useUser();
+  const [liveQuery, setLiveQuery] = useState("");
+  const [liveTab, setLiveTab] = useState<LiveKind | null>(null);
   const pending = pendingRows(user);
   const required = profileChecklist(user).filter((r) => r.required);
   const profileDone = required.filter((r) => r.done).length;
   const profileTotal = required.length;
-  const active = getOrders().filter(isActiveOrder);
-  /** Prefer order-backed labs in Live orders; show hub bookings without an order here too. */
-  const upcomingLabs = getLabBookings().filter(
-    (b) => b.status === "upcoming" && !labBookingIsPast(b) && !b.orderId,
-  );
-  const empty = pending.length === 0 && active.length === 0 && upcomingLabs.length === 0;
+  const live = collectLiveRows();
+  const groups = groupLiveRows(live);
+  const tabs = groups.map((g) => ({ id: g.id, label: g.label, count: g.rows.length }));
+  const activeTab =
+    liveTab && groups.some((g) => g.id === liveTab) ? liveTab : (groups[0]?.id ?? "pharmacy");
+  const tabRows = live.filter((row) => row.kind === activeTab);
+  const showLiveSearch = tabRows.length > LIVE_SEARCH_AFTER || Boolean(liveQuery.trim());
+  const visibleLive = liveQuery.trim()
+    ? tabRows.filter((row) => fieldsMatchQuery([row.hay], liveQuery))
+    : tabRows;
+  const empty = pending.length === 0 && live.length === 0;
   const progress = profileTotal > 0 ? profileDone / profileTotal : 1;
 
   if (empty) {
@@ -168,44 +248,39 @@ function ActivityBody() {
   return (
     <div className="space-y-5">
       {pending.length > 0 && (
-        <section className="overflow-hidden rounded-2xl border border-line bg-white">
-          <div className="border-b border-line px-4 py-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">
-                  {tx("Complete your profile")}
-                </p>
-                <p className="mt-0.5 text-xs text-ink-tertiary">
-                  {profileDone} {tx("of")} {profileTotal} {tx("done")} · {pending.length} {tx("left")}
-                </p>
-              </div>
-              <span
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-2xs font-medium text-[color:var(--pp-primary-950)]"
-                style={{
-                  background: `conic-gradient(var(--pp-primary-950) ${progress * 360}deg, var(--pp-primary-300) 0)`,
-                }}
-                aria-hidden
-              >
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-white">
-                  {Math.round(progress * 100)}%
-                </span>
+        <DetailSection
+          title={tx("Complete your profile")}
+          lede={`${profileDone} ${tx("of")} ${profileTotal} ${tx("done")} · ${pending.length} ${tx("left")}`}
+          meta={
+            <span
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-2xs font-medium text-[color:var(--pp-primary-950)]"
+              style={{
+                background: `conic-gradient(var(--pp-primary-950) ${progress * 360}deg, var(--pp-primary-300) 0)`,
+              }}
+              aria-hidden
+            >
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-white">
+                {Math.round(progress * 100)}%
               </span>
-            </div>
-            <div className="mt-3 h-1 overflow-hidden rounded-full bg-[color:var(--pp-primary-200)]">
+            </span>
+          }
+          flush
+        >
+          <div className="border-b border-line px-5 py-3">
+            <div className="h-1 overflow-hidden rounded-full bg-[color:var(--pp-primary-200)]">
               <div
                 className="h-full rounded-full bg-[color:var(--pp-primary-950)] transition-[width] duration-300"
                 style={{ width: `${progress * 100}%` }}
               />
             </div>
           </div>
-
           <ul>
             {pending.map((r, i) => (
               <li key={r.id} className={i > 0 ? "border-t border-line" : undefined}>
                 <button
                   type="button"
                   onClick={() => nav(`/profile/${r.id}`)}
-                  className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
+                  className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
                 >
                   <span
                     className="grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 border-[#B4541F]/60"
@@ -221,29 +296,58 @@ function ActivityBody() {
               </li>
             ))}
           </ul>
-        </section>
+        </DetailSection>
       )}
 
-      {(active.length > 0 || upcomingLabs.length > 0) && (
-        <section>
-          <p className="pp-caps mb-3 text-[color:var(--pp-violet)]">{tx("Live orders")}</p>
-          <div className="space-y-3">
-            {active.map((o) => (
-              <LiveOrderCard
-                key={o.id}
-                o={o}
-                onClick={() => nav(o.type === "lab" ? `/orders/${o.id}` : `/orders/${o.id}`)}
+      {live.length > 0 && (
+        <DetailSection
+          title={tx("Live orders")}
+          meta={
+            <DetailMeta>
+              {live.length} {tx("live")}
+            </DetailMeta>
+          }
+          flush
+        >
+          {tabs.length > 1 ? (
+            <div className="border-b border-line px-5 py-3">
+              <LiveKindTabs
+                tabs={tabs}
+                active={activeTab}
+                onChange={(id) => {
+                  setLiveTab(id);
+                  setLiveQuery("");
+                }}
               />
-            ))}
-            {upcomingLabs.map((b) => (
-              <UpcomingLabCard
-                key={b.id}
-                b={b}
-                onClick={() => nav("/appointments")}
-              />
-            ))}
-          </div>
-        </section>
+            </div>
+          ) : null}
+          {showLiveSearch ? (
+            <div className="border-b border-line px-5 py-3">
+              <PageSearchField scope="orders" value={liveQuery} onChange={setLiveQuery} />
+            </div>
+          ) : null}
+          {visibleLive.length === 0 ? (
+            <p className="px-5 py-5 text-sm text-ink-tertiary">{tx("No matching live orders.")}</p>
+          ) : (
+            <ul
+              id={`live-panel-${activeTab}`}
+              role="tabpanel"
+              aria-labelledby={tabs.length > 1 ? `live-tab-${activeTab}` : undefined}
+              className={
+                "divide-y divide-line " +
+                (visibleLive.length > LIVE_SEARCH_AFTER
+                  ? "max-h-[min(28rem,calc(100vh-16rem))] overflow-y-auto"
+                  : "")
+              }
+            >
+              {visibleLive.map((row) => (
+                <li key={row.id}>
+                  <LiveRowButton row={row} onClick={() => nav(row.href)} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </DetailSection>
       )}
     </div>
   );
@@ -254,9 +358,7 @@ export function MobileActivity() {
   const { tx } = useI18n();
   const { user } = useUser();
   const pending = pendingRows(user).length;
-  const live =
-    getOrders().filter(isActiveOrder).length +
-    getLabBookings().filter((b) => b.status === "upcoming" && !labBookingIsPast(b) && !b.orderId).length;
+  const live = collectLiveRows().length;
   const total = pending + live;
   const [open, setOpen] = useState(false);
 

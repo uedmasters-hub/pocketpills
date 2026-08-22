@@ -9,6 +9,7 @@ import { ReviewsPanel } from "@/components/reviews/ReviewsPanel";
 import { useI18n } from "@/lib/i18n";
 import type { ReviewSummary } from "@/lib/reviewsApi";
 import { VENDOR_TYPE_LABELS, specialisedInFromListing } from "@/lib/businessProfile";
+import { listingForHub } from "@/lib/listingOverlay";
 import { defaultFacilitySpecialised } from "@/lib/specialisedIn";
 import { SpecialisedInSection } from "@/components/SpecialisedIn";
 import {
@@ -31,11 +32,14 @@ import { normalizeHfCode } from "@/lib/hfApi";
 import {
   displayFacilityLevel,
   displayFacilityName,
+  FACILITY_HERO_USPS,
   facilityHours,
+  facilityRegistrySubtitle,
   formatNepalMobile,
   getFacilityClaim,
   getVerifiedFacility,
   hfCodeFromId,
+  hfProfileId,
   sameHf,
   vendorFromFacilityLevel,
 } from "@/lib/facilityDirectory";
@@ -99,7 +103,7 @@ export function FacilityPublic() {
           ) : (
             <LiveFacilityCta
               hours={facilityHours()}
-              onBook={() => nav("/appointments")}
+              onBook={() => nav(`/appointments/provider/${hfProfileId(n)}/services`)}
             />
           )
         }
@@ -213,19 +217,21 @@ function FacilityProfile({
   const { tx } = useI18n();
   const entering = useEnterSkeleton(hfCode);
   const [reviewSummary, setReviewSummary] = useState<ReviewSummary | null>(null);
+  const listing = listingForHub(`hf-${hfCode}`, ownerId);
+  const displayName = listing?.name || name;
   const kind = displayFacilityLevel(facilityLevel);
   const vendor = vendorFromFacilityLevel(facilityLevel);
-  const hours = facilityHours();
+  const hours = listing?.hours || facilityHours();
   const typeLabel = tx(VENDOR_TYPE_LABELS[vendor]);
   const bio = tx("{name} is a registered {kind} in {place}.")
-    .replace("{name}", name)
+    .replace("{name}", displayName)
     .replace("{kind}", kind || typeLabel.toLowerCase())
     .replace("{place}", district);
-  const about = live
+  const about = listing?.about || (live
     ? tx("{name} claimed this health-facility profile and can receive patients through PocketPills.")
-        .replace("{name}", name)
+        .replace("{name}", displayName)
     : tx("{name}’s facility record is pre-filled from the health-facility registry. Claim it to publish this card.")
-        .replace("{name}", name);
+        .replace("{name}", displayName));
   const services = live
     ? [tx("Outpatient consults"), tx("Diagnostics"), tx("Follow-up care")]
     : [tx("Outpatient consults"), tx("Follow-up care")];
@@ -278,18 +284,12 @@ function FacilityProfile({
       backTo={backTo}
       backLabel={backLabel}
       eyebrow={typeLabel}
-      name={name}
-      subtitle={[kind && kind.toLowerCase() !== typeLabel.toLowerCase() ? kind : null, `HF #${hfCode}`]
-        .filter(Boolean)
-        .join(" • ")}
+      name={displayName}
+      subtitle={facilityRegistrySubtitle(kind, typeLabel, hfCode)}
       bio={bio}
       about={about}
       imageUrl={PHOTO}
-      usps={[
-        { label: tx("Verified Doctors") },
-        { label: tx("Digital Prescription") },
-        { label: tx("Free Followup") },
-      ]}
+      usps={FACILITY_HERO_USPS.map((label) => ({ label: tx(label) }))}
       leadingBadges={
         reviewSummary == null ? (
           <RatingChipSkeleton variant="badge" />
@@ -325,7 +325,7 @@ function FacilityProfile({
           <ReviewsPanel
             kind="facility"
             subjectId={hfCode}
-            listingName={name}
+            listingName={displayName}
             canWrite={live}
             owned={owned}
             onSummary={setReviewSummary}
@@ -335,19 +335,20 @@ function FacilityProfile({
       }
       afterReviews={
         clinic ? (
-          <>
-            <ClinicProfileAfterReviews clinic={clinic} />
-            <ClinicRelatedSection clinic={clinic} />
-          </>
+          <ClinicProfileAfterReviews clinic={clinic} />
         ) : hospital ? (
-          <>
-            <HospitalProfileAfterReviews hospital={hospital} />
-            <HospitalRelatedSection hospital={hospital} />
-          </>
+          <HospitalProfileAfterReviews hospital={hospital} />
+        ) : null
+      }
+      afterPage={
+        clinic ? (
+          <ClinicRelatedSection clinic={clinic} />
+        ) : hospital ? (
+          <HospitalRelatedSection hospital={hospital} />
         ) : null
       }
     >
-      {specialisedIn.length ? (
+      {clinic && specialisedIn.length ? (
         <SpecialisedInSection groups={specialisedIn} variant="facility" />
       ) : null}
       {clinic ? (

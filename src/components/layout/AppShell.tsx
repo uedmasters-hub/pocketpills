@@ -224,9 +224,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { tx } = useI18n();
   const chromeHidden = useChromeVisibility();
   const { review } = useRightRail();
-  const isBookFlow = pathname.startsWith("/appointments/book");
   const isMedOrder = /^\/drug\/[^/]+\/order/.test(pathname);
-  const splitJourney = isBookFlow || isMedOrder;
+  const splitJourney = isMedOrder;
   const focusedFlow = isFocusedPatientFlow(pathname) || splitJourney;
   /* PDP / focused browse pages own a sticky right column — Activity would collide. */
   const isDrugDetail = /^\/drug\/[^/]+$/.test(pathname);
@@ -260,13 +259,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       <AnnouncementBar />
       <SiteHeader />
       {splitJourney ? (
-        <div className={`${FRAME} pb-16 pt-8`}>
+        <div className={`${FRAME} pb-10 pt-8`}>
           <main id="main" key={pathname} tabIndex={-1} className={`${SURFACE} min-w-0 animate-fade-up`}>
             {children}
           </main>
         </div>
       ) : (
-        <div className="mx-auto flex w-full max-w-[105rem] flex-col gap-8 px-5 pb-28 pt-8 md:px-8 lg:flex-row lg:items-start lg:pb-16 xl:px-20">
+        <div className="mx-auto flex w-full max-w-[105rem] flex-col gap-8 px-5 pb-28 pt-8 md:px-8 lg:flex-row lg:items-start lg:pb-10 xl:px-20">
           {focusedFlow ? <div className="hidden w-60 shrink-0 lg:block" aria-hidden /> : <Sidebar />}
 
           <div className="flex min-w-0 w-full flex-1 flex-col gap-8">

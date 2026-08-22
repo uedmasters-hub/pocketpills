@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { DetailSection } from "@/components/DetailSection";
 import { RatingStars } from "@/components/reviews/RatingChip";
 import { ReviewsPanelSkeleton } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
@@ -152,7 +153,7 @@ export function ReviewsPanel({
     ) : null;
 
   const sortAndWrite = (
-    <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
       {hasReviews ? (
         <label className="inline-flex items-center gap-2.5 text-sm text-ink-tertiary">
           {tx("Sort by:")}
@@ -180,22 +181,20 @@ export function ReviewsPanel({
       ) : (
         <span />
       )}
-      {writeCta}
     </div>
   );
 
   return (
-    <section className="min-w-0">
-      <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{tx("Patient reviews")}</h2>
+    <DetailSection title={tx("Patient reviews")} meta={writeCta}>
 
       {busy && !hasReviews && !mine ? (
-        <div className="mt-5">
+        <div>
           <ReviewsPanelSkeleton heading={false} label={tx("Loading reviews")} />
         </div>
       ) : null}
 
       {hasReviews ? (
-        <div className="mt-5 flex flex-wrap items-start gap-x-8 gap-y-5">
+        <div className="flex flex-wrap items-start gap-x-8 gap-y-5">
           <div className="inline-flex items-center gap-5 rounded-[1.5rem] border border-line bg-white px-5 py-4">
             <div className="shrink-0">
               <p className="font-display text-[1.75rem] font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
@@ -236,7 +235,7 @@ export function ReviewsPanel({
           ) : null}
         </div>
       ) : topics?.length && !busy ? (
-        <div className="mt-5">
+        <div>
           <ReviewTopicPills topics={topics} tx={tx} />
         </div>
       ) : null}
@@ -397,7 +396,7 @@ export function ReviewsPanel({
           </button>
         </div>
       )}
-    </section>
+    </DetailSection>
   );
 }
 

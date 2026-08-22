@@ -303,12 +303,8 @@ function PharmacyProfile({
           />
         ) : undefined
       }
-      afterReviews={
-        <>
-          <PharmacyProfileAfterReviews pharmacy={pharmacy} />
-          <PharmacyRelatedSection pharmacy={pharmacy} />
-        </>
-      }
+      afterReviews={<PharmacyProfileAfterReviews pharmacy={pharmacy} />}
+      afterPage={<PharmacyRelatedSection pharmacy={pharmacy} />}
     >
       <PharmacyProfileMid pharmacy={pharmacy} />
     </DirectoryDetailLayout>

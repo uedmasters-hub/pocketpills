@@ -9,6 +9,7 @@ import {
   type SpecialtyId,
 } from "@/lib/appointments";
 import type { SpecialisedGroup } from "@/lib/specialisedIn";
+import { DetailSection, DetailMeta } from "@/components/DetailSection";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { RecentArticlesSection } from "@/components/RecentArticles";
 import { getDoctorClaim } from "@/lib/doctorDirectory";
@@ -28,22 +29,12 @@ import {
 } from "@/lib/doctorProfileContent";
 import { useReviewSummaries } from "@/lib/useReviewSummaries";
 import type { ReviewSummary } from "@/lib/reviewsApi";
+import { listingSectionEnabled } from "@/lib/listingPage";
+import { listingFaqsFor, listingForHub, listingShows } from "@/lib/listingOverlay";
 
-const CARD = "rounded-2xl border border-line bg-white p-4";
-const H2 = "font-display text-xl font-medium text-[color:var(--pp-primary-950)]";
-const LEDE = "mt-1 text-sm text-ink-tertiary";
+const CARD = "rounded-xl border border-line bg-[color:var(--pp-primary-100)] p-4";
 const TAG =
   "inline-flex items-center rounded-full border border-line bg-white px-3 py-1.5 text-sm text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]";
-
-function SectionHead({ title, lede }: { title: string; lede?: string }) {
-  const { tx } = useI18n();
-  return (
-    <>
-      <h2 className={H2}>{tx(title)}</h2>
-      {lede ? <p className={LEDE}>{tx(lede)}</p> : null}
-    </>
-  );
-}
 
 export function DoctorConditionsSection({
   provider,
@@ -58,12 +49,11 @@ export function DoctorConditionsSection({
   if (!conditions.length && !services.length) return null;
 
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead
-        title="Conditions & treatments"
-        lede="What this specialty typically covers on PocketPills, plus consult types listed on the profile."
-      />
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+    <DetailSection
+      title={tx("Conditions & treatments")}
+      lede={tx("What this specialty typically covers on PocketPills, plus consult types listed on the profile.")}
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
         {conditions.length ? (
           <div className={CARD}>
             <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
@@ -96,7 +86,7 @@ export function DoctorConditionsSection({
           </div>
         ) : null}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -106,12 +96,11 @@ export function DoctorExperienceSection({ provider }: { provider: CareProvider }
   if (!data) return null;
 
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead
-        title="Experience & education"
-        lede="Professional history taken from this listing and registry record."
-      />
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+    <DetailSection
+      title={tx("Experience & education")}
+      lede={tx("Professional history taken from this listing and registry record.")}
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
         {data.jobs.length ? (
           <div className={CARD + " sm:col-span-2"}>
             <p className="text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
@@ -156,7 +145,7 @@ export function DoctorExperienceSection({ provider }: { provider: CareProvider }
           </div>
         ) : null}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -174,12 +163,11 @@ export function DoctorPracticeSection({
   if (!cards.length) return null;
 
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead
-        title="Practice locations"
-        lede="Where this doctor currently sees patients, as listed on PocketPills."
-      />
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+    <DetailSection
+      title={tx("Practice locations")}
+      lede={tx("Where this doctor currently sees patients, as listed on PocketPills.")}
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
         {cards.map((loc) => {
           const qs = specialtyId ? `?specialty=${encodeURIComponent(specialtyId)}` : "";
           const href = loc.href.includes("?") ? loc.href : loc.href + qs;
@@ -202,7 +190,7 @@ export function DoctorPracticeSection({
           );
         })}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -213,13 +201,16 @@ export function DoctorFaqSection({
   provider: CareProvider;
   specialisedIn: SpecialisedGroup[];
 }) {
-  const items = doctorFaqs(provider, doctorConditions(provider), specialisedIn);
-  return <FaqAccordion items={items} />;
+  const listing = listingForHub(provider.id);
+  if (listing && !listingSectionEnabled(listing.pageSections, "faq")) return null;
+  const items = listingFaqsFor(provider.id, doctorFaqs(provider, doctorConditions(provider), specialisedIn));
+  return items.length ? <FaqAccordion items={items} /> : null;
 }
 
 export function DoctorArticlesSection({ provider }: { provider: CareProvider }) {
   const nmc = nmcNumberOf(provider);
   const ownerId = ownerIdForListing(provider.id, nmc ? getDoctorClaim(nmc)?.providerId : undefined);
+  if (listingForHub(provider.id, ownerId) && !listingShows(provider.id, "publications", ownerId)) return null;
   const owned = ownerId ? publicationsForOwner(ownerId) : [];
   if (!owned.length) return null;
   return (
@@ -287,9 +278,8 @@ export function DoctorHighlightsSection({
   if (!facts.length) return null;
 
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <h2 className={H2}>{tx("Specialised in")}</h2>
-      <div className="mt-4 flex flex-wrap items-center gap-4">
+    <DetailSection title={tx("Specialised in")}>
+      <div className="flex flex-wrap items-center gap-4">
         {facts.map((fact) => (
           <div
             key={fact.key}
@@ -302,7 +292,7 @@ export function DoctorHighlightsSection({
           </div>
         ))}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -323,24 +313,28 @@ export function DoctorSpecialisationsGrid({
   const shown = expanded || extra === 0 ? tiles : tiles.slice(0, visibleCap);
 
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className={H2}>{tx("Specialisations")}</h2>
-        {extra > 0 && !expanded ? (
+    <DetailSection
+      title={tx("Specialisations")}
+      meta={
+        extra > 0 && !expanded ? (
           <button
             type="button"
             onClick={() => setExpanded(true)}
             className="text-sm text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
+            aria-expanded={false}
           >
             {extra} {tx("more")}
           </button>
-        ) : null}
-      </div>
-      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        ) : extra > 0 ? (
+          <DetailMeta>{tx("All shown")}</DetailMeta>
+        ) : undefined
+      }
+    >
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {shown.map((tile) => (
           <div
             key={tile.id}
-            className="flex flex-col items-center justify-center rounded-2xl bg-white px-3 py-6 text-center"
+            className="flex flex-col items-center justify-center rounded-xl border border-line bg-[color:var(--pp-primary-100)] px-3 py-6 text-center"
           >
             <img src={tile.imageUrl} alt="" className="h-16 w-16 object-contain" />
             <p className="mt-3 text-sm font-medium text-[color:var(--pp-primary-950)]">{tx(tile.label)}</p>
@@ -350,7 +344,8 @@ export function DoctorSpecialisationsGrid({
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="flex flex-col items-center justify-center rounded-2xl bg-white px-3 py-6 text-center"
+            aria-label={tx("View all specialisations")}
+            className="flex flex-col items-center justify-center rounded-xl border border-line bg-[color:var(--pp-primary-100)] px-3 py-6 text-center"
           >
             <span className="grid h-12 w-12 place-items-center rounded-full bg-[color:var(--pp-primary-200)] text-2xl font-medium leading-none text-[color:var(--pp-primary-950)]">
               +
@@ -360,14 +355,13 @@ export function DoctorSpecialisationsGrid({
           </button>
         ) : null}
       </div>
-    </section>
+    </DetailSection>
   );
 }
 
 export function DoctorRelatedSection({ provider }: { provider: CareProvider }) {
   const { tx } = useI18n();
   const specialtyKey = provider.specialties.join(",");
-  const affiliateKey = (provider.affiliatedFacilityIds ?? []).join(",");
   const doctors = useMemo(() => {
     return listProviders()
       .filter(
@@ -378,57 +372,33 @@ export function DoctorRelatedSection({ provider }: { provider: CareProvider }) {
       )
       .slice(0, 4);
   }, [provider.id, specialtyKey]);
-  const facilities = useMemo(() => {
-    return listProviders()
-      .filter(
-        (p) =>
-          p.kind !== "doctor" &&
-          (p.city === provider.city || (provider.affiliatedFacilityIds ?? []).includes(p.id)),
-      )
-      .slice(0, 4);
-  }, [provider.city, affiliateKey]);
   const doctorIds = useMemo(
     () => doctors.map((d) => nmcNumberOf(d) || d.id.replace(/^nmc-/, "")),
     [doctors],
   );
   const { map: ratings } = useReviewSummaries("doctor", doctorIds);
 
-  if (!doctors.length && !facilities.length) return null;
+  if (!doctors.length) return null;
 
   return (
-    <section className="min-w-0 scroll-mt-28">
-      <SectionHead
-        title="Related doctors & healthcare facilities"
-        lede="Similar clinicians and nearby facilities already listed on PocketPills."
-      />
-      {doctors.length ? (
-        <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {doctors.map((d) => {
-            const id = nmcNumberOf(d) || d.id.replace(/^nmc-/, "");
-            const summary = ratings[id];
-            return (
-              <DoctorRelatedCard
-                key={d.id}
-                item={d}
-                summary={summary}
-              />
-            );
-          })}
-        </div>
-      ) : null}
-      {facilities.length ? (
-        <>
-          <p className="mt-6 text-2xs font-semibold uppercase tracking-wide text-ink-tertiary">
-            {tx("Related hospitals & clinics")}
-          </p>
-          <div className="mt-2 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {facilities.map((f) => (
-              <DoctorRelatedCard key={f.id} item={f} />
-            ))}
-          </div>
-        </>
-      ) : null}
-    </section>
+    <DetailSection
+      title={tx("Related doctors")}
+      lede={tx("Similar clinicians already listed on PocketPills.")}
+    >
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {doctors.map((d) => {
+          const id = nmcNumberOf(d) || d.id.replace(/^nmc-/, "");
+          const summary = ratings[id];
+          return (
+            <DoctorRelatedCard
+              key={d.id}
+              item={d}
+              summary={summary}
+            />
+          );
+        })}
+      </div>
+    </DetailSection>
   );
 }
 
@@ -437,9 +407,11 @@ const STAR_PATH = "M12 3.6 14.6 9l6 .9-4.3 4.2 1 5.9L12 17.3 6.7 20l1-5.9L3.4 9.
 export function DoctorRelatedCard({
   item,
   summary,
+  to,
 }: {
   item: CareProvider;
   summary?: ReviewSummary | null;
+  to?: string;
 }) {
   const { tx } = useI18n();
   const nmc = item.kind === "doctor" ? nmcNumberOf(item) : null;
@@ -453,7 +425,7 @@ export function DoctorRelatedCard({
 
   return (
     <Link
-      to={providerProfileHref(item)}
+      to={to ?? providerProfileHref(item)}
       className="relative flex h-[11.25rem] w-full overflow-hidden rounded-2xl border border-line bg-white"
     >
       <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between px-5 py-5 pr-6">

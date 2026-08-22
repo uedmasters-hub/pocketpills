@@ -1,14 +1,18 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { DetailMeta, DetailSection } from "@/components/DetailSection";
 import { useI18n } from "@/lib/i18n";
 import { formatFee } from "@/lib/appointments";
-import { TIME_OPTIONS } from "@/lib/timeSlots";
+import { ListingPageEditor } from "@/components/ListingPageEditor";
+import { ListingSectionPreview } from "@/components/ListingSectionPreview";
 import {
   SERVICE_PRESETS,
   VENDOR_TYPE_LABELS,
   OFFERING_KIND_LABELS,
   hubPathForProfile,
+  ingestRemoteDraft,
+  cachePublishedListing,
   listingNameFromProvider,
   loadDraftForProvider,
   newBusinessOffering,
@@ -16,40 +20,29 @@ import {
   servicesForHub,
   publishBusinessProfile,
   saveDraft,
-  summarizeSchedule,
   unpublishBusinessProfile,
-  newListingPublication,
-  PUBLICATION_KIND_LABELS,
-  MAX_LISTING_PUBLICATIONS,
   type BusinessCapabilities,
-  type BusinessDaySchedule,
   type BusinessProfile,
   type BusinessService,
-  type ListingPublicationKind,
 } from "@/lib/businessProfile";
+import { listingSection, LISTING_SECTION_LABELS, type ListingSection, type ListingSectionKind } from "@/lib/listingPage";
+import { apiLoadListing } from "@/lib/listingApi";
 import { useProvider } from "@/lib/providerAuth";
 import { nmcNumberFromId, setDoctorPublished } from "@/lib/doctorDirectory";
 import { hfCodeFromId, setFacilityPublished } from "@/lib/facilityDirectory";
 import { specialisedVariantForVendor } from "@/lib/specialisedIn";
-import { SpecialisedInEditor, SpecialisedInSection } from "@/components/SpecialisedIn";
+import { SpecialisedInSection } from "@/components/SpecialisedIn";
 
 const FIELD =
   "h-12 w-full rounded-xl border border-line bg-white px-4 text-sm text-[color:var(--pp-primary-950)] placeholder:text-ink-tertiary outline-none focus:border-[color:var(--pp-primary-950)]";
-const AREA =
-  "w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-[color:var(--pp-primary-950)] placeholder:text-ink-tertiary outline-none focus:border-[color:var(--pp-primary-950)]";
 const LABEL = "mb-1.5 block text-sm font-medium text-ink-secondary";
-const SELECT =
-  FIELD +
-  " appearance-none bg-[length:0.9rem] bg-[right_1rem_center] bg-no-repeat pr-10";
-const SELECT_CHEVRON = {
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234e2a84'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
-} as const;
 
 const STEPS = [
   { key: "essentials", title: "Essentials" },
   { key: "contact", title: "Contact & location" },
   { key: "practice", title: "Practice & services" },
   { key: "hours", title: "Hours & listing" },
+  { key: "page", title: "Public page" },
 ] as const;
 
 type PreviewMode = "card" | "page";
@@ -76,6 +69,18 @@ export function BusinessProfile() {
     } else if (draft.name.trim() && draft.name.trim() !== provider.orgName.trim()) {
       updateProvider({ orgName: draft.name.trim() });
     }
+    void apiLoadListing(provider.id).then((row) => {
+      if (row?.published) cachePublishedListing(row.published);
+      if (!row?.draft) return;
+      const remote = ingestRemoteDraft(provider.id, row.draft);
+      if (!remote) return;
+      setProfile((current) => {
+        if (!current) return remote;
+        const localTs = Date.parse(current.updatedAt) || 0;
+        const remoteTs = Date.parse(remote.updatedAt) || 0;
+        return remoteTs >= localTs ? remote : current;
+      });
+    });
   }, [provider?.id]);
 
   useEffect(() => {
@@ -114,21 +119,35 @@ export function BusinessProfile() {
     if (partial.phone !== undefined) updateProvider({ phone: partial.phone });
   };
 
+  const listingSectionRow = (kind: ListingSectionKind) =>
+    listingSection(profile.pageSections, kind) ?? {
+      id: kind,
+      kind,
+      title: LISTING_SECTION_LABELS[kind],
+      enabled: true,
+    };
+
+  const listingEnable = (kind: ListingSectionKind) => ({
+    onProfile: patch,
+    onSection: (partial: Partial<ListingSection>) => {
+      const sections = profile.pageSections ?? [];
+      const row = listingSection(sections, kind);
+      if (!row) {
+        patch({
+          pageSections: [...sections, { ...listingSectionRow(kind), ...partial }],
+        });
+        return;
+      }
+      patch({
+        pageSections: sections.map((s) => (s.id === row.id ? { ...s, ...partial } : s)),
+      });
+    },
+  });
+
   const patchCap = (key: keyof BusinessCapabilities, value: boolean) => {
     setProfile((p) =>
       p ? { ...p, capabilities: { ...p.capabilities, [key]: value } } : p,
     );
-    setDirty(true);
-  };
-
-  const patchSchedule = (day: string, partial: Partial<BusinessDaySchedule>) => {
-    setProfile((p) => {
-      if (!p) return p;
-      const schedule = p.schedule.map((row) =>
-        row.day === day ? { ...row, ...partial } : row,
-      );
-      return { ...p, schedule, hours: summarizeSchedule(schedule) };
-    });
     setDirty(true);
   };
 
@@ -251,15 +270,24 @@ export function BusinessProfile() {
 
   const showDoctorBits =
     profile.type === "doctor" || profile.type === "hospital" || profile.type === "clinic";
+  const specialisedVariant = specialisedVariantForVendor(profile.type) ?? "doctor";
   const showLabBits = profile.type === "lab";
   const showIndividualBits =
     profile.type === "individual" || profile.type === "pharmacy" || profile.type === "ambulance";
 
   const presets = SERVICE_PRESETS[profile.type];
 
+  const canvas = step === 4;
+
   return (
     <div className="pb-28 lg:pb-8">
-      <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <div
+        className={
+          canvas
+            ? ""
+            : "grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]"
+        }
+      >
         <div className="min-w-0">
           <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Listing setup")}</p>
 
@@ -300,7 +328,8 @@ export function BusinessProfile() {
 
           <div className="mt-8">
             {step === 0 ? (
-              <div className="space-y-4">
+              <DetailSection title={tx("Essentials")}>
+                <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <BareField label={tx("Registered name")}>
                     <input
@@ -328,11 +357,13 @@ export function BusinessProfile() {
                     placeholder={tx("One-line intro")}
                   />
                 </BareField>
-              </div>
+                </div>
+              </DetailSection>
             ) : null}
 
             {step === 1 ? (
-              <div className="space-y-4">
+              <DetailSection title={tx("Contact & location")}>
+                <div className="space-y-4">
                 <BareField label={tx("Street address")}>
                   <input
                     className={FIELD}
@@ -382,11 +413,14 @@ export function BusinessProfile() {
                     placeholder={tx("Website (optional)")}
                   />
                 </BareField>
-              </div>
+                </div>
+              </DetailSection>
             ) : null}
 
             {step === 2 ? (
               <div className="space-y-6">
+                <DetailSection title={tx("Practice & services")}>
+                <div className="space-y-6">
                 {showDoctorBits ? (
                   <BareField label={tx("Specialty / focus")}>
                     <input
@@ -396,14 +430,6 @@ export function BusinessProfile() {
                       placeholder={tx("Specialty / focus")}
                     />
                   </BareField>
-                ) : null}
-
-                {showDoctorBits ? (
-                  <SpecialisedInEditor
-                    variant={specialisedVariantForVendor(profile.type) ?? "doctor"}
-                    value={profile.specialisedIn}
-                    onChange={(specialisedIn) => patch({ specialisedIn })}
-                  />
                 ) : null}
 
                 <div>
@@ -533,7 +559,7 @@ export function BusinessProfile() {
                   </div>
 
                   {profile.services.filter((s) => s.kind === "service").length > 0 ? (
-                    <ul className="mt-4 overflow-hidden rounded-2xl border border-line bg-white">
+                    <ul className="mt-4 overflow-hidden rounded-xl border border-line bg-[color:var(--pp-primary-100)]">
                       {profile.services
                         .filter((s) => s.kind === "service")
                         .map((s, i) => (
@@ -583,262 +609,106 @@ export function BusinessProfile() {
                     </Link>
                   </p>
                 </div>
+                </div>
+                </DetailSection>
+
+                {showDoctorBits ? (
+                  <SpecialisedInSection
+                    variant={specialisedVariant}
+                    groups={profile.specialisedIn}
+                    onChange={(specialisedIn) => patch({ specialisedIn })}
+                  />
+                ) : null}
               </div>
             ) : null}
 
             {step === 3 ? (
               <div className="space-y-6">
-                <ul className="overflow-hidden rounded-2xl border border-line bg-white">
-                  {profile.schedule.map((row, i) => (
-                    <li
-                      key={row.day}
-                      className={
-                        "flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between " +
-                        (i > 0 ? "border-t border-line" : "")
-                      }
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={row.open}
-                          aria-label={tx(row.day)}
-                          onClick={() => patchSchedule(row.day, { open: !row.open })}
-                          className={
-                            "relative h-7 w-12 shrink-0 rounded-full transition-colors " +
-                            (row.open
-                              ? "bg-[color:var(--pp-primary-950)]"
-                              : "bg-[color:var(--pp-primary-200)]")
-                          }
-                        >
-                          <span
-                            className={
-                              "pointer-events-none absolute top-1 h-5 w-5 rounded-full bg-white transition-all " +
-                              (row.open ? "left-6" : "left-1")
-                            }
-                            aria-hidden
-                          />
-                        </button>
-                        <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">
-                          {tx(row.day)}
-                        </p>
-                      </div>
-                      {row.open ? (
-                        <div className="grid grid-cols-2 gap-2 sm:w-[16rem]">
-                          <select
-                            className={SELECT}
-                            style={SELECT_CHEVRON}
-                            value={row.start}
-                            onChange={(e) => patchSchedule(row.day, { start: e.target.value })}
-                            aria-label={tx("Start")}
-                          >
-                            {TIME_OPTIONS.map((t) => (
-                              <option key={t} value={t}>
-                                {t}
-                              </option>
-                            ))}
-                          </select>
-                          <select
-                            className={SELECT}
-                            style={SELECT_CHEVRON}
-                            value={row.end}
-                            onChange={(e) => patchSchedule(row.day, { end: e.target.value })}
-                            aria-label={tx("End")}
-                          >
-                            {TIME_OPTIONS.map((t) => (
-                              <option key={t} value={t}>
-                                {t}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-ink-tertiary">{tx("Closed")}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-
-                <BareField label={tx("About")}>
-                  <textarea
-                    className={AREA}
-                    rows={4}
-                    value={profile.about}
-                    onChange={(e) => patch({ about: e.target.value })}
-                    placeholder={tx("About (optional)")}
-                  />
-                </BareField>
-
-                <div>
-                  <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">
-                    {tx("Publications")}
-                  </p>
-                  <p className="mt-1 text-sm text-ink-tertiary">
-                    {tx(
-                      "Up to 6 news items, articles, or publications on your public profile. Remove an older one to add a new one.",
-                    )}
-                  </p>
-                  <p className="mt-2 text-2xs font-medium uppercase tracking-wide text-ink-tertiary">
-                    {profile.publications.length} {tx("of")} {MAX_LISTING_PUBLICATIONS}
-                  </p>
-                  <ul className="mt-3 space-y-3">
-                    {profile.publications.map((item) => (
-                      <li key={item.id} className="rounded-2xl border border-line bg-white p-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <select
-                            className={SELECT + " !h-10 w-[9.5rem]"}
-                            style={SELECT_CHEVRON}
-                            value={item.kind}
-                            onChange={(e) =>
-                              patch({
-                                publications: profile.publications.map((p) =>
-                                  p.id === item.id
-                                    ? { ...p, kind: e.target.value as ListingPublicationKind }
-                                    : p,
-                                ),
-                              })
-                            }
-                            aria-label={tx("Type")}
-                          >
-                            {(Object.keys(PUBLICATION_KIND_LABELS) as ListingPublicationKind[]).map((k) => (
-                              <option key={k} value={k}>
-                                {tx(PUBLICATION_KIND_LABELS[k])}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            type="button"
-                            className="ml-auto text-sm text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
-                            onClick={() =>
-                              patch({
-                                publications: profile.publications.filter((p) => p.id !== item.id),
-                              })
-                            }
-                          >
-                            {tx("Remove")}
-                          </button>
-                        </div>
-                        <input
-                          className={FIELD + " mt-3"}
-                          value={item.title}
-                          onChange={(e) =>
-                            patch({
-                              publications: profile.publications.map((p) =>
-                                p.id === item.id ? { ...p, title: e.target.value } : p,
-                              ),
-                            })
-                          }
-                          placeholder={tx("Title")}
-                        />
-                        <textarea
-                          className={AREA + " mt-2"}
-                          rows={2}
-                          value={item.summary}
-                          onChange={(e) =>
-                            patch({
-                              publications: profile.publications.map((p) =>
-                                p.id === item.id ? { ...p, summary: e.target.value } : p,
-                              ),
-                            })
-                          }
-                          placeholder={tx("Short summary (optional)")}
-                        />
-                        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_6.5rem]">
-                          <input
-                            className={FIELD}
-                            value={item.imageUrl || ""}
-                            onChange={(e) =>
-                              patch({
-                                publications: profile.publications.map((p) =>
-                                  p.id === item.id ? { ...p, imageUrl: e.target.value } : p,
-                                ),
-                              })
-                            }
-                            placeholder={tx("Image URL (optional)")}
-                          />
-                          <input
-                            className={FIELD}
-                            inputMode="numeric"
-                            value={item.minutes || ""}
-                            onChange={(e) =>
-                              patch({
-                                publications: profile.publications.map((p) =>
-                                  p.id === item.id
-                                    ? { ...p, minutes: Number(e.target.value) || undefined }
-                                    : p,
-                                ),
-                              })
-                            }
-                            placeholder={tx("Min")}
-                            aria-label={tx("Minutes to read")}
-                          />
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                  {profile.publications.length < MAX_LISTING_PUBLICATIONS ? (
-                    <button
-                      type="button"
-                      className="mt-3 text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
-                      onClick={() =>
-                        patch({ publications: [...profile.publications, newListingPublication()] })
-                      }
-                    >
-                      {tx("Add publication")}
-                    </button>
-                  ) : (
-                    <p className="mt-3 text-sm text-ink-tertiary">
-                      {tx("Remove an older publication to keep this slot clean, then add a new one.")}
-                    </p>
-                  )}
-                </div>
+                <ListingSectionPreview
+                  profile={profile}
+                  section={listingSectionRow("hours")}
+                  enable={listingEnable("hours")}
+                />
+                <ListingSectionPreview
+                  profile={profile}
+                  section={listingSectionRow("about")}
+                  enable={listingEnable("about")}
+                />
+                <ListingSectionPreview
+                  profile={profile}
+                  section={listingSectionRow("publications")}
+                  enable={listingEnable("publications")}
+                />
 
                 {live ? (
-                  <button
-                    type="button"
-                    onClick={onUnpublish}
-                    className="text-sm text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
-                  >
-                    {tx("Unpublish listing")}
-                  </button>
+                  <DetailSection title={tx("Listing")}>
+                    <button
+                      type="button"
+                      onClick={onUnpublish}
+                      className="text-sm text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
+                    >
+                      {tx("Unpublish listing")}
+                    </button>
+                  </DetailSection>
                 ) : null}
               </div>
             ) : null}
+
+            {step === 4 ? (
+              <ListingPageEditor
+                profile={profile}
+                onChange={patch}
+                live={live}
+                hubPath={hubPath}
+                onPublish={onPublish}
+                onSaveDraft={() => {
+                  saveDraft(profile, provider.id);
+                  setDirty(false);
+                  setSavedFlash(tx("Draft saved"));
+                }}
+                onUnpublish={live ? onUnpublish : undefined}
+              />
+            ) : null}
           </div>
 
-          {stepError ? (
-            <p className="mt-5 text-sm font-medium text-red-700" role="alert">
-              {stepError}
-            </p>
-          ) : null}
-
-          <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="!h-11 !px-6"
-              onClick={goBack}
-              disabled={step === 0}
-            >
-              {tx("Back")}
-            </Button>
-            {step < STEPS.length - 1 ? (
-              <Button size="sm" className="!h-11 !px-7" onClick={goNext}>
-                {tx("Continue")}
+          {canvas ? (
+            <div className="mt-8">
+              <Button variant="outline" size="sm" className="!h-11 !px-6" onClick={goBack}>
+                {tx("Back")}
               </Button>
-            ) : (
-              <Button size="sm" className="!h-11 !px-7" onClick={onPublish}>
-                {live ? tx("Update live listing") : tx("Publish to care hub")}
-              </Button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <>
+              {stepError ? (
+                <p className="mt-5 text-sm font-medium text-red-700" role="alert">
+                  {stepError}
+                </p>
+              ) : null}
+              <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="!h-11 !px-6"
+                  onClick={goBack}
+                  disabled={step === 0}
+                >
+                  {tx("Back")}
+                </Button>
+                <Button size="sm" className="!h-11 !px-7" onClick={goNext}>
+                  {tx("Continue")}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
 
+        {canvas ? null : (
         <aside className="h-fit lg:sticky lg:top-28">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">
-              {tx("Patient view")} ({live ? tx("Live") : tx("Draft")})
-            </p>
+          <DetailSection
+            title={`${tx("Patient view")}`}
+            meta={<DetailMeta>{live ? tx("Live") : tx("Draft")}</DetailMeta>}
+          >
+          <div className="flex items-center justify-end">
             <div className="flex rounded-full bg-[color:var(--pp-primary-100)] p-0.5">
               {(["card", "page"] as const).map((mode) => (
                 <button
@@ -874,17 +744,19 @@ export function BusinessProfile() {
               {tx("Open on care hub")} →
             </Link>
           ) : null}
+          </DetailSection>
         </aside>
+        )}
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-white/95 px-5 py-3 backdrop-blur lg:hidden">
-        {step < STEPS.length - 1 ? (
-          <Button fullWidth onClick={goNext}>
-            {tx("Continue")}
+        {canvas ? (
+          <Button fullWidth onClick={onPublish}>
+            {live ? tx("Publish changes") : tx("Publish")}
           </Button>
         ) : (
-          <Button fullWidth onClick={onPublish}>
-            {live ? tx("Update live listing") : tx("Publish to care hub")}
+          <Button fullWidth onClick={goNext}>
+            {tx("Continue")}
           </Button>
         )}
       </div>
@@ -940,7 +812,7 @@ function BusinessCardPreview({ profile }: { profile: BusinessProfile }) {
   const kindLabel = VENDOR_TYPE_LABELS[profile.type];
 
   return (
-    <div className="rounded-[1.5rem] border border-[#E6E1EF] bg-white p-5">
+    <div className="rounded-xl border border-line bg-[color:var(--pp-primary-100)] p-5">
       <div className="flex items-start justify-between gap-2">
         <p className="pp-caps text-[color:var(--pp-violet)]">{tx(kindLabel)}</p>
         <span className="text-sm text-ink-tertiary">★ {profile.rating.toFixed(1)}</span>
@@ -973,7 +845,7 @@ function BusinessPagePreview({
   const items = servicesForHub(profile, orgId);
 
   return (
-    <div className="max-h-[26rem] overflow-y-auto rounded-[1.5rem] border border-[#E6E1EF] bg-white p-5">
+    <div className="max-h-[26rem] overflow-y-auto rounded-xl border border-line bg-[color:var(--pp-primary-100)] p-5">
       <p className="pp-caps text-[color:var(--pp-violet)]">{tx(VENDOR_TYPE_LABELS[profile.type])}</p>
       <p className="mt-1 font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
         {profile.name.trim() || tx("Your name")}
