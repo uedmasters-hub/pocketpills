@@ -248,33 +248,43 @@ function ActivityBody() {
   return (
     <div className="space-y-5">
       {pending.length > 0 && (
-        <DetailSection
-          title={tx("Complete your profile")}
-          lede={`${profileDone} ${tx("of")} ${profileTotal} ${tx("done")} · ${pending.length} ${tx("left")}`}
-          meta={
+        <section className="overflow-hidden rounded-2xl border border-line bg-white">
+          <div className="flex items-start gap-4 px-5 py-4">
+            <div className="min-w-0 flex-1">
+              <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
+                {tx("Complete your profile")}
+              </h2>
+              <p className="mt-1 text-sm text-ink-tertiary">
+                {profileDone} {tx("of")} {profileTotal} {tx("done")} · {pending.length} {tx("left")}
+              </p>
+              {/* Progress sits with status copy — not a separate orphaned strip */}
+              <div
+                className="mt-3 h-1.5 overflow-hidden rounded-full bg-[color:var(--pp-primary-200)]"
+                role="progressbar"
+                aria-valuenow={Math.round(progress * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={tx("Profile completion")}
+              >
+                <div
+                  className="h-full rounded-full bg-[color:var(--pp-primary-950)] transition-[width] duration-300"
+                  style={{ width: `${Math.max(progress * 100, progress > 0 ? 6 : 0)}%` }}
+                />
+              </div>
+            </div>
             <span
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-2xs font-medium text-[color:var(--pp-primary-950)]"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-2xs font-semibold text-[color:var(--pp-primary-950)]"
               style={{
-                background: `conic-gradient(var(--pp-primary-950) ${progress * 360}deg, var(--pp-primary-300) 0)`,
+                background: `conic-gradient(var(--pp-primary-950) ${progress * 360}deg, var(--pp-primary-200) 0)`,
               }}
               aria-hidden
             >
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-white">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-white tnum">
                 {Math.round(progress * 100)}%
               </span>
             </span>
-          }
-          flush
-        >
-          <div className="border-b border-line px-5 py-3">
-            <div className="h-1 overflow-hidden rounded-full bg-[color:var(--pp-primary-200)]">
-              <div
-                className="h-full rounded-full bg-[color:var(--pp-primary-950)] transition-[width] duration-300"
-                style={{ width: `${progress * 100}%` }}
-              />
-            </div>
           </div>
-          <ul>
+          <ul className="border-t border-line">
             {pending.map((r, i) => (
               <li key={r.id} className={i > 0 ? "border-t border-line" : undefined}>
                 <button
@@ -283,9 +293,11 @@ function ActivityBody() {
                   className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
                 >
                   <span
-                    className="grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 border-[#B4541F]/60"
+                    className="grid h-5 w-5 shrink-0 place-items-center rounded-full border border-[color:var(--pp-primary-300)] text-[10px] font-semibold leading-none text-ink-tertiary tnum"
                     aria-hidden
-                  />
+                  >
+                    {i + 1}
+                  </span>
                   <span className="min-w-0 flex-1 text-sm font-medium text-[color:var(--pp-primary-950)]">
                     {tx(r.label)}
                   </span>
@@ -296,7 +308,7 @@ function ActivityBody() {
               </li>
             ))}
           </ul>
-        </DetailSection>
+        </section>
       )}
 
       {live.length > 0 && (

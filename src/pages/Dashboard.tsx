@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { DetailMeta, DetailSection } from "@/components/DetailSection";
+import { DetailSection } from "@/components/DetailSection";
 import { useUser } from "@/lib/user";
 import { treatments, type Treatment } from "@/lib/data";
-import { pendingRows } from "@/lib/profile";
 import { appointmentIsPast, getAppointments } from "@/lib/appointments";
 import { mergeActiveOrders, statusMeta, typeMeta } from "@/lib/orders";
 import { careEventHref } from "@/lib/careJourney";
@@ -12,6 +11,7 @@ import { monthDayShort } from "@/lib/timeSlots";
 import { useI18n } from "@/lib/i18n";
 
 /* ── shared bits ───────────────────────────────────────── */
+/** Borderless chevron — matches AvailabilityBoard / site rail controls. */
 function ArrowBtn({
   dir,
   onClick,
@@ -29,16 +29,33 @@ function ArrowBtn({
       disabled={disabled}
       aria-label={dir === "l" ? tx("Previous") : tx("Next")}
       className={
-        "rounded-full bg-[color:var(--pp-primary-100)] p-1 text-[color:var(--pp-primary-950)] transition-colors " +
-        (disabled ? "cursor-default opacity-40" : "hover:bg-[color:var(--pp-primary-200)]")
+        "grid h-8 w-8 place-items-center transition-colors " +
+        (disabled
+          ? "cursor-default text-[color:var(--neutral-300)]"
+          : "text-[color:var(--pp-primary-950)] hover:text-[color:var(--pp-violet)]")
       }
     >
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ transform: dir === "l" ? "rotate(180deg)" : undefined }} aria-hidden>
-        <path d="M9.58902 6.22528C9.29923 6.52124 9.30422 6.99609 9.60018 7.28588L14.4529 12.0375L9.60018 16.7891C9.30422 17.0789 9.29922 17.5538 9.58902 17.8497C9.87881 18.1457 10.3537 18.1507 10.6496 17.8609L16.0496 12.5734C16.1937 12.4323 16.2749 12.2391 16.2749 12.0375C16.2749 11.8359 16.1937 11.6427 16.0496 11.5016L10.6496 6.21412C10.3537 5.92432 9.87881 5.92932 9.58902 6.22528Z" fill="currentColor" />
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        aria-hidden
+      >
+        {dir === "l" ? (
+          <path d="M12.5 5 7.5 10l5 5" strokeLinecap="round" strokeLinejoin="round" />
+        ) : (
+          <path d="M7.5 5 12.5 10l-5 5" strokeLinecap="round" strokeLinejoin="round" />
+        )}
       </svg>
     </button>
   );
 }
+
+/** Shared card chrome for framed tiles (offers, quick actions, empty slots). */
+const CARD_FRAME = "rounded-2xl border border-line";
 
 /** Filled circle arrow used inside promo cards. */
 function FilledArrow() {
@@ -50,8 +67,11 @@ function FilledArrow() {
   );
 }
 
-const DASH_IMG = "https://static.pocketpills.com/webapp";
 const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = "none"; };
+
+/** Offers art — replace files in `public/img/offers/`. */
+const OFFER_IMG_VER = "20260822c";
+const offerImg = (file: string) => `/img/offers/${file}?v=${OFFER_IMG_VER}`;
 
 interface Promo {
   badge: string;
@@ -74,7 +94,7 @@ const PROMOS: Promo[] = [
     d: "Start a free online assessment to get a prescription — no clinic visit.",
     offer: "Covered by most plans",
     persuasion: "Doctor-led · Ships free · Pause anytime",
-    img: `${DASH_IMG}/img/minor-ailment-bc.svg`,
+    img: offerImg("birth-control.png"),
     to: "/appointments/treatments/birth-control",
     brand: true,
   },
@@ -84,7 +104,7 @@ const PROMOS: Promo[] = [
     d: "Brand-name Ozempic at a generic price, with pharmacist support.",
     offer: "Get it at $139!",
     persuasion: "Limited-time price · Free standard delivery",
-    img: `${DASH_IMG}/images/dashboard/weight-loss-doctor.png`,
+    img: offerImg("weight-loss.png"),
     to: "/drug/ozempic",
   },
   {
@@ -93,7 +113,7 @@ const PROMOS: Promo[] = [
     d: "Clinically proven treatments prescribed online by Canadian doctors.",
     offer: "Start from $39/mo",
     persuasion: "Discreet packaging · Results in 3–6 months",
-    img: `${DASH_IMG}/images/dashboard/hair-loss-card.webp`,
+    img: offerImg("hair-loss.png"),
     to: "/appointments",
   },
   {
@@ -102,23 +122,71 @@ const PROMOS: Promo[] = [
     d: "Easy consults, expert care, and same-day delivery in select cities.",
     offer: "Consult from $0",
     persuasion: "Plain packaging · Ships to your door",
-    img: `${DASH_IMG}/images/dashboard/ed-card.webp`,
+    img: offerImg("ed.png"),
     to: "/appointments",
   },
 ];
 
 const TREAT_CARD =
-  "relative flex aspect-[4/5] flex-col overflow-hidden rounded-2xl text-left transition-transform";
+  "relative flex aspect-square flex-col overflow-hidden rounded-[1.75rem] border border-line bg-white text-left transition-transform";
 const TREAT_CARD_RAIL =
-  TREAT_CARD + " w-[calc((100%-1rem)/2)] shrink-0 sm:w-[calc((100%-3rem)/4)]";
+  /* ~4 cards + peek of the next so the rail doesn’t look like only four exist */
+  TREAT_CARD + " w-[calc((100%-1rem)/2.15)] shrink-0 sm:w-[calc((100%-3.25rem)/4.25)]";
 const TREAT_CARD_GRID = TREAT_CARD + " w-full";
+/** Soft white → pale lavender fill (card chrome, not an image fade). */
 const TREAT_CARD_BG = {
-  backgroundImage: "linear-gradient(180deg,#FFFFFF 0%,#FAF9FE 42%,#E7E2F7 100%)",
+  backgroundImage: "linear-gradient(180deg,#FFFFFF 0%,#FAF9FE 48%,#EDE8F7 100%)",
 } as const;
 const TREAT_GRID = "grid grid-cols-2 gap-4 sm:grid-cols-4";
 /** Collapsed rail: 7 treatments + View more. */
 const TREAT_COLLAPSED = 7;
 
+/** Section shell: title + optional rail controls, then body — used by every dashboard block. */
+function DashSection({
+  title,
+  showArrows = false,
+  extra,
+  onPrev,
+  onNext,
+  prevDisabled,
+  nextDisabled,
+  flush,
+  children,
+}: {
+  title: string;
+  showArrows?: boolean;
+  extra?: ReactNode;
+  onPrev?: () => void;
+  onNext?: () => void;
+  prevDisabled?: boolean;
+  nextDisabled?: boolean;
+  flush?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <DetailSection
+      title={title}
+      flush={flush}
+      meta={
+        showArrows || extra ? (
+          <div className="flex items-center gap-3">
+            {extra}
+            {showArrows ? (
+              <div className="flex gap-1">
+                <ArrowBtn dir="l" onClick={() => onPrev?.()} disabled={prevDisabled} />
+                <ArrowBtn dir="r" onClick={() => onNext?.()} disabled={nextDisabled} />
+              </div>
+            ) : null}
+          </div>
+        ) : undefined
+      }
+    >
+      {children}
+    </DetailSection>
+  );
+}
+
+/** Open rail header (title + chevrons) — matches treatment comps outside a boxed section. */
 function RailHeader({
   title,
   showArrows = true,
@@ -128,7 +196,7 @@ function RailHeader({
   prevDisabled,
   nextDisabled,
 }: {
-  title?: string;
+  title: string;
   showArrows?: boolean;
   extra?: ReactNode;
   onPrev?: () => void;
@@ -138,11 +206,11 @@ function RailHeader({
 }) {
   return (
     <div className="mb-4 flex items-center justify-between gap-4">
-      {title ? <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{title}</h2> : <span />}
+      <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{title}</h2>
       <div className="flex items-center gap-3">
         {extra}
         {showArrows ? (
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             <ArrowBtn dir="l" onClick={() => onPrev?.()} disabled={prevDisabled} />
             <ArrowBtn dir="r" onClick={() => onNext?.()} disabled={nextDisabled} />
           </div>
@@ -162,6 +230,9 @@ function TreatmentDashCard({
   className?: string;
 }) {
   const { tx } = useI18n();
+  const [imgFailed, setImgFailed] = useState(false);
+  const src = treatment.img;
+
   return (
     <button
       type="button"
@@ -169,17 +240,22 @@ function TreatmentDashCard({
       className={className}
       style={TREAT_CARD_BG}
     >
-      <p className="relative z-10 px-5 pt-5 font-display text-xl font-normal leading-tight text-[color:var(--pp-primary-950)]">
+      <p className="relative z-10 max-w-[58%] px-5 pt-5 text-left font-display text-[1.35rem] font-medium leading-tight text-[color:var(--pp-primary-950)]">
         {tx(treatment.name)}
       </p>
-      {treatment.img ? (
-        <img
-          src={treatment.img}
-          alt=""
-          loading="lazy"
-          onError={hideOnError}
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[66%] w-full object-contain object-bottom"
-        />
+      {src && !imgFailed ? (
+        <span
+          className="pointer-events-none absolute -bottom-[6%] -right-[4%] z-0 block h-[58%] w-[72%]"
+          aria-hidden
+        >
+          <img
+            src={src}
+            alt=""
+            loading="lazy"
+            onError={() => setImgFailed(true)}
+            className="h-full w-full select-none object-contain object-right-bottom"
+          />
+        </span>
       ) : (
         <span className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-5xl" aria-hidden>
           {treatment.emoji}
@@ -198,7 +274,11 @@ function PromoCard({ p, onClick }: { p: Promo; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="pp-snap group flex h-[270px] w-[88%] flex-none items-stretch overflow-hidden rounded-2xl border border-line bg-white text-left transition-colors hover:bg-[color:var(--state-hover)] active:bg-[color:var(--state-pressed)] sm:w-[70%]"
+      className={
+        "pp-snap group flex h-[270px] w-[88%] flex-none items-stretch overflow-hidden " +
+        CARD_FRAME +
+        " bg-white text-left transition-colors hover:bg-[color:var(--state-hover)] active:bg-[color:var(--state-pressed)] sm:w-[70%]"
+      }
     >
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 py-5 pl-5 pr-4 sm:pl-7 sm:pr-5">
         <span
@@ -236,83 +316,155 @@ function PromoCard({ p, onClick }: { p: Promo; onClick: () => void }) {
           onError={hideOnError}
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
-        <span
-          className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent"
-          aria-hidden
-        />
       </div>
     </button>
   );
 }
 
-/* ── action rows ───────────────────────────────────────── */
+/* ── Quick actions — cyan bento cards ───────────────────── */
 type ActionId = "appointment" | "transfer" | "order" | "renew" | "treatments" | "prices" | "family";
 
-const ACTION_ICON: Record<ActionId, { bg: string; fg: string }> = {
-  appointment: { bg: "#4E2A84", fg: "#fff" },
-  transfer:   { bg: "#7040D9", fg: "#fff" },
-  order:      { bg: "#8C60FF", fg: "#fff" },
-  renew:      { bg: "#4E2A84", fg: "#fff" },
-  treatments: { bg: "#12655A", fg: "#fff" },
-  prices:     { bg: "#E5E3FF", fg: "#4E2A84" },
-  family:     { bg: "#E5E3FF", fg: "#4E2A84" },
-};
-
-function ActionIcon({ id }: { id: ActionId }) {
-  const { fg } = ACTION_ICON[id];
-  const c = { width: 24, height: 24, viewBox: "0 0 24 24", fill: "none", stroke: fg, strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  switch (id) {
-    case "appointment":
-      return <svg {...c}><rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M8 3v4M16 3v4M3 10h18" /><circle cx="12" cy="15.5" r="1.3" fill={fg} stroke="none" /></svg>;
-    case "transfer":
-      return <svg {...c}><path d="M13.5 3.5H7.2A2.2 2.2 0 0 0 5 5.7v12.6a2.2 2.2 0 0 0 2.2 2.2h6.3" /><path d="M5 8h8.5M14.5 12h6M17.8 9l3 3-3 3" /></svg>;
-    case "order":
-      return <svg {...c}><rect x="3" y="3" width="18" height="18" rx="4" /><path d="M12 8v8M8 12h8" /></svg>;
-    case "renew":
-      return <svg {...c}><rect x="3.5" y="3.5" width="17" height="17" rx="4" /><path d="M9 8h2.6a2 2 0 0 1 0 4H9V8v8" /><path d="m11.8 12 3.2 4" /></svg>;
-    case "treatments":
-      return <svg {...c}><rect x="3" y="7" width="18" height="13" rx="3" /><path d="M8.5 7V5.6A1.6 1.6 0 0 1 10.1 4h3.8a1.6 1.6 0 0 1 1.6 1.6V7" /><path d="M12 11.2v4.6M9.7 13.5h4.6" /></svg>;
-    case "prices":
-      return <svg {...c}><circle cx="11" cy="11" r="7.5" /><path d="m20 20-4-4" /><path d="M11 7.5v7M12.8 9.2h-2.4a1.4 1.4 0 0 0 0 2.8h1.2a1.4 1.4 0 0 1 0 2.8H9.2" /></svg>;
-    default:
-      return <svg {...c}><circle cx="9" cy="8" r="3.4" /><path d="M3 19c0-3.1 2.7-5 6-5s6 1.9 6 5" /><circle cx="17.5" cy="10" r="2.4" /><path d="M16 14.4c2.6 0 4.5 1.5 4.5 4" /></svg>;
-  }
-}
-
-function ActionRow({
-  id,
-  title,
-  sub,
-  onClick,
-  flush,
-}: {
+type QuickAction = {
   id: ActionId;
   title: string;
-  sub: string;
+  to: string;
+  wide?: boolean;
+  image: string;
+};
+
+/**
+ * Quick-action card art — replace files in `public/img/quick-actions/`.
+ * Cache-bust so browser picks up replacements without a hard refresh.
+ */
+const QA_IMG_VER = "20260822c";
+const qaImg = (file: string) => `/img/quick-actions/${file}?v=${QA_IMG_VER}`;
+
+const QUICK_ACTION_IMG: Record<ActionId, string> = {
+  appointment: qaImg("appointment.png"),
+  transfer: qaImg("transfer.png"),
+  order: qaImg("order.png"),
+  treatments: qaImg("treatments.png"),
+  prices: qaImg("prices.png"),
+  family: qaImg("family.png"),
+  renew: qaImg("renew.png"),
+};
+
+function QuickActionCard({
+  title,
+  wide,
+  image,
+  onClick,
+}: {
+  title: string;
+  wide?: boolean;
+  image: string;
   onClick: () => void;
-  flush?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={
-        flush
-          ? "flex w-full items-start gap-4 px-5 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)]"
-          : "flex w-full items-start gap-4 rounded-2xl border border-line bg-white p-4 text-left transition-colors hover:bg-[color:var(--state-hover)]"
+        "relative flex min-h-[8.25rem] flex-col overflow-hidden " +
+        CARD_FRAME +
+        " bg-[color:var(--secondary-500)] p-4 text-left transition-colors hover:brightness-[0.98] " +
+        (wide ? "col-span-2" : "col-span-1")
       }
     >
-      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: ACTION_ICON[id].bg }}>
-        <ActionIcon id={id} />
+      <span
+        className={
+          "relative z-10 line-clamp-2 whitespace-pre-line font-display text-lg font-medium leading-snug text-[color:var(--pp-primary-950)] " +
+          (wide ? "max-w-[11rem] pr-2" : "max-w-[6.75rem] pr-1")
+        }
+      >
+        {title}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-base font-semibold text-[color:var(--pp-primary-950)]">{title}</span>
-        <span className="mt-0.5 block text-sm leading-snug whitespace-normal break-words text-ink-tertiary">{sub}</span>
-      </span>
-      <span className="shrink-0 text-lg text-ink-tertiary" aria-hidden>
-        ›
+      {/* Fixed square slot so every specialty PNG renders at the same visual size. */}
+      <span
+        className="pointer-events-none absolute -bottom-2 -right-2 z-0 block h-[6.75rem] w-[6.75rem]"
+        aria-hidden
+      >
+        <img
+          src={image}
+          alt=""
+          loading="lazy"
+          className="h-full w-full select-none object-contain object-right-bottom"
+        />
       </span>
     </button>
+  );
+}
+
+function QuickActions({
+  actions,
+  onOpen,
+}: {
+  actions: QuickAction[];
+  onOpen: (to: string) => void;
+}) {
+  const { tx } = useI18n();
+  const railRef = useRef<HTMLDivElement>(null);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(false);
+
+  const sync = () => {
+    const el = railRef.current;
+    if (!el) return;
+    setAtStart(el.scrollLeft <= 4);
+    setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    sync();
+    const el = railRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", sync, { passive: true });
+    window.addEventListener("resize", sync);
+    return () => {
+      el.removeEventListener("scroll", sync);
+      window.removeEventListener("resize", sync);
+    };
+  }, []);
+
+  return (
+    <DashSection
+      title={tx("Quick actions")}
+      showArrows
+      onPrev={() => railRef.current?.scrollBy({ left: -280, behavior: "smooth" })}
+      onNext={() => railRef.current?.scrollBy({ left: 280, behavior: "smooth" })}
+      prevDisabled={atStart}
+      nextDisabled={atEnd}
+    >
+      <div
+        ref={railRef}
+        onScroll={sync}
+        className="pp-scroll overflow-x-auto pb-1"
+      >
+        <div className="grid min-w-[42rem] grid-cols-6 gap-3 sm:min-w-0">
+          {actions.map((a) => (
+            <QuickActionCard
+              key={a.id}
+              title={tx(a.title)}
+              wide={a.wide}
+              image={a.image}
+              onClick={() => onOpen(a.to)}
+            />
+          ))}
+          <div
+            className={
+              "col-span-2 flex min-h-[8.25rem] items-center justify-center " +
+              CARD_FRAME +
+              " bg-white p-4"
+            }
+            aria-disabled="true"
+          >
+            <span className="font-display text-lg font-medium leading-snug text-[color:var(--neutral-300)]">
+              {tx("coming …")}
+            </span>
+          </div>
+        </div>
+      </div>
+    </DashSection>
   );
 }
 
@@ -324,7 +476,7 @@ function AppCard() {
   const appUrl = "https://pocketpills.com/app";
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-line bg-[#E5E3FF] p-6 sm:p-8">
+    <section className={"relative overflow-hidden " + CARD_FRAME + " bg-[#E5E3FF] p-6 sm:p-8"}>
       {/* Soft organic accent — matches production shell */}
       <span
         className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-[45%] bg-[#C9C2FA]/80"
@@ -339,7 +491,7 @@ function AppCard() {
           {tx("Scan the QR code or get the download link")}
         </p>
 
-        <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 sm:flex-row sm:items-stretch sm:gap-5 sm:p-5">
+        <div className={"mt-5 flex flex-col gap-4 " + CARD_FRAME + " bg-white p-4 sm:flex-row sm:items-stretch sm:gap-5 sm:p-5"}>
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-3">
             <div
               className="flex gap-1"
@@ -432,71 +584,17 @@ function AppCard() {
   );
 }
 
-/* ── fax ───────────────────────────────────────────────── */
-function FaxCard() {
-  const { tx } = useI18n();
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard?.writeText("1-855-950-7226").then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
-    }).catch(() => {});
-  };
-
-  return (
-    <section className="relative overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-200)] p-6 sm:p-8">
-      <div className="relative z-10 max-w-md pr-24 sm:pr-28">
-        <h2 className="font-display text-lg font-medium leading-snug text-[color:var(--pp-primary-950)]">
-          {tx("Fax us your prescription for faster service")}
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-ink-secondary">
-          {tx("Ask your clinic to send it our way.")}
-          <br />
-          {tx("We'll get it to you sooner.")}
-        </p>
-        <button
-          type="button"
-          onClick={copy}
-          className="mt-5 inline-flex items-center gap-2.5 text-md font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-80"
-          aria-label={copied ? "Fax number copied" : "Copy fax number 1-855-950-7226"}
-        >
-          <span className="leading-none">1-855-950-7226</span>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="shrink-0" aria-hidden>
-            <rect x="9" y="9" width="11" height="11" rx="2" />
-            <path d="M5 15V5a2 2 0 0 1 2-2h10" />
-          </svg>
-          {copied && <span className="text-xs font-medium text-wellness" aria-hidden>{tx("Copied")}</span>}
-        </button>
-        <span className="sr-only" aria-live="polite">
-          {copied ? "Fax number copied to clipboard" : ""}
-        </span>
-      </div>
-
-      {/* Decorative mark — extreme right */}
-      <span
-        className="pointer-events-none absolute bottom-5 right-5 grid h-[5.5rem] w-[5.5rem] place-items-center rounded-2xl bg-[#D8D3F5] sm:bottom-6 sm:right-6 sm:h-24 sm:w-24"
-        aria-hidden
-      >
-        <span className="relative grid h-11 w-11 place-items-center rounded-full bg-white sm:h-12 sm:w-12">
-          <span className="h-0 w-0 border-y-[7px] border-l-[12px] border-y-transparent border-l-[color:var(--pp-primary-300)]" />
-        </span>
-      </span>
-    </section>
-  );
-}
-
 /* ── page ──────────────────────────────────────────────── */
 export function Dashboard() {
   const { tx } = useI18n();
   const nav = useNavigate();
-  const { user, displayName } = useUser();
+  const { displayName } = useUser();
   const promoRef = useRef<HTMLDivElement>(null);
   const treatRef = useRef<HTMLDivElement>(null);
   const [showAllTreatments, setShowAllTreatments] = useState(false);
   const [treatAtStart, setTreatAtStart] = useState(true);
   const [treatAtEnd, setTreatAtEnd] = useState(false);
 
-  const pending = pendingRows(user);
   const nextVisit = useMemo(() => {
     return getAppointments()
       .filter((a) => !appointmentIsPast(a) && a.status !== "cancelled")
@@ -541,21 +639,6 @@ export function Dashboard() {
 
   return (
     <div className="space-y-10">
-      {pending.length > 0 && (
-        <button
-          type="button"
-          onClick={() => nav("/profile")}
-          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#B4541F] px-5 py-4 text-base font-medium text-white transition-opacity hover:opacity-95"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-            <circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.4h.01" />
-          </svg>
-          {pending.length}{" "}
-          {pending.length === 1 ? tx("Profile pending action") : tx("Profile pending actions")}
-          <span aria-hidden>›</span>
-        </button>
-      )}
-
       <header>
         <p className="font-display text-3xl font-medium text-[color:var(--pp-primary-950)]">
           {tx("Hi")}, {displayName}
@@ -564,7 +647,7 @@ export function Dashboard() {
       </header>
 
       {nextVisit || nextOrder ? (
-        <DetailSection title={tx("Up next")} meta={<DetailMeta>{tx("Open to continue")}</DetailMeta>} flush>
+        <DashSection title={tx("Up next")} flush>
           <ul className="divide-y divide-line">
             {nextVisit ? (
               <li>
@@ -609,10 +692,10 @@ export function Dashboard() {
               </li>
             ) : null}
           </ul>
-        </DetailSection>
+        </DashSection>
       ) : null}
 
-      {/* treatments */}
+      {/* treatments — open rail to match design comps (no boxed section around cards) */}
       <section>
         <RailHeader
           title={tx("Start a new treatment")}
@@ -654,7 +737,7 @@ export function Dashboard() {
               style={TREAT_CARD_BG}
               aria-label={tx("View more treatments")}
             >
-              <p className="relative z-10 px-5 pt-5 font-display text-xl font-normal leading-tight text-[color:var(--pp-primary-950)]">
+              <p className="relative z-10 px-5 pt-5 font-display text-[1.35rem] font-medium leading-tight text-[color:var(--pp-primary-950)]">
                 {tx("View more")}
               </p>
               <p className="relative z-10 px-5 pt-1 text-sm text-ink-tertiary">
@@ -675,50 +758,69 @@ export function Dashboard() {
         </div>
       </section>
 
-      <DetailSection title={tx("Quick actions")} flush>
-        <div className="divide-y divide-line">
-          <ActionRow
-            flush
-            id="appointment"
-            title={tx("Book a doctor appointment")}
-            sub={tx("Virtual or in-clinic with a licensed clinician")}
-            onClick={() => nav("/appointments")}
-          />
-          <ActionRow flush id="transfer" title={tx("Transfer my prescriptions")} sub={tx("Switch to PocketPills")} onClick={() => nav("/transfer")} />
-          <ActionRow flush id="order" title={tx("Start a new order")} sub={tx("Refill an active prescription")} onClick={() => nav("/pharmacy")} />
-          <ActionRow flush id="renew" title={tx("Renew my prescription")} sub={tx("Renew an expired prescription")} onClick={() => nav("/fill")} />
-          <ActionRow flush id="treatments" title={tx("Explore treatments")} sub={tx("Get care from healthcare practitioners")} onClick={() => nav("/appointments")} />
-          <ActionRow flush id="prices" title={tx("See drug prices")} sub={tx("Look up pricing details")} onClick={() => nav("/drug")} />
-          <ActionRow flush id="family" title={tx("Add family member")} sub={tx("Manage your loved ones' meds")} onClick={() => nav("/account/family")} />
-        </div>
-      </DetailSection>
+      <QuickActions
+        actions={[
+          {
+            id: "appointment",
+            title: "Book a\ndoctor visit",
+            to: "/appointments",
+            wide: true,
+            image: QUICK_ACTION_IMG.appointment,
+          },
+          {
+            id: "transfer",
+            title: "Transfer my\nprescriptions",
+            to: "/transfer",
+            wide: true,
+            image: QUICK_ACTION_IMG.transfer,
+          },
+          { id: "order", title: "Start a\nnew order", to: "/pharmacy", image: QUICK_ACTION_IMG.order },
+          {
+            id: "treatments",
+            title: "Explore\ntreatments",
+            to: "/appointments",
+            image: QUICK_ACTION_IMG.treatments,
+          },
+          { id: "prices", title: "See drug\nprices", to: "/drug", image: QUICK_ACTION_IMG.prices },
+          {
+            id: "family",
+            title: "Add family\nmember",
+            to: "/account/family",
+            image: QUICK_ACTION_IMG.family,
+          },
+          {
+            id: "renew",
+            title: "Renew my\nprescription",
+            to: "/fill",
+            wide: true,
+            image: QUICK_ACTION_IMG.renew,
+          },
+        ]}
+        onOpen={(to) => nav(to)}
+      />
 
       {/* Offers sit directly above the get-the-app / QR block */}
-      <section aria-label="Promotions">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{tx("Offers for you")}</h2>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => nav("/offers")}
-              className="text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
-            >
-              {tx("See all")}
-            </button>
-            <div className="flex gap-2">
-              <ArrowBtn dir="l" onClick={() => promoRef.current?.scrollBy({ left: -320, behavior: "smooth" })} />
-              <ArrowBtn dir="r" onClick={() => promoRef.current?.scrollBy({ left: 320, behavior: "smooth" })} />
-            </div>
-          </div>
-        </div>
+      <DashSection
+        title={tx("Offers for you")}
+        showArrows
+        onPrev={() => promoRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
+        onNext={() => promoRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
+        extra={
+          <button
+            type="button"
+            onClick={() => nav("/offers")}
+            className="text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
+          >
+            {tx("See all")}
+          </button>
+        }
+      >
         <div ref={promoRef} className="pp-scroll flex gap-4 overflow-x-auto">
           {PROMOS.map((p) => <PromoCard key={p.t} p={p} onClick={() => nav(p.to)} />)}
         </div>
-      </section>
+      </DashSection>
 
       <AppCard />
-
-      <FaxCard />
     </div>
   );
 }

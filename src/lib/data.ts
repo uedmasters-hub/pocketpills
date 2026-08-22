@@ -2,7 +2,7 @@ import treatmentCatalog from "../../treatments.json";
 
 export interface Treatment {
   slug: string; name: string; category: string; blurb: string; from: number; eligible: boolean; emoji: string;
-  /** Cut-out portrait for the card; falls back to the emoji when absent. */
+  /** Cut-out illustration for the card; falls back to the emoji when absent. */
   img?: string;
 }
 
@@ -18,6 +18,17 @@ const CATEGORY_EMOJI: Record<string, string> = {
   Oncology: "🎗️",
   Dental: "🦷",
 };
+
+/** Per-treatment replaceable art — drop files in `public/img/treatments-rail/{slug}.png`. */
+const IMG_VER = "20260822d";
+
+function treatmentRailSrc(slug: string) {
+  return `/img/treatments-rail/${slug}.png?v=${IMG_VER}`;
+}
+
+function treatmentImg(slug: string): string {
+  return treatmentRailSrc(slug);
+}
 
 function slugifyTreatment(name: string) {
   return name
@@ -50,6 +61,7 @@ function treatmentsFromCatalog(catalog: Record<string, string[]>): Treatment[] {
       from: 25,
       eligible: true,
       emoji: CATEGORY_EMOJI[category] || "🏥",
+      img: treatmentImg(slug),
     });
   };
   for (const name of catalog.Popular || []) add(name);
