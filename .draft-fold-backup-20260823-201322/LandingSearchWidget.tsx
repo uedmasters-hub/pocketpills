@@ -99,14 +99,7 @@ function SuggestionIcon({ kind }: { kind: Suggestion["icon"] }) {
  * Landing search pill — design match for draft homepage.
  * Language toggle updates site locale; mic uses local speech; Search navigates.
  */
-export function LandingSearchWidget({
-  spotlight = false,
-  onOpenChange,
-}: {
-  /** Draft focus mode: host owns the scroll + scrim, field/list get a ring. */
-  spotlight?: boolean;
-  onOpenChange?: (open: boolean) => void;
-}) {
+export function LandingSearchWidget() {
   const { tx, lang, setLang } = useI18n();
   const nav = useNavigate();
   const inputId = useId();
@@ -160,23 +153,15 @@ export function LandingSearchWidget({
     setActiveIdx(0);
   }, [query]);
 
-  /* Tell the host when the suggestion panel opens / closes (draft focus mode). */
-  const openRef = useRef(open);
-  useEffect(() => {
-    if (openRef.current === open) return;
-    openRef.current = open;
-    onOpenChange?.(open);
-  }, [open, onOpenChange]);
-
   /* When suggestions open, scroll the field up so the list isn’t clipped by the fold. */
   useEffect(() => {
-    if (!open || spotlight || !wrapRef.current) return;
+    if (!open || !wrapRef.current) return;
     const el = wrapRef.current;
     const id = window.requestAnimationFrame(() => {
       el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
     });
     return () => window.cancelAnimationFrame(id);
-  }, [open, spotlight]);
+  }, [open]);
 
   const voiceError = voiceErrorMessage(error, tx);
 
@@ -243,8 +228,8 @@ export function LandingSearchWidget({
         }}
         className={
           "flex items-center gap-2 rounded-full border bg-white py-1.5 pl-4 pr-1.5 shadow-[0_8px_30px_rgba(24,7,48,0.06)] transition-[border-color,box-shadow] " +
-          (listening || (spotlight && open)
-            ? "border-[color:var(--pp-violet)] shadow-[0_0_0_4px_rgba(107,77,230,0.16)]"
+          (listening
+            ? "border-[color:var(--pp-violet)] shadow-[0_0_0_3px_rgba(107,77,230,0.12)]"
             : "border-line")
         }
       >
@@ -385,12 +370,7 @@ export function LandingSearchWidget({
           id={listId}
           role="listbox"
           aria-label={tx("Search suggestions")}
-          className={
-            "absolute left-0 right-0 z-50 mt-2 max-h-[min(22rem,50vh)] overflow-y-auto overscroll-contain rounded-2xl border bg-white py-1 " +
-            (spotlight
-              ? "border-[rgba(107,77,230,0.35)] shadow-[0_24px_60px_rgba(24,7,48,0.22)]"
-              : "border-line shadow-float")
-          }
+          className="absolute left-0 right-0 z-50 mt-2 max-h-[min(22rem,50vh)] overflow-y-auto overscroll-contain rounded-2xl border border-line bg-white py-1 shadow-float"
         >
           {filtered.map((s, i) => (
             <li key={s.id} role="option" aria-selected={i === activeIdx}>

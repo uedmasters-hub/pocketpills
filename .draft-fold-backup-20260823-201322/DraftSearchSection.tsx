@@ -3,15 +3,8 @@ import { LandingSearchWidget } from "@/components/landing/LandingSearchWidget";
 import { SearchShieldIcon } from "@/components/landing/SearchIcons";
 import { useI18n } from "@/lib/i18n";
 
-/**
- * Search headline + pill widget — top half of the merged draft panel.
- * `data-draft-search-end` marks the element the fold maths measures to.
- */
-export function DraftSearchSection({
-  onOpenChange,
-}: {
-  onOpenChange?: (open: boolean) => void;
-}) {
+/** Search headline + pill widget for the draft first fold. */
+export function DraftSearchSection() {
   const { tx } = useI18n();
   return (
     <section className="draft-search-section" aria-label={tx("Search healthcare services")}>
@@ -20,12 +13,12 @@ export function DraftSearchSection({
           <SearchShieldIcon className="h-4 w-4 text-[color:var(--pp-primary-950)]" />
           {tx("Nepal's complete healthcare platform")}
         </p>
-        <h1 className="mx-auto mt-5 max-w-3xl font-display text-[clamp(1.625rem,3.8vw,2.375rem)] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-headline)]">
+        <h1 className="mx-auto mt-6 max-w-3xl font-display text-[clamp(1.625rem,3.8vw,2.375rem)] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-headline)] sm:text-[clamp(1.625rem,3.8vw,2.375rem)]">
           {tx("Find any healthcare service")}
         </h1>
       </header>
-      <div className={`${SHELL_X} shrink-0`} data-draft-search-end>
-        <LandingSearchWidget spotlight onOpenChange={onOpenChange} />
+      <div className={`${SHELL_X} shrink-0`}>
+        <LandingSearchWidget />
       </div>
     </section>
   );

@@ -14,18 +14,13 @@ import "@/pages/landing-draft/landingDraft.css";
 
 /** Where the field lands after the focus scroll — 0.3 = just above centre. */
 const FOCUS_VIEWPORT_RATIO = 0.3;
-/** Guard rails for the measured search height, so a bad read can't wreck the fold. */
-const SEARCH_H_MIN = 96;
-const SEARCH_H_MAX_RATIO = 0.6;
 
 /**
  * Draft landing at /landing/draft.
  * Live `/` (Landing) is unchanged.
  *
- * The hero is an absolute layer exactly one fold tall; the panel (search +
- * shop) is pushed down by a spacer so it overlaps the video's bottom edge.
- * Both numbers are measured at runtime — see landingDraft.css for why the
- * chrome tokens can't be trusted for this.
+ * First fold: video fills the whole viewport; ONE white panel (search + shop)
+ * rides up over it so the search field sits a fixed gap above the fold bottom.
  */
 export function LandingDraft() {
   const nav = useNavigate();
@@ -36,6 +31,11 @@ export function LandingDraft() {
   const panelRef = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
 
+  /*
+    Measure panel top -> search field bottom and publish it as --draft-search-h.
+    The panel's negative margin is derived from it, so the field always lands
+    --draft-bottom-gap above the fold bottom regardless of copy or font size.
+  */
   useLayoutEffect(() => {
     const stage = stageRef.current;
     const panel = panelRef.current;
@@ -43,41 +43,23 @@ export function LandingDraft() {
     const field = panel.querySelector<HTMLElement>("[data-draft-search-end]");
     if (!field) return;
 
-    /* Only write when the value actually moves — otherwise the ResizeObserver
-       re-fires on its own layout change and spins. */
-    const put = (name: string, px: number) => {
-      const next = `${Math.round(px)}px`;
-      if (stage.style.getPropertyValue(name) !== next) stage.style.setProperty(name, next);
-    };
-
     const measure = () => {
-      /* Real distance from the document top to the stage — covers a wrapped or
-         dismissed announcement bar and any drift in the header tokens. */
-      put("--draft-fold-top", stage.getBoundingClientRect().top + window.scrollY);
-
-      const raw = field.getBoundingClientRect().bottom - panel.getBoundingClientRect().top;
-      const max = window.innerHeight * SEARCH_H_MAX_RATIO;
-      if (raw > 0) put("--draft-search-h", Math.min(Math.max(raw, SEARCH_H_MIN), max));
+      const h = field.getBoundingClientRect().bottom - panel.getBoundingClientRect().top;
+      if (h > 0) stage.style.setProperty("--draft-search-h", `${Math.round(h)}px`);
     };
 
     measure();
-    /* Second pass after paint — webfonts and the video poster settle late. */
-    const raf = window.requestAnimationFrame(measure);
-    const settle = window.setTimeout(measure, 500);
 
     const ro = new ResizeObserver(measure);
     ro.observe(panel);
     ro.observe(field);
-    ro.observe(document.body);
     window.addEventListener("resize", measure);
-    window.addEventListener("load", measure);
+    const settle = window.setTimeout(measure, 500);
     void document.fonts?.ready.then(measure).catch(() => {});
 
     return () => {
       ro.disconnect();
       window.removeEventListener("resize", measure);
-      window.removeEventListener("load", measure);
-      window.cancelAnimationFrame(raf);
       window.clearTimeout(settle);
     };
   }, []);
@@ -105,15 +87,12 @@ export function LandingDraft() {
 
       <main>
         <div ref={stageRef} className={`draft-stage${focused ? " is-focus" : ""}`}>
-          {/* Absolute layer — exactly one fold tall, out of flow on purpose */}
+          {/* Video owns the full first fold */}
           <div className="draft-hero-slot">
             <DraftReveal soft delay={100}>
               <DraftHeroVideo />
             </DraftReveal>
           </div>
-
-          {/* Reserves the fold minus the panel's overlap */}
-          <div className="draft-fold-spacer" aria-hidden />
 
           {/* One panel, one border, one radius — search and shop share the surface */}
           <div className={`draft-panel-wrap ${FRAME}`}>

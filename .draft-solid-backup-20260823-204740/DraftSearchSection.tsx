@@ -23,6 +23,11 @@ export function DraftSearchSection({
         <h1 className="mx-auto mt-5 max-w-3xl font-display text-[clamp(1.625rem,3.8vw,2.375rem)] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-headline)]">
           {tx("Find any healthcare service")}
         </h1>
+        <p className="mx-auto mt-3 max-w-[42rem] text-[0.9375rem] leading-relaxed text-ink-secondary [text-wrap:balance] md:text-base">
+          {tx(
+            "Search verified hospitals, clinics, doctors, nurses, home care providers, ambulances, emergency services, pathology labs, surgeries, outpatient care, and more\u2014all in one trusted platform.",
+          )}
+        </p>
       </header>
       <div className={`${SHELL_X} shrink-0`} data-draft-search-end>
         <LandingSearchWidget spotlight onOpenChange={onOpenChange} />

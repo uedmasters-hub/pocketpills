@@ -23,19 +23,6 @@
   /* Breathing room between the search field and the bottom of the viewport */
   --draft-bottom-gap: 1.5rem;
   --draft-search-h: 12rem;
-  /*
-    The video's share of the fold — THE dial. Lower = less video on screen.
-    --draft-hero-visible is clamped by min() so the panel can never ride high
-    enough to push the search field past the bottom of the viewport.
-  */
-  --draft-hero-ratio: 0.6;
-  /* How far the video continues behind the panel. Keep >= the 1.75rem corner
-     radius, or page background shows through the panel's rounded top. */
-  --draft-hero-overlap: 4rem;
-  --draft-hero-visible: min(
-    calc(var(--draft-fold-full) * var(--draft-hero-ratio)),
-    calc(var(--draft-fold-full) - var(--draft-search-h) - var(--draft-bottom-gap))
-  );
   --draft-search-gap: 2.25rem;
   --draft-shop-pt: 1.575rem;
   --draft-headline-search-gap: 1.375rem;
@@ -44,7 +31,6 @@
 @media (max-width: 640px) {
   :root {
     --draft-bottom-gap: 1.125rem;
-    --draft-hero-ratio: 0.68;
   }
 }
 
@@ -73,16 +59,12 @@
   Hero = absolute layer pinned to the top of the stage, exactly one fold tall.
   Out of flow on purpose: the panel below cannot shorten it.
 */
-/*
-  Video is cut at the panel — visible height plus a tuck behind the rounded top.
-  Below this the strips either side of the panel are page background.
-*/
 .draft-hero-slot {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: calc(var(--draft-hero-visible) + var(--draft-hero-overlap));
+  height: var(--draft-fold-full);
   overflow: hidden;
   z-index: 0;
 }
@@ -100,12 +82,12 @@
 
 /* Trust badges ride just above the panel's top edge */
 .draft-hero-slot .draft-hero-trust {
-  bottom: calc(var(--draft-hero-overlap) + 1.25rem);
+  bottom: calc(var(--draft-search-h) + var(--draft-bottom-gap) + 1.25rem);
 }
 
 @media (min-width: 768px) {
   .draft-hero-slot .draft-hero-trust {
-    bottom: calc(var(--draft-hero-overlap) + 1.75rem);
+    bottom: calc(var(--draft-search-h) + var(--draft-bottom-gap) + 1.75rem);
   }
 }
 
@@ -114,7 +96,7 @@
   min-height keeps the panel clear of the header on very short viewports.
 */
 .draft-fold-spacer {
-  height: var(--draft-hero-visible);
+  height: calc(var(--draft-fold-full) - var(--draft-search-h) - var(--draft-bottom-gap));
   min-height: 7rem;
 }
 
