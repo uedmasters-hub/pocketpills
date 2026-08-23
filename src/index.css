@@ -187,6 +187,9 @@
     --color-danger-subtle: var(--error-500);
     --color-info: var(--primary-600);
     --color-info-subtle: var(--primary-300);
+    /* Pharmacy “Processing” — cool sky, distinct from purple verifying */
+    --color-processing: #0369a1;
+    --color-processing-subtle: #e0f2fe;
 
     --surface-0: var(--neutral-100);
     --surface-1: var(--neutral-100);
@@ -258,6 +261,8 @@
     --color-danger-subtle: #450a0a;
     --color-info: #aaa4ff;
     --color-info-subtle: #2a2448;
+    --color-processing: #7dd3fc;
+    --color-processing-subtle: #0c4a6e;
 
     --surface-0: #180730;
     --surface-1: #220f3e;

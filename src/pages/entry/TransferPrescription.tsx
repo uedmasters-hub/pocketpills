@@ -787,10 +787,10 @@ export function TransferPrescription() {
         </div>
 
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button onClick={() => nav(trackId ? `/orders/${trackId}` : "/pharmacy")}>
+          <Button onClick={() => nav(trackId ? `/orders/${trackId}` : "/orders?service=pharmacy")}>
             {tx("Track transfer")}
           </Button>
-          <Button variant="secondary" onClick={() => nav("/pharmacy")}>{tx("Go to Pharmacy")}</Button>
+          <Button variant="secondary" onClick={() => nav("/orders?service=pharmacy")}>{tx("Go to orders")}</Button>
         </div>
       </div>
     </TransferShell>

@@ -1,189 +1,475 @@
+/**
+ * Unified order history — service tabs (Consultation, Medication, Pharmacy, …)
+ * with subtype chips and Pharmacy-style grid. Replaces the separate /pharmacy surface.
+ */
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import {
+  OrderSection,
+  OrderTile,
+} from "@/components/orders/OrderBoard";
+import {
   getOrders,
-  orderTotals,
-  typeMeta,
+  isActiveOrder,
   statusMeta,
+  statusPillClass,
   money,
   fmtDate,
   transferStatusLabel,
   labStatusLabel,
+  orderTotals,
   type Order,
   type OrderStatus,
-  type OrderType,
 } from "@/lib/orders";
 import { CareJourneyPage } from "@/pages/care/CareJourneyPage";
 
-const IN_PROGRESS: OrderStatus[] = ["verifying", "processing", "out_for_delivery"];
-const CARD = "rounded-2xl border border-line bg-white";
-const PILL = "rounded-full px-3 py-1 text-xs font-semibold";
+type ServiceId =
+  | "all"
+  | "consultation"
+  | "medication"
+  | "pharmacy"
+  | "labs"
+  | "assistance"
+  | "emergencies";
 
-/** Quiet type cue — only a thin left edge, no chips or colored icons. */
-const TYPE_RAIL: Record<OrderType, string> = {
-  fill: "linear-gradient(180deg, #3D2A7A 0%, #6B5CE7 100%)",
-  consultation: "linear-gradient(180deg, #9B93F0 0%, #C8C2FF 100%)",
-  refill: "linear-gradient(180deg, #0A5A68 0%, #54C7DA 100%)",
-  transfer: "linear-gradient(180deg, #8B7355 0%, #D2C2A8 100%)",
-  lab: "linear-gradient(180deg, #2F5D50 0%, #7BC4A8 100%)",
+type SubId = string;
+
+type HistoryEntry = {
+  id: string;
+  service: Exclude<ServiceId, "all">;
+  subtype: SubId;
+  title: string;
+  meta: string;
+  status: OrderStatus;
+  statusLabel: string;
+  href: string;
+  /** When set, render the shared OrderTile */
+  order?: Order;
 };
 
-const TYPE_SECTIONS: { type: OrderType; title: string }[] = [
-  { type: "fill", title: "Prescription fills" },
-  { type: "consultation", title: "Consultations" },
-  { type: "lab", title: "Lab visits" },
-  { type: "refill", title: "Refills" },
-  { type: "transfer", title: "Transfers" },
+const SERVICE_SUBS: Record<
+  Exclude<ServiceId, "all">,
+  { id: SubId; label: string }[]
+> = {
+  consultation: [
+    { id: "all", label: "All" },
+    { id: "doctor", label: "Doctor" },
+    { id: "clinic", label: "Clinic" },
+    { id: "hospital", label: "Hospital" },
+  ],
+  medication: [
+    { id: "all", label: "All" },
+    { id: "prescription", label: "Prescription" },
+    { id: "refill", label: "Refill" },
+    { id: "otc", label: "OTC" },
+  ],
+  pharmacy: [
+    { id: "all", label: "All" },
+    { id: "fill", label: "Fill" },
+    { id: "transfer", label: "Transfer" },
+    { id: "pickup", label: "Pickup" },
+  ],
+  labs: [
+    { id: "all", label: "All" },
+    { id: "blood", label: "Blood work" },
+    { id: "imaging", label: "Imaging" },
+    { id: "pathology", label: "Pathology" },
+  ],
+  assistance: [
+    { id: "all", label: "All" },
+    { id: "nurse", label: "Nurse" },
+    { id: "home", label: "Home visit" },
+    { id: "support", label: "Care support" },
+  ],
+  emergencies: [
+    { id: "all", label: "All" },
+    { id: "ambulance", label: "Ambulance" },
+    { id: "er", label: "ER" },
+    { id: "urgent", label: "Urgent care" },
+  ],
+};
+
+const SERVICE_LABEL: Record<Exclude<ServiceId, "all">, string> = {
+  consultation: "Consultation",
+  medication: "Medication",
+  pharmacy: "Pharmacy",
+  labs: "Labs",
+  assistance: "Assistance",
+  emergencies: "Emergencies",
+};
+
+const SERVICE_CTA: Record<Exclude<ServiceId, "all">, { label: string; to: string }> = {
+  consultation: { label: "Book consult →", to: "/appointments" },
+  medication: { label: "New fill →", to: "/fill" },
+  pharmacy: { label: "Transfer →", to: "/transfer" },
+  labs: { label: "Book a lab →", to: "/appointments" },
+  assistance: { label: "Get help →", to: "/messages" },
+  emergencies: { label: "Urgent care →", to: "/appointments" },
+};
+
+/** Demo rows so non-pharmacy services have something to browse in the draft. */
+const DEMO_ENTRIES: HistoryEntry[] = [
+  {
+    id: "demo-consult-doc-1",
+    service: "consultation",
+    subtype: "doctor",
+    title: "Dr. Amrita Shah",
+    meta: "Aug 20, 2026 · Family medicine · Virtual",
+    status: "delivered",
+    statusLabel: "Completed",
+    href: "/appointments",
+  },
+  {
+    id: "demo-consult-clinic-1",
+    service: "consultation",
+    subtype: "clinic",
+    title: "King West Family Clinic",
+    meta: "Aug 12, 2026 · Follow-up · In person",
+    status: "processing",
+    statusLabel: "Confirmed",
+    href: "/appointments",
+  },
+  {
+    id: "demo-consult-hosp-1",
+    service: "consultation",
+    subtype: "hospital",
+    title: "Toronto General — Cardiology",
+    meta: "Jul 28, 2026 · Outpatient · Dr. Chen",
+    status: "delivered",
+    statusLabel: "Completed",
+    href: "/appointments",
+  },
+  {
+    id: "demo-med-otc-1",
+    service: "medication",
+    subtype: "otc",
+    title: "Vitamin D3 1000 IU",
+    meta: "Aug 8, 2026 · 1 bottle · $12.99",
+    status: "delivered",
+    statusLabel: "Delivered",
+    href: "/drug",
+  },
+  {
+    id: "demo-pharm-pickup-1",
+    service: "pharmacy",
+    subtype: "pickup",
+    title: "Pharmacy pickup — Metformin",
+    meta: "Aug 5, 2026 · Ready at counter",
+    status: "out_for_delivery",
+    statusLabel: "Ready for pickup",
+    href: "/orders",
+  },
+  {
+    id: "demo-lab-blood-1",
+    service: "labs",
+    subtype: "blood",
+    title: "CBC & lipid panel",
+    meta: "Aug 18, 2026 · Lifelabs · 9:30 am",
+    status: "verifying",
+    statusLabel: "Sample received",
+    href: "/appointments",
+  },
+  {
+    id: "demo-lab-img-1",
+    service: "labs",
+    subtype: "imaging",
+    title: "Chest X-ray",
+    meta: "Aug 1, 2026 · Imaging centre",
+    status: "delivered",
+    statusLabel: "Results ready",
+    href: "/appointments",
+  },
+  {
+    id: "demo-assist-nurse-1",
+    service: "assistance",
+    subtype: "nurse",
+    title: "Injection support visit",
+    meta: "Aug 15, 2026 · Home · 45 min",
+    status: "processing",
+    statusLabel: "Scheduled",
+    href: "/appointments",
+  },
+  {
+    id: "demo-assist-home-1",
+    service: "assistance",
+    subtype: "home",
+    title: "Vitals & intake",
+    meta: "Jul 22, 2026 · Completed",
+    status: "delivered",
+    statusLabel: "Completed",
+    href: "/appointments",
+  },
+  {
+    id: "demo-emer-amb-1",
+    service: "emergencies",
+    subtype: "ambulance",
+    title: "Emergency ambulance",
+    meta: "Jun 30, 2026 · Dispatched · Toronto",
+    status: "delivered",
+    statusLabel: "Completed",
+    href: "/appointments",
+  },
+  {
+    id: "demo-emer-urgent-1",
+    service: "emergencies",
+    subtype: "urgent",
+    title: "Urgent care walk-in",
+    meta: "Aug 10, 2026 · Same-day · Closed",
+    status: "cancelled",
+    statusLabel: "Cancelled",
+    href: "/appointments",
+  },
 ];
 
-function StatusPill({ status, type }: { status: OrderStatus; type?: OrderType }) {
-  const { tx } = useI18n();
-  const style: Record<OrderStatus, string> = {
-    verifying: "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]",
-    processing: "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]",
-    out_for_delivery: "bg-[color:var(--pp-primary-200)] text-[color:var(--pp-primary-950)]",
-    delivered: "bg-wellness-subtle text-wellness",
-    cancelled: "bg-danger-subtle text-danger",
-  };
-  const label =
-    type === "lab"
-      ? labStatusLabel(status)
-      : type === "transfer"
-        ? transferStatusLabel(status)
-        : statusMeta[status].label;
-  return <span className={`${PILL} ${style[status]}`}>{tx(label)}</span>;
+function mapOrder(o: Order): HistoryEntry | null {
+  if (o.type === "consultation") {
+    return {
+      id: o.id,
+      service: "consultation",
+      subtype: "doctor",
+      title: o.prescriber ?? o.items[0]?.name ?? o.id,
+      meta: `${fmtDate(o.date)} · ${o.id}`,
+      status: o.status,
+      statusLabel: statusMeta[o.status].label,
+      href: `/orders/${o.id}`,
+      order: o,
+    };
+  }
+  if (o.type === "lab") {
+    return {
+      id: o.id,
+      service: "labs",
+      subtype: "blood",
+      title: o.labName ?? o.items[0]?.name ?? "Lab visit",
+      meta: `${o.visitSlot ?? fmtDate(o.date)} · ${o.id}`,
+      status: o.status,
+      statusLabel: labStatusLabel(o.status),
+      href: `/orders/${o.id}`,
+      order: o,
+    };
+  }
+  if (o.type === "transfer") {
+    return {
+      id: o.id,
+      service: "pharmacy",
+      subtype: "transfer",
+      title: o.fromPharmacy ? `From ${o.fromPharmacy}` : "Prescription transfer",
+      meta: `${fmtDate(o.date)} · ${o.id}`,
+      status: o.status,
+      statusLabel: transferStatusLabel(o.status),
+      href: `/orders/${o.id}`,
+      order: o,
+    };
+  }
+  if (o.type === "refill") {
+    const total = orderTotals(o).total;
+    return {
+      id: o.id,
+      service: "medication",
+      subtype: "refill",
+      title: o.items[0]?.name ?? o.id,
+      meta: `${fmtDate(o.date)} · ${o.items.length} item${o.items.length === 1 ? "" : "s"}${total > 0 ? ` · ${money(total)}` : ""}`,
+      status: o.status,
+      statusLabel: statusMeta[o.status].label,
+      href: `/orders/${o.id}`,
+      order: o,
+    };
+  }
+  if (o.type === "fill") {
+    const total = orderTotals(o).total;
+    return {
+      id: o.id,
+      service: "medication",
+      subtype: "prescription",
+      title: o.items[0]?.name ?? o.id,
+      meta: `${fmtDate(o.date)} · ${o.items.length} item${o.items.length === 1 ? "" : "s"}${total > 0 ? ` · ${money(total)}` : ""}`,
+      status: o.status,
+      statusLabel: statusMeta[o.status].label,
+      href: `/orders/${o.id}`,
+      order: o,
+    };
+  }
+  return null;
 }
 
-function orderTitle(o: Order, tx: (s: string) => string) {
-  if (o.type === "transfer") return o.fromPharmacy ? `${tx("From")} ${o.fromPharmacy}` : tx("Prescription transfer");
-  if (o.type === "lab") return o.labName ?? tx("Lab visit");
-  const names = o.items.map((i) => i.name);
-  if (names.length === 0) return tx(typeMeta[o.type].label);
-  if (names.length === 1) return names[0];
-  if (names.length === 2) return names.join(" & ");
-  return `${names[0]} +${names.length - 1} ${tx("more")}`;
-}
+const TILE_PAD_X = "px-3 sm:px-4";
+const TILE_PAD = `${TILE_PAD_X} py-3 sm:py-4`;
+const PILL = "rounded-full px-3 py-1 text-xs font-semibold";
 
-function OrderCard({ o }: { o: Order }) {
+/** Demo / non-order rows — same shell as OrderTile. */
+function HistoryTile({ entry }: { entry: HistoryEntry }) {
   const { tx } = useI18n();
   const nav = useNavigate();
-  const total = orderTotals(o).total;
-  const cancelled = o.status === "cancelled";
-  const delivered = o.status === "delivered";
-  const showDocs = delivered && o.type !== "transfer" && o.type !== "lab";
+  const active = isActiveOrder({ status: entry.status } as Order);
+  const pct = Math.round(
+    entry.status === "verifying"
+      ? 33
+      : entry.status === "processing"
+        ? 55
+        : entry.status === "out_for_delivery"
+          ? 80
+          : entry.status === "delivered"
+            ? 100
+            : 0,
+  );
+
+  if (entry.order) return <OrderTile o={entry.order} />;
+
+  if (!active) {
+    return (
+      <div
+        role="link"
+        tabIndex={0}
+        onClick={() => nav(entry.href)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            nav(entry.href);
+          }
+        }}
+        className={
+          "flex h-full min-h-[7.5rem] cursor-pointer flex-col overflow-hidden rounded-2xl border border-line bg-white text-left transition-colors " +
+          "hover:bg-[color:var(--state-hover)] active:bg-[color:var(--state-pressed)]"
+        }
+      >
+        <div className={`flex items-center justify-between gap-3 border-b border-line ${TILE_PAD_X} py-3`}>
+          <span className={`${PILL} ${statusPillClass(entry.status)}`}>{tx(entry.statusLabel)}</span>
+        </div>
+        <div className={`flex flex-1 flex-col ${TILE_PAD}`}>
+          <p className="truncate text-base font-semibold text-[color:var(--pp-primary-950)]">{entry.title}</p>
+          <p className="mt-1 truncate text-sm text-ink-tertiary">{entry.meta}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      role="link"
-      tabIndex={0}
-      onClick={() => nav(`/orders/${o.id}`)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          nav(`/orders/${o.id}`);
-        }
-      }}
+    <button
+      type="button"
+      onClick={() => nav(entry.href)}
       className={
-        `group relative flex cursor-pointer items-center gap-4 overflow-hidden ${CARD} py-4 pl-5 pr-4 transition-colors ` +
-        "hover:bg-[color:var(--state-hover)] active:bg-[color:var(--state-pressed)] sm:gap-6 sm:py-5 sm:pl-6 sm:pr-5 " +
-        (cancelled ? "opacity-70" : "")
+        "flex h-full min-h-[7.5rem] flex-col overflow-hidden rounded-2xl border border-line bg-white text-left transition-colors " +
+        "hover:bg-[color:var(--state-hover)] active:bg-[color:var(--state-pressed)]"
       }
     >
-      <span
-        className="absolute inset-y-0 left-0 w-1"
-        style={{ background: TYPE_RAIL[o.type] }}
-        aria-hidden
-      />
+      <div className={`flex items-center justify-between gap-2 ${TILE_PAD_X} pt-3 sm:pt-4`}>
+        <span className={`${PILL} min-w-0 truncate ${statusPillClass(entry.status)}`}>
+          {tx(entry.statusLabel)}
+        </span>
+        <span className="tnum shrink-0 text-sm text-ink-tertiary">{pct}%</span>
+      </div>
+      <div className="mt-3 h-1 w-full bg-[color:var(--pp-primary-200)]" role="progressbar" aria-valuenow={pct}>
+        <div className="h-full bg-[color:var(--pp-primary-950)]" style={{ width: `${pct}%` }} />
+      </div>
+      <div className={`flex flex-1 flex-col ${TILE_PAD}`}>
+        <p className="truncate text-base font-semibold text-[color:var(--pp-primary-950)]">{entry.title}</p>
+        <p className="mt-1 truncate text-sm text-ink-tertiary">{entry.meta}</p>
+      </div>
+    </button>
+  );
+}
 
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-2">
-          <span className="truncate font-semibold text-[color:var(--pp-primary-950)]">{orderTitle(o, tx)}</span>
-          <StatusPill status={o.status} type={o.type} />
-        </span>
-        <span className="mt-1 block truncate text-sm text-ink-tertiary">
-          {o.type === "lab"
-            ? `${o.visitSlot ?? fmtDate(o.date)} · ${o.items[0]?.name ?? o.id}`
-            : `${fmtDate(o.date)} · ${o.id}${
-                o.items.length > 1 && o.type !== "transfer"
-                  ? ` · ${o.items.map((i) => i.name).join(", ")}`
-                  : ""
-              }`}
-        </span>
-      </span>
-
-      {showDocs ? (
-        <span className="flex shrink-0 flex-col items-end gap-1">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              nav(`/orders/${o.id}/receipt`);
-            }}
-            className="text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
-          >
-            {tx("View receipt")}
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              nav(`/orders/${o.id}/invoice`);
-            }}
-            className="text-2xs font-medium text-ink-tertiary transition-colors hover:text-[color:var(--pp-primary-950)]"
-          >
-            {tx("Invoice")}
-          </button>
-        </span>
-      ) : (
-        <span className="shrink-0 text-right">
-          <span className="block font-display text-lg font-medium text-[color:var(--pp-primary-950)] tnum">
-            {o.type === "transfer" && total === 0 ? tx("Free") : money(total)}
-          </span>
-          <span className="mt-0.5 block text-2xs text-ink-tertiary">
-            {o.type === "transfer"
-              ? tx("No charge yet")
-              : `${o.items.length} ${o.items.length === 1 ? tx("item") : tx("items")}`}
-          </span>
-        </span>
-      )}
+function HistoryGrid({ entries }: { entries: HistoryEntry[] }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {entries.map((e) => (
+        <HistoryTile key={e.id} entry={e} />
+      ))}
     </div>
   );
+}
+
+const SERVICE_IDS: ServiceId[] = [
+  "all",
+  "consultation",
+  "medication",
+  "pharmacy",
+  "labs",
+  "assistance",
+  "emergencies",
+];
+
+function parseService(raw: string | null): ServiceId {
+  return SERVICE_IDS.includes(raw as ServiceId) ? (raw as ServiceId) : "all";
 }
 
 /* ── History ───────────────────────────────────────────── */
 export function OrderHistory() {
   const { tx } = useI18n();
-  const [tab, setTab] = useState<"all" | "progress" | "delivered" | "cancelled">("all");
-  const orders = getOrders();
+  const [params, setParams] = useSearchParams();
+  const [service, setService] = useState<ServiceId>(() => parseService(params.get("service")));
+  const [subtype, setSubtype] = useState<SubId>("all");
 
-  const counts = useMemo(() => {
-    const progress = orders.filter((o) => IN_PROGRESS.includes(o.status)).length;
-    const delivered = orders.filter((o) => o.status === "delivered").length;
-    const cancelled = orders.filter((o) => o.status === "cancelled").length;
-    return { all: orders.length, progress, delivered, cancelled };
-  }, [orders]);
+  const catalog = useMemo(() => {
+    const fromOrders = getOrders()
+      .map(mapOrder)
+      .filter((e): e is HistoryEntry => Boolean(e));
+    const ids = new Set(fromOrders.map((e) => e.id));
+    return [...fromOrders, ...DEMO_ENTRIES.filter((e) => !ids.has(e.id))].sort((a, b) =>
+      b.meta.localeCompare(a.meta),
+    );
+  }, []);
 
-  const list = orders.filter((o) => {
-    if (tab === "progress") return IN_PROGRESS.includes(o.status);
-    if (tab === "delivered") return o.status === "delivered";
-    if (tab === "cancelled") return o.status === "cancelled";
-    return true;
-  });
+  const serviceCounts = useMemo(() => {
+    const counts: Record<ServiceId, number> = {
+      all: catalog.length,
+      consultation: 0,
+      medication: 0,
+      pharmacy: 0,
+      labs: 0,
+      assistance: 0,
+      emergencies: 0,
+    };
+    for (const e of catalog) counts[e.service] += 1;
+    return counts;
+  }, [catalog]);
 
-  const grouped = useMemo(() => {
-    return TYPE_SECTIONS.map((section) => ({
-      ...section,
-      items: list.filter((o) => o.type === section.type),
-    })).filter((s) => s.items.length > 0);
-  }, [list]);
+  const byService =
+    service === "all" ? catalog : catalog.filter((e) => e.service === service);
 
-  const tabs = [
-    ["all", "All", counts.all],
-    ["progress", "In progress", counts.progress],
-    ["delivered", "Delivered", counts.delivered],
-    ["cancelled", "Cancelled", counts.cancelled],
-  ] as const;
+  const subDefs = service === "all" ? [] : SERVICE_SUBS[service];
+  const subCounts = useMemo(() => {
+    const map: Record<string, number> = { all: byService.length };
+    for (const s of subDefs) {
+      if (s.id === "all") continue;
+      map[s.id] = byService.filter((e) => e.subtype === s.id).length;
+    }
+    return map;
+  }, [byService, subDefs]);
+
+  const filtered =
+    service === "all" || subtype === "all"
+      ? byService
+      : byService.filter((e) => e.subtype === subtype);
+
+  const active = filtered.filter((e) => isActiveOrder({ status: e.status } as Order));
+  const past = filtered.filter((e) => !isActiveOrder({ status: e.status } as Order));
+
+  const onService = (next: ServiceId) => {
+    setService(next);
+    setSubtype("all");
+    const p = new URLSearchParams(params);
+    if (next === "all") p.delete("service");
+    else p.set("service", next);
+    setParams(p, { replace: true });
+  };
+
+  /** Service CTA as a link on the first section header only. */
+  const headerLink =
+    service === "all" ? null : (
+      <Link
+        to={SERVICE_CTA[service].to}
+        className="text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
+      >
+        {tx(SERVICE_CTA[service].label.replace(/\s*→\s*$/, ""))}
+      </Link>
+    );
+
+  const firstIsActive = active.length > 0;
+  const firstTitle = firstIsActive ? tx("In progress") : tx("Recent");
+  const firstEntries = firstIsActive ? active : past;
+  const showRecentBelow = firstIsActive && past.length > 0;
 
   return (
     <div>
@@ -192,115 +478,108 @@ export function OrderHistory() {
         <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-4xl">
           {tx("Order history")}
         </h1>
-        <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          {tx("Track deliveries, lab visits, receipts, and reorders in one place.")}
-        </p>
       </header>
 
-      {counts.progress > 0 && (
-        <button
-          type="button"
-          onClick={() => setTab("progress")}
-          className={
-            "mb-6 flex w-full items-center justify-between gap-4 rounded-2xl border border-line " +
-            "bg-[color:var(--pp-primary-200)] px-5 py-4 text-left transition-opacity hover:opacity-90"
-          }
+      {/* Service tabs */}
+      <div className="mb-5 border-b border-line">
+        <div
+          className="flex min-w-0 gap-1 overflow-x-auto"
+          role="tablist"
+          aria-label={tx("Service")}
         >
-          <span>
-            <span className="block text-sm font-semibold text-[color:var(--pp-primary-950)]">
-              {counts.progress} {counts.progress === 1 ? tx("order on the way") : tx("orders on the way")}
-            </span>
-            <span className="mt-0.5 block text-xs text-ink-secondary">
-              {tx("Tap to see what’s in progress — free delivery across Canada.")}
-            </span>
-          </span>
-          <span className="shrink-0 text-sm font-medium text-[color:var(--pp-violet)]">{tx("View →")}</span>
-        </button>
-      )}
-
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2" role="group" aria-label={tx("Filter orders")}>
-          {tabs.map(([id, label, count]) => (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={tab === id}
-              onClick={() => setTab(id)}
-              className={
-                "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors " +
-                (tab === id
-                  ? "bg-[color:var(--pp-primary-950)] text-white"
-                  : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)] hover:bg-[color:var(--pp-primary-200)]")
-              }
-            >
-              {tx(label)}
-              <span
+          {(
+            [
+              ["all", "All"],
+              ["consultation", "Consultation"],
+              ["medication", "Medication"],
+              ["pharmacy", "Pharmacy"],
+              ["labs", "Labs"],
+              ["assistance", "Assistance"],
+              ["emergencies", "Emergencies"],
+            ] as const
+          ).map(([id, label]) => {
+            const on = service === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                onClick={() => onService(id)}
                 className={
-                  "tnum rounded-full px-1.5 py-0.5 text-2xs font-semibold " +
-                  (tab === id ? "bg-white/20 text-white" : "bg-white text-ink-tertiary")
+                  "relative -mb-px shrink-0 px-3 py-3 text-sm font-medium transition-colors sm:px-4 " +
+                  (on
+                    ? "text-[color:var(--pp-primary-950)]"
+                    : "text-ink-tertiary hover:text-[color:var(--pp-primary-950)]")
                 }
               >
-                {count}
-              </span>
-            </button>
-          ))}
+                {tx(label)}
+                <span className="ml-1.5 tnum text-ink-tertiary">{serviceCounts[id]}</span>
+                {on ? (
+                  <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[color:var(--pp-primary-950)]" />
+                ) : null}
+              </button>
+            );
+          })}
         </div>
-        <Link
-          to="/fill"
-          className="text-sm font-medium text-[color:var(--pp-violet)] transition-opacity hover:opacity-70"
-        >
-          {tx("New fill →")}
-        </Link>
       </div>
 
-      {list.length === 0 ? (
-        <div className={`${CARD} px-6 py-14 text-center`}>
-          <p className="font-semibold text-[color:var(--pp-primary-950)]">
-            {tab === "all"
-              ? tx("No orders yet")
-              : tab === "progress"
-                ? tx("No in-progress orders")
-                : tab === "delivered"
-                  ? tx("No delivered orders")
-                  : tx("No cancelled orders")}
+      {/* Subtype chips */}
+      {service !== "all" && subDefs.length > 0 ? (
+        <div
+          className="mb-5 flex flex-wrap gap-2"
+          role="tablist"
+          aria-label={tx(`${SERVICE_LABEL[service]} type`)}
+        >
+          {subDefs
+            .filter((s) => s.id === "all" || (subCounts[s.id] ?? 0) > 0)
+            .map((s) => {
+              const on = subtype === s.id;
+              const label = s.id === "all" ? tx("All types") : tx(s.label);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  onClick={() => setSubtype(s.id)}
+                  className={
+                    "inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors " +
+                    (on
+                      ? "border border-[color:var(--pp-primary-950)] bg-white text-[color:var(--pp-primary-950)]"
+                      : "border border-transparent bg-white text-ink-secondary hover:bg-[color:var(--pp-primary-300)] hover:text-[color:var(--pp-primary-950)]")
+                  }
+                >
+                  {label}
+                </button>
+              );
+            })}
+        </div>
+      ) : null}
+
+      {filtered.length === 0 ? (
+        <div className="rounded-2xl border border-line bg-white px-6 py-14 text-center">
+          <p className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
+            {tx("Nothing in this view yet")}
           </p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-ink-tertiary">
-            {tab === "all"
-              ? tx("When you fill, refill, or transfer a prescription, it will show up here.")
-              : tx("Try another filter, or place a new fill.")}
+          <p className="mx-auto mt-2 max-w-sm text-sm text-ink-tertiary">
+            {tx("Try another service or type, or start a new request.")}
           </p>
-          <Link
-            to="/fill"
-            className="mt-5 inline-flex rounded-full bg-cta px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-cta-hover"
-          >
-            {tx("Fill a prescription")}
-          </Link>
         </div>
       ) : (
-        <div className="space-y-8">
-          {grouped.map((section) => (
-            <section key={section.type} aria-labelledby={`orders-${section.type}`}>
-              <div className="mb-3 flex items-center gap-3">
-                <span
-                  className="h-4 w-1 shrink-0 rounded-full"
-                  style={{ background: TYPE_RAIL[section.type] }}
-                  aria-hidden
-                />
-                <h2
-                  id={`orders-${section.type}`}
-                  className="text-sm font-semibold text-[color:var(--pp-primary-950)]"
-                >
-                  {tx(section.title)}
-                </h2>
-                <span className="text-2xs text-ink-tertiary tnum">{section.items.length}</span>
-              </div>
-              <div className="space-y-2">
-                {section.items.map((o) => (
-                  <OrderCard key={o.id} o={o} />
-                ))}
-              </div>
-            </section>
-          ))}
+        <div className="space-y-10">
+          <OrderSection
+            title={firstTitle}
+            count={firstEntries.length}
+            aside={headerLink ?? undefined}
+          >
+            <HistoryGrid entries={firstEntries} />
+          </OrderSection>
+          {showRecentBelow ? (
+            <OrderSection title={tx("Recent")} count={past.length}>
+              <HistoryGrid entries={past} />
+            </OrderSection>
+          ) : null}
         </div>
       )}
     </div>

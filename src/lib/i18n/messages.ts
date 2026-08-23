@@ -34,6 +34,7 @@ const EN = {
   "app.businessProfile": "Business profile",
   "app.family": "Family",
   "app.notifications": "Notifications",
+  "app.support": "Help & support",
 
   "menu.editProfile": "Edit profile",
   "menu.businessProfile": "Business profile",
@@ -183,6 +184,7 @@ const FR: Partial<Record<MessageKey, string>> = {
   "app.businessProfile": "Profil professionnel",
   "app.family": "Famille",
   "app.notifications": "Notifications",
+  "app.support": "Aide et soutien",
 
   "menu.editProfile": "Modifier le profil",
   "menu.businessProfile": "Profil professionnel",
@@ -326,6 +328,7 @@ const NE: Partial<Record<MessageKey, string>> = {
   "app.businessProfile": "व्यवसाय प्रोफाइल",
   "app.family": "परिवार",
   "app.notifications": "सूचनाहरू",
+  "app.support": "मद्दत र सहयोग",
 
   "menu.editProfile": "प्रोफाइल सम्पादन",
   "menu.businessProfile": "व्यवसाय प्रोफाइल",

@@ -42,13 +42,31 @@ export const typeMeta: Record<OrderType, { label: string; icon: string }> = {
   lab: { label: "Lab visit", icon: "🧪" },
 };
 
-export const statusMeta: Record<OrderStatus, { label: string; tone: "primary" | "info" | "wellness" | "danger" | "neutral" }> = {
-  verifying: { label: "Pharmacist verifying", tone: "primary" },
-  processing: { label: "Processing", tone: "info" },
-  out_for_delivery: { label: "Out for delivery", tone: "info" },
+export const statusMeta: Record<OrderStatus, { label: string; tone: "primary" | "info" | "wellness" | "danger" | "neutral" | "warning" }> = {
+  verifying: { label: "Pharmacist verifying", tone: "warning" },
+  processing: { label: "Processing", tone: "primary" },
+  out_for_delivery: { label: "Out for delivery", tone: "wellness" },
   delivered: { label: "Delivered", tone: "wellness" },
   cancelled: { label: "Cancelled", tone: "danger" },
 };
+
+/** Chip classes — each live status reads at a glance (cancelled / verifying especially). */
+export function statusPillClass(status: OrderStatus): string {
+  switch (status) {
+    case "verifying":
+      /* Amber — review / attention, same clarity as cancelled */
+      return "bg-warning-subtle text-warning";
+    case "processing":
+      /* Cool sky blue — clearly not purple verifying */
+      return "bg-[color:var(--color-processing-subtle)] text-[color:var(--color-processing)]";
+    case "out_for_delivery":
+      return "bg-[color:var(--secondary-500)] text-[color:var(--secondary-800)]";
+    case "delivered":
+      return "bg-wellness-subtle text-wellness";
+    case "cancelled":
+      return "bg-danger-subtle text-danger";
+  }
+}
 
 /** Transfer-specific status copy for pharmacy tracking */
 export function transferStatusLabel(status: OrderStatus): string {
@@ -117,6 +135,20 @@ const SEED: Order[] = [
     pharmacist: "J. Nguyen, RPh",
   },
   {
+    id: "PP-RF-4410", invoiceNo: "INV-2026-4410", date: "2026-08-20", type: "refill", status: "verifying",
+    patient: "Ramesh Mandal", address: "221 King St W, Toronto, ON M5H 1K4",
+    items: [{ name: "Metformin", strength: "500mg", qty: 90, unitPrice: 0.11 }],
+    dispensingFee: 11.99, insuranceCovered: 18.0, payment: { method: "mixed", cardLast4: "4242" },
+    pharmacist: "R. Okafor, RPh",
+  },
+  {
+    id: "PP-RF-4388", invoiceNo: "INV-2026-4388", date: "2026-08-12", type: "refill", status: "processing",
+    patient: "Ramesh Mandal", address: "221 King St W, Toronto, ON M5H 1K4",
+    items: [{ name: "Alysena", strength: "0.1/0.02mg", qty: 84, unitPrice: 0.21 }],
+    dispensingFee: 11.99, insuranceCovered: 29.63, payment: { method: "insurance" },
+    pharmacist: "J. Nguyen, RPh",
+  },
+  {
     id: "PP-TR-2984", invoiceNo: "INV-2026-2984", date: "2026-06-02", type: "transfer", status: "processing",
     patient: "Ramesh Mandal", address: "221 King St W, Toronto, ON M5H 1K4",
     fromPharmacy: "Shoppers Drug Mart",
@@ -132,6 +164,23 @@ const SEED: Order[] = [
     items: [{ name: "Salbutamol", strength: "100mcg", qty: 1, unitPrice: 22.0 }],
     dispensingFee: 11.99, insuranceCovered: 20.4, payment: { method: "mixed", cardLast4: "4242" },
     pharmacist: "J. Nguyen, RPh",
+  },
+  {
+    id: "PP-TR-8425", invoiceNo: "INV-2026-8425", date: "2026-08-18", type: "transfer", status: "cancelled",
+    patient: "Ramesh Mandal", address: "221 King St W, Toronto, ON M5H 1K4",
+    fromPharmacy: "Manabiyata Pharmacy",
+    items: [
+      { name: "Metformin", strength: "500mg", qty: 90, unitPrice: 0.11 },
+      { name: "Atorvastatin", strength: "20mg", qty: 90, unitPrice: 0.47 },
+    ],
+    dispensingFee: 11.99, insuranceCovered: 0, payment: { method: "insurance" },
+  },
+  {
+    id: "PP-MED-4599", invoiceNo: "INV-2026-4599", date: "2026-08-16", type: "fill", status: "cancelled",
+    patient: "Ramesh Mandal", address: "221 King St W, Toronto, ON M5H 1K4",
+    items: [{ name: "Abilify", strength: "10mg", qty: 30, unitPrice: 1.85 }],
+    dispensingFee: 11.99, insuranceCovered: 0, payment: { method: "card", cardLast4: "4242" },
+    pharmacist: "R. Okafor, RPh",
   },
 ];
 

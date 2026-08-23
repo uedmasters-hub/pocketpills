@@ -869,7 +869,7 @@ export function FillPrescription() {
   }
 
   /* Confirmation */
-  return <Confirmation state={s} total={offerQuote.due} onHome={() => nav("/app")} onTrack={() => nav("/pharmacy")} />;
+  return <Confirmation state={s} total={offerQuote.due} onHome={() => nav("/app")} onTrack={() => nav("/orders?service=pharmacy")} />;
 }
 
 function Confirmation({ state, total, onHome, onTrack }: { state: State; total: number; onHome: () => void; onTrack: () => void }) {

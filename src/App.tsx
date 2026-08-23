@@ -57,7 +57,7 @@ import {
   PocketpillsBenefits,
   SwitchAccount,
 } from "@/pages/account/AccountPages";
-import { Pharmacy, Account } from "@/pages/Simple";
+import { Account } from "@/pages/Simple";
 import { Messages } from "@/pages/Messages";
 
 import { Eligibility, Questionnaire } from "@/pages/care/Steps1";
@@ -75,6 +75,8 @@ import { Offers } from "@/pages/Offers";
 import { PharmaciesIndex, PharmaciesByRegion } from "@/pages/PharmaciesByRegion";
 
 import { OrderHistory, OrderDetail } from "@/pages/orders/OrderHistory";
+import { HelpSupport } from "@/pages/support/HelpSupport";
+import { Notifications } from "@/pages/notifications/Notifications";
 import { Receipt, Invoice } from "@/pages/orders/Documents";
 import { Appointments } from "@/pages/appointments/Appointments";
 import { AppointmentDetail, AppointmentReceipt } from "@/pages/appointments/AppointmentDetail";
@@ -258,7 +260,7 @@ export default function App() {
             <Route path="/app" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/draft" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/pharmacy" element={<Pharmacy />} />
+            <Route path="/pharmacy" element={<Navigate to="/orders?service=pharmacy" replace />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:section" element={<ProfileSection />} />
@@ -270,7 +272,10 @@ export default function App() {
             <Route path="/account/switch" element={<SwitchAccount />} />
             <Route path="/business" element={<Navigate to="/provider/listing" replace />} />
             <Route path="/orders" element={<OrderHistory />} />
+            <Route path="/orders/draft" element={<Navigate to="/orders" replace />} />
             <Route path="/orders/:id" element={<OrderDetail />} />
+            <Route path="/support" element={<HelpSupport />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="/appointments" element={<Appointments />} />
             <Route path="/appointments/visit/:id" element={<AppointmentDetail />} />
             <Route path="/appointments/provider/:id/services/:serviceId" element={<FacilityServiceDetail />} />

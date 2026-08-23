@@ -3,22 +3,10 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { DateOfBirthField } from "@/components/DateOfBirthField";
 import { PhoneField } from "@/components/PhoneField";
-import {
-  getOrders,
-  orderTotals,
-  statusMeta,
-  money,
-  fmtDate,
-  transferStatusLabel,
-  transferStepIndex,
-  TRANSFER_TRACK_STEPS,
-  TRANSFER_HINTS,
-} from "@/lib/orders";
 import { useUser, newInsuranceId, fmtInsuranceList, fmtInsurancePlan, type InsurancePlan } from "@/lib/user";
 import { useI18n } from "@/lib/i18n";
 import { useReviewDraft, type ReviewChange } from "@/lib/rightRail";
 
-/* ── shared page furniture ─────────────────────────────── */
 function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
     <header className="mb-8">
@@ -31,169 +19,6 @@ function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub
 
 const CARD = "rounded-2xl border border-line bg-white";
 const PILL = "rounded-full px-3 py-1 text-xs font-semibold";
-
-function StatusPill({ status }: { status: keyof typeof statusMeta }) {
-  const tone: Record<string, string> = {
-    primary: "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]",
-    info: "bg-info-subtle text-info",
-    wellness: "bg-wellness-subtle text-wellness",
-    danger: "bg-danger-subtle text-danger",
-    neutral: "bg-surface-1 text-ink-secondary",
-  };
-  const { tx } = useI18n();
-  return <span className={`${PILL} ${tone[statusMeta[status].tone]}`}>{tx(statusMeta[status].label)}</span>;
-}
-
-/* ── Pharmacy ──────────────────────────────────────────── */
-export function Pharmacy() {
-  const { tx } = useI18n();
-  const nav = useNavigate();
-  const all = getOrders();
-  const transfers = all.filter((o) => o.type === "transfer" && o.status !== "delivered" && o.status !== "cancelled");
-  const active = all.filter((o) => o.type !== "transfer" && o.status !== "delivered" && o.status !== "cancelled");
-  const recent = all.filter((o) => o.status === "delivered").slice(0, 3);
-
-  return (
-    <div>
-      <PageHead
-        eyebrow={tx("Pharmacy")}
-        title={tx("Orders & refills")}
-        sub={tx("Track deliveries, transfers, manage refills, and view receipts.")}
-      />
-
-      {transfers.length > 0 && (
-        <section className="mb-10">
-          <div className="mb-3 flex items-end justify-between gap-3">
-            <h2 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">{tx("Transfers to track")}</h2>
-            <p className="text-xs text-ink-tertiary">{tx("Tap a card for full detail")}</p>
-          </div>
-          <div className="space-y-3">
-            {transfers.map((o) => {
-              const step = transferStepIndex(o.status);
-              const pct = ((step + 1) / TRANSFER_TRACK_STEPS.length) * 100;
-              const nextHint = TRANSFER_HINTS[Math.min(step, TRANSFER_HINTS.length - 1)];
-              return (
-                <button
-                  key={o.id}
-                  type="button"
-                  onClick={() => nav(`/orders/${o.id}`)}
-                  className={`${CARD} w-full p-5 text-left transition-colors hover:bg-[color:var(--state-hover)]`}
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-[color:var(--pp-primary-950)]">{o.id}</p>
-                      <p className="mt-0.5 text-sm text-ink-tertiary">
-                        {tx("From")} {o.fromPharmacy ?? tx("your pharmacy")} · {fmtDate(o.date)}
-                      </p>
-                    </div>
-                    <span className={`${PILL} bg-[color:var(--pp-primary-200)] text-[color:var(--pp-primary-950)]`}>
-                      {tx(transferStatusLabel(o.status))}
-                    </span>
-                  </div>
-
-                  <ol className="mt-4 flex gap-1.5" aria-label={tx("Transfer progress")}>
-                    {TRANSFER_TRACK_STEPS.map((label, i) => (
-                      <li key={label} className="min-w-0 flex-1" title={tx(label)}>
-                        <span
-                          className={
-                            "block h-1.5 rounded-full " +
-                            (i <= step ? "bg-[color:var(--pp-primary-950)]" : "bg-[color:var(--pp-primary-300)]")
-                          }
-                        />
-                      </li>
-                    ))}
-                  </ol>
-                  <div className="mt-2 flex items-center justify-between gap-2 text-xs text-ink-tertiary">
-                    <span>{tx(TRANSFER_TRACK_STEPS[step])}</span>
-                    <span className="tnum">{Math.round(pct)}%</span>
-                  </div>
-
-                  <div className="mt-4 rounded-xl bg-[color:var(--pp-primary-200)] px-3.5 py-3">
-                    <p className="text-2xs font-semibold uppercase tracking-wide text-[color:var(--pp-violet)]">{tx("Next cue")}</p>
-                    <p className="mt-1 text-sm font-medium text-[color:var(--pp-primary-950)]">{tx(nextHint.title)}</p>
-                    <p className="mt-0.5 text-sm text-ink-secondary">{tx(nextHint.detail)}</p>
-                  </div>
-
-                  <p className="mt-3 text-sm font-medium text-[color:var(--pp-violet)]">{tx("View transfer details →")}</p>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {active.length > 0 && (
-        <section className="mb-10">
-          <h2 className="mb-3 font-display text-md font-medium text-[color:var(--pp-primary-950)]">{tx("In progress")}</h2>
-          <div className="space-y-3">
-            {active.map((o) => {
-              const t = orderTotals(o);
-              const pct = o.status === "verifying" ? 33 : o.status === "processing" ? 55 : 80;
-              return (
-                <button type="button" key={o.id} onClick={() => nav(`/orders/${o.id}`)} className={`${CARD} w-full p-5 text-left transition-colors hover:bg-[color:var(--state-hover)]`}>
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-[color:var(--pp-primary-950)]">{o.id}</p>
-                      <p className="text-sm text-ink-tertiary">{fmtDate(o.date)} · {o.items.length} {o.items.length === 1 ? tx("item") : tx("items")} · {money(t.total)}</p>
-                    </div>
-                    <StatusPill status={o.status} />
-                  </div>
-                  <div
-                    className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-1"
-                    role="progressbar"
-                    aria-valuenow={pct}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label={`Order ${o.id} progress`}
-                  >
-                    <div className="h-full rounded-full bg-[color:var(--pp-primary-950)] transition-[width] duration-500" style={{ width: `${pct}%` }} />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      <section className="mb-10">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-md font-medium text-[color:var(--pp-primary-950)]">{tx("Recent orders")}</h2>
-          <Link to="/orders" className="text-sm font-semibold text-[color:var(--pp-violet)] hover:underline">{tx("View all")}</Link>
-        </div>
-        <div className="space-y-2">
-          {recent.map((o) => (
-            <Link key={o.id} to={`/orders/${o.id}`} className={`${CARD} flex items-center gap-4 p-4 transition-colors hover:bg-[color:var(--state-hover)]`}>
-              <span className="min-w-0 flex-1">
-                <span className="block font-semibold text-[color:var(--pp-primary-950)]">{o.id}</span>
-                <span className="block truncate text-sm text-ink-tertiary">{fmtDate(o.date)} · {o.items.map((i) => i.name).join(", ")}</span>
-              </span>
-              <span className="shrink-0 text-sm font-semibold text-[color:var(--pp-primary-950)] tnum">{money(orderTotals(o).total)}</span>
-              <span className="shrink-0 text-ink-tertiary" aria-hidden>→</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <button
-        type="button"
-        onClick={() => nav("/transfer")}
-        className={`${CARD} flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-[color:var(--state-hover)]`}
-      >
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[#7040D9] text-white" aria-hidden>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M13.5 3.5H7.2A2.2 2.2 0 0 0 5 5.7v12.6a2.2 2.2 0 0 0 2.2 2.2h6.3" />
-            <path d="M14.5 12h6M17.8 9l3 3-3 3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold text-[color:var(--pp-primary-950)]">{tx("Transfer my prescriptions")}</span>
-          <span className="block text-sm text-ink-tertiary">{tx("Switch to PocketPills")}</span>
-        </span>
-        <span className="shrink-0 text-ink-tertiary" aria-hidden>›</span>
-      </button>
-    </div>
-  );
-}
 
 /* ── Account ───────────────────────────────────────────── */
 const INSURANCE_CARRIERS = [
@@ -515,6 +340,7 @@ export function Account() {
           </h2>
           {(
             [
+              [tx("Notifications"), tx("Order, refill, and care updates"), "/notifications"],
               [tx("Notification settings"), tx("Reminders, delivery, and care messages"), "/account/notifications"],
               [t("menu.language"), t("account.languageDesc"), "/account/language"],
               [t("menu.family"), tx("People you manage medications for"), "/account/family"],

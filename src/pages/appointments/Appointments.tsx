@@ -8,6 +8,7 @@ import { mapSearchHits } from "@/components/AlsoFoundHeading";
 import { HighlightedText } from "@/components/HighlightedText";
 import { drugs, type Treatment } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
+import { StickyChrome } from "@/components/layout/StickyChrome";
 import {
   appointmentIsPast,
   filterProviders,
@@ -295,7 +296,7 @@ export function Appointments() {
       />
     ) : null;
 
-  const withRail = "flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-8";
+  const withRail = "flex flex-col gap-8 lg:flex-row lg:items-stretch lg:gap-8";
 
   return (
     <div>
@@ -1257,15 +1258,8 @@ function YourAppointments({
   ].slice(0, 6);
   if (total === 0 && pastRows.length === 0) return null;
 
-  return (
-    <aside
-      className={
-        layout === "aside"
-          ? "w-full shrink-0 lg:sticky lg:top-28 lg:w-72 xl:w-80"
-          : "mt-12 border-t border-line pt-8"
-      }
-      aria-label={tx("Your appointments")}
-    >
+  const panel = (
+    <>
       {total > 0 ? (
         <>
           <div className="mb-5">
@@ -1357,37 +1351,65 @@ function YourAppointments({
             <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
               {tx(total > 0 ? "Past visits" : "Your visits")}
             </h2>
-            <p className="mt-1 text-sm text-ink-tertiary">
-              {tx("Open a visit for tips, follow-up, and the receipt.")}
-            </p>
           </div>
-          <div className="space-y-2">
-            {pastRows.map((row) => (
-              <button
-                key={row.id}
-                type="button"
-                onClick={() => nav(row.href)}
-                className="w-full rounded-2xl border border-line bg-white px-4 py-3 text-left hover:border-[color:var(--pp-violet)]"
-              >
-                <p className="truncate text-sm font-semibold text-[color:var(--pp-primary-950)]">
-                  {row.title}
-                </p>
-                <p className="mt-0.5 truncate text-xs text-ink-tertiary">
-                  {row.meta}
-                  <span className="mx-1.5 text-ink-tertiary/50">·</span>
-                  {row.status === "cancelled"
-                    ? tx("Cancelled")
-                    : row.status === "completed"
-                      ? tx("Completed")
-                      : row.status === "not_attempted"
-                        ? tx("Not attempted")
-                        : tx("Past")}
-                </p>
-              </button>
-            ))}
-          </div>
+          <ul className="overflow-hidden rounded-2xl border border-line bg-white">
+            {pastRows.map((row) => {
+              const cancelled = row.status === "cancelled";
+              const statusLabel =
+                row.status === "cancelled"
+                  ? tx("Cancelled")
+                  : row.status === "completed"
+                    ? tx("Completed")
+                    : row.status === "not_attempted"
+                      ? tx("Not attempted")
+                      : tx("Past");
+              return (
+                <li key={row.id} className="border-b border-line last:border-b-0">
+                  <button
+                    type="button"
+                    onClick={() => nav(row.href)}
+                    className={
+                      "w-full px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--state-hover)] " +
+                      (cancelled ? "text-ink-tertiary line-through" : "")
+                    }
+                  >
+                    <span
+                      className={
+                        "block truncate text-sm font-semibold " +
+                        (cancelled ? "" : "text-[color:var(--pp-primary-950)]")
+                      }
+                    >
+                      {row.title}
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-ink-tertiary">
+                      {row.meta}
+                      {!cancelled ? (
+                        <>
+                          <span className="mx-1.5 text-ink-tertiary/50">·</span>
+                          {statusLabel}
+                        </>
+                      ) : null}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       ) : null}
+    </>
+  );
+
+  return (
+    <aside
+      className={
+        layout === "aside"
+          ? "w-full shrink-0 lg:w-72 xl:w-80"
+          : "mt-12 border-t border-line pt-8"
+      }
+      aria-label={tx("Your appointments")}
+    >
+      {layout === "aside" ? <StickyChrome>{panel}</StickyChrome> : panel}
     </aside>
   );
 }

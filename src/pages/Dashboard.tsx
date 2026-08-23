@@ -751,7 +751,7 @@ export function Dashboard() {
             to: "/transfer",
             image: QUICK_ACTION_IMG.transfer,
           },
-          { id: "order", title: "Start a\nnew order", to: "/pharmacy", image: QUICK_ACTION_IMG.order },
+          { id: "order", title: "Start a\nnew order", to: "/orders?service=pharmacy", image: QUICK_ACTION_IMG.order },
           {
             id: "treatments",
             title: "Explore\ntreatments",

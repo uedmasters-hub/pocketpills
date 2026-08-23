@@ -11,7 +11,8 @@ import {
 } from "@/components/layout/ActivityRail";
 import { useRightRail } from "@/lib/rightRail";
 import { useDismiss } from "@/lib/useDismiss";
-import { useChromeVisibility } from "@/lib/useChromeVisibility";
+import { ChromeVisibilityProvider, useChromeHidden } from "@/lib/chromeVisibility";
+import { StickyChrome } from "@/components/layout/StickyChrome";
 import { FRAME, SURFACE } from "@/components/layout/Grid";
 import { useI18n } from "@/lib/i18n";
 import { isFocusedPatientFlow } from "@/lib/marketingPaths";
@@ -49,13 +50,13 @@ const NAV: { id: NavId; labelKey: MessageKey; to: string }[] = [
 
 const MORE: [MessageKey, string][] = [
   ["app.profile", "/profile"],
-  ["app.pharmacy", "/pharmacy"],
+  ["app.support", "/support"],
   ["app.messages", "/messages"],
   ["app.offers", "/offers"],
   ["app.pharmaciesRegion", "/pharmacies/regions"],
   ["app.editProfile", "/account"],
   ["app.family", "/account/family"],
-  ["app.notifications", "/account/notifications"],
+  ["app.notifications", "/notifications"],
 ];
 
 /** Exact for leaf paths; prefix only when the path has real nested segments. */
@@ -88,8 +89,7 @@ function navIsActive(id: NavId, pathname: string) {
         pathname.startsWith("/treatment")
       );
     case "orders":
-      /* Pharmacy is the orders & refills surface */
-      return pathname.startsWith("/orders") || pathname.startsWith("/pharmacy");
+      return pathname.startsWith("/orders");
     default:
       return false;
   }
@@ -106,7 +106,8 @@ function Sidebar() {
 
   return (
     <aside className="hidden w-64 shrink-0 lg:block">
-      <nav aria-label={t("nav.main")} className="sticky top-28 flex flex-col gap-1">
+      <StickyChrome>
+        <nav aria-label={t("nav.main")} className="flex flex-col gap-1">
         {NAV.map((n) => {
           const active = navIsActive(n.id, pathname);
           return (
@@ -169,6 +170,7 @@ function Sidebar() {
           )}
         </div>
       </nav>
+      </StickyChrome>
     </aside>
   );
 }
@@ -220,15 +222,24 @@ function MobileNav({ hidden }: { hidden: boolean }) {
 
 /* ── shell ─────────────────────────────────────────────── */
 export function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <ChromeVisibilityProvider>
+      <AppShellBody>{children}</AppShellBody>
+    </ChromeVisibilityProvider>
+  );
+}
+
+function AppShellBody({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { tx } = useI18n();
-  const chromeHidden = useChromeVisibility();
+  const chromeHidden = useChromeHidden();
   const { review } = useRightRail();
   const isMedOrder = /^\/drug\/[^/]+\/order/.test(pathname);
   const splitJourney = isMedOrder;
   const focusedFlow = isFocusedPatientFlow(pathname) || splitJourney;
   /* PDP / focused browse pages own a sticky right column — Activity would collide. */
   const isDrugDetail = /^\/drug\/[^/]+$/.test(pathname);
+  /* Order detail pages only — list keeps Activity rail. */
   const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname);
   const isPharmacies = pathname === "/pharmacies" || pathname.startsWith("/pharmacies/");
   const isDoctors = pathname === "/doctors" || pathname.startsWith("/doctors/");
@@ -241,7 +252,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     isDoctors ||
     isFacilities ||
     isAppointments ||
-    pathname === "/messages";
+    pathname === "/messages" ||
+    pathname === "/support";
   const showActivity = !focusedFlow && !hideActivityRail;
 
   /**
@@ -265,7 +277,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </main>
         </div>
       ) : (
-        <div className="mx-auto flex w-full max-w-[105rem] flex-col gap-8 px-5 pb-28 pt-8 md:px-8 lg:flex-row lg:items-start lg:pb-10 xl:px-20">
+        <div className="mx-auto flex w-full max-w-[105rem] flex-col gap-8 px-5 pb-28 pt-8 md:px-8 lg:flex-row lg:items-stretch lg:pb-10 xl:px-20">
           {focusedFlow ? <div className="hidden w-60 shrink-0 lg:block" aria-hidden /> : <Sidebar />}
 
           <div className="flex min-w-0 w-full flex-1 flex-col gap-8">

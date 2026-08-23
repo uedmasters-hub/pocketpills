@@ -4,6 +4,7 @@ import { useUser } from "@/lib/user";
 import { pendingRows, profileChecklist } from "@/lib/profile";
 import { useRightRail } from "@/lib/rightRail";
 import { useI18n } from "@/lib/i18n";
+import { StickyChrome } from "@/components/layout/StickyChrome";
 import { Caret } from "@/components/ui";
 import { PageSearchField } from "@/components/PageSearchField";
 import { DetailMeta, DetailSection } from "@/components/DetailSection";
@@ -168,6 +169,8 @@ function LiveKindTabs({
 }
 
 function orderAccent(o: Order) {
+  if (o.status === "verifying") return "var(--warning-900)";
+  if (o.status === "processing") return "var(--color-processing)";
   if (o.status === "out_for_delivery") return "var(--secondary-800)";
   if (o.type === "transfer") return "var(--pp-violet)";
   if (o.type === "lab") return "var(--pp-green)";
@@ -405,19 +408,18 @@ export function MobileActivity() {
   );
 }
 
-/** Sticky right rail — always mounted in AppShell so layout stays consistent. */
+/** Right rail — sticky with top gap synced to header hide/show. */
 export function ActivityRail() {
   const { tx } = useI18n();
   const { pathname } = useLocation();
   return (
     <aside className="hidden w-72 shrink-0 lg:block xl:w-80" aria-label={tx("Activity")}>
-      <div className="sticky top-28">
+      <StickyChrome>
         <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{tx("Activity")}</h2>
-        <p className="mt-1 text-sm text-ink-tertiary">{tx("What needs you next")}</p>
         <div className="mt-5">
           <ActivityBody key={pathname} />
         </div>
-      </div>
+      </StickyChrome>
     </aside>
   );
 }
@@ -508,12 +510,12 @@ export function ReviewRail() {
 
   return (
     <aside className="hidden w-72 shrink-0 lg:block xl:w-80" aria-label={tx("Review")}>
-      <div className="sticky top-28">
+      <StickyChrome>
         <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{tx("Review")}</h2>
         <div className="mt-5">
           <ReviewBody />
         </div>
-      </div>
+      </StickyChrome>
     </aside>
   );
 }

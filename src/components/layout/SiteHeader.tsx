@@ -4,7 +4,7 @@ import { useUser } from "@/lib/user";
 import { pathFromLocation, saveAuthReturn } from "@/lib/authReturn";
 import { useI18n } from "@/lib/i18n";
 import { LogoLink } from "@/components/Logo";
-import { useChromeVisibility } from "@/lib/useChromeVisibility";
+import { useChromeHidden } from "@/lib/chromeVisibility";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
 import { Caret } from "@/components/ui";
 import { FRAME, SURFACE } from "@/components/layout/Grid";
@@ -344,7 +344,7 @@ function PharmacyMenu() {
         <DropTile to="/drug" icon="circle" label="Search prices" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
         <DropTile to="/offers" icon="plus" label="Offers & discounts" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
       </>}
-      cta="/pharmacy" ctaLabel="Online Pharmacy"
+      cta="/orders?service=pharmacy" ctaLabel="Online Pharmacy"
       asideTitle="Explore Medications"
       tags={[["Ozempic", "/drug/ozempic"], ["Finasteride", "/drug/finasteride"], ["Minoxidil", "/drug/loniten"], ["Lantus", "/drug/lantus"], ["Wegovy", "/drug/wegovy"], ["Escitalopram", "/drug/escitalopram"], ["Jardiance", "/drug/jardiance"], ["Alysena", "/drug/alysena"]]}
       browseTo="/drug" browseLabel="Browse all medications"
@@ -402,7 +402,7 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
   const { t } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
   // Focused flows keep chrome pinned — losing "Save & exit" mid-checkout is hostile.
-  const scrolledAway = useChromeVisibility();
+  const scrolledAway = useChromeHidden();
   const hidden = variant === "focused" ? false : scrolledAway;
 
   /* Checkout / assessment flows — no nav, protect the funnel. */
@@ -430,22 +430,38 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
   const isApp = variant === "app";
 
   if (isApp) {
+    const iconBtn =
+      "inline-flex h-10 w-10 items-center justify-center rounded-full text-[color:var(--pp-nav-ink)] " +
+      "transition-colors hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]";
     return (
       <Shell hidden={hidden}>
         <Brand to="/app" />
-        <div className="flex items-center gap-5 md:gap-6">
-          <a
-            href="https://apps.apple.com/ca/app/pocketpills-doctor-pharmacy/id1367442074"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden items-center gap-2 text-base font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:text-[color:var(--pp-primary-950)] lg:inline-flex"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><rect x="7" y="2" width="10" height="20" rx="2.5" /><path d="M11 18h2" /></svg>
-            {t("nav.getApp")}
-          </a>
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
           <Link to="/" className="hidden items-center gap-2 text-base font-medium text-[color:var(--pp-nav-ink)] transition-colors hover:text-[color:var(--pp-primary-950)] lg:inline-flex">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" /></svg>
             Pocketpills.com
+          </Link>
+          <Link
+            to="/notifications"
+            className={iconBtn}
+            aria-label={t("app.notifications")}
+            title={t("app.notifications")}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M6.5 9.5a5.5 5.5 0 0 1 11 0c0 5 2 6.5 2 6.5H4.5s2-1.5 2-6.5Z" />
+              <path d="M10 19a2 2 0 0 0 4 0" />
+            </svg>
+          </Link>
+          <Link
+            to="/messages"
+            className={iconBtn}
+            aria-label={t("app.messages")}
+            title={t("app.messages")}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M4.5 6.5h15v11a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 17.5v-11Z" />
+              <path d="m4.5 7.5 7.5 5.5 7.5-5.5" />
+            </svg>
           </Link>
           <UserMenu />
         </div>
