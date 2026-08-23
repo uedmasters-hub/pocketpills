@@ -55,11 +55,9 @@ export function TagSuggestField({
   const inputId = `tags-${label.toLowerCase().replace(/\s+/g, "-")}`;
 
   const draftIn = new Set(draftTokens(draft).map((x) => x.toLowerCase()));
-  const taken = new Set([
-    ...items.map((x) => x.toLowerCase()),
-    ...draftIn,
-  ]);
-  const chips = suggestions.filter((s) => !items.some((x) => x.toLowerCase() === s.toLowerCase())).slice(0, 7);
+  const chips = suggestions
+    .filter((s) => !items.some((x) => x.toLowerCase() === s.toLowerCase()))
+    .slice(0, 7);
   const showChips = focused && chips.length > 0;
 
   const commit = () => {
