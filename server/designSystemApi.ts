@@ -195,23 +195,32 @@ export async function handleDesignSystem(req: DesignSystemRequest): Promise<{ st
         return { status: 200, body: { page, source: "static" } };
       }
       let page = await getPage(id, section, slug);
-      if (!page) {
-        // Newer seed pages may not exist on older DBs — serve bundled copy.
-        const seed = buildSeedPages().find((p) => p.section === section && p.slug === slug);
-        if (seed) {
-          page = {
-            id: `seed-${section}-${slug}`,
-            versionId: id,
-            section: seed.section,
-            slug: seed.slug,
-            title: seed.title,
-            sortOrder: seed.sortOrder,
-            lede: seed.lede,
-            bodyMd: seed.bodyMd,
-            blocks: [],
-            updatedAt: new Date().toISOString(),
-          };
-        }
+      const seed = buildSeedPages().find((p) => p.section === section && p.slug === slug);
+      const preferSeedDocs =
+        seed &&
+        ((section === "components" &&
+          (slug === "phone" || slug === "date-of-birth" || slug === "field" || slug === "selection")) ||
+          (section === "patterns" && slug === "forms"));
+      if (!page && seed) {
+        page = {
+          id: `seed-${section}-${slug}`,
+          versionId: id,
+          section: seed.section,
+          slug: seed.slug,
+          title: seed.title,
+          sortOrder: seed.sortOrder,
+          lede: seed.lede,
+          bodyMd: seed.bodyMd,
+          blocks: [],
+          updatedAt: new Date().toISOString(),
+        };
+      } else if (page && preferSeedDocs && seed) {
+        page = {
+          ...page,
+          title: seed.title,
+          lede: seed.lede,
+          bodyMd: seed.bodyMd,
+        };
       }
       if (!page) return { status: 404, body: { error: "Page not found" } };
       return { status: 200, body: { page, source: "db" } };

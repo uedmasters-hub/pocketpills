@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui";
+import { DateOfBirthField } from "@/components/DateOfBirthField";
+import { isoToDobDisplay } from "@/lib/dob";
 import { useUser, type Profile } from "@/lib/user";
 import {
   ensureDemoAccounts,
@@ -349,7 +351,7 @@ export function ManageFamily() {
                 <p className="font-semibold text-[color:var(--pp-primary-950)]">{m.name}</p>
                 <p className="text-sm text-ink-tertiary">
                   {tx(m.relationship)}
-                  {m.dob ? ` · ${tx("Born")} ${m.dob}` : ""}
+                  {m.dob ? ` · ${tx("Born")} ${isoToDobDisplay(m.dob) || m.dob}` : ""}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -403,15 +405,11 @@ export function ManageFamily() {
               ))}
             </select>
           </label>
-          <label className="block">
-            <span className={LABEL}>{tx("Date of birth (optional)")}</span>
-            <input
-              className={FIELD}
-              value={form.dob}
-              onChange={(e) => setForm((f) => ({ ...f, dob: e.target.value }))}
-              placeholder="YYYY-MM-DD"
-            />
-          </label>
+          <DateOfBirthField
+            label={tx("Date of birth (optional)")}
+            value={form.dob}
+            onChange={(v) => setForm((f) => ({ ...f, dob: v }))}
+          />
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" onClick={add} disabled={!form.name.trim()}>
               {tx("Save member")}
@@ -609,7 +607,7 @@ export function SwitchAccount() {
       lastName: account.lastName,
       phone: "",
       dob: "",
-      province: "ON",
+      province: "Kathmandu",
       healthCard: "",
       address: "",
       insurances: [],

@@ -95,7 +95,105 @@ const DISTRICT_KEY = "pp.pharmacies.district.v1";
 
 export const DEFAULT_PHARMACY_DISTRICT = "Kathmandu";
 
+/** Districts used across directories, profile, and health-card locality (Nepal). */
 export const NEPAL_DISTRICTS = [
+  "Achham",
+  "Arghakhanchi",
+  "Baglung",
+  "Baitadi",
+  "Bajhang",
+  "Bajura",
+  "Banke",
+  "Bara",
+  "Bardiya",
+  "Bhaktapur",
+  "Bhojpur",
+  "Chitwan",
+  "Dadeldhura",
+  "Dailekh",
+  "Dang",
+  "Darchula",
+  "Dhading",
+  "Dhankuta",
+  "Dhanusha",
+  "Dolakha",
+  "Dolpa",
+  "Doti",
+  "Eastern Rukum",
+  "Gorkha",
+  "Gulmi",
+  "Humla",
+  "Ilam",
+  "Jajarkot",
+  "Jhapa",
+  "Jumla",
+  "Kailali",
+  "Kalikot",
+  "Kanchanpur",
+  "Kapilvastu",
+  "Kaski",
+  "Kathmandu",
+  "Kavrepalanchok",
+  "Khotang",
+  "Lalitpur",
+  "Lamjung",
+  "Mahottari",
+  "Makwanpur",
+  "Manang",
+  "Morang",
+  "Mugu",
+  "Mustang",
+  "Myagdi",
+  "Nawalparasi East",
+  "Nawalparasi West",
+  "Nuwakot",
+  "Okhaldhunga",
+  "Palpa",
+  "Panchthar",
+  "Parbat",
+  "Parsa",
+  "Pyuthan",
+  "Ramechhap",
+  "Rasuwa",
+  "Rautahat",
+  "Rolpa",
+  "Rupandehi",
+  "Salyan",
+  "Sankhuwasabha",
+  "Saptari",
+  "Sarlahi",
+  "Sindhuli",
+  "Sindhupalchok",
+  "Siraha",
+  "Solukhumbu",
+  "Sunsari",
+  "Surkhet",
+  "Syangja",
+  "Tanahu",
+  "Taplejung",
+  "Terhathum",
+  "Udayapur",
+  "Western Rukum",
+] as const;
+
+/** Map legacy Canadian province codes (and blanks) to a Nepal district. */
+export function coerceNepalDistrict(raw: string): string {
+  const v = normalizeCityName(raw);
+  if (!v) return DEFAULT_PHARMACY_DISTRICT;
+  if (/^(AB|BC|MB|NB|NL|NS|NT|NU|ON|PE|QC|SK|YT|NP)$/i.test(v)) {
+    return DEFAULT_PHARMACY_DISTRICT;
+  }
+  const match = NEPAL_DISTRICTS.find((d) => d.toLowerCase() === v.toLowerCase());
+  return match || v;
+}
+
+/** Sorted district options for profile / auth selects (current value kept if custom). */
+export function nepalDistrictOptions(current?: string): string[] {
+  return districtSelectOptions(coerceNepalDistrict(current || ""), [...NEPAL_DISTRICTS]);
+}
+
+/** Top DDA districts — footer / coverage pills (mirrors former CA province chips). */
+export const FEATURED_DELIVERY_DISTRICTS = [
   "Kathmandu",
   "Morang",
   "Rupandehi",
@@ -109,12 +207,7 @@ export const NEPAL_DISTRICTS = [
   "Dhanusha",
   "Parsa",
   "Dang",
-  "Bhaktapur",
-  "Makwanpur",
 ] as const;
-
-/** Top DDA districts — footer / coverage pills (mirrors former CA province chips). */
-export const FEATURED_DELIVERY_DISTRICTS = NEPAL_DISTRICTS.slice(0, 13);
 
 export function districtSlug(name: string) {
   return normalizeCityName(name)

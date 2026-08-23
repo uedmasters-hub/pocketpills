@@ -15,6 +15,7 @@ import {
 } from "@/lib/hospitalStaff";
 import { useProvider } from "@/lib/providerAuth";
 import { WeeklySlotEditor } from "@/components/WeeklySlotEditor";
+import { PhoneField } from "@/components/PhoneField";
 
 const FIELD =
   "h-11 w-full rounded-xl border border-line bg-white px-3.5 text-sm text-[color:var(--pp-primary-950)] outline-none focus:border-[color:var(--pp-primary-950)]";
@@ -374,14 +375,11 @@ function DoctorEditor({
 
         <Section title={tx("Personal details")} hint={tx("How patients reach and understand you.")}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={tx("Phone")}>
-              <input
-                className={FIELD}
-                value={draft.phone}
-                onChange={(e) => patch({ phone: e.target.value })}
-                inputMode="tel"
-              />
-            </Field>
+            <PhoneField
+              label={tx("Phone")}
+              value={draft.phone}
+              onChange={(v) => patch({ phone: v })}
+            />
             <Field label={tx("Email")}>
               <input
                 className={FIELD}

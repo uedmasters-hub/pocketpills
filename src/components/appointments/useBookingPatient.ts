@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { loadFamily, saveFamily } from "@/lib/accountPrefs";
 import { useI18n } from "@/lib/i18n";
 import { useUser } from "@/lib/user";
+import { isValidDob } from "@/lib/dob";
 import {
   addPatientUpload,
   deletePatientFile,
@@ -158,7 +159,7 @@ export function useBookingPatient() {
     const dob = newDob.trim();
     if (!name) return;
     if (dob && !isValidDob(dob)) {
-      setDobError(tx("Use YYYY-MM-DD and a date in the past."));
+      setDobError(tx("Use DD / MM / YYYY and a date in the past."));
       return;
     }
     const id = `pass-${Date.now()}`;
@@ -269,18 +270,4 @@ function persistOtherPatients(list: BookingPatientOption[]) {
   } catch {
     /* demo — ignore persistence errors */
   }
-}
-
-function isValidDob(value: string): boolean {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!m) return false;
-  const year = Number(m[1]);
-  const month = Number(m[2]);
-  const day = Number(m[3]);
-  const d = new Date(year, month - 1, day);
-  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return false;
-  const now = new Date();
-  if (d > now) return false;
-  if (now.getFullYear() - year > 120) return false;
-  return true;
 }

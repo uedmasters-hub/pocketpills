@@ -249,28 +249,14 @@ function ActivityBody() {
     <div className="space-y-5">
       {pending.length > 0 && (
         <section className="overflow-hidden rounded-2xl border border-line bg-white">
-          <div className="flex items-start gap-4 px-5 py-4">
-            <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-4 px-5 py-4">
+            <div className="min-w-0">
               <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
                 {tx("Complete your profile")}
               </h2>
               <p className="mt-1 text-sm text-ink-tertiary">
                 {profileDone} {tx("of")} {profileTotal} {tx("done")} · {pending.length} {tx("left")}
               </p>
-              {/* Progress sits with status copy — not a separate orphaned strip */}
-              <div
-                className="mt-3 h-1.5 overflow-hidden rounded-full bg-[color:var(--pp-primary-200)]"
-                role="progressbar"
-                aria-valuenow={Math.round(progress * 100)}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label={tx("Profile completion")}
-              >
-                <div
-                  className="h-full rounded-full bg-[color:var(--pp-primary-950)] transition-[width] duration-300"
-                  style={{ width: `${Math.max(progress * 100, progress > 0 ? 6 : 0)}%` }}
-                />
-              </div>
             </div>
             <span
               className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-2xs font-semibold text-[color:var(--pp-primary-950)]"
@@ -284,9 +270,23 @@ function ActivityBody() {
               </span>
             </span>
           </div>
-          <ul className="border-t border-line">
+          {/* Full-bleed bar — edge to edge, not padded like an orphan strip */}
+          <div
+            className="h-1 bg-[color:var(--pp-primary-200)]"
+            role="progressbar"
+            aria-valuenow={Math.round(progress * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={tx("Profile completion")}
+          >
+            <div
+              className="h-full bg-[color:var(--pp-primary-950)] transition-[width] duration-300"
+              style={{ width: `${Math.max(progress * 100, progress > 0 ? 6 : 0)}%` }}
+            />
+          </div>
+          <ul>
             {pending.map((r, i) => (
-              <li key={r.id} className={i > 0 ? "border-t border-line" : undefined}>
+              <li key={r.id} className="border-t border-line">
                 <button
                   type="button"
                   onClick={() => nav(`/profile/${r.id}`)}
@@ -428,34 +428,24 @@ function ReviewBody() {
   if (!review) return null;
 
   return (
-    <div className="space-y-5">
-      <section className="overflow-hidden rounded-2xl border border-line bg-white">
-        <div className="border-b border-line px-4 py-4">
-          <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{tx(review.title)}</p>
-          <p className="mt-0.5 text-xs text-ink-tertiary">
-            {review.changes.length}{" "}
-            {review.changes.length === 1 ? tx("change to review") : tx("changes to review")}
-          </p>
-        </div>
-        <ul>
-          {review.changes.map((c, i) => (
-            <li key={`${c.label}-${i}`} className={"px-4 py-3.5 " + (i > 0 ? "border-t border-line" : "")}>
-              <p className="text-xs font-medium text-ink-tertiary">{tx(c.label)}</p>
-              {c.from != null && c.from !== "" ? (
-                <p className="mt-1 text-sm text-[color:var(--pp-primary-950)]">
-                  <span className="text-ink-tertiary line-through">{c.from}</span>
-                  <span className="mx-1.5 text-ink-tertiary">→</span>
-                  <span className="font-medium">{c.to || "—"}</span>
-                </p>
-              ) : (
-                <p className="mt-1 text-sm font-medium text-[color:var(--pp-primary-950)]">{c.to || "—"}</p>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <div className="space-y-2">
+    <section className="overflow-hidden rounded-2xl border border-line bg-white">
+      <ul>
+        {review.changes.map((c, i) => (
+          <li key={`${c.label}-${i}`} className={"px-5 py-3.5 " + (i > 0 ? "border-t border-line" : "")}>
+            <p className="text-xs font-medium text-ink-tertiary">{tx(c.label)}</p>
+            {c.from != null && c.from !== "" ? (
+              <p className="mt-1 text-sm text-[color:var(--pp-primary-950)]">
+                <span className="text-ink-tertiary line-through">{c.from}</span>
+                <span className="mx-1.5 text-ink-tertiary">→</span>
+                <span className="font-medium">{c.to || "—"}</span>
+              </p>
+            ) : (
+              <p className="mt-1 text-sm font-medium text-[color:var(--pp-primary-950)]">{c.to || "—"}</p>
+            )}
+          </li>
+        ))}
+      </ul>
+      <div className="space-y-1 border-t border-line px-5 py-4">
         <button
           type="button"
           onClick={() => {
@@ -472,12 +462,12 @@ function ReviewBody() {
             review.onDiscard?.();
             clearReview();
           }}
-          className="flex w-full items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium text-ink-secondary transition-colors hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]"
+          className="flex w-full items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]"
         >
           {tx("Discard")}
         </button>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -497,13 +487,7 @@ export function MobileReview() {
         aria-expanded={open}
         aria-controls="mobile-review-panel"
       >
-        <span>
-          <span className="block text-sm font-medium text-[color:var(--pp-primary-950)]">{tx("Review changes")}</span>
-          <span className="mt-0.5 block text-xs text-ink-tertiary">
-            {review.changes.length}{" "}
-            {review.changes.length === 1 ? tx("update ready to save") : tx("updates ready to save")}
-          </span>
-        </span>
+        <span className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">{tx("Review")}</span>
         <span className="text-ink-tertiary">
           <Caret open={open} />
         </span>
@@ -523,10 +507,9 @@ export function ReviewRail() {
   if (!review) return null;
 
   return (
-    <aside className="hidden w-72 shrink-0 lg:block xl:w-80" aria-label={tx("Review changes")}>
+    <aside className="hidden w-72 shrink-0 lg:block xl:w-80" aria-label={tx("Review")}>
       <div className="sticky top-28">
         <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{tx("Review")}</h2>
-        <p className="mt-1 text-sm text-ink-tertiary">{tx("Confirm before updating")}</p>
         <div className="mt-5">
           <ReviewBody />
         </div>

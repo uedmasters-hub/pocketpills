@@ -7,6 +7,10 @@ import type {
 
 export { Modal, ConfirmModal } from "./Modal";
 export { Tooltip } from "./Tooltip";
+export { PhoneField } from "@/components/PhoneField";
+export { DateOfBirthField } from "@/components/DateOfBirthField";
+export { TagSuggestField } from "@/components/TagSuggestField";
+export { DistrictField } from "@/components/DistrictField";
 
 export {
   AccessGateSkeleton,

@@ -23,7 +23,7 @@ export function DetailSection({
   return (
     <section
       id={id}
-      className={"scroll-mt-28 overflow-hidden rounded-2xl border border-line bg-white " + className}
+      className={"scroll-mt-28 rounded-2xl border border-line bg-white " + className}
     >
       <div className="flex items-start justify-between gap-3 px-5 py-4">
         <div className="min-w-0 flex-1">

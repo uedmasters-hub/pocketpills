@@ -3,10 +3,15 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { pathFromLocation, peekAuthReturn, consumeAuthReturn, isSafeReturnPath, saveAuthReturn } from "@/lib/authReturn";
 import { Card, Field, Progress, Badge, Switch } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
+import { DateOfBirthField } from "@/components/DateOfBirthField";
+import { PhoneField } from "@/components/PhoneField";
 import { useUser, newInsuranceId } from "@/lib/user";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { useI18n } from "@/lib/i18n";
+import { isValidDob } from "@/lib/dob";
+import { formatPhoneSoft, isValidPhone } from "@/lib/phone";
+import { DistrictField } from "@/components/DistrictField";
 
 /* ── Shared auth chrome ─────────────────────────────────── */
 function AuthShell({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
@@ -107,17 +112,8 @@ function isValidEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
 
-function isValidPhone(v: string) {
-  const digits = v.replace(/\D/g, "");
-  return digits.length >= 10 && digits.length <= 15;
-}
-
 function formatPhone(v: string) {
-  const d = v.replace(/\D/g, "").slice(0, 11);
-  if (d.length <= 3) return d;
-  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
-  if (d.length <= 10) return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-  return `+${d.slice(0, 1)} (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7)}`;
+  return formatPhoneSoft(v);
 }
 
 const inputClass =
@@ -345,29 +341,42 @@ export function Login() {
         {phase === "form" && (
           <>
             <div className="space-y-4">
-              <label htmlFor={idField} className="block">
-                <span className="mb-1.5 block text-sm font-medium text-ink">{tx("Phone or Email")}</span>
-                <input
-                  id={idField}
-                  value={identifier}
-                  inputMode={isPhone ? "tel" : isEmail ? "email" : "text"}
-                  autoComplete={isPhone ? "tel" : "username"}
-                  placeholder="Enter phone number or email"
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    setIdentifier(detectId(next) === "phone" ? formatPhone(next) : next);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && canPrimary) goAccount();
-                  }}
-                  className={inputClass}
-                />
-                {isPhone && (
-                  <span className="mt-1.5 block text-xs text-ink-tertiary">
-                    Mobile detected — we'll sign you in with a one-time code.
-                  </span>
-                )}
-              </label>
+              {isPhone ? (
+                <div>
+                  <PhoneField
+                    label={tx("Phone")}
+                    value={identifier}
+                    onChange={setIdentifier}
+                    hint="Mobile detected — we'll sign you in with a one-time code."
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIdentifier("")}
+                    className="mt-2 text-sm font-medium text-ink-secondary underline decoration-line underline-offset-2 hover:text-[color:var(--pp-primary-950)]"
+                  >
+                    Use email instead
+                  </button>
+                </div>
+              ) : (
+                <label htmlFor={idField} className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-ink">{tx("Phone or Email")}</span>
+                  <input
+                    id={idField}
+                    value={identifier}
+                    inputMode={isEmail ? "email" : "text"}
+                    autoComplete="username"
+                    placeholder="Enter phone number or email"
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setIdentifier(detectId(next) === "phone" ? formatPhone(next) : next);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && canPrimary) goAccount();
+                    }}
+                    className={inputClass}
+                  />
+                </label>
+              )}
 
               {/* Password collapses for phone; stays for email / unknown */}
               <div
@@ -559,14 +568,14 @@ export function SignUp() {
   const [step, setStep] = useState(0);
   const [f, setF] = useState({
     email: "", password: "", firstName: "", lastName: "", dob: "", phone: "",
-    province: "ON", healthCard: "", hasInsurance: true, carrier: "", group: "", member: "",
+    province: "Kathmandu", healthCard: "", hasInsurance: true, carrier: "", group: "", member: "",
     address: "", allergies: "",
   });
   const set = (k: keyof typeof f, v: string | boolean) => setF((p) => ({ ...p, [k]: v }));
 
   const canNext =
     step === 0 ? !!f.firstName && !!f.lastName && !!f.email && !!f.password :
-    step === 1 ? !!f.dob && !!f.phone :
+    step === 1 ? isValidDob(f.dob) && isValidPhone(f.phone) :
     step === 2 ? true :
     !!f.address;
 
@@ -647,8 +656,12 @@ export function SignUp() {
         {step === 1 && (
           <>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label={tx("Date of birth")} placeholder="YYYY-MM-DD" value={f.dob} onChange={(e) => set("dob", e.target.value)} />
-              <Field label={tx("Phone")} placeholder="(416) 555-0100" value={f.phone} onChange={(e) => set("phone", e.target.value)} />
+              <DateOfBirthField
+                label={tx("Date of birth")}
+                value={f.dob}
+                onChange={(v) => set("dob", v)}
+              />
+              <PhoneField label={tx("Phone")} value={f.phone} onChange={(v) => set("phone", v)} />
             </div>
             <Field
               label={tx("Allergies (optional)")}
@@ -661,19 +674,11 @@ export function SignUp() {
         )}
         {step === 2 && (
           <>
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-ink-secondary" id="auth-province-label">
-                {tx("Province")}
-              </span>
-              <select
-                value={f.province}
-                onChange={(e) => set("province", e.target.value)}
-                aria-labelledby="auth-province-label"
-                className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3 text-ink focus:border-primary"
-              >
-                {["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"].map((p) => <option key={p}>{p}</option>)}
-              </select>
-            </label>
+            <DistrictField
+              label={tx("District")}
+              value={f.province}
+              onChange={(v) => set("province", v)}
+            />
             <Field label={tx("Health card number (optional)")} value={f.healthCard} onChange={(e) => set("healthCard", e.target.value)} />
             <div className="border-t border-line pt-4">
               <Switch

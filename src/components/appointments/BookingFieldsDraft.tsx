@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { DetailSection } from "@/components/DetailSection";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui";
+import { DateOfBirthField } from "@/components/DateOfBirthField";
 import { Modal } from "@/components/ui/Modal";
 import { useI18n } from "@/lib/i18n";
 import type { PayMethod, PaymentFields } from "@/components/checkout/ChoosePaymentOption";
@@ -182,13 +183,10 @@ export function VisitWhoPanelDraft({
                   ))}
                 </select>
               </label>
-              <Field
+              <DateOfBirthField
                 label={tx("Date of birth (optional)")}
                 value={newDob}
-                onChange={(e) => onNewDob(e.target.value)}
-                placeholder="YYYY-MM-DD"
-                className="placeholder:italic"
-                inputMode="numeric"
+                onChange={onNewDob}
                 error={dobError || undefined}
               />
             </div>

@@ -267,7 +267,7 @@ export function TransferPrescription() {
     line1: "",
     line2: "",
     city: "",
-    province: "ON",
+    province: "Kathmandu",
     postal: "",
   });
   const pay = usePaymentFields();

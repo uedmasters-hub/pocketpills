@@ -10,6 +10,7 @@ import {
 } from "@/components/care/PrepChoices";
 import { useI18n } from "@/lib/i18n";
 import type { CareLine, PrepItem } from "@/lib/careJourney";
+import { PhoneField } from "@/components/PhoneField";
 
 const ACCESS = [
   "Elevator",
@@ -237,13 +238,10 @@ export function StructuredPrepBody({
           }}
         />
         {choice === "Different number" ? (
-          <input
-            type="tel"
+          <PhoneField
+            label={tx("Mobile number")}
             value={number}
-            onChange={(e) => setDraft(joinChoices(["Different number", e.target.value]))}
-            className="h-11 w-full rounded-xl border border-line bg-white px-3.5 text-sm text-[color:var(--pp-primary-950)] outline-none focus:border-[color:var(--pp-primary-950)]"
-            placeholder={tx("Mobile number")}
-            autoComplete="tel"
+            onChange={(v) => setDraft(joinChoices(["Different number", v]))}
           />
         ) : null}
       </div>

@@ -3,12 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { EntryFlow } from "@/components/layout/EntryFlow";
 import { Card, Field, Badge, Switch } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
+import { DateOfBirthField } from "@/components/DateOfBirthField";
+import { PhoneField } from "@/components/PhoneField";
 import { drugs } from "@/lib/data";
 import { ActiveOfferBanner } from "@/components/offers/ActiveOfferBanner";
 import { CheckoutOffers, useOfferQuote } from "@/components/offers/CheckoutOffers";
 import { ChoosePaymentOption, usePaymentFields } from "@/components/checkout/ChoosePaymentOption";
 import type { CheckoutContext } from "@/lib/offers";
 import { useI18n } from "@/lib/i18n";
+import { DistrictField } from "@/components/DistrictField";
 import {
   fileToUpload,
   isReadableImage,
@@ -66,7 +69,7 @@ const initial: State = {
   method: null, files: [], clinic: "", prescriber: "", ocrText: "",
   mailAddress: "", transferPharmacy: "", transferPhone: "",
   meds: [], who: "self", otherName: "", otherDob: "", otherRel: "",
-  province: "ON", healthNumber: "", allergies: [], currentMeds: [], pregnant: "",
+  province: "Kathmandu", healthNumber: "", allergies: [], currentMeds: [], pregnant: "",
   packaging: "pocketpacks", autoRefill: true, genericOk: true,
   useProvincial: true, hasPrivate: true, carrier: "Sun Life", group: "4402", member: "", payOOP: false,
   address: "221 King St W, Toronto, ON", speed: "standard", leaveAtDoor: true, notes: "",
@@ -554,7 +557,7 @@ export function FillPrescription() {
         {m === "transfer" && (
           <div className="space-y-4">
             <Card className="p-5"><Field label={tx("Current pharmacy")} placeholder={tx("e.g. Shoppers Drug Mart, Queen St")} value={s.transferPharmacy} onChange={(e) => set({ transferPharmacy: e.target.value })} /></Card>
-            <Card className="p-5"><Field label={tx("Pharmacy phone")} placeholder="(416) 555-0100" value={s.transferPhone} onChange={(e) => set({ transferPhone: e.target.value })} /></Card>
+            <Card className="p-5"><PhoneField label={tx("Pharmacy phone")} value={s.transferPhone} onChange={(v) => set({ transferPhone: v })} /></Card>
             <p className="text-sm text-ink-tertiary">{tx("We'll contact them and move your prescriptions—no need to call yourself.")}</p>
           </div>
         )}
@@ -674,18 +677,22 @@ export function FillPrescription() {
             <Card className="space-y-3 p-5">
               <Field label={tx("Full name")} placeholder={tx("e.g. Jordan Chen")} value={s.otherName} onChange={(e) => set({ otherName: e.target.value })} />
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label={tx("Date of birth")} placeholder="YYYY-MM-DD" value={s.otherDob} onChange={(e) => set({ otherDob: e.target.value })} />
+                <DateOfBirthField
+                  label={tx("Date of birth")}
+                  value={s.otherDob}
+                  onChange={(v) => set({ otherDob: v })}
+                />
                 <Field label={tx("Relationship")} placeholder={tx("e.g. Parent, child")} value={s.otherRel} onChange={(e) => set({ otherRel: e.target.value })} />
               </div>
             </Card>
           )}
           <Card className="p-5">
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block text-sm"><span className="mb-1.5 block font-medium text-ink-secondary">{tx("Province")}</span>
-                <select value={s.province} onChange={(e) => set({ province: e.target.value })} className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3 text-ink focus:border-primary">
-                  {["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"].map((p) => <option key={p}>{p}</option>)}
-                </select>
-              </label>
+              <DistrictField
+                label={tx("District")}
+                value={s.province}
+                onChange={(v) => set({ province: v })}
+              />
               <Field label={tx("Health card number")} placeholder={tx("Optional")} value={s.healthNumber} onChange={(e) => set({ healthNumber: e.target.value })} />
             </div>
           </Card>

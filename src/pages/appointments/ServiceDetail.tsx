@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Field } from "@/components/ui";
+import { PhoneField } from "@/components/PhoneField";
 import { DetailSection } from "@/components/DetailSection";
 import { LocationPicker } from "@/components/care/LocationPicker";
 import { ChipGroup, ChoiceList, FieldLabel, joinChoices } from "@/components/care/PrepChoices";
@@ -13,6 +13,7 @@ import {
 } from "@/components/care/PrepEditorFields";
 import { useI18n } from "@/lib/i18n";
 import { useUser } from "@/lib/user";
+import { isValidPhone } from "@/lib/phone";
 import { serviceQuote } from "@/lib/bookingQuote";
 import type { CheckoutContext } from "@/lib/offers";
 import {
@@ -98,7 +99,7 @@ export function ServiceDetail() {
         ? tx("Available 24/7")
         : service.city;
   const canRequest =
-    Boolean(phone.trim()) &&
+    isValidPhone(phone) &&
     !(needsAddress && !address.trim()) &&
     Boolean(booking.patient) &&
     booking.visitTab !== "new" &&
@@ -155,7 +156,7 @@ export function ServiceDetail() {
           confirmHint={
             booking.visitTab === "new"
               ? tx("Save or cancel the new patient to continue.")
-              : !phone.trim()
+              : !isValidPhone(phone)
                 ? tx("Add a contact phone to continue.")
                 : needsAddress && !address.trim()
                   ? tx("Add a pickup address to continue.")
@@ -196,11 +197,10 @@ export function ServiceDetail() {
               </p>
               <LocationPicker value={address} onChange={setAddress} placeholder="Street, city" />
             </div>
-            <Field
+            <PhoneField
               label={tx("Contact phone")}
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder={tx("Mobile number")}
+              onChange={setPhone}
             />
             {needsAccess ? (
               <div>

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { coerceNepalDistrict } from "@/lib/nepalCities";
 
 export interface InsurancePlan {
   id: string;
@@ -31,7 +32,7 @@ export interface Profile {
 }
 
 const EMPTY: Profile = {
-  firstName: "", lastName: "", email: "", phone: "", dob: "", province: "ON",
+  firstName: "", lastName: "", email: "", phone: "", dob: "", province: "Kathmandu",
   healthCard: "", address: "", insurances: [], allergies: [], onboarded: false,
 };
 
@@ -105,7 +106,7 @@ function normalizeProfile(raw: Record<string, unknown>): Profile {
     email: String(raw.email ?? ""),
     phone: String(raw.phone ?? ""),
     dob: String(raw.dob ?? ""),
-    province: String(raw.province ?? "ON"),
+    province: coerceNepalDistrict(String(raw.province ?? "Kathmandu")),
     healthCard: String(raw.healthCard ?? ""),
     address: String(raw.address ?? ""),
     insurances,

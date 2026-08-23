@@ -71,6 +71,9 @@ export const SEED_NAV: { section: string; label: string; items: { slug: string; 
     items: [
       { slug: "button", title: "Button" },
       { slug: "field", title: "Field" },
+      { slug: "selection", title: "Selection" },
+      { slug: "phone", title: "Phone" },
+      { slug: "date-of-birth", title: "Date of birth" },
       { slug: "card", title: "Card" },
       { slug: "badge", title: "Badge" },
       { slug: "modal", title: "Modal" },
@@ -285,10 +288,77 @@ Use Tailwind text utilities mapped to the type ramp. Section titles use \`font-d
 Import from \`@/components/ui/Button\`. Prefer one primary button per section.`,
     ],
     field: [
-      "Labeled inputs with calm borders.",
+      "Labeled inputs with calm borders — plus shared Mobile, DOB, and tag selection fields.",
       `## Usage
 
-\`Field\` from the UI kit. Always associate label + control.`,
+\`Field\` from the UI kit for generic text. For structured inputs use:
+
+- \`PhoneField\` — \`@/components/PhoneField\`
+- \`DateOfBirthField\` — \`@/components/DateOfBirthField\`
+- \`TagSuggestField\` — \`@/components/TagSuggestField\` (see **Selection**)`,
+    ],
+    selection: [
+      "Searchable district picker and suggestion-chip tag fields.",
+      `## Usage
+
+### District
+
+Import \`DistrictField\` from \`@/components/DistrictField\`.
+
+- Height-capped menu with internal scroll (does not fill the viewport)
+- Search filters Nepal’s 77 districts
+- Portaled so parent cards do not clip the menu
+- Quick suggestion chips while open
+
+\`\`\`tsx
+<DistrictField label="District" value={district} onChange={setDistrict} />
+\`\`\`
+
+### Tags
+
+Import \`TagSuggestField\` from \`@/components/TagSuggestField\`.
+
+- Focus reveals suggestion chips
+- Chips append with commas; Add splits into separate tags`,
+    ],
+    phone: [
+      "Country dial + ISO initials (default Nepal), region groups, search, and a 10-digit national number.",
+      `## Usage
+
+Import \`PhoneField\` from \`@/components/PhoneField\` (also re-exported from \`@/components/ui\`).
+
+### Behavior
+
+- Trigger shows \`+977 NP\` (dial + ISO). Full country name is on the option tooltip
+- Menu is height-capped, portaled (not clipped by cards), and **grouped by region** (Asia first)
+- **Search** filters by country name, ISO, dial code, or region
+- National number is capped at **10 digits** with a persistent mask
+- Stored value: \`+977 - 9801234567\`
+- Default country: Nepal (\`NP\`)
+
+### Variants
+
+\`\`\`tsx
+<PhoneField label="Mobile" value={phone} onChange={setPhone} />
+<PhoneField label="Mobile" value={phone} onChange={setPhone} allowedIsos={["NP"]} />
+\`\`\`
+
+Use \`allowedIsos={["NP"]}\` for Nepal-only claim / OTP flows.`,
+    ],
+    "date-of-birth": [
+      "Masked DD / MM / YYYY entry; stores ISO YYYY-MM-DD. Same control site-wide.",
+      `## Usage
+
+Import \`DateOfBirthField\` from \`@/components/DateOfBirthField\` (also re-exported from \`@/components/ui\`).
+
+- Type digits freely; segments auto-advance
+- Unfilled placeholders stay visible (\`DD / MM / YYYY\`)
+- Emits ISO \`YYYY-MM-DD\` when complete
+- Validate with \`isValidDob\` from \`@/lib/dob\`
+
+\`\`\`tsx
+<DateOfBirthField label="Date of birth" value={dob} onChange={setDob} />
+\`\`\``,
     ],
     card: [
       "Use cards for interactive containers — not decorative wrappers.",
@@ -368,7 +438,9 @@ Import from \`@/components/ui/Button\`. Prefer one primary button per section.`,
       "One column, clear labels, progressive disclosure.",
       `## Patterns
 
-Group related fields. Show validation near the control. Prefer native inputs styled via tokens.`,
+Group related fields. Show validation near the control.
+
+**Always** use shared \`PhoneField\` and \`DateOfBirthField\` for mobile / DOB — do not invent local masks or country selects. See Components → Phone and Date of birth.`,
     ],
     feedback: [
       "Toasts for ephemeral success; inline for errors.",

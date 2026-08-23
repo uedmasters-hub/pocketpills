@@ -9,6 +9,7 @@ import { mergeActiveOrders, statusMeta, typeMeta } from "@/lib/orders";
 import { careEventHref } from "@/lib/careJourney";
 import { monthDayShort } from "@/lib/timeSlots";
 import { useI18n } from "@/lib/i18n";
+import { PhoneField } from "@/components/PhoneField";
 
 /* ── shared bits ───────────────────────────────────────── */
 /** Borderless chevron — matches AvailabilityBoard / site rail controls. */
@@ -328,7 +329,6 @@ type QuickAction = {
   id: ActionId;
   title: string;
   to: string;
-  wide?: boolean;
   image: string;
 };
 
@@ -351,12 +351,10 @@ const QUICK_ACTION_IMG: Record<ActionId, string> = {
 
 function QuickActionCard({
   title,
-  wide,
   image,
   onClick,
 }: {
   title: string;
-  wide?: boolean;
   image: string;
   onClick: () => void;
 }) {
@@ -367,16 +365,10 @@ function QuickActionCard({
       className={
         "relative flex min-h-[8.25rem] flex-col overflow-hidden " +
         CARD_FRAME +
-        " bg-[color:var(--secondary-500)] p-4 text-left transition-colors hover:brightness-[0.98] " +
-        (wide ? "col-span-2" : "col-span-1")
+        " bg-[color:var(--secondary-500)] p-4 text-left transition-colors hover:brightness-[0.98]"
       }
     >
-      <span
-        className={
-          "relative z-10 line-clamp-2 whitespace-pre-line font-display text-lg font-medium leading-snug text-[color:var(--pp-primary-950)] " +
-          (wide ? "max-w-[11rem] pr-2" : "max-w-[6.75rem] pr-1")
-        }
-      >
+      <span className="relative z-10 max-w-[65%] pr-1 line-clamp-2 whitespace-pre-line font-display text-lg font-medium leading-snug text-[color:var(--pp-primary-950)]">
         {title}
       </span>
       {/* Fixed square slot so every specialty PNG renders at the same visual size. */}
@@ -403,65 +395,30 @@ function QuickActions({
   onOpen: (to: string) => void;
 }) {
   const { tx } = useI18n();
-  const railRef = useRef<HTMLDivElement>(null);
-  const [atStart, setAtStart] = useState(true);
-  const [atEnd, setAtEnd] = useState(false);
-
-  const sync = () => {
-    const el = railRef.current;
-    if (!el) return;
-    setAtStart(el.scrollLeft <= 4);
-    setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
-  };
-
-  useEffect(() => {
-    sync();
-    const el = railRef.current;
-    if (!el) return;
-    el.addEventListener("scroll", sync, { passive: true });
-    window.addEventListener("resize", sync);
-    return () => {
-      el.removeEventListener("scroll", sync);
-      window.removeEventListener("resize", sync);
-    };
-  }, []);
 
   return (
-    <DashSection
-      title={tx("Quick actions")}
-      showArrows
-      onPrev={() => railRef.current?.scrollBy({ left: -280, behavior: "smooth" })}
-      onNext={() => railRef.current?.scrollBy({ left: 280, behavior: "smooth" })}
-      prevDisabled={atStart}
-      nextDisabled={atEnd}
-    >
-      <div
-        ref={railRef}
-        onScroll={sync}
-        className="pp-scroll overflow-x-auto pb-1"
-      >
-        <div className="grid min-w-[42rem] grid-cols-6 gap-3 sm:min-w-0">
-          {actions.map((a) => (
-            <QuickActionCard
-              key={a.id}
-              title={tx(a.title)}
-              wide={a.wide}
-              image={a.image}
-              onClick={() => onOpen(a.to)}
-            />
-          ))}
-          <div
-            className={
-              "col-span-2 flex min-h-[8.25rem] items-center justify-center " +
-              CARD_FRAME +
-              " bg-white p-4"
-            }
-            aria-disabled="true"
-          >
-            <span className="font-display text-lg font-medium leading-snug text-[color:var(--neutral-300)]">
-              {tx("coming …")}
-            </span>
-          </div>
+    <DashSection title={tx("Quick actions")}>
+      {/* 2 → 3 through 1440px → 4 above */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 min-[1441px]:grid-cols-4">
+        {actions.map((a) => (
+          <QuickActionCard
+            key={a.id}
+            title={tx(a.title)}
+            image={a.image}
+            onClick={() => onOpen(a.to)}
+          />
+        ))}
+        <div
+          className={
+            "flex min-h-[8.25rem] items-center justify-center " +
+            CARD_FRAME +
+            " bg-white p-4"
+          }
+          aria-disabled="true"
+        >
+          <span className="font-display text-lg font-medium leading-snug text-[color:var(--neutral-300)]">
+            {tx("coming …")}
+          </span>
         </div>
       </div>
     </DashSection>
@@ -473,6 +430,8 @@ function AppCard() {
   const { tx } = useI18n();
   const [mode, setMode] = useState<"phone" | "email">("phone");
   const [sent, setSent] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const appUrl = "https://pocketpills.com/app";
 
   return (
@@ -543,17 +502,37 @@ function AppCard() {
               })}
             </div>
 
-            <div className="flex items-center gap-2 rounded-xl border border-line px-4 py-2.5 focus-within:border-[color:var(--primary-600)]">
-              <input
-                className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-tertiary"
-                placeholder={mode === "phone" ? "+1 953-800-0060" : "you@example.com"}
-                aria-label={mode === "phone" ? tx("Phone number") : tx("Email address")}
-                inputMode={mode === "phone" ? "tel" : "email"}
-              />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-2">
+              {mode === "phone" ? (
+                <PhoneField
+                  label={tx("Phone number")}
+                  hideLabel
+                  value={phone}
+                  onChange={(v) => {
+                    setPhone(v);
+                    setSent(false);
+                  }}
+                  className="min-w-0 flex-1"
+                />
+              ) : (
+                <div className="flex h-11 min-w-0 flex-1 items-center rounded-xl border border-line px-3.5 focus-within:border-primary">
+                  <input
+                    className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-tertiary"
+                    placeholder="you@example.com"
+                    aria-label={tx("Email address")}
+                    inputMode="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setSent(false);
+                    }}
+                  />
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => setSent(true)}
-                className="shrink-0 text-sm font-medium text-[color:var(--pp-primary-950)] transition-opacity hover:opacity-70"
+                className="h-11 shrink-0 rounded-xl px-3 text-sm font-medium text-[color:var(--pp-primary-950)] transition-opacity hover:opacity-70 sm:px-2"
               >
                 {sent ? tx("Sent") : tx("Send link")}
               </button>
@@ -764,14 +743,12 @@ export function Dashboard() {
             id: "appointment",
             title: "Book a\ndoctor visit",
             to: "/appointments",
-            wide: true,
             image: QUICK_ACTION_IMG.appointment,
           },
           {
             id: "transfer",
             title: "Transfer my\nprescriptions",
             to: "/transfer",
-            wide: true,
             image: QUICK_ACTION_IMG.transfer,
           },
           { id: "order", title: "Start a\nnew order", to: "/pharmacy", image: QUICK_ACTION_IMG.order },
@@ -792,7 +769,6 @@ export function Dashboard() {
             id: "renew",
             title: "Renew my\nprescription",
             to: "/fill",
-            wide: true,
             image: QUICK_ACTION_IMG.renew,
           },
         ]}

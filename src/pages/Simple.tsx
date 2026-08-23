@@ -1,6 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { DateOfBirthField } from "@/components/DateOfBirthField";
+import { PhoneField } from "@/components/PhoneField";
 import {
   getOrders,
   orderTotals,
@@ -361,14 +363,8 @@ export function Account() {
               <span className={labelCls}>{tx("Email")}</span>
               <input className={field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             </label>
-            <label className="block">
-              <span className={labelCls}>{tx("Phone")}</span>
-              <input className={field} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(416) 555-0100" />
-            </label>
-            <label className="block">
-              <span className={labelCls}>{tx("Date of birth")}</span>
-              <input className={field} value={dob} onChange={(e) => setDob(e.target.value)} placeholder="YYYY-MM-DD" />
-            </label>
+            <DateOfBirthField label={tx("Date of birth")} value={dob} onChange={setDob} />
+            <PhoneField label={tx("Phone")} value={phone} onChange={setPhone} />
           </div>
         </section>
 

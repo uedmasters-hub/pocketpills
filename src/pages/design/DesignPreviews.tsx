@@ -7,6 +7,10 @@ import { ConfirmModal } from "@/components/ui/Modal";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { RatingStars, ReviewCountChip } from "@/components/reviews/RatingChip";
 import { Skeleton, SkeletonText } from "@/components/ui/Skeleton";
+import { DateOfBirthField } from "@/components/DateOfBirthField";
+import { PhoneField } from "@/components/PhoneField";
+import { TagSuggestField } from "@/components/TagSuggestField";
+import { DistrictField } from "@/components/DistrictField";
 
 function Panel({ title, children }: { title?: string; children: ReactNode }) {
   return (
@@ -261,11 +265,119 @@ function ButtonPreview() {
 }
 
 function FieldPreview() {
+  const [phone, setPhone] = useState("");
+  const [dob, setDob] = useState("");
   return (
     <Panel title="Field">
       <div className="grid max-w-md gap-4">
         <Field label="Full name" placeholder="Alex Rivera" hint="As it appears on your health card" />
         <Field label="Email" type="email" error="Enter a valid email" defaultValue="not-an-email" />
+        <PhoneField
+          label="Mobile"
+          value={phone}
+          onChange={setPhone}
+          hint="Shared PhoneField — region list, search, ISO initials (default NP)."
+        />
+        <DateOfBirthField
+          label="Date of birth"
+          value={dob}
+          onChange={setDob}
+          hint="Shared DateOfBirthField — DD / MM / YYYY → ISO YYYY-MM-DD."
+        />
+      </div>
+    </Panel>
+  );
+}
+
+function PhonePreview() {
+  const [phone, setPhone] = useState("+977 - 9801234567");
+  const [locked, setLocked] = useState("+977 - 9801234567");
+  return (
+    <Panel title="Phone / Mobile">
+      <div className="grid max-w-md gap-5">
+        <div>
+          <PhoneField label="Mobile" value={phone} onChange={setPhone} />
+          <p className="mt-2 text-2xs text-ink-tertiary">
+            Open the dial picker for region groups + search. Value:{" "}
+            <span className="tnum">{phone || "—"}</span>
+          </p>
+        </div>
+        <div>
+          <PhoneField
+            label="Nepal-only (claims)"
+            value={locked}
+            onChange={setLocked}
+            allowedIsos={["NP"]}
+            hint='Pass allowedIsos={["NP"]} when the flow is Nepal mobile only.'
+          />
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+function DobPreview() {
+  const [dob, setDob] = useState("1990-04-12");
+  return (
+    <Panel title="Date of birth">
+      <div className="grid max-w-md gap-4">
+        <DateOfBirthField label="Date of birth" value={dob} onChange={setDob} />
+        <p className="text-2xs text-ink-tertiary">
+          Mask stays visible while typing. ISO value: <span className="tnum">{dob || "—"}</span>
+        </p>
+      </div>
+    </Panel>
+  );
+}
+
+const DEMO_CONDITION_SUGGESTIONS = [
+  "Asthma",
+  "Diabetes",
+  "Hypertension",
+  "Thyroid disorder",
+  "Heart disease",
+  "Migraine",
+  "Anxiety",
+] as const;
+
+const DEMO_ALLERGY_SUGGESTIONS = [
+  "Penicillin",
+  "Sulfa drugs",
+  "Peanuts",
+  "Latex",
+  "Aspirin / NSAIDs",
+  "Shellfish",
+  "Pollen",
+] as const;
+
+function SelectionPreview() {
+  const [conditions, setConditions] = useState<string[]>([]);
+  const [allergies, setAllergies] = useState<string[]>([]);
+  const [district, setDistrict] = useState("Kathmandu");
+  return (
+    <Panel title="Selection">
+      <div className="grid max-w-lg gap-5">
+        <DistrictField label="District" value={district} onChange={setDistrict} />
+        <p className="text-2xs text-ink-tertiary">
+          Searchable district menu (height-capped, portaled). Value: {district}
+        </p>
+        <TagSuggestField
+          label="Conditions"
+          items={conditions}
+          onChange={setConditions}
+          placeholder="e.g. asthma"
+          suggestions={DEMO_CONDITION_SUGGESTIONS}
+        />
+        <TagSuggestField
+          label="Allergies"
+          items={allergies}
+          onChange={setAllergies}
+          placeholder="e.g. penicillin"
+          suggestions={DEMO_ALLERGY_SUGGESTIONS}
+        />
+        <p className="text-2xs text-ink-tertiary">
+          Tag chips: focus → append with commas → Add splits into separate tags.
+        </p>
       </div>
     </Panel>
   );
@@ -383,10 +495,14 @@ function SkeletonPreview() {
 }
 
 function FormsPreview() {
+  const [phone, setPhone] = useState("");
+  const [dob, setDob] = useState("");
   return (
     <Panel title="Form pattern">
       <div className="grid max-w-lg gap-4">
         <Field label="Reason for visit" placeholder="Sore throat" />
+        <PhoneField label="Mobile" value={phone} onChange={setPhone} />
+        <DateOfBirthField label="Date of birth" value={dob} onChange={setDob} />
         <Field label="Preferred pharmacy" placeholder="Search…" />
         <div className="flex gap-2">
           <Button size="sm">Continue</Button>
@@ -473,6 +589,9 @@ export function DesignPagePreview({
   if (section === "components") {
     if (slug === "button") return <ButtonPreview />;
     if (slug === "field") return <FieldPreview />;
+    if (slug === "selection") return <SelectionPreview />;
+    if (slug === "phone") return <PhonePreview />;
+    if (slug === "date-of-birth") return <DobPreview />;
     if (slug === "card") return <CardPreview />;
     if (slug === "modal") return <ModalPreview />;
     if (slug === "tooltip") return <TooltipPreview />;

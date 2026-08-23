@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { DIRECTORY_SIDEBAR_CARD } from "@/components/DirectoryDetailLayout";
 import { Button } from "@/components/ui/Button";
 import { ClaimLookupSkeleton, Field, RegistrySearchSkeleton } from "@/components/ui";
+import { PhoneField } from "@/components/PhoneField";
 import { useI18n } from "@/lib/i18n";
 import {
   lookupHfFacility,
@@ -462,16 +463,14 @@ export function FacilityClaimPanel({ facility }: { facility: HfFacility }) {
       )}
 
       <div className="mt-3">
-        <Field
+        <PhoneField
           label={tx("Mobile number")}
-          type="tel"
-          inputMode="tel"
-          placeholder="98XXXXXXXX"
           value={phone}
-          onChange={(e) => {
-            setPhone(e.target.value);
+          onChange={(v) => {
+            setPhone(v);
             setSent(false);
           }}
+          allowedIsos={["NP"]}
           hint={tx("Nepal mobile, 10 digits starting with 9. +977 is OK.")}
         />
       </div>

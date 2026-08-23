@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { DetailMeta, DetailSection } from "@/components/DetailSection";
 import { useI18n } from "@/lib/i18n";
 import { formatFee } from "@/lib/appointments";
+import { isValidPhone } from "@/lib/phone";
 import { ListingPageEditor } from "@/components/ListingPageEditor";
 import { ListingSectionPreview } from "@/components/ListingSectionPreview";
 import {
@@ -32,6 +33,7 @@ import { nmcNumberFromId, setDoctorPublished } from "@/lib/doctorDirectory";
 import { hfCodeFromId, setFacilityPublished } from "@/lib/facilityDirectory";
 import { specialisedVariantForVendor } from "@/lib/specialisedIn";
 import { SpecialisedInSection } from "@/components/SpecialisedIn";
+import { PhoneField } from "@/components/PhoneField";
 
 const FIELD =
   "h-12 w-full rounded-xl border border-line bg-white px-4 text-sm text-[color:var(--pp-primary-950)] placeholder:text-ink-tertiary outline-none focus:border-[color:var(--pp-primary-950)]";
@@ -235,7 +237,7 @@ export function BusinessProfile() {
     if (index === 1) {
       if (!profile.address.trim()) return tx("Address is required.");
       if (!profile.city.trim()) return tx("City is required.");
-      if (!profile.phone.trim()) return tx("Phone is required.");
+      if (!isValidPhone(profile.phone)) return tx("Phone is required.");
       if (!profile.email.trim()) return tx("Email is required.");
     }
     return null;
@@ -383,16 +385,11 @@ export function BusinessProfile() {
                       autoComplete="address-level2"
                     />
                   </BareField>
-                  <BareField label={tx("Phone")}>
-                    <input
-                      className={FIELD}
-                      value={profile.phone}
-                      onChange={(e) => patch({ phone: e.target.value })}
-                      inputMode="tel"
-                      placeholder={tx("Phone")}
-                      autoComplete="tel"
-                    />
-                  </BareField>
+                  <PhoneField
+                    label={tx("Phone")}
+                    value={profile.phone}
+                    onChange={(v) => patch({ phone: v })}
+                  />
                 </div>
                 <BareField label={tx("Email")}>
                   <input

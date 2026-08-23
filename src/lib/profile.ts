@@ -36,7 +36,7 @@ export function profileChecklist(user: Profile | null): ChecklistRow[] {
     },
     {
       id: "card",
-      label: "Provincial Health Card",
+      label: "District & health ID",
       done: Boolean(user?.healthCard),
       value: user?.healthCard ? user.province : undefined,
       required: true,
@@ -78,7 +78,7 @@ export function pendingRows(user: Profile | null): ChecklistRow[] {
 export const SECTION_TITLES: Record<ChecklistId, string> = {
   personal: "Personal details",
   health: "Health information",
-  card: "Provincial Health Card",
+  card: "District & health ID",
   insurance: "Insurance",
   shipping: "Shipping address",
   payment: "Payment details",
