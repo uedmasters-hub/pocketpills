@@ -91,7 +91,7 @@ export function Appointments() {
   const nav = useNavigate();
   const [params, setParams] = useSearchParams();
   const [kind, setKind] = useState<KindFilter>("all");
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(() => params.get("q")?.trim() ?? "");
   const [tick, setTick] = useState(0);
   const [showAllSpecialties, setShowAllSpecialties] = useState(false);
   const [showAllTreatments, setShowAllTreatments] = useState(false);
@@ -99,6 +99,11 @@ export function Appointments() {
   const [showAllLabs, setShowAllLabs] = useState(false);
   const [showAllAssistants, setShowAllAssistants] = useState(false);
   const [showAllServices, setShowAllServices] = useState(false);
+
+  useEffect(() => {
+    const fromUrl = params.get("q")?.trim() ?? "";
+    setQ((prev) => (fromUrl && fromUrl !== prev ? fromUrl : prev));
+  }, [params]);
 
   // Re-read bookings when returning to the hub (e.g. after lab book).
   useEffect(() => {

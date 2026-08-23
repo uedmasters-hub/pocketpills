@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { entryPoints, type EntryIconKey } from "@/lib/data";
 import { useUser } from "@/lib/user";
@@ -65,7 +65,7 @@ function ArrowCircle({ size = 24, circleFill = "var(--pp-primary-950)", arrowFil
 }
 
 /** 2×2 entry tiles — simple icon + label on the lavender well (no card chrome). */
-function Tiles({ onPick, last }: { onPick: (to: string) => void; last?: { title: string; to: string } }) {
+function Tiles({ onPick, last, compact = false }: { onPick: (to: string) => void; last?: { title: string; to: string }; compact?: boolean }) {
   const { tx } = useI18n();
   const items = last ? [...entryPoints.slice(0, 3), { ...entryPoints[3], title: last.title, to: last.to }] : entryPoints;
   return (
@@ -75,7 +75,10 @@ function Tiles({ onPick, last }: { onPick: (to: string) => void; last?: { title:
           key={e.title}
           type="button"
           onClick={() => onPick(e.to)}
-          className="flex h-full min-h-[140px] w-full flex-col items-center justify-center gap-4 px-3 py-6 text-center transition-opacity duration-200 hover:opacity-80 active:opacity-70 sm:min-h-[160px] sm:gap-5"
+          className={
+            "flex h-full w-full flex-col items-center justify-center gap-4 px-3 py-6 text-center transition-opacity duration-200 hover:opacity-80 active:opacity-70 " +
+            (compact ? "min-h-[6.25rem] sm:min-h-[7rem] sm:gap-3 sm:py-4" : "min-h-[140px] sm:min-h-[160px] sm:gap-5")
+          }
         >
           <span className="grid h-14 w-14 place-items-center rounded-2xl sm:h-16 sm:w-16" style={{ backgroundColor: e.tile }}>
             <TileIcon id={e.id} />
@@ -113,7 +116,16 @@ const HERO = {
   start: 6,
 };
 
-function Hero() {
+function Hero({
+  overlay,
+  viewportClass = "hero-viewport",
+  hideTrustBadges = false,
+}: {
+  /** Optional content centered over the video (draft landing tiles). */
+  overlay?: ReactNode;
+  viewportClass?: string;
+  hideTrustBadges?: boolean;
+} = {}) {
   const { tx } = useI18n();
   const [playing, setPlaying] = useState(true);
   const [reduced, setReduced] = useState(false);
@@ -178,7 +190,9 @@ function Hero() {
 
   return (
     <section
-      className="hero-viewport relative -mt-[65px] min-h-[520px] overflow-hidden bg-[color:var(--pp-lavender)] md:-mt-[82px]"
+      className={
+        `${viewportClass} relative -mt-[65px] min-h-[520px] overflow-hidden bg-[color:var(--pp-lavender)] md:-mt-[82px]`
+      }
     >
       {/* Always-present backdrop so the hero reads as designed even with no media. */}
       <div
@@ -219,8 +233,10 @@ function Hero() {
       )}
 
       {/* Soft gray wash — mutes the video and adds depth for badges */}
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-[#D8D6E0]/45" aria-hidden />
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-black/10 via-transparent to-black/25" aria-hidden />
+      <>
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-[#D8D6E0]/45" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-black/10 via-transparent to-black/25" aria-hidden />
+      </>
 
       <button
         type="button"
@@ -231,7 +247,14 @@ function Hero() {
         {playing ? "❚❚" : "▶"}
       </button>
 
+      {overlay ? (
+        <div className={`pointer-events-none absolute inset-x-0 top-[4.25rem] z-20 sm:top-[4.75rem] md:top-[5.25rem] ${FRAME}`}>
+          <div className={`${SURFACE} pointer-events-auto`}>{overlay}</div>
+        </div>
+      ) : null}
+
       {/* Align with white shell below: FRAME gutters + SURFACE width */}
+      {!hideTrustBadges ? (
       <div className={`pointer-events-none absolute inset-x-0 bottom-14 z-30 md:bottom-16 ${FRAME}`}>
         <div className={`${SURFACE} flex flex-wrap items-center justify-between gap-3`}>
           <span className="flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-[color:var(--pp-navy)] shadow-sm backdrop-blur-sm">
@@ -242,6 +265,7 @@ function Hero() {
           </span>
         </div>
       </div>
+      ) : null}
     </section>
   );
 }
@@ -391,15 +415,19 @@ function RingArrow({ size = 20, color = "#4E2A84" }: { size?: number; color?: st
   );
 }
 
-function BuyAgain({ go }: { go: (to?: string) => void }) {
+function BuyAgain({ go, compact = false }: { go: (to?: string) => void; compact?: boolean }) {
   const { tx } = useI18n();
   return (
-    <section className={SHELL_BLOCK} aria-label="Shop and get care">
-      <div className="grid gap-6 lg:min-h-[430px] lg:grid-cols-2 lg:gap-8">
+    <section className={compact ? `${SHELL_X} pb-4 md:pb-5` : SHELL_BLOCK} aria-label="Shop and get care">
+      <div className={compact ? "grid gap-4 lg:grid-cols-2 lg:gap-6" : "grid gap-6 lg:min-h-[430px] lg:grid-cols-2 lg:gap-8"}>
         <div className="flex min-h-0 flex-col">
           <SectionHeads title="Buy again!" onLink={() => go("/messages")} />
           <div
-            className="relative flex min-h-[280px] flex-1 overflow-hidden rounded-3xl lg:min-h-0"
+            className={
+              compact
+                ? "relative flex min-h-[11.25rem] overflow-hidden rounded-3xl sm:min-h-[12.5rem]"
+                : "relative flex min-h-[280px] flex-1 overflow-hidden rounded-3xl lg:min-h-0"
+            }
             style={{ backgroundImage: "linear-gradient(135deg,#A78BEE 0%,#8A6FE3 45%,#6B4FC7 100%)" }}
           >
             <div className="grid h-full w-full grid-cols-2 overflow-hidden">
@@ -436,8 +464,8 @@ function BuyAgain({ go }: { go: (to?: string) => void }) {
 
         <div className="flex min-h-0 w-full flex-col">
           <SectionHeads title="Doctor-led treatment" onLink={() => go("/appointments")} />
-          <div className="w-full flex-1 rounded-3xl bg-[color:var(--primary-200)] p-2 sm:p-3">
-            <Tiles onPick={(to) => go(to)} />
+          <div className={compact ? "w-full rounded-3xl bg-[color:var(--primary-200)] p-1.5 sm:p-2" : "w-full flex-1 rounded-3xl bg-[color:var(--primary-200)] p-2 sm:p-3"}>
+            <Tiles onPick={(to) => go(to)} compact={compact} />
           </div>
         </div>
       </div>
@@ -1264,7 +1292,12 @@ function Reveal({
 }
 
 /* ═══ Page ══════════════════════════════════════════════ */
-export function Landing() {
+export function Landing({
+  welcome,
+}: {
+  /** Optional override for the white-island intro block. */
+  welcome?: ReactNode;
+} = {}) {
   const nav = useNavigate();
   const { signedIn } = useUser();
   const go = (to?: string) => nav(signedIn ? (to ?? "/app") : "/get-started");
@@ -1283,7 +1316,7 @@ export function Landing() {
         <div className={`relative z-20 -mt-6 ${FRAME}`}>
           <div className={`${SURFACE} overflow-hidden ${ISLAND}`}>
             <Reveal delay={140}>
-              <Welcome onStart={() => go()} />
+              {welcome ?? <Welcome onStart={() => go()} />}
             </Reveal>
             <Reveal delay={220}>
               <BuyAgain go={go} />
@@ -1326,3 +1359,13 @@ export function Landing() {
   );
 }
 
+export {
+  BuyAgain,
+  FeatureCards,
+  Partners,
+  HowItWorks,
+  Testimonials,
+  JoinBand,
+  NabpBand,
+  Faq,
+};

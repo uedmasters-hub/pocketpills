@@ -409,9 +409,15 @@
   --pp-announce: 2.5rem;
   /* Short peek: label + title only — CTA stays on the next fold */
   --pp-welcome-fold: 6.25rem;
+  /* Sticky header pill + top offset (sits in flow above the fold) */
+  --pp-header-chrome: 5.25rem;
 }
+
 @media (max-width: 640px) {
-  :root { --pp-welcome-fold: 6.75rem; }
+  :root {
+    --pp-welcome-fold: 6.75rem;
+    --pp-header-chrome: 5rem;
+  }
 }
 
 .hero-viewport {

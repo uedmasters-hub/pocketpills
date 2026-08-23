@@ -1,0 +1,129 @@
+/*
+  Draft landing (/landing/draft) — isolated layout tokens & structure.
+  Live landing uses hero-viewport / ISLAND; do not mix selectors.
+*/
+:root {
+  --draft-announce: var(--pp-announce, 2.5rem);
+  --draft-header: var(--pp-header-chrome, 5.25rem);
+  /* First viewport after chrome; + header-pull when stage slides under sticky pill */
+  --draft-fold: calc(100svh - var(--draft-announce) - var(--draft-header));
+  --draft-overlap: 3.5rem;
+  --draft-search-gap: 2.5rem;
+  --draft-shop-pt: 1.575rem;
+  --draft-headline-search-gap: 1.7325rem;
+  --draft-header-pull: 4.0625rem;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --draft-header: 5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --draft-shop-pt: 1.89rem;
+    --draft-header-pull: 5.125rem;
+    --draft-headline-search-gap: 2.31rem;
+  }
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --draft-fold: calc(100dvh - var(--draft-announce) - var(--draft-header));
+  }
+}
+
+/* Pull stage under sticky header pill (matches live hero -mt) */
+.draft-stage {
+  position: relative;
+  margin-top: calc(-1 * var(--draft-header-pull));
+}
+
+/*
+  First fold = video fills + search pinned at bottom (always in viewport).
+*/
+.draft-first-fold {
+  display: flex;
+  flex-direction: column;
+  height: calc(var(--draft-fold) + var(--draft-header-pull));
+  max-height: calc(var(--draft-fold) + var(--draft-header-pull));
+  overflow: visible;
+}
+
+.draft-hero-slot {
+  flex: 1 1 0;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  /* Pull search panel up over the video bottom */
+  margin-bottom: calc(-1 * var(--draft-overlap));
+}
+
+.draft-hero-slot > .pp-reveal,
+.draft-hero-slot > .pp-reveal-in {
+  display: block;
+  height: 100%;
+}
+
+.draft-hero-slot .draft-hero {
+  height: 100%;
+  min-height: 0;
+}
+
+.draft-hero-slot .draft-hero-trust {
+  bottom: calc(var(--draft-overlap) + 1.25rem);
+}
+
+@media (min-width: 768px) {
+  .draft-hero-slot .draft-hero-trust {
+    bottom: calc(var(--draft-overlap) + 1.75rem);
+  }
+}
+
+/* Search sits at fold bottom — never clipped below viewport */
+.draft-search-anchor {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 10;
+}
+
+.draft-panel {
+  overflow: visible;
+  border: 1px solid var(--line);
+  background: #fff;
+  box-shadow: 0 -10px 40px rgba(24, 7, 48, 0.08);
+}
+
+.draft-panel-top {
+  border-radius: 1.75rem 1.75rem 0 0;
+  border-bottom: none;
+}
+
+.draft-panel-bottom {
+  margin-top: -1px;
+  border-radius: 0 0 1.75rem 1.75rem;
+  border-top: none;
+}
+
+.draft-search-section {
+  display: flex;
+  flex-direction: column;
+  padding-top: 1.25rem;
+  padding-bottom: var(--draft-search-gap);
+  gap: var(--draft-headline-search-gap);
+}
+
+@media (min-width: 640px) {
+  .draft-search-section {
+    padding-top: 1.5rem;
+  }
+}
+
+.draft-shop-section {
+  padding-top: var(--draft-shop-pt);
+}
+
+.draft-lower {
+  margin-top: var(--section-gap-y, 2rem);
+}

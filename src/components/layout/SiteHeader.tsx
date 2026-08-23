@@ -288,8 +288,8 @@ function useVariant(): HeaderVariant {
   if (isFocusedPatientFlow(pathname)) return "focused";
   if (pathname === "/login" || pathname === "/get-started") return "minimal";
   if (pathname.startsWith("/provider")) return "minimal";
-  /* Homepage + How it works / Support — always marketing nav. */
-  if (pathname === "/" || isAlwaysPublicPath(pathname)) return "marketing";
+  /* Homepage + draft + How it works / Support — always marketing nav. */
+  if (pathname === "/" || pathname === "/landing/draft" || isAlwaysPublicPath(pathname)) return "marketing";
   /* Treatment / Pharmacy — marketing when logged out, app when logged in. */
   if (isDualBrowsePath(pathname) && !signedIn) return "marketing";
   return signedIn ? "app" : "marketing";
