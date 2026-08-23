@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { entryPoints, type EntryIconKey } from "@/lib/data";
 import { useUser } from "@/lib/user";
@@ -6,11 +6,21 @@ import { useI18n } from "@/lib/i18n";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
-import { FRAME, SURFACE, SECTION_TITLE, SECTION_GAP, SECTION_GAP_Y, ISLAND_PAD, ISLAND_RADIUS, ISLAND, SHELL_X, SHELL_BLOCK } from "@/components/layout/Grid";
+import { FRAME, SURFACE, SECTION_TITLE, ISLAND_PAD, ISLAND_RADIUS, ISLAND, SHELL_X, SHELL_BLOCK } from "@/components/layout/Grid";
+import { DraftHeroVideo } from "@/pages/landing-draft/DraftHeroVideo";
+import { DraftReveal } from "@/pages/landing-draft/DraftReveal";
+import { DraftLowerSection } from "@/pages/landing-draft/sections/DraftLowerSection";
+import { DraftMergedSections } from "@/pages/landing-draft/sections/DraftMergedSections";
+import { DraftSearchSection } from "@/pages/landing-draft/sections/DraftSearchSection";
+import { DraftShopSection } from "@/pages/landing-draft/sections/DraftShopSection";
+import "@/pages/landing-draft/landingDraft.css";
 
-const VIDEO_ID = "xbTcp1sTsME";
+/** Where the field lands after the focus scroll — 0.3 = just above centre. */
+const FOCUS_VIEWPORT_RATIO = 0.3;
+/** Guard rails for the measured search height, so a bad read can't wreck the fold. */
+const SEARCH_H_MIN = 96;
+const SEARCH_H_MAX_RATIO = 0.6;
 
-/* Product art. Swap these for local files in /public if you want to self-host. */
 const CDN = "https://static.pocketpills.com/acq-web/redesign/home";
 const IMG = {
   pen: `${CDN}/ozempic_pen.webp`,
@@ -69,7 +79,7 @@ function Tiles({ onPick, last, compact = false }: { onPick: (to: string) => void
   const { tx } = useI18n();
   const items = last ? [...entryPoints.slice(0, 3), { ...entryPoints[3], title: last.title, to: last.to }] : entryPoints;
   return (
-    <div className="grid h-full w-full grid-cols-2 grid-rows-2">
+    <div className={"grid h-full w-full grid-cols-2 grid-rows-2 " + (compact ? "gap-3 sm:gap-4" : "")}>
       {items.map((e) => (
         <button
           key={e.title}
@@ -77,7 +87,9 @@ function Tiles({ onPick, last, compact = false }: { onPick: (to: string) => void
           onClick={() => onPick(e.to)}
           className={
             "flex h-full w-full flex-col items-center justify-center gap-4 px-3 py-6 text-center transition-opacity duration-200 hover:opacity-80 active:opacity-70 " +
-            (compact ? "min-h-[6.25rem] sm:min-h-[7rem] sm:gap-3 sm:py-4" : "min-h-[140px] sm:min-h-[160px] sm:gap-5")
+            (compact
+              ? "min-h-[7.5rem] rounded-3xl bg-[color:var(--primary-200)] sm:min-h-[8.5rem] sm:gap-3 sm:py-4"
+              : "min-h-[140px] sm:min-h-[160px] sm:gap-5")
           }
         >
           <span className="grid h-14 w-14 place-items-center rounded-2xl sm:h-16 sm:w-16" style={{ backgroundColor: e.tile }}>
@@ -87,304 +99,6 @@ function Tiles({ onPick, last, compact = false }: { onPick: (to: string) => void
         </button>
       ))}
     </div>
-  );
-}
-
-/* ═══ 1. Announcement helpers (Welcome CTA arrow) ════════ */
-function CircleArrow({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M9.3 12h5.2M12.4 9.4l2.6 2.6-2.6 2.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-/* ═══ 3. Hero (full-bleed autoplay video) ════════ */
-/**
- * Hero media, in order of preference:
- *   1. HERO.file    — self-hosted mp4/webm. Most reliable: muted autoplay is
- *                     allowed everywhere and there's no third-party embed to fail.
- *                     Drop a file in /public and set the path below.
- *   2. HERO.youtube — iframe fallback (needs the video to allow embedding).
- *   3. Gradient     — always painted underneath, so the hero is never blank.
- */
-const HERO = {
-  file: "/hero.mp4",              // self-hosted; falls back to YouTube if missing
-  poster: "",                     // e.g. "/hero-poster.jpg"
-  youtube: VIDEO_ID,
-  start: 6,
-};
-
-function Hero({
-  overlay,
-  viewportClass = "hero-viewport",
-  hideTrustBadges = false,
-}: {
-  /** Optional content centered over the video (draft landing tiles). */
-  overlay?: ReactNode;
-  viewportClass?: string;
-  hideTrustBadges?: boolean;
-} = {}) {
-  const { tx } = useI18n();
-  const [playing, setPlaying] = useState(true);
-  const [reduced, setReduced] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const frameRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  }, []);
-
-  /* Native video: start at HERO.start, attempt autoplay, surface control if blocked. */
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v || !HERO.file) return;
-    if (reduced) { v.pause(); setPlaying(false); return; }
-
-    const seekStart = () => {
-      if (Math.abs(v.currentTime - HERO.start) > 0.35) v.currentTime = HERO.start;
-    };
-
-    const onLoaded = () => {
-      seekStart();
-      void v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
-    };
-
-    /* Loop restarts at 0 — jump back to the intended in-point. */
-    const onTimeUpdate = () => {
-      if (v.currentTime > 0 && v.currentTime < 0.4) seekStart();
-    };
-
-    if (v.readyState >= 1) onLoaded();
-    else v.addEventListener("loadedmetadata", onLoaded);
-
-    v.addEventListener("timeupdate", onTimeUpdate);
-    return () => {
-      v.removeEventListener("loadedmetadata", onLoaded);
-      v.removeEventListener("timeupdate", onTimeUpdate);
-    };
-  }, [reduced]);
-
-  const toggle = () => {
-    const v = videoRef.current;
-    if (v) {
-      if (playing) v.pause(); else void v.play().catch(() => {});
-      setPlaying(!playing);
-      return;
-    }
-    // YouTube JS API needs an exact origin to accept commands.
-    frameRef.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: "command", func: playing ? "pauseVideo" : "playVideo", args: [] }),
-      "https://www.youtube-nocookie.com",
-    );
-    setPlaying(!playing);
-  };
-
-  const ytSrc =
-    `https://www.youtube-nocookie.com/embed/${HERO.youtube}` +
-    `?autoplay=1&mute=1&loop=1&playlist=${HERO.youtube}&controls=0&modestbranding=1` +
-    `&rel=0&playsinline=1&showinfo=0&iv_load_policy=3&enablejsapi=1&start=${HERO.start}` +
-    `&origin=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "")}`;
-
-  return (
-    <section
-      className={
-        `${viewportClass} relative -mt-[65px] min-h-[520px] overflow-hidden bg-[color:var(--pp-lavender)] md:-mt-[82px]`
-      }
-    >
-      {/* Always-present backdrop so the hero reads as designed even with no media. */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(900px 520px at 70% 25%, rgba(167,160,211,.55), transparent 62%)," +
-            "radial-gradient(700px 460px at 20% 80%, rgba(124,116,188,.35), transparent 60%)," +
-            "linear-gradient(140deg,#EFEAFB 0%,#E1D9F5 55%,#CFC4EE 100%)",
-        }}
-        aria-hidden
-      />
-
-      {HERO.file && !failed ? (
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          poster={HERO.poster || undefined}
-          onError={() => setFailed(true)}
-          className="absolute inset-0 h-full w-full object-cover"
-        >
-          <source src={HERO.file} />
-        </video>
-      ) : (
-        <iframe
-          ref={frameRef}
-          title="How PocketPills works"
-          src={ytSrc}
-          allow="autoplay; encrypted-media; picture-in-picture"
-          allowFullScreen
-          loading="eager"
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[max(100%,56.25vw)] w-[max(100%,177.78vh)] -translate-x-1/2 -translate-y-1/2"
-        />
-      )}
-
-      {/* Soft gray wash — mutes the video and adds depth for badges */}
-      <>
-        <div className="pointer-events-none absolute inset-0 z-[1] bg-[#D8D6E0]/45" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-black/10 via-transparent to-black/25" aria-hidden />
-      </>
-
-      <button
-        type="button"
-        onClick={toggle}
-        className="absolute bottom-4 left-1/2 z-20 grid h-9 w-9 -translate-x-1/2 place-items-center rounded-full bg-black/30 text-2xs text-white backdrop-blur transition-colors duration-200 hover:bg-black/50 sm:bottom-auto sm:left-auto sm:right-5 sm:top-28 sm:translate-x-0"
-        aria-label={playing ? "Pause video" : "Play video"}
-      >
-        {playing ? "❚❚" : "▶"}
-      </button>
-
-      {overlay ? (
-        <div className={`pointer-events-none absolute inset-x-0 top-[4.25rem] z-20 sm:top-[4.75rem] md:top-[5.25rem] ${FRAME}`}>
-          <div className={`${SURFACE} pointer-events-auto`}>{overlay}</div>
-        </div>
-      ) : null}
-
-      {/* Align with white shell below: FRAME gutters + SURFACE width */}
-      {!hideTrustBadges ? (
-      <div className={`pointer-events-none absolute inset-x-0 bottom-14 z-30 md:bottom-16 ${FRAME}`}>
-        <div className={`${SURFACE} flex flex-wrap items-center justify-between gap-3`}>
-          <span className="flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-[color:var(--pp-navy)] shadow-sm backdrop-blur-sm">
-            <span aria-hidden>🇨🇦</span>{tx("Complete care, without leaving home")}
-          </span>
-          <span className="rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-[color:var(--pp-navy)] shadow-sm backdrop-blur-sm">
-            {tx("Trusted by 800,000+ Canadians · 4.8★ rated")}
-          </span>
-        </div>
-      </div>
-      ) : null}
-    </section>
-  );
-}
-
-/* ═══ 4. Welcome card + stats ═══════════════════ */
-function MapleIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M12 2.2 13.4 6.5l4.2-1.2-1.6 3.9 3.5 2.1-4.1.9.6 4.2L12 14.8 8 16.4l.6-4.2-4.1-.9 3.5-2.1-1.6-3.9 4.2 1.2L12 2.2Zm0 14.3v5.3" />
-    </svg>
-  );
-}
-
-function StarsIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="m12 3.2 2.1 4.3 4.7.7-3.4 3.3.8 4.7L12 14.2 7.8 16.2l.8-4.7-3.4-3.3 4.7-.7L12 3.2Z" />
-    </svg>
-  );
-}
-
-function AppStoreIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M16.7 12.9c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.7-1.3-.1-2.5.8-3.2.8-.7 0-1.7-.7-2.8-.7-1.4 0-2.8.9-3.5 2.2-1.5 2.6-.4 6.5 1.1 8.6.7 1 1.5 2.2 2.6 2.1 1.1 0 1.5-.7 2.8-.7s1.6.7 2.8.7c1.2 0 1.9-1 2.6-2 .8-1.2 1.1-2.3 1.1-2.4-.1 0-2.2-.8-2.3-3.7ZM14.6 6.4c.6-.7 1-1.7.9-2.7-1.1.1-2.1.6-2.6 1.4-.5.7-1 1.6-.9 2.6 1 .1 1.9-.5 2.6-1.3Z" />
-    </svg>
-  );
-}
-
-function PlayStoreIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
-      <path d="M4.2 3.1c-.2.2-.4.6-.4 1.1v15.6c0 .5.2.9.4 1.1l.1.1 8.7-8.7v-.2L4.3 3l-.1.1Z" fill="#00A0FF" />
-      <path d="m16.1 15.1-2.9-2.9v-.2l2.9-2.9.1 0 3.5 2c1 .6 1 1.5 0 2.1l-3.5 2-.1.1Z" fill="#FFBD00" />
-      <path d="m16.2 15.1-3-3L4.2 20.1c.3.3.9.4 1.5 0l10.5-5Z" fill="#FF3A44" />
-      <path d="M16.2 8.9 5.7 2.9C5.1 2.5 4.5 2.6 4.2 3l8.8 8.8 3.2-2.9Z" fill="#00F076" />
-    </svg>
-  );
-}
-
-function TrustpilotIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="#00B67A" aria-hidden>
-      <path d="m12 2.8 2.5 7.6H22l-6.2 4.5 2.4 7.3L12 17.7 5.8 22.2l2.4-7.3L2 10.4h7.5L12 2.8Z" />
-    </svg>
-  );
-}
-
-type TrustStat = {
-  title: string;
-  sub: string;
-  icon: "maple" | "stars" | "appstore" | "play" | "trustpilot";
-};
-
-const TRUST_STATS: TrustStat[] = [
-  { title: "100% Canadian Care", sub: "Trusted by millions of Canadians", icon: "maple" },
-  { title: "Over 2 million", sub: "5-star in-app reviews", icon: "stars" },
-  { title: "4.8 rating", sub: "46K+ App Store reviews", icon: "appstore" },
-  { title: "4.6 rating", sub: "13K+ Google Play reviews", icon: "play" },
-  { title: "4.7 score", sub: "9K+ Trustpilot reviews", icon: "trustpilot" },
-];
-
-function TrustStatIcon({ name }: { name: TrustStat["icon"] }) {
-  switch (name) {
-    case "maple":
-      return <MapleIcon />;
-    case "stars":
-      return <StarsIcon />;
-    case "appstore":
-      return <AppStoreIcon />;
-    case "play":
-      return <PlayStoreIcon />;
-    case "trustpilot":
-      return <TrustpilotIcon />;
-  }
-}
-
-function Welcome({ onStart }: { onStart: () => void }) {
-  const { tx } = useI18n();
-  return (
-    <>
-      {/* First-fold peek: label + title + small gap. Video height keeps the CTA below. */}
-      <header className={`${SHELL_X} pt-5 text-center sm:pt-6`}>
-        <p className="text-base font-semibold text-[color:var(--pp-violet)]">{tx("Welcome to Pocketpills")}</p>
-        <h1 className="mx-auto mt-2 max-w-3xl font-display text-[clamp(2.25rem,4vw,2.875rem)] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-headline)]">
-          {tx("Your health, handled.")}
-        </h1>
-      </header>
-
-      {/* Next fold: CTA + trust stats */}
-      <div className={`${SHELL_X} mt-6 pb-10 text-center sm:mt-7 md:pb-12`}>
-        <button
-          type="button"
-          onClick={onStart}
-          className="inline-flex min-w-[12.5rem] items-center justify-center gap-2 rounded-full bg-cta px-12 py-4 text-md font-medium text-white transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed"
-        >
-          {tx("get start")} <CircleArrow size={16} />
-        </button>
-
-        <div
-          className="mt-10 overflow-hidden rounded-2xl border border-line bg-[color:var(--pp-primary-200)] px-4 py-5 text-left sm:px-5 sm:py-6 lg:mt-12"
-          aria-label="Trust and ratings"
-        >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-5 lg:gap-0 lg:divide-x lg:divide-[color:var(--border-default)]">
-            {TRUST_STATS.map((s) => (
-              <div key={s.sub} className="flex items-start gap-3 lg:px-5">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-[color:var(--pp-primary-950)]">
-                  <TrustStatIcon name={s.icon} />
-                </span>
-                <span className="min-w-0 pt-0.5">
-                  <span className="block text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx(s.title)}</span>
-                  <span className="mt-0.5 block text-2xs leading-snug text-ink-tertiary">{tx(s.sub)}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </>
   );
 }
 
@@ -418,14 +132,14 @@ function RingArrow({ size = 20, color = "#4E2A84" }: { size?: number; color?: st
 function BuyAgain({ go, compact = false }: { go: (to?: string) => void; compact?: boolean }) {
   const { tx } = useI18n();
   return (
-    <section className={compact ? `${SHELL_X} pb-4 md:pb-5` : SHELL_BLOCK} aria-label="Shop and get care">
+    <section className={compact ? `${SHELL_X} pb-8 md:pb-10` : SHELL_BLOCK} aria-label="Shop and get care">
       <div className={compact ? "grid gap-4 lg:grid-cols-2 lg:gap-6" : "grid gap-6 lg:min-h-[430px] lg:grid-cols-2 lg:gap-8"}>
         <div className="flex min-h-0 flex-col">
           <SectionHeads title="Buy again!" onLink={() => go("/messages")} />
           <div
             className={
               compact
-                ? "relative flex min-h-[11.25rem] overflow-hidden rounded-3xl sm:min-h-[12.5rem]"
+                ? "relative flex min-h-[11.25rem] flex-1 overflow-hidden rounded-3xl sm:min-h-[12.5rem]"
                 : "relative flex min-h-[280px] flex-1 overflow-hidden rounded-3xl lg:min-h-0"
             }
             style={{ backgroundImage: "linear-gradient(135deg,#A78BEE 0%,#8A6FE3 45%,#6B4FC7 100%)" }}
@@ -464,7 +178,8 @@ function BuyAgain({ go, compact = false }: { go: (to?: string) => void; compact?
 
         <div className="flex min-h-0 w-full flex-col">
           <SectionHeads title="Doctor-led treatment" onLink={() => go("/appointments")} />
-          <div className={compact ? "w-full rounded-3xl bg-[color:var(--primary-200)] p-1.5 sm:p-2" : "w-full flex-1 rounded-3xl bg-[color:var(--primary-200)] p-2 sm:p-3"}>
+          {/* draft compact: separate tile cards on white; live keeps one filled block */}
+          <div className={compact ? "w-full flex-1" : "w-full flex-1 rounded-3xl bg-[color:var(--primary-200)] p-2 sm:p-3"}>
             <Tiles onPick={(to) => go(to)} compact={compact} />
           </div>
         </div>
@@ -1227,134 +942,106 @@ function Faq({ go }: { go: (to?: string) => void }) {
   );
 }
 
-/* Soft enter when a section loads / scrolls into view */
-function Reveal({
-  children,
-  className = "",
-  delay = 0,
-  soft = false,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-  /** Opacity-only (no lift) — better for full-bleed media */
-  soft?: boolean;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [on, setOn] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setOn(true);
-      return;
-    }
-    let done = false;
-    const show = () => {
-      if (done) return;
-      done = true;
-      setOn(true);
-    };
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          show();
-          io.disconnect();
-        }
-      },
-      { threshold: 0.1, rootMargin: "0px 0px -5% 0px" },
-    );
-    io.observe(el);
-    const fallback = window.setTimeout(show, 2400);
-    return () => {
-      io.disconnect();
-      window.clearTimeout(fallback);
-    };
-  }, []);
-
-  return (
-    <div
-      ref={ref}
-      className={[
-        "pp-reveal",
-        soft ? "pp-reveal-soft" : "",
-        on ? "pp-reveal-in" : "",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      style={delay ? { transitionDelay: `${delay}ms` } : undefined}
-    >
-      {children}
-    </div>
-  );
-}
-
 /* ═══ Page ══════════════════════════════════════════════ */
-export function Landing({
-  welcome,
-}: {
-  /** Optional override for the white-island intro block. */
-  welcome?: ReactNode;
-} = {}) {
+export function Landing() {
   const nav = useNavigate();
   const { signedIn } = useUser();
   const go = (to?: string) => nav(signedIn ? (to ?? "/app") : "/get-started");
 
+  const stageRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [focused, setFocused] = useState(false);
+
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    const panel = panelRef.current;
+    if (!stage || !panel) return;
+    const field = panel.querySelector<HTMLElement>("[data-draft-search-end]");
+    if (!field) return;
+
+    const put = (name: string, px: number) => {
+      const next = `${Math.round(px)}px`;
+      if (stage.style.getPropertyValue(name) !== next) stage.style.setProperty(name, next);
+    };
+
+    const measure = () => {
+      put("--draft-fold-top", stage.getBoundingClientRect().top + window.scrollY);
+
+      const raw = field.getBoundingClientRect().bottom - panel.getBoundingClientRect().top;
+      const max = window.innerHeight * SEARCH_H_MAX_RATIO;
+      if (raw > 0) put("--draft-search-h", Math.min(Math.max(raw, SEARCH_H_MIN), max));
+    };
+
+    measure();
+    const raf = window.requestAnimationFrame(measure);
+    const settle = window.setTimeout(measure, 500);
+
+    const ro = new ResizeObserver(measure);
+    ro.observe(panel);
+    ro.observe(field);
+    ro.observe(document.body);
+    window.addEventListener("resize", measure);
+    window.addEventListener("load", measure);
+    void document.fonts?.ready.then(measure).catch(() => {});
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("load", measure);
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(settle);
+    };
+  }, []);
+
+  const onSearchOpenChange = useCallback((open: boolean) => {
+    setFocused(open);
+    if (!open) return;
+    const field = panelRef.current?.querySelector<HTMLElement>("[data-draft-search-end]");
+    if (!field) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.requestAnimationFrame(() => {
+      const top =
+        window.scrollY +
+        field.getBoundingClientRect().top -
+        window.innerHeight * FOCUS_VIEWPORT_RATIO;
+      window.scrollTo({ top: Math.max(top, 0), behavior: reduce ? "auto" : "smooth" });
+    });
+  }, []);
+
   return (
     <div className="min-h-screen bg-[color:var(--pp-page)]">
       <AnnouncementBar onGo={() => go()} />
-      {/* Outside Reveal so sticky hide/show isn’t clipped by a same-height wrapper */}
       <SiteHeader />
+
       <main>
-        <Reveal soft delay={100}>
-          <Hero />
-        </Reveal>
+        <div ref={stageRef} className={`draft-stage${focused ? " is-focus" : ""}`}>
+          <div className="draft-hero-slot">
+            <DraftReveal soft delay={100}>
+              <DraftHeroVideo />
+            </DraftReveal>
+          </div>
 
-        {/* Continuous white shell — lavender only shows in the page margins */}
-        <div className={`relative z-20 -mt-6 ${FRAME}`}>
-          <div className={`${SURFACE} overflow-hidden ${ISLAND}`}>
-            <Reveal delay={140}>
-              {welcome ?? <Welcome onStart={() => go()} />}
-            </Reveal>
-            <Reveal delay={220}>
-              <BuyAgain go={go} />
-            </Reveal>
-            <Reveal delay={300}>
-              <FeatureCards go={go} />
-            </Reveal>
-            <Reveal delay={380}>
-              <Partners />
-            </Reveal>
+          <div className="draft-fold-spacer" aria-hidden />
+
+          <div className={`draft-panel-wrap ${FRAME}`}>
+            <div ref={panelRef} className={`draft-panel ${SURFACE}`}>
+              <DraftReveal soft delay={140}>
+                <DraftSearchSection onOpenChange={onSearchOpenChange} />
+              </DraftReveal>
+              <DraftShopSection go={go} />
+              <DraftMergedSections go={go} />
+            </div>
           </div>
         </div>
 
-        {/* Lower islands — same FRAME + SURFACE as the shell so edges align */}
-        <div className={`${FRAME} ${SECTION_GAP_Y}`}>
-          <div className={`${SURFACE} flex flex-col ${SECTION_GAP} pb-0`}>
-            <Reveal>
-              <HowItWorks />
-            </Reveal>
-            <Reveal>
-              <Testimonials />
-            </Reveal>
-            <Reveal>
-              <JoinBand go={go} />
-            </Reveal>
-            <Reveal>
-              <NabpBand />
-            </Reveal>
-            <Reveal>
-              <Faq go={go} />
-            </Reveal>
-          </div>
-        </div>
+        <DraftLowerSection go={go} />
       </main>
 
-      <Reveal>
+      <DraftReveal>
         <SiteFooter go={go} variant="full" />
-      </Reveal>
+      </DraftReveal>
+
+      {focused ? <div className="draft-focus-scrim" aria-hidden /> : null}
     </div>
   );
 }

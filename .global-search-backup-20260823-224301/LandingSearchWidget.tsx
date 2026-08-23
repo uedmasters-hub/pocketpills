@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { voiceLangFromSiteLang, type VoiceSearchLang } from "@/lib/specialtySearch";
+import { DEFAULT_HITS, searchEverything, type GlobalHit, type GlobalHitKind } from "@/lib/globalSearch";
 import { useLocalSpeech } from "@/lib/useLocalSpeech";
 import {
   SearchDoctorIcon,
@@ -9,52 +10,6 @@ import {
   SearchMagnifyIcon,
   SearchMicIcon,
 } from "@/components/landing/SearchIcons";
-
-type Suggestion = {
-  id: string;
-  label: string;
-  hint: string;
-  to: string;
-  icon: "doctor" | "location" | "search";
-};
-
-const QUICK_SUGGESTIONS: Suggestion[] = [
-  {
-    id: "doctors",
-    label: "Doctors",
-    hint: "Find verified physicians",
-    to: "/doctors",
-    icon: "doctor",
-  },
-  {
-    id: "hospitals",
-    label: "Hospitals & clinics",
-    hint: "Browse facilities nearby",
-    to: "/facilities",
-    icon: "location",
-  },
-  {
-    id: "ambulance",
-    label: "Ambulance & emergency",
-    hint: "Urgent care services",
-    to: "/appointments",
-    icon: "search",
-  },
-  {
-    id: "labs",
-    label: "Labs & pathology",
-    hint: "Book tests and diagnostics",
-    to: "/appointments",
-    icon: "search",
-  },
-  {
-    id: "home-care",
-    label: "Home care & nurses",
-    hint: "In-home assistance",
-    to: "/appointments",
-    icon: "doctor",
-  },
-];
 
 function voiceErrorMessage(error: string | null, tx: (s: string) => string): string | null {
   if (!error) return null;
@@ -88,18 +43,43 @@ function voiceErrorMessage(error: string | null, tx: (s: string) => string): str
   }
 }
 
-function SuggestionIcon({ kind }: { kind: Suggestion["icon"] }) {
+function SuggestionIcon({ kind }: { kind: GlobalHitKind }) {
   const cls = "h-4 w-4 shrink-0 text-[color:var(--pp-primary-950)]";
-  if (kind === "doctor") return <SearchDoctorIcon className={cls} />;
-  if (kind === "location") return <SearchLocationIcon className={cls} />;
+  if (kind === "doctor" || kind === "care-worker" || kind === "specialty") {
+    return <SearchDoctorIcon className={cls} />;
+  }
+  if (kind === "facility" || kind === "pharmacy" || kind === "lab") {
+    return <SearchLocationIcon className={cls} />;
+  }
   return <SearchMagnifyIcon className={cls} />;
 }
+
+/** Small type label so a result's kind is readable at a glance. */
+const KIND_LABEL: Record<GlobalHitKind, string> = {
+  specialty: "Specialty",
+  treatment: "Treatment",
+  doctor: "Doctors",
+  facility: "Facilities",
+  pharmacy: "Pharmacy",
+  lab: "Labs",
+  "care-worker": "Home care",
+  service: "Emergency",
+  medication: "Medication",
+  browse: "",
+};
 
 /**
  * Landing search pill — design match for draft homepage.
  * Language toggle updates site locale; mic uses local speech; Search navigates.
  */
-export function LandingSearchWidget() {
+export function LandingSearchWidget({
+  spotlight = false,
+  onOpenChange,
+}: {
+  /** Draft focus mode: host owns the scroll + scrim, field/list get a ring. */
+  spotlight?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const { tx, lang, setLang } = useI18n();
   const nav = useNavigate();
   const inputId = useId();
@@ -138,30 +118,33 @@ export function LandingSearchWidget() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return QUICK_SUGGESTIONS;
-    return QUICK_SUGGESTIONS.filter(
-      (s) =>
-        s.label.toLowerCase().includes(q) ||
-        s.hint.toLowerCase().includes(q) ||
-        s.id.includes(q),
-    );
+  /* Intent-resolved results: entity + specialty + location, EN and Nepali. */
+  const filtered: GlobalHit[] = useMemo(() => {
+    const q = query.trim();
+    return q ? searchEverything(q) : DEFAULT_HITS;
   }, [query]);
 
   useEffect(() => {
     setActiveIdx(0);
   }, [query]);
 
+  /* Tell the host when the suggestion panel opens / closes (draft focus mode). */
+  const openRef = useRef(open);
+  useEffect(() => {
+    if (openRef.current === open) return;
+    openRef.current = open;
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
+
   /* When suggestions open, scroll the field up so the list isn’t clipped by the fold. */
   useEffect(() => {
-    if (!open || !wrapRef.current) return;
+    if (!open || spotlight || !wrapRef.current) return;
     const el = wrapRef.current;
     const id = window.requestAnimationFrame(() => {
       el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
     });
     return () => window.cancelAnimationFrame(id);
-  }, [open]);
+  }, [open, spotlight]);
 
   const voiceError = voiceErrorMessage(error, tx);
 
@@ -171,22 +154,14 @@ export function LandingSearchWidget() {
       nav("/appointments");
       return;
     }
-    const hit = filtered.find((s) => s.label.toLowerCase() === q.toLowerCase());
-    if (hit) {
-      nav(hit.to);
-      return;
-    }
-    nav(`/appointments?q=${encodeURIComponent(q)}`);
+    /* Submitting takes the best resolved route, not a literal text search. */
+    const [best] = override ? searchEverything(q) : filtered;
+    nav(best ? best.to : `/appointments?q=${encodeURIComponent(q)}`);
   };
 
-  const pickSuggestion = (s: Suggestion) => {
-    setQuery(s.label);
+  const pickSuggestion = (hit: GlobalHit) => {
     setOpen(false);
-    if (s.to.startsWith("/appointments")) {
-      nav(`/appointments?q=${encodeURIComponent(s.label)}`);
-      return;
-    }
-    nav(s.to);
+    nav(hit.to);
   };
 
   const toggleVoice = () => {
@@ -228,8 +203,8 @@ export function LandingSearchWidget() {
         }}
         className={
           "flex items-center gap-2 rounded-full border bg-white py-1.5 pl-4 pr-1.5 shadow-[0_8px_30px_rgba(24,7,48,0.06)] transition-[border-color,box-shadow] " +
-          (listening
-            ? "border-[color:var(--pp-violet)] shadow-[0_0_0_3px_rgba(107,77,230,0.12)]"
+          (listening || (spotlight && open)
+            ? "border-[color:var(--pp-violet)] shadow-[0_0_0_4px_rgba(107,77,230,0.16)]"
             : "border-line")
         }
       >
@@ -370,7 +345,12 @@ export function LandingSearchWidget() {
           id={listId}
           role="listbox"
           aria-label={tx("Search suggestions")}
-          className="absolute left-0 right-0 z-50 mt-2 max-h-[min(22rem,50vh)] overflow-y-auto overscroll-contain rounded-2xl border border-line bg-white py-1 shadow-float"
+          className={
+            "absolute left-0 right-0 z-50 mt-2 max-h-[min(22rem,50vh)] overflow-y-auto overscroll-contain rounded-2xl border bg-white py-1 " +
+            (spotlight
+              ? "border-[rgba(107,77,230,0.35)] shadow-[0_24px_60px_rgba(24,7,48,0.22)]"
+              : "border-line shadow-float")
+          }
         >
           {filtered.map((s, i) => (
             <li key={s.id} role="option" aria-selected={i === activeIdx}>
@@ -384,14 +364,19 @@ export function LandingSearchWidget() {
                 }
               >
                 <span className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--pp-primary-100)]">
-                  <SuggestionIcon kind={s.icon} />
+                  <SuggestionIcon kind={s.kind} />
                 </span>
-                <span className="min-w-0">
+                <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium text-[color:var(--pp-primary-950)]">
-                    {tx(s.label)}
+                    {s.label}
                   </span>
-                  <span className="block truncate text-xs text-ink-tertiary">{tx(s.hint)}</span>
+                  <span className="block truncate text-xs text-ink-tertiary">{s.hint}</span>
                 </span>
+                {KIND_LABEL[s.kind] ? (
+                  <span className="ml-auto hidden shrink-0 rounded-full bg-[color:var(--pp-primary-100)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--pp-primary-950)] sm:inline">
+                    {tx(KIND_LABEL[s.kind])}
+                  </span>
+                ) : null}
               </button>
             </li>
           ))}
@@ -400,3 +385,4 @@ export function LandingSearchWidget() {
     </div>
   );
 }
+
