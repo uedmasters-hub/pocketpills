@@ -2,7 +2,9 @@
 export function isAlwaysPublicPath(pathname: string) {
   if (
     pathname === "/how-it-works" ||
+    pathname.startsWith("/how-it-works/") ||
     pathname === "/about-us" ||
+    pathname.startsWith("/about-us/") ||
     pathname === "/questions"
   ) {
     return true;

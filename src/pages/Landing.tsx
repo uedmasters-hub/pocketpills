@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { FRAME, SURFACE, SECTION_TITLE, ISLAND_PAD, ISLAND_RADIUS, ISLAND, SHELL_X, SHELL_BLOCK } from "@/components/layout/Grid";
+import { HOW_IT_WORKS_STEPS } from "@/lib/howItWorks";
 import { DraftHeroVideo } from "@/pages/landing-draft/DraftHeroVideo";
 import { DraftReveal } from "@/pages/landing-draft/DraftReveal";
 import { DraftLowerSection } from "@/pages/landing-draft/sections/DraftLowerSection";
@@ -321,33 +322,15 @@ function Partners() {
 }
 
 /* ═══ 8b. How it works ═══════════════════════════════ */
-const HOW_CDN = "https://static.pocketpills.com/acq-web/redesign/home";
 /** Seconds into each step clip before its card visual populates. */
 const HOW_REVEAL_AT = 1.8;
-const HOW_STEPS = [
-  {
-    title: "Become a member",
-    video: `${HOW_CDN}/videos/step1.webm`,
-    poster: `${HOW_CDN}/posterStep1.webp`,
-    card: "/img/how/card1-welcome.webp",
-    alt: "Welcome to Pocketpills — become a member.",
-  },
-  {
-    title: "Match with experts",
-    video: `${HOW_CDN}/videos/step2.webm`,
-    poster: `${HOW_CDN}/posterStep2.webp`,
-    // Multi-option floating expert scene (calling UI also at /img/how/card2-call.jpg)
-    card: "/img/how/card2-experts.jpg",
-    alt: "Match with Pocketpills clinicians and pharmacists.",
-  },
-  {
-    title: "Manage your health on the go",
-    video: `${HOW_CDN}/videos/step3.webm`,
-    poster: `${HOW_CDN}/posterStep3.webp`,
-    card: "/img/how/card3-manage.webp",
-    alt: "Manage prescriptions, refills, and care from your phone with Pocketpills.",
-  },
-] as const;
+const HOW_STEPS = HOW_IT_WORKS_STEPS.map((s) => ({
+  title: s.title,
+  video: s.video,
+  poster: s.poster,
+  card: s.img,
+  alt: s.imgAlt,
+}));
 
 function HowItWorks() {
   const { tx } = useI18n();
@@ -436,7 +419,7 @@ function HowItWorks() {
         <div className="relative mx-auto aspect-[3/4] w-full max-w-[24rem] shrink-0 overflow-hidden bg-[color:var(--primary-500)] lg:mx-0 lg:aspect-auto lg:w-[min(48%,30rem)] lg:max-w-none lg:self-stretch">
           {inView ? (
             <video
-              key={step.video}
+              key={step.title}
               ref={videoRef}
               muted
               playsInline
@@ -466,7 +449,7 @@ function HowItWorks() {
             {tx("See the full guide →")}
           </Link>
 
-          <ol className="mt-6 grid grid-cols-1 gap-x-3 gap-y-7 sm:mt-7 sm:grid-cols-3 sm:gap-x-3">
+          <ol className="mt-6 grid grid-cols-2 gap-x-3 gap-y-7 sm:mt-7 xl:grid-cols-4">
             {HOW_STEPS.map((s, i) => {
               const isActive = i === active && revealed[i];
               const isReady = revealed[i];
@@ -486,12 +469,12 @@ function HowItWorks() {
                     <span className="relative w-full pb-3.5">
                       <span
                         className={
-                          "relative mx-auto block aspect-[3/4] w-full max-w-[9.5rem] overflow-hidden rounded-t-2xl rounded-b-none transition-[border-color,transform,box-shadow] duration-300 sm:max-w-[10.5rem] " +
+                          "relative mx-auto block aspect-[3/4] w-full max-w-[8.5rem] overflow-hidden rounded-t-2xl rounded-b-none transition-[border-color,transform,box-shadow] duration-300 sm:max-w-[9.5rem] " +
                           (isReady ? "bg-[color:var(--pp-primary-200)]" : "bg-[#ececf1]") +
                           " " +
                           (isActive
                             ? "border border-[color:var(--pp-primary-950)] shadow-[0_8px_24px_rgba(78,42,132,0.12)]"
-                            : "border border-transparent")
+                            : "border border-line")
                         }
                       >
                         {isReady ? (
@@ -508,7 +491,7 @@ function HowItWorks() {
                       </span>
                       <span
                         className={
-                          "absolute bottom-0 left-1/2 grid h-7 w-7 -translate-x-1/2 place-items-center rounded-full text-xs font-semibold transition-colors duration-300 " +
+                          "absolute bottom-0 left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full text-xs font-semibold leading-none tracking-normal tnum transition-colors duration-300 " +
                           (isActive
                             ? "bg-[color:var(--pp-primary-950)] text-white"
                             : isReady
@@ -521,7 +504,7 @@ function HowItWorks() {
                     </span>
                     <span
                       className={
-                        "mt-1.5 max-w-[9.5rem] text-xs font-medium leading-snug transition-colors duration-300 sm:text-sm " +
+                        "mt-1.5 max-w-[8.5rem] text-xs font-medium leading-snug transition-colors duration-300 sm:max-w-[9.5rem] sm:text-sm " +
                         (isActive
                           ? "text-[color:var(--pp-primary-950)]"
                           : isReady

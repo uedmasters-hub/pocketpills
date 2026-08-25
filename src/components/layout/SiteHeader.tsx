@@ -531,7 +531,8 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
         </div>
         <Link
           to="/how-it-works"
-          className={ITEM + (pathname === "/how-it-works" ? ITEM_OPEN : "")}
+          className={ITEM + (!open && pathname === "/how-it-works" ? ITEM_OPEN : "")}
+          onMouseEnter={() => setOpen(null)}
         >
           {t("nav.howItWorks")}
         </Link>

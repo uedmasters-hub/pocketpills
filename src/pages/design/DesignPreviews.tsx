@@ -156,9 +156,9 @@ function MotionPreview() {
 
 function ImagesPreview() {
   const shots = [
-    { src: "/img/how/card1-welcome.webp", label: "Welcome" },
-    { src: "/img/how/card2-experts.jpg", label: "Experts" },
-    { src: "/img/how/card3-manage.webp", label: "Manage" },
+    { src: "/img/how/card1-welcome.png", label: "Welcome" },
+    { src: "/img/how/card2-experts.png", label: "Experts" },
+    { src: "/img/how/card3-manage.png", label: "Manage" },
     { src: "/img/treatments/uti.png", label: "Treatment" },
   ];
   return (

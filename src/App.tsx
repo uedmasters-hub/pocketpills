@@ -46,6 +46,7 @@ import { BusinessProfile } from "@/pages/business/BusinessProfile";
 import { Landing } from "@/pages/Landing";
 import { HowItWorks } from "@/pages/HowItWorks";
 import { AboutUs } from "@/pages/AboutUs";
+import { AboutUsDraft } from "@/pages/about-draft/AboutUsDraft";
 import { Questions } from "@/pages/Questions";
 import { Dashboard } from "@/pages/Dashboard";
 import { Profile } from "@/pages/Profile";
@@ -179,7 +180,9 @@ export default function App() {
           {/* Always public — How it works + Support (even when signed in) */}
           <Route element={<PublicMarketingLayout />}>
             <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/how-it-works/draft" element={<Navigate to="/how-it-works" replace />} />
             <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/about-us/draft" element={<AboutUsDraft />} />
             <Route path="/questions" element={<Questions />} />
             <Route path="/doctors" element={<DoctorDirectory />} />
             <Route path="/doctors/claim" element={<ClaimDoctor />} />
