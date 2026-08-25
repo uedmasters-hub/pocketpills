@@ -4,6 +4,7 @@ import {
   LandingTestimonials,
 } from "@/pages/LandingSections";
 import { DraftReveal } from "@/pages/landing-draft/DraftReveal";
+import { DraftSectionDivider } from "@/pages/landing-draft/DraftSectionDivider";
 
 /**
  * How it works, join band, testimonials — the lower half of the ONE merged
@@ -16,12 +17,15 @@ import { DraftReveal } from "@/pages/landing-draft/DraftReveal";
 export function DraftMergedSections({ go }: { go: (to?: string) => void }) {
   return (
     <div className="draft-merged">
+      <DraftSectionDivider flush />
       <DraftReveal>
         <LandingHowItWorks />
       </DraftReveal>
+      <DraftSectionDivider />
       <DraftReveal>
         <LandingJoinBand go={go} />
       </DraftReveal>
+      <DraftSectionDivider />
       <DraftReveal>
         <LandingTestimonials />
       </DraftReveal>

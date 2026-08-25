@@ -3,7 +3,7 @@ import { LandingSearchWidget } from "@/components/landing/LandingSearchWidget";
 import { SearchShieldIcon } from "@/components/landing/SearchIcons";
 import { useI18n } from "@/lib/i18n";
 
-/** Draft landing hero copy + search — replaces Welcome CTA block on /landing/draft. */
+/** Search hero copy + pill — used by the landing homepage. */
 export function LandingSearchHero({ compact = false }: { compact?: boolean } = {}) {
   const { tx } = useI18n();
   return (

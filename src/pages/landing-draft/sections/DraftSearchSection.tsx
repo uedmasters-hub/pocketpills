@@ -20,7 +20,7 @@ export function DraftSearchSection({
           <SearchShieldIcon className="h-4 w-4 text-[color:var(--pp-primary-950)]" />
           {tx("Nepal's complete healthcare platform")}
         </p>
-        <h1 className="mx-auto mt-5 max-w-3xl font-display text-[clamp(1.625rem,3.8vw,2.375rem)] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-headline)]">
+        <h1 className="mx-auto mt-8 max-w-3xl font-display text-[clamp(1.625rem,3.8vw,2.375rem)] font-medium leading-[1.15] tracking-tight text-[color:var(--pp-headline)]">
           {tx("Find any healthcare service")}
         </h1>
       </header>

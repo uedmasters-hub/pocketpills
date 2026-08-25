@@ -9,6 +9,8 @@ import { ProfileMenu } from "@/components/layout/ProfileMenu";
 import { Caret } from "@/components/ui";
 import { FRAME, SURFACE } from "@/components/layout/Grid";
 import { isAlwaysPublicPath, isDualBrowsePath, isFocusedPatientFlow } from "@/lib/marketingPaths";
+import { LANDING_SERVICE_CATEGORIES } from "@/lib/landingServiceCategories";
+import { FEATURED_DELIVERY_DISTRICTS, pharmacyDirectoryPath } from "@/lib/nepalCities";
 
 const NAVCDN = "https://static.pocketpills.com/acq-web/redesign/navbar";
 
@@ -76,6 +78,22 @@ function Icon({ id }: { id: string }) {
           <path {...W} d="M26.7254 15.1605C27.1545 14.7112 27.8666 14.6948 28.316 15.1239L35.0895 21.5927C35.3118 21.8049 35.4375 22.0989 35.4375 22.4062C35.4375 22.7136 35.3118 23.0076 35.0895 23.2198L28.316 29.6886C27.8666 30.1177 27.1545 30.1013 26.7254 29.652C26.2963 29.2027 26.3127 28.4905 26.762 28.0614L31.5056 23.5312H14.0625C13.4412 23.5312 12.9375 23.0276 12.9375 22.4062C12.9375 21.7849 13.4412 21.2812 14.0625 21.2812H31.5056L26.762 16.7511C26.3127 16.322 26.2963 15.6099 26.7254 15.1605Z" />
         </svg>
       );
+    case "doctor":
+    case "hospital":
+    case "pharmacy":
+    case "ambulance":
+    case "fill":
+    case "delivery":
+    case "search": {
+      const s = { width: 30, height: 30, viewBox: "0 0 24 24", fill: "none", stroke: "white", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+      if (id === "doctor") return (<svg {...s}><circle cx="12" cy="7" r="3" /><path d="M6 20v-1.5A5.5 5.5 0 0 1 12 13a5.5 5.5 0 0 1 6 5.5V20" /></svg>);
+      if (id === "hospital") return (<svg {...s}><path d="M4 20V8l8-4 8 4v12" /><path d="M10 20v-6h4v6" /><path d="M12 9v4M10 11h4" /></svg>);
+      if (id === "pharmacy") return (<svg {...s}><rect x="4" y="7" width="16" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M12 11v6M9 14h6" /></svg>);
+      if (id === "ambulance") return (<svg {...s}><path d="M3 14h11v5H3z" /><path d="M14 16h4l3 3H14z" /><circle cx="7" cy="19" r="1.5" /><circle cx="17" cy="19" r="1.5" /><path d="M8 10h3M9.5 8.5v3" /></svg>);
+      if (id === "fill") return (<svg {...s}><path d="M7 4h8l3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" /><path d="M14 4v4h4" /><path d="M8 13h8M8 17h5" /></svg>);
+      if (id === "delivery") return (<svg {...s}><path d="M3 14h11v5H3z" /><path d="M14 15h4l3 4H14z" /><circle cx="7" cy="19" r="1.4" /><circle cx="17" cy="19" r="1.4" /><path d="M5 14V9h7v5" /></svg>);
+      return (<svg {...s}><circle cx="11" cy="11" r="6" /><path d="m16 16 4 4" /></svg>);
+    }
     default: // prescription circle
       return (
         <svg width="28" height="28" viewBox="0 0 36 36" fill="none" aria-hidden>
@@ -288,8 +306,8 @@ function useVariant(): HeaderVariant {
   if (isFocusedPatientFlow(pathname)) return "focused";
   if (pathname === "/login" || pathname === "/get-started") return "minimal";
   if (pathname.startsWith("/provider")) return "minimal";
-  /* Homepage + draft + How it works / Support — always marketing nav. */
-  if (pathname === "/" || pathname === "/landing/draft" || isAlwaysPublicPath(pathname)) return "marketing";
+  /* Homepage + How it works / Support — always marketing nav. */
+  if (pathname === "/" || isAlwaysPublicPath(pathname)) return "marketing";
   /* Treatment / Pharmacy — marketing when logged out, app when logged in. */
   if (isDualBrowsePath(pathname) && !signedIn) return "marketing";
   return signedIn ? "app" : "marketing";
@@ -300,6 +318,8 @@ const ITEM =
   "text-[color:var(--pp-nav-ink)] transition-colors duration-200 " +
   "hover:bg-[color:var(--state-hover)] hover:text-[color:var(--pp-primary-950)]";
 
+const ITEM_OPEN = " bg-[color:var(--state-hover)] text-[color:var(--pp-primary-950)]";
+
 const CTA =
   "inline-flex h-11 items-center rounded-full bg-cta px-5 text-base font-medium text-white " +
   "transition-colors duration-200 hover:bg-cta-hover active:bg-cta-pressed";
@@ -307,52 +327,73 @@ const CTA =
 const SEC = "#3FBFB5";
 const PRI = "#7040D9";
 
+const CARE_TAG_IDS = [
+  "clinic",
+  "nurse",
+  "home-care",
+  "labs",
+  "emergency-equipment",
+  "urgent-services",
+  "assistant",
+  "medicines",
+  "oxygen",
+  "treatments",
+] as const;
+
 function TreatmentMenu() {
+  const { tx } = useI18n();
+  const tags: [string, string][] = CARE_TAG_IDS.flatMap((id) => {
+    const cat = LANDING_SERVICE_CATEGORIES.find((c) => c.id === id);
+    return cat ? [[tx(cat.label), cat.to] as [string, string]] : [];
+  });
   return (
     <MegaPanel
       bg={`${NAVCDN}/nav_bg_green.png`}
-      eyebrow="Get Prescribed Online"
+      eyebrow="Get care online"
       tiles={<>
-        <DropTile to="/appointments/treatments/weight-loss" icon="weight" label="Lose weight" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
-        <DropTile to="/appointments/treatments/hair-loss" icon="hair" label="Reverse hair loss" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
-        <DropTile to="/appointments/treatments/erectile-dysfunction" icon="ed" label="Male sexual health" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
-        <DropTile to="/appointments/treatments/birth-control" icon="birth" label="Prevent pregnancy" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/doctors" icon="doctor" label="Find a doctor" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/facilities?q=hospital" icon="hospital" label="Find a hospital" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/pharmacies" icon="pharmacy" label="Find a pharmacy" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/appointments?q=ambulance" icon="ambulance" label="Request ambulance" chip={SEC} hover="hover:bg-[color:var(--state-hover)]" />
       </>}
-      cta="/appointments" ctaLabel="Get a prescription"
-      asideTitle="Virtual Care"
-      tags={[["Find a doctor", "/doctors"], ["Find a pharmacy", "/pharmacies"], ["Find a hospital", "/facilities"], ["Acne (Mild)", "/appointments/treatments/acne"], ["Birth Control", "/appointments/treatments/birth-control"], ["Erectile Dysfunction", "/appointments/treatments/erectile-dysfunction"], ["Hair Loss", "/appointments/treatments/hair-loss"], ["Urinary Tract Infection", "/appointments/treatments/uti"], ["Weight Loss", "/appointments/treatments/weight-loss"], ["Minor ailments", "/appointments"]]}
-      browseTo="/appointments" browseLabel="See all treatments"
+      cta="/appointments" ctaLabel="Book an appointment"
+      asideTitle="Care services"
+      tags={tags}
+      browseTo="/appointments" browseLabel="See all services"
       faqs={[
         { label: "Can I get a prescription online?", slug: "online-prescription" },
-        { label: "How do I qualify for a prescription?", slug: "qualify-prescription" },
-        { label: "How fast is the application process?", slug: "application-speed" },
-        { label: "Is delivery free across Canada?", slug: "delivery-free" },
+        { label: "Does Pocketpills replace my family doctor?", slug: "replace-family-doctor" },
+        { label: "Who can use Pocketpills?", slug: "who-can-use" },
+        { label: "How long does delivery take?", slug: "delivery-time" },
       ]}
     />
   );
 }
 
 function PharmacyMenu() {
+  const districtTags: [string, string][] = FEATURED_DELIVERY_DISTRICTS.slice(0, 5).map((name) => [
+    name,
+    pharmacyDirectoryPath(name),
+  ]);
   return (
     <MegaPanel
       bg={`${NAVCDN}/nav_bg_lilac.png`}
-      eyebrow="Get Started"
+      eyebrow="Get started"
       tiles={<>
-        <DropTile to="/appointments" icon="plus" label="Get a new prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
-        <DropTile to="/fill" icon="searchprices" label="Fill a prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/fill" icon="fill" label="Fill a prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
         <DropTile to="/transfer" icon="transfer" label="Transfer a prescription" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
-        <DropTile to="/drug" icon="circle" label="Search prices" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
-        <DropTile to="/offers" icon="plus" label="Offers & discounts" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/drug" icon="search" label="Search medicines" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
+        <DropTile to="/appointments?q=urgent" icon="delivery" label="Urgent delivery" chip={PRI} hover="hover:bg-[color:var(--state-hover)]" />
       </>}
-      cta="/orders?service=pharmacy" ctaLabel="Online Pharmacy"
-      asideTitle="Explore Medications"
-      tags={[["Ozempic", "/drug/ozempic"], ["Finasteride", "/drug/finasteride"], ["Minoxidil", "/drug/loniten"], ["Lantus", "/drug/lantus"], ["Wegovy", "/drug/wegovy"], ["Escitalopram", "/drug/escitalopram"], ["Jardiance", "/drug/jardiance"], ["Alysena", "/drug/alysena"]]}
+      cta="/pharmacies" ctaLabel="Find a pharmacy"
+      asideTitle="Pharmacy & meds"
+      tags={[["Browse A–Z", "/drug"], ["Pharmacies by region", "/pharmacies/regions"], ["Offers", "/offers"], ...districtTags]}
       browseTo="/drug" browseLabel="Browse all medications"
       faqs={[
         { label: "I already have a prescription. How do I fill it with Pocketpills?", slug: "fill-existing-rx" },
-        { label: "Can I get a prescription without consulting a doctor?", slug: "prescription-without-doctor" },
-        { label: "How much does it cost?", slug: "how-much-cost" },
         { label: "How do I transfer my prescriptions from a different pharmacy?", slug: "transfer-prescription" },
+        { label: "Can I refill online?", slug: "refill-online" },
+        { label: "How long does delivery take?", slug: "delivery-time" },
       ]}
     />
   );
@@ -365,7 +406,7 @@ function SupportMenu() {
         <div className="flex flex-col gap-3 p-3">
           <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-[color:var(--pp-violet)]">Learn</p>
           <div className="flex flex-col gap-2.5">
-            {[["About us", "/about-us"], ["How it works", "/how-it-works"], ["FAQs", "/questions"], ["Browse Ailments", "/consult/minor-ailments"]].map(([l, t]) =>
+            {[["About us", "/about-us"], ["How it works", "/how-it-works"], ["FAQs", "/questions"], ["Book an appointment", "/appointments"]].map(([l, t]) =>
               <Link key={l} to={t} className="text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:text-[color:var(--pp-violet)]">{l}</Link>)}
           </div>
         </div>
@@ -481,21 +522,21 @@ export function SiteHeader({ variant: forced }: { variant?: HeaderVariant } = {}
         onMouseLeave={() => setOpen(null)}
       >
         <div className="relative" onMouseEnter={() => setOpen("t")}>
-          <span className={ITEM}><Link to="/appointments">{t("nav.treatment")}</Link><Chevron /></span>
+          <span className={ITEM + (open === "t" ? ITEM_OPEN : "")}><Link to="/appointments">{t("nav.treatment")}</Link><Chevron /></span>
           {open === "t" && <TreatmentMenu />}
         </div>
         <div className="relative" onMouseEnter={() => setOpen("p")}>
-          <span className={ITEM}><Link to="/drug">{t("nav.pharmacy")}</Link><Chevron /></span>
+          <span className={ITEM + (open === "p" ? ITEM_OPEN : "")}><Link to="/drug">{t("nav.pharmacy")}</Link><Chevron /></span>
           {open === "p" && <PharmacyMenu />}
         </div>
         <Link
           to="/how-it-works"
-          className={ITEM + (pathname === "/how-it-works" ? " bg-[color:var(--state-hover)] text-[color:var(--pp-primary-950)]" : "")}
+          className={ITEM + (pathname === "/how-it-works" ? ITEM_OPEN : "")}
         >
           {t("nav.howItWorks")}
         </Link>
         <div className="relative" onMouseEnter={() => setOpen("s")}>
-          <span className={ITEM}><a href="#care">{t("nav.support")}</a><Chevron /></span>
+          <span className={ITEM + (open === "s" ? ITEM_OPEN : "")}><a href="#care">{t("nav.support")}</a><Chevron /></span>
           {open === "s" && <SupportMenu />}
         </div>
       </nav>

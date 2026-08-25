@@ -1,5 +1,5 @@
 /*
-  Landing hero + panel layout — used by live `/` and `/landing/draft`.
+  Landing hero + panel layout — used by live `/`.
   Legacy hero-viewport / ISLAND selectors live in index.css for old references.
 
   Fold model
@@ -135,15 +135,9 @@
 .draft-search-section {
   display: flex;
   flex-direction: column;
-  padding-top: 1.25rem;
+  padding-top: 2rem;
   padding-bottom: var(--draft-search-gap);
   gap: var(--draft-headline-search-gap);
-}
-
-@media (min-width: 640px) {
-  .draft-search-section {
-    padding-top: 1.5rem;
-  }
 }
 
 .draft-shop-section {

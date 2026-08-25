@@ -44,7 +44,6 @@ import { ProviderOffers } from "@/pages/provider/ProviderOffers";
 import { BusinessProfile } from "@/pages/business/BusinessProfile";
 
 import { Landing } from "@/pages/Landing";
-import { LandingDraft } from "@/pages/landing-draft/LandingDraft";
 import { HowItWorks } from "@/pages/HowItWorks";
 import { AboutUs } from "@/pages/AboutUs";
 import { Questions } from "@/pages/Questions";
@@ -168,7 +167,7 @@ export default function App() {
           <Routes>
           {/* Marketing homepage — own chrome */}
           <Route path="/" element={<Landing />} />
-          <Route path="/landing/draft" element={<LandingDraft />} />
+          <Route path="/landing/draft" element={<Navigate to="/" replace />} />
 
           {/* Design system docs (HIG-style) — versions managed in-header */}
           <Route path="/design/versions" element={<Navigate to="/design" replace />} />

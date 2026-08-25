@@ -1,20 +1,24 @@
 import {
-  LandingBuyAgain,
   LandingFeatureCards,
   LandingPartners,
 } from "@/pages/LandingSections";
 import { DraftReveal } from "@/pages/landing-draft/DraftReveal";
+import { DraftSectionDivider } from "@/pages/landing-draft/DraftSectionDivider";
+import { DraftTelehealthSection } from "@/pages/landing-draft/sections/DraftTelehealthSection";
 
-/** Buy again, feature cards, and partners — inside the white draft panel. */
+/** Telehealth booking, feature cards, and partners — inside the white draft panel. */
 export function DraftShopSection({ go }: { go: (to?: string) => void }) {
   return (
-    <section className="draft-shop-section" aria-label="Shop and get care">
+    <section className="draft-shop-section" aria-label="Telehealth and featured care">
+      <DraftSectionDivider />
       <DraftReveal delay={220}>
-        <LandingBuyAgain go={go} compact />
+        <DraftTelehealthSection />
       </DraftReveal>
+      <DraftSectionDivider />
       <DraftReveal delay={300}>
         <LandingFeatureCards go={go} />
       </DraftReveal>
+      <DraftSectionDivider />
       <DraftReveal delay={380}>
         <LandingPartners />
       </DraftReveal>
