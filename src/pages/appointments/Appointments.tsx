@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
-import { RatingChipSkeleton } from "@/components/ui";
+import { RatingChipSkeleton, SkeletonImage } from "@/components/ui";
 import { RatingChip } from "@/components/reviews/RatingChip";
 import { PageSearchField } from "@/components/PageSearchField";
 import { mapSearchHits } from "@/components/AlsoFoundHeading";
 import { HighlightedText } from "@/components/HighlightedText";
+import { DetailSection } from "@/components/DetailSection";
 import { drugs, type Treatment } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import { StickyChrome } from "@/components/layout/StickyChrome";
+import { useShellColumn } from "@/lib/columnHover";
 import {
   appointmentIsPast,
   filterProviders,
-  formatDistance,
   formatFee,
   getAppointments,
   getProvider,
@@ -61,6 +62,9 @@ import { useReviewSummaries } from "@/lib/useReviewSummaries";
 import type { ReviewSummary } from "@/lib/reviewsApi";
 import { searchSpecialties } from "@/lib/specialtySearch";
 import { searchTreatments } from "@/lib/treatmentSearch";
+import { nmcNumberOf } from "@/lib/doctorProfileContent";
+import { hfCodeFromId, shortHfCode } from "@/lib/facilityDirectory";
+import { pharmacyHours } from "@/lib/pharmacyDirectory";
 
 type KindFilter = "all" | ProviderKind;
 
@@ -85,6 +89,172 @@ function useCollapsedList<T>(
 const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => {
   e.currentTarget.style.display = "none";
 };
+
+const DIRECTORY_CARD =
+  "group relative block w-full overflow-hidden rounded-[1.5rem] border border-[#E6E1EF] bg-white text-left " +
+  "h-[12.75rem] transition-[transform,box-shadow,border-color] duration-200 " +
+  "hover:-translate-y-0.5 hover:border-[#D9D2E8] hover:shadow-[0_14px_32px_rgba(40,24,72,0.08)]";
+
+const PHOTO_MASK = {
+  WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 18%)",
+  maskImage: "linear-gradient(to right, transparent 0%, #000 18%)",
+} as const;
+
+const PHARMACY_PHOTO = "/img/treatments/uti.png";
+const LAB_PHOTOS = [
+  "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=640&h=400&fit=crop",
+  "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=640&h=400&fit=crop",
+  "https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=640&h=400&fit=crop",
+  "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=640&h=400&fit=crop",
+  "https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=640&h=400&fit=crop",
+  "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=640&h=400&fit=crop",
+];
+const ASSISTANT_PHOTOS: Record<string, string> = {
+  "ma-priya": "/img/doctors/doctor-w1.png",
+  "nurse-jordan": "/img/doctors/doctor-m2.png",
+  "hc-amira": "/img/doctors/doctor-w2.png",
+  "ma-chris": "/img/doctors/doctor-m1.png",
+  "nurse-sofia": "/img/doctors/doctor-w3.png",
+  "hc-mark": "/img/doctors/doctor-m3.png",
+  "nurse-ava": "/img/doctors/doctor-w1.png",
+};
+const ASSISTANT_FALLBACK = [
+  "/img/doctors/doctor-w1.png",
+  "/img/doctors/doctor-w2.png",
+  "/img/doctors/doctor-w3.png",
+  "/img/doctors/doctor-m1.png",
+  "/img/doctors/doctor-m2.png",
+  "/img/doctors/doctor-m3.png",
+];
+const SERVICE_PHOTOS: Record<string, string> = {
+  "svc-ambulance":
+    "https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?w=640&h=400&fit=crop",
+  "svc-non-emerg-transport":
+    "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=640&h=400&fit=crop",
+  "svc-urgent-care":
+    "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=640&h=400&fit=crop",
+  "svc-after-hours":
+    "https://images.unsplash.com/photo-1576091160550-b11a3d8d0a3e?w=640&h=400&fit=crop",
+  "svc-home-oxygen":
+    "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=640&h=400&fit=crop",
+  "svc-mental-crisis":
+    "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=640&h=400&fit=crop",
+  "svc-pharmacy-delivery":
+    "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=640&h=400&fit=crop",
+};
+
+function pickPhoto(id: string, photos: string[]) {
+  let n = 0;
+  for (let i = 0; i < id.length; i++) n += id.charCodeAt(i);
+  return photos[n % photos.length];
+}
+
+function labPhoto(id: string) {
+  return pickPhoto(id, LAB_PHOTOS);
+}
+
+function assistantPhoto(id: string) {
+  return ASSISTANT_PHOTOS[id] || pickPhoto(id, ASSISTANT_FALLBACK);
+}
+
+function ratingSummary(id: string, average: number, count: number): ReviewSummary {
+  return { subjectId: id, average, count, histogram: [0, 0, 0, 0, 0] };
+}
+
+function DirectoryListingCard({
+  photo,
+  photoObjectClass = "object-cover object-[50%_40%]",
+  status,
+  statusTone = "wellness",
+  summary,
+  ratingPending = false,
+  title,
+  highlightQuery = "",
+  meta,
+  detail,
+  detailStrong = false,
+  cta,
+  tag,
+  onClick,
+}: {
+  photo?: string;
+  photoObjectClass?: string;
+  status: string;
+  statusTone?: "wellness" | "muted";
+  summary?: ReviewSummary | null;
+  ratingPending?: boolean;
+  title: string;
+  highlightQuery?: string;
+  meta: string;
+  detail?: string;
+  detailStrong?: boolean;
+  cta: string;
+  tag?: string;
+  onClick: () => void;
+}) {
+  const [photoFailed, setPhotoFailed] = useState(false);
+  useEffect(() => {
+    setPhotoFailed(false);
+  }, [photo]);
+  const showPhoto = Boolean(photo) && !photoFailed;
+
+  return (
+    <button type="button" onClick={onClick} className={DIRECTORY_CARD}>
+      {showPhoto ? (
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-[40%]" aria-hidden>
+          <SkeletonImage
+            src={photo}
+            alt=""
+            loading="lazy"
+            className="h-full w-full"
+            imgClassName={photoObjectClass}
+            style={PHOTO_MASK}
+            onError={() => setPhotoFailed(true)}
+          />
+          <span className="absolute inset-y-0 left-0 w-[22%] bg-gradient-to-r from-white to-transparent" />
+        </div>
+      ) : null}
+
+      <div
+        className={
+          "relative z-10 flex h-full min-w-0 flex-col justify-between px-5 py-5 " +
+          (showPhoto ? "w-[66%] pr-2" : "w-full")
+        }
+      >
+        <div className="flex min-w-0 flex-col">
+          <div className="flex items-center gap-2.5">
+            <p className={"pp-caps " + (statusTone === "wellness" ? "text-wellness" : "text-ink-tertiary")}>
+              {status}
+            </p>
+            {summary ? <RatingChip summary={summary} /> : ratingPending ? <RatingChipSkeleton /> : null}
+          </div>
+          <h3 className="mt-2 block w-full min-w-0 overflow-hidden truncate font-display text-lg font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)]">
+            <HighlightedText text={title} query={highlightQuery} />
+          </h3>
+          <p className="mt-0.5 block w-full truncate text-sm leading-snug text-ink-tertiary">{meta}</p>
+          {detail ? (
+            <p
+              className={
+                detailStrong
+                  ? "mt-1.5 font-display text-xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum"
+                  : "mt-1.5 text-sm font-medium leading-snug text-[color:var(--pp-primary-950)]"
+              }
+            >
+              {detail}
+            </p>
+          ) : null}
+        </div>
+        <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{cta} →</p>
+      </div>
+
+      {tag ? (
+        <span className="absolute right-3 top-3 z-10 grid h-7 min-w-7 place-items-center rounded-full bg-white px-2 text-2xs font-semibold text-[color:var(--pp-primary-950)] shadow-sm tnum">
+          {tag}
+        </span>
+      ) : null}
+    </button>
+  );
+}
 
 export function Appointments() {
   const { tx } = useI18n();
@@ -165,10 +335,10 @@ export function Appointments() {
   const railCount = upcomingAppts.length + upcomingLabs.length + upcomingCare.length + openRequests.length;
   const hasUpcoming = railCount > 0;
   const hasRail = hasUpcoming || pastAppts.length > 0 || pastLabs.length > 0 || pastCare.length > 0 || pastRequests.length > 0;
-  const { slots: collapsedSlots, visible: collapsedVisible } = listCollapse(hasUpcoming ? 3 : 4);
-  const listGridClass = hasUpcoming
-    ? "grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-4"
-    : "grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4";
+  const { slots: listSlots, visible: listVisible } = listCollapse(2);
+  const { slots: tileSlots, visible: tileVisible } = listCollapse(3);
+  const tileGridClass = "grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-4";
+  const listGridClass = "grid grid-cols-1 gap-4 sm:grid-cols-2";
 
   const providers = useMemo(
     () =>
@@ -196,43 +366,43 @@ export function Appointments() {
     filteredSpecialties,
     showAllSpecialties,
     isSearching,
-    collapsedSlots,
-    collapsedVisible,
+    tileSlots,
+    tileVisible,
   );
   const treatmentsCollapse = useCollapsedList(
     filteredTreatments,
     showAllTreatments,
     isSearching,
-    collapsedSlots,
-    collapsedVisible,
+    tileSlots,
+    tileVisible,
   );
   const pharmaciesCollapse = useCollapsedList(
     filteredPharmacies,
     showAllPharmacies,
     isSearching,
-    collapsedSlots,
-    collapsedVisible,
+    listSlots,
+    listVisible,
   );
   const labsCollapse = useCollapsedList(
     filteredLabs,
     showAllLabs,
     isSearching,
-    collapsedSlots,
-    collapsedVisible,
+    listSlots,
+    listVisible,
   );
   const assistantsCollapse = useCollapsedList(
     filteredAssistants,
     showAllAssistants,
     isSearching,
-    collapsedSlots,
-    collapsedVisible,
+    listSlots,
+    listVisible,
   );
   const servicesCollapse = useCollapsedList(
     filteredServices,
     showAllServices,
     isSearching,
-    collapsedSlots,
-    collapsedVisible,
+    listSlots,
+    listVisible,
   );
 
   const noSearchResults =
@@ -302,12 +472,13 @@ export function Appointments() {
     ) : null;
 
   const withRail = "flex flex-col gap-8 lg:flex-row lg:items-stretch lg:gap-8";
+  const mainCol = useShellColumn("main");
 
   return (
     <div>
       {!specialty ? (
         <div className={hasRail ? withRail : undefined}>
-          <div className="min-w-0 flex-1">
+          <div className={"min-w-0 flex-1 " + mainCol.className} onMouseEnter={mainCol.onMouseEnter}>
             <header className="mb-6">
               <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Care")}</p>
               <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-4xl">
@@ -352,10 +523,10 @@ export function Appointments() {
                   isSearching={isSearching}
                   canCollapse={specialtiesCollapse.canCollapse}
                   total={filteredSpecialties.length}
-                  collapsedVisible={collapsedVisible}
+                  collapsedVisible={tileVisible}
                   onShowAll={() => setShowAllSpecialties(true)}
                   onShowLess={() => setShowAllSpecialties(false)}
-                  gridClass={listGridClass}
+                  gridClass={tileGridClass}
                 >
                   {mapSearchHits(
                     specialtiesCollapse.visible,
@@ -372,7 +543,7 @@ export function Appointments() {
                   )}
                   {specialtiesCollapse.canCollapse && (
                     <ViewAllCard
-                      remaining={filteredSpecialties.length - collapsedVisible}
+                      remaining={filteredSpecialties.length - tileVisible}
                       label={tx("View all")}
                       ariaLabel={tx("View all specialisations")}
                       onClick={() => setShowAllSpecialties(true)}
@@ -387,10 +558,10 @@ export function Appointments() {
                   isSearching={isSearching}
                   canCollapse={treatmentsCollapse.canCollapse}
                   total={filteredTreatments.length}
-                  collapsedVisible={collapsedVisible}
+                  collapsedVisible={tileVisible}
                   onShowAll={() => setShowAllTreatments(true)}
                   onShowLess={() => setShowAllTreatments(false)}
-                  gridClass={listGridClass}
+                  gridClass={tileGridClass}
                 >
                   {mapSearchHits(
                     treatmentsCollapse.visible,
@@ -407,7 +578,7 @@ export function Appointments() {
                   )}
                   {treatmentsCollapse.canCollapse && (
                     <ViewAllCard
-                      remaining={filteredTreatments.length - collapsedVisible}
+                      remaining={filteredTreatments.length - tileVisible}
                       label={tx("View all")}
                       ariaLabel={tx("View all treatments")}
                       onClick={() => setShowAllTreatments(true)}
@@ -422,7 +593,7 @@ export function Appointments() {
                   isSearching={isSearching}
                   canCollapse={pharmaciesCollapse.canCollapse}
                   total={filteredPharmacies.length}
-                  collapsedVisible={collapsedVisible}
+                  collapsedVisible={listVisible}
                   onShowAll={() => setShowAllPharmacies(true)}
                   onShowLess={() => setShowAllPharmacies(false)}
                   gridClass={listGridClass}
@@ -453,7 +624,7 @@ export function Appointments() {
                   )}
                   {pharmaciesCollapse.canCollapse && (
                     <ViewAllCard
-                      remaining={filteredPharmacies.length - collapsedVisible}
+                      remaining={filteredPharmacies.length - listVisible}
                       label={tx("View all")}
                       ariaLabel={tx("View all pharmacies")}
                       compact
@@ -469,7 +640,7 @@ export function Appointments() {
                   isSearching={isSearching}
                   canCollapse={labsCollapse.canCollapse}
                   total={filteredLabs.length}
-                  collapsedVisible={collapsedVisible}
+                  collapsedVisible={listVisible}
                   onShowAll={() => setShowAllLabs(true)}
                   onShowLess={() => setShowAllLabs(false)}
                   gridClass={listGridClass}
@@ -498,9 +669,10 @@ export function Appointments() {
                   )}
                   {labsCollapse.canCollapse && (
                     <ViewAllCard
-                      remaining={filteredLabs.length - collapsedVisible}
+                      remaining={filteredLabs.length - listVisible}
                       label={tx("View all")}
                       ariaLabel={tx("View all labs")}
+                      compact
                       onClick={() => setShowAllLabs(true)}
                     />
                   )}
@@ -513,7 +685,7 @@ export function Appointments() {
                   isSearching={isSearching}
                   canCollapse={assistantsCollapse.canCollapse}
                   total={filteredAssistants.length}
-                  collapsedVisible={collapsedVisible}
+                  collapsedVisible={listVisible}
                   onShowAll={() => setShowAllAssistants(true)}
                   onShowLess={() => setShowAllAssistants(false)}
                   gridClass={listGridClass}
@@ -533,9 +705,10 @@ export function Appointments() {
                   )}
                   {assistantsCollapse.canCollapse && (
                     <ViewAllCard
-                      remaining={filteredAssistants.length - collapsedVisible}
+                      remaining={filteredAssistants.length - listVisible}
                       label={tx("View all")}
                       ariaLabel={tx("View all medical assistants")}
+                      compact
                       onClick={() => setShowAllAssistants(true)}
                     />
                   )}
@@ -548,7 +721,7 @@ export function Appointments() {
                   isSearching={isSearching}
                   canCollapse={servicesCollapse.canCollapse}
                   total={filteredServices.length}
-                  collapsedVisible={collapsedVisible}
+                  collapsedVisible={listVisible}
                   onShowAll={() => setShowAllServices(true)}
                   onShowLess={() => setShowAllServices(false)}
                   gridClass={listGridClass}
@@ -568,9 +741,10 @@ export function Appointments() {
                   )}
                   {servicesCollapse.canCollapse && (
                     <ViewAllCard
-                      remaining={filteredServices.length - collapsedVisible}
+                      remaining={filteredServices.length - listVisible}
                       label={tx("View all")}
                       ariaLabel={tx("View all services")}
+                      compact
                       onClick={() => setShowAllServices(true)}
                     />
                   )}
@@ -583,7 +757,7 @@ export function Appointments() {
         </div>
       ) : (
         <div className={hasRail ? withRail : undefined}>
-          <div className="min-w-0 flex-1">
+          <div className={"min-w-0 flex-1 " + mainCol.className} onMouseEnter={mainCol.onMouseEnter}>
             <header className="mb-6">
               <button
                 type="button"
@@ -664,13 +838,7 @@ export function Appointments() {
                 </button>
               </div>
             ) : (
-              <div
-                className={
-                  hasUpcoming
-                    ? "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
-                    : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                }
-              >
+              <div className={listGridClass}>
                 {mapSearchHits(
                   providers,
                   q,
@@ -726,33 +894,35 @@ function HubSection({
 }) {
   const { tx } = useI18n();
   if (!show) return null;
-  return (
-    <section aria-label={title}>
-      <div className="mb-4 flex items-end justify-between gap-3">
-        <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{title}</h2>
-        <div className="flex items-center gap-3">
-          {headerExtra}
-          {showAll && !isSearching ? (
-            <button
-              type="button"
-              onClick={onShowLess}
-              className="text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
-            >
-              {tx("Show less")}
-            </button>
-          ) : (
-            <p className="text-sm text-ink-tertiary">
-              {canCollapse
-                ? tx("{n} more").replace("{n}", String(total - collapsedVisible))
-                : isSearching
-                  ? tx("{n} matches").replace("{n}", String(total))
-                  : null}
-            </p>
-          )}
-        </div>
+  const showingLess = showAll && !isSearching;
+  const countLabel = showingLess
+    ? null
+    : canCollapse
+      ? tx("{n} more").replace("{n}", String(total - collapsedVisible))
+      : isSearching
+        ? tx("{n} matches").replace("{n}", String(total))
+        : null;
+  const meta =
+    headerExtra || showingLess || countLabel ? (
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {headerExtra}
+        {showingLess ? (
+          <button
+            type="button"
+            onClick={onShowLess}
+            className="text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
+          >
+            {tx("Show less")}
+          </button>
+        ) : countLabel ? (
+          <p className="text-sm text-ink-tertiary">{countLabel}</p>
+        ) : null}
       </div>
+    ) : undefined;
+  return (
+    <DetailSection title={title} meta={meta}>
       <div className={gridClass}>{children}</div>
-    </section>
+    </DetailSection>
   );
 }
 
@@ -816,9 +986,9 @@ function ViewAllCard({
         type="button"
         onClick={onClick}
         className={
-          "flex flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-[#D4CDE3] bg-[#FBFAFE] px-5 py-8 text-center " +
-          "transition-[transform,box-shadow,border-color] duration-200 " +
-          "hover:-translate-y-0.5 hover:border-[#D9D2E8] hover:shadow-[0_14px_32px_rgba(40,24,72,0.08)]"
+          DIRECTORY_CARD +
+          " flex flex-col items-center justify-center border-dashed border-[#D4CDE3] bg-[#FBFAFE] text-center " +
+          "hover:border-[#D9D2E8]"
         }
         aria-label={ariaLabel}
       >
@@ -945,76 +1115,36 @@ function ProviderCard({
   const kind = tx(kindLabel(p.kind));
   const availableSoon =
     p.nextAvailable === "Today" || p.nextAvailable === "Tomorrow" || p.nextAvailable === "In 2 days";
-  const badge =
-    p.nextAvailable === "Today"
-      ? tx("Available")
-      : availableSoon
-        ? tx(p.nextAvailable)
-        : p.nextAvailable;
+  const status = p.nextAvailable === "Today" ? tx("Available") : tx(p.nextAvailable);
   const feeAmount = p.consultationFee > 0 ? p.consultationFee : specialty.feeFrom;
   const feeCovered = feeAmount <= 0;
-  const place = p.address?.split(",")[0]?.trim() || p.city;
-  const meta = `${place} · ${formatDistance(p.distanceKm)}`;
+  const isDoctor = p.kind === "doctor";
+  const nmc = nmcNumberOf(p);
+  const hf = hfCodeFromId(p.id);
+  const place = p.city;
+  const meta = isDoctor ? `${p.subtitle || kind} • ${place}` : `${kind} • ${place}`;
+  const detail = isDoctor
+    ? feeCovered
+      ? tx("Covered / OHIP")
+      : formatFee(feeAmount)
+    : p.hours || (feeCovered ? tx("Covered / OHIP") : formatFee(feeAmount));
 
   return (
-    <button
-      type="button"
+    <DirectoryListingCard
+      photo={p.imageUrl}
+      photoObjectClass={isDoctor ? "object-cover object-[22%_12%]" : "object-cover object-[50%_40%]"}
+      status={status}
+      statusTone={availableSoon ? "wellness" : "muted"}
+      summary={p.reviewCount > 0 ? ratingSummary(p.id, p.rating, p.reviewCount) : null}
+      title={p.name}
+      highlightQuery={highlightQuery}
+      meta={meta}
+      detail={detail}
+      detailStrong={isDoctor && !feeCovered}
+      cta={tx("View profile")}
+      tag={nmc ? `#${nmc}` : hf ? `#${shortHfCode(hf)}` : undefined}
       onClick={onSelect}
-      className={
-        "group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#E6E1EF] bg-white text-left " +
-        "transition-[transform,box-shadow,border-color] duration-200 " +
-        "hover:-translate-y-0.5 hover:border-[#D9D2E8] hover:shadow-[0_14px_32px_rgba(40,24,72,0.08)] " +
-        "active:translate-y-0 active:shadow-none"
-      }
-    >
-      <div className="relative aspect-[5/3] w-full overflow-hidden bg-[color:var(--pp-primary-200)]">
-        <img
-          src={p.imageUrl}
-          alt=""
-          loading="lazy"
-          className={
-            "absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] " +
-            (p.kind === "doctor" ? "object-top" : "object-center")
-          }
-        />
-        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-2xs font-semibold text-wellness shadow-sm backdrop-blur-sm">
-          {badge}
-        </span>
-      </div>
-
-      <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <p className="pp-caps text-[color:var(--pp-violet)]">{kind}</p>
-          <p className="shrink-0 text-sm font-semibold text-[color:var(--pp-violet)] tnum">
-            ★ {p.rating.toFixed(1)}
-          </p>
-        </div>
-
-        <h3 className="mt-2 font-display text-xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          <HighlightedText text={p.name} query={highlightQuery} />
-        </h3>
-        <p className="mt-1 text-sm text-ink-tertiary">{meta}</p>
-        <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-ink-secondary">
-          {tx(p.bio)}
-        </p>
-
-        <p className="mt-4 text-sm text-ink-tertiary">
-          {feeCovered ? (
-            <span className="font-semibold text-[color:var(--pp-primary-950)]">
-              {tx("Covered / OHIP")}
-            </span>
-          ) : (
-            <>
-              {tx("From")}{" "}
-              <span className="font-semibold text-[color:var(--pp-primary-950)] tnum">
-                {formatFee(feeAmount)}
-                <span className="font-normal text-ink-tertiary">*</span>
-              </span>
-            </>
-          )}
-        </p>
-      </div>
-    </button>
+    />
   );
 }
 
@@ -1028,44 +1158,26 @@ function ServiceCard({
   highlightQuery?: string;
 }) {
   const { tx } = useI18n();
+  const kind = tx(healthServiceCategoryLabel(service.category));
+  const detail =
+    service.etaMinutes != null
+      ? `~${service.etaMinutes} ${tx("min")}`
+      : service.feeFrom != null && service.feeFrom > 0
+        ? formatFee(service.feeFrom)
+        : undefined;
   return (
-    <button
-      type="button"
+    <DirectoryListingCard
+      photo={SERVICE_PHOTOS[service.id] || pickPhoto(service.id, LAB_PHOTOS)}
+      photoObjectClass="object-cover object-[50%_40%]"
+      status={service.available24h ? tx("Available 24/7") : tx("Available")}
+      title={tx(service.name)}
+      highlightQuery={highlightQuery}
+      meta={`${kind} • ${service.city}`}
+      detail={detail}
+      cta={tx("View profile")}
       onClick={onOpen}
-      className={
-        "group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#E6E1EF] bg-white p-5 text-left " +
-        "transition-[transform,box-shadow,border-color] duration-200 " +
-        "hover:-translate-y-0.5 hover:border-[#D9D2E8] hover:shadow-[0_14px_32px_rgba(40,24,72,0.08)]"
-      }
-    >
-      <span className="text-4xl" aria-hidden>
-        {service.emoji}
-      </span>
-      <p className="mt-4 pp-caps text-[color:var(--pp-violet)]">
-        {tx(healthServiceCategoryLabel(service.category))}
-      </p>
-      <h3 className="mt-1.5 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        <HighlightedText text={tx(service.name)} query={highlightQuery} />
-      </h3>
-      <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-ink-secondary">{tx(service.blurb)}</p>
-      <p className="mt-4 text-sm text-ink-tertiary">
-        {service.etaMinutes != null
-          ? `~${service.etaMinutes} ${tx("min")}`
-          : service.available24h
-            ? tx("Available 24/7")
-            : service.city}
-        {service.feeFrom != null && service.feeFrom > 0
-          ? ` · ${tx("From")} ${formatFee(service.feeFrom)}`
-          : ""}
-      </p>
-    </button>
+    />
   );
-}
-
-function samePlace(a?: string, b?: string) {
-  const x = (a || "").trim().toLowerCase();
-  const y = (b || "").trim().toLowerCase();
-  return Boolean(x && y && x === y);
 }
 
 function PharmacyCard({
@@ -1083,34 +1195,22 @@ function PharmacyCard({
 }) {
   const { tx } = useI18n();
   const nepal = pharmacy.province === "NP";
-  const location = nepal
-    ? pharmacy.address || pharmacy.city
+  const place = nepal
+    ? pharmacy.city || pharmacy.address
     : [pharmacy.city, pharmacy.distance].filter(Boolean).join(" • ");
-  const street =
-    !nepal && pharmacy.address && !samePlace(pharmacy.address, pharmacy.city) ? pharmacy.address : "";
   return (
-    <button
-      type="button"
+    <DirectoryListingCard
+      photo={PHARMACY_PHOTO}
+      status={tx("Available")}
+      summary={summary}
+      ratingPending={ratingPending}
+      title={pharmacy.name}
+      highlightQuery={highlightQuery}
+      meta={place ? `${tx("Pharmacy")} • ${place}` : tx("Pharmacy")}
+      detail={pharmacy.hours || pharmacyHours()}
+      cta={tx("Transfer prescription")}
       onClick={onOpen}
-      className={
-        "group flex min-h-[11.5rem] flex-col overflow-hidden rounded-[1.75rem] border border-[#E6E1EF] bg-white p-5 text-left " +
-        "transition-[transform,box-shadow,border-color] duration-200 " +
-        "hover:-translate-y-0.5 hover:border-[#D9D2E8] hover:shadow-[0_14px_32px_rgba(40,24,72,0.08)]"
-      }
-    >
-      <div className="flex items-center gap-2.5">
-        <p className="pp-caps text-wellness">{tx("Available")}</p>
-        {summary ? <RatingChip summary={summary} /> : ratingPending ? <RatingChipSkeleton /> : null}
-      </div>
-      <h3 className="mt-2 font-display text-xl font-medium leading-snug tracking-tight text-[color:var(--pp-primary-950)]">
-        <HighlightedText text={pharmacy.name} query={highlightQuery} />
-      </h3>
-      {location ? <p className="mt-1 text-sm text-ink-tertiary">{location}</p> : null}
-      {street ? <p className="mt-1.5 text-sm text-ink-secondary">{street}</p> : null}
-      <p className="mt-auto pt-4 text-sm font-medium text-[color:var(--pp-violet)]">
-        {tx("Transfer prescription")} →
-      </p>
-    </button>
+    />
   );
 }
 
@@ -1124,31 +1224,22 @@ function LabCard({
   highlightQuery?: string;
 }) {
   const { tx } = useI18n();
+  const availableSoon =
+    lab.nextAvailable === "Today" || lab.nextAvailable === "Tomorrow" || lab.nextAvailable === "In 2 days";
   return (
-    <button
-      type="button"
+    <DirectoryListingCard
+      photo={labPhoto(lab.id)}
+      photoObjectClass="object-cover object-[50%_40%]"
+      status={lab.nextAvailable === "Today" ? tx("Available") : tx(lab.nextAvailable)}
+      statusTone={availableSoon ? "wellness" : "muted"}
+      summary={ratingSummary(lab.id, lab.rating, 1)}
+      title={lab.name}
+      highlightQuery={highlightQuery}
+      meta={`${tx("Lab")} • ${lab.city}`}
+      detail={lab.hours}
+      cta={tx("View profile")}
       onClick={onOpen}
-      className={
-        "group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#E6E1EF] bg-white p-5 text-left " +
-        "transition-[transform,box-shadow,border-color] duration-200 " +
-        "hover:-translate-y-0.5 hover:border-[#D9D2E8] hover:shadow-[0_14px_32px_rgba(40,24,72,0.08)]"
-      }
-    >
-      <span className="text-4xl" aria-hidden>
-        {lab.emoji}
-      </span>
-      <p className="mt-4 pp-caps text-[color:var(--pp-violet)]">{tx("Lab")}</p>
-      <h3 className="mt-1.5 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        <HighlightedText text={lab.name} query={highlightQuery} />
-      </h3>
-      <p className="mt-1 text-sm text-ink-tertiary">
-        {lab.city} · {formatDistance(lab.distanceKm)}
-      </p>
-      <p className="mt-2 line-clamp-2 flex-1 text-sm text-ink-secondary">{tx(lab.subtitle)}</p>
-      <p className="mt-4 text-sm text-ink-tertiary">
-        ★ {lab.rating.toFixed(1)} · {tx(lab.nextAvailable)}
-      </p>
-    </button>
+    />
   );
 }
 
@@ -1162,36 +1253,25 @@ function CareWorkerCard({
   highlightQuery?: string;
 }) {
   const { tx } = useI18n();
+  const availableSoon =
+    worker.nextAvailable === "Today" ||
+    worker.nextAvailable === "Tomorrow" ||
+    worker.nextAvailable === "In 2 days";
   return (
-    <button
-      type="button"
+    <DirectoryListingCard
+      photo={worker.imageUrl || assistantPhoto(worker.id)}
+      photoObjectClass="object-cover object-[22%_12%]"
+      status={worker.nextAvailable === "Today" ? tx("Available") : tx(worker.nextAvailable)}
+      statusTone={availableSoon ? "wellness" : "muted"}
+      summary={ratingSummary(worker.id, worker.rating, 1)}
+      title={worker.name}
+      highlightQuery={highlightQuery}
+      meta={`${tx(careWorkerKindLabel(worker.kind))} • ${worker.city}`}
+      detail={formatFee(worker.feeFrom)}
+      detailStrong
+      cta={tx("View profile")}
       onClick={onOpen}
-      className={
-        "group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#E6E1EF] bg-white p-5 text-left " +
-        "transition-[transform,box-shadow,border-color] duration-200 " +
-        "hover:-translate-y-0.5 hover:border-[#D9D2E8] hover:shadow-[0_14px_32px_rgba(40,24,72,0.08)]"
-      }
-    >
-      <span className="text-4xl" aria-hidden>
-        {worker.emoji}
-      </span>
-      <p className="mt-4 pp-caps text-[color:var(--pp-violet)]">
-        {tx(careWorkerKindLabel(worker.kind))}
-      </p>
-      <h3 className="mt-1.5 font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
-        <HighlightedText text={worker.name} query={highlightQuery} />
-      </h3>
-      <p className="mt-1 text-sm text-ink-tertiary">
-        {worker.city} · {formatDistance(worker.distanceKm)}
-      </p>
-      <p className="mt-2 line-clamp-2 flex-1 text-sm text-ink-secondary">{tx(worker.bio)}</p>
-      <p className="mt-4 text-sm text-ink-tertiary">
-        {tx("From")}{" "}
-        <span className="font-semibold text-[color:var(--pp-primary-950)] tnum">
-          {formatFee(worker.feeFrom)}
-        </span>
-      </p>
-    </button>
+    />
   );
 }
 
@@ -1224,6 +1304,7 @@ function YourAppointments({
 }) {
   const { tx } = useI18n();
   const nav = useNavigate();
+  const railCol = useShellColumn("rail");
   const total =
     upcomingAppts.length + upcomingLabs.length + upcomingCare.length + openRequests.length;
   const pastRows = [
@@ -1413,8 +1494,9 @@ function YourAppointments({
           : "mt-12 border-t border-line pt-8"
       }
       aria-label={tx("Your appointments")}
+      onMouseEnter={layout === "aside" ? railCol.onMouseEnter : undefined}
     >
-      {layout === "aside" ? <StickyChrome>{panel}</StickyChrome> : panel}
+      {layout === "aside" ? <StickyChrome className={railCol.className}>{panel}</StickyChrome> : panel}
     </aside>
   );
 }

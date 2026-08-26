@@ -4,6 +4,7 @@ import { MapEmbed } from "@/components/MapEmbed";
 import { RegionGridSkeleton } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { listDdaDistricts, type DdaDistrict } from "@/lib/ddaApi";
+import { useShellColumn } from "@/lib/columnHover";
 import { getRegion } from "@/lib/pharmacies";
 import {
   FEATURED_DELIVERY_DISTRICTS,
@@ -68,8 +69,15 @@ function DistrictPills({
 
 function NepalMapPanel({ total, districtCount }: { total: number; districtCount: number }) {
   const { tx } = useI18n();
+  const railCol = useShellColumn("rail");
   return (
-    <aside className="hidden w-[20rem] shrink-0 lg:sticky lg:top-28 lg:block lg:self-start xl:w-[22rem]">
+    <aside
+      className={
+        "hidden w-[20rem] shrink-0 lg:sticky lg:top-28 lg:block lg:self-start xl:w-[22rem] " +
+        railCol.className
+      }
+      onMouseEnter={railCol.onMouseEnter}
+    >
       <div className={`${CARD} overflow-hidden`}>
         <MapEmbed title={tx("Nepal coverage map")} src={NEPAL_MAP} className="aspect-[4/3]" />
         <div className="p-5">
@@ -107,6 +115,7 @@ function NepalMapPanel({ total, districtCount }: { total: number; districtCount:
 /** Index — pick a DDA district. */
 export function PharmaciesIndex() {
   const { tx } = useI18n();
+  const mainCol = useShellColumn("main");
   const [districts, setDistricts] = useState<DdaDistrict[]>([]);
   const [busy, setBusy] = useState(true);
 
@@ -129,7 +138,10 @@ export function PharmaciesIndex() {
   return (
     <div>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
-        <div className="min-w-0 flex-1">
+        <div
+          className={"min-w-0 flex-1 " + mainCol.className}
+          onMouseEnter={mainCol.onMouseEnter}
+        >
           <header className="mb-8">
             <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Coverage")}</p>
             <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-4xl">

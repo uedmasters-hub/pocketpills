@@ -22,6 +22,7 @@ import {
   type SavedAccount,
 } from "@/lib/accountPrefs";
 import { useI18n } from "@/lib/i18n";
+import { DetailSection } from "@/components/DetailSection";
 
 const CARD = "rounded-2xl border border-line bg-white";
 const FIELD =
@@ -275,12 +276,85 @@ export function LanguagePreference() {
 
 /* ── Family ────────────────────────────────────────────── */
 const RELATIONS = ["Spouse / partner", "Child", "Parent", "Sibling", "Other"];
+const EMPTY_MEMBER = { name: "", relationship: RELATIONS[0], dob: "" };
+
+function familyInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function FamilyMemberFields({
+  title,
+  form,
+  onChange,
+  onSave,
+  onCancel,
+  saveLabel,
+}: {
+  title: string;
+  form: { name: string; relationship: string; dob: string };
+  onChange: (next: { name: string; relationship: string; dob: string }) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saveLabel: string;
+}) {
+  const { tx } = useI18n();
+  const relations = RELATIONS.includes(form.relationship)
+    ? RELATIONS
+    : [form.relationship, ...RELATIONS];
+
+  return (
+    <div className="space-y-4">
+      <h3 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">{title}</h3>
+      <label className="block">
+        <span className={LABEL}>{tx("Full name")}</span>
+        <input
+          className={FIELD}
+          value={form.name}
+          onChange={(e) => onChange({ ...form, name: e.target.value })}
+          autoComplete="name"
+        />
+      </label>
+      <label className="block">
+        <span className={LABEL}>{tx("Relationship")}</span>
+        <select
+          className={FIELD}
+          value={form.relationship}
+          onChange={(e) => onChange({ ...form, relationship: e.target.value })}
+        >
+          {relations.map((r) => (
+            <option key={r} value={r}>
+              {tx(r)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <DateOfBirthField
+        label={tx("Date of birth (optional)")}
+        value={form.dob}
+        onChange={(v) => onChange({ ...form, dob: v })}
+      />
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" size="sm" onClick={onSave} disabled={!form.name.trim()}>
+          {saveLabel}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+          {tx("Cancel")}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function ManageFamily() {
   const { tx } = useI18n();
   const [members, setMembers] = useState<FamilyMember[]>(() => loadFamily());
   const [adding, setAdding] = useState(false);
-  const [form, setForm] = useState({ name: "", relationship: RELATIONS[0], dob: "" });
+  const [form, setForm] = useState(EMPTY_MEMBER);
   const [saved, setSaved] = useState(false);
 
   const persist = (next: FamilyMember[]) => {
@@ -288,6 +362,16 @@ export function ManageFamily() {
     saveFamily(next);
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1200);
+  };
+
+  const closeAdd = () => {
+    setAdding(false);
+    setForm(EMPTY_MEMBER);
+  };
+
+  const startAdd = () => {
+    setForm(EMPTY_MEMBER);
+    setAdding(true);
   };
 
   const add = () => {
@@ -303,129 +387,86 @@ export function ManageFamily() {
         linked: true,
       },
     ]);
-    setForm({ name: "", relationship: RELATIONS[0], dob: "" });
-    setAdding(false);
+    closeAdd();
   };
-
-  const remove = (id: string) => persist(members.filter((m) => m.id !== id));
-  const toggleLink = (id: string) =>
-    persist(members.map((m) => (m.id === id ? { ...m, linked: !m.linked } : m)));
 
   return (
     <div>
       <BackLink />
-      <PageHead
-        title={tx("Manage family")}
-        sub={tx("Add people you manage medications for. Each person gets their own profile once they accept an invite.")}
-      />
+      <PageHead title={tx("Manage family")} />
       <SavedToast show={saved} />
 
-      {members.length === 0 && !adding && (
-        <div className={`${CARD} px-6 py-12 text-center`}>
-          <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx("No family members yet")}</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-ink-secondary">
-            {tx("Add a spouse, child, or parent so refills and deliveries stay organized in one place.")}
-          </p>
-          <Button type="button" size="sm" className="mt-5" onClick={() => setAdding(true)}>
-            {tx("Add family member")}
-          </Button>
-        </div>
-      )}
-
-      {members.length > 0 && (
-        <ul className="space-y-3">
-          {members.map((m) => (
-            <li key={m.id} className={`${CARD} flex flex-wrap items-center gap-4 p-5`}>
-              <span
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[color:var(--pp-primary-200)] text-sm font-semibold text-[color:var(--pp-primary-950)]"
-                aria-hidden
-              >
-                {m.name
-                  .split(/\s+/)
-                  .map((p) => p[0])
-                  .slice(0, 2)
-                  .join("")
-                  .toUpperCase()}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-[color:var(--pp-primary-950)]">{m.name}</p>
-                <p className="text-sm text-ink-tertiary">
-                  {tx(m.relationship)}
-                  {m.dob ? ` · ${tx("Born")} ${isoToDobDisplay(m.dob) || m.dob}` : ""}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => toggleLink(m.id)}
-                  aria-pressed={m.linked}
-                  className={
-                    "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors " +
-                    (m.linked
-                      ? "bg-[color:var(--pp-primary-950)] text-white"
-                      : "bg-[color:var(--pp-primary-100)] text-[color:var(--pp-primary-950)]")
-                  }
-                >
-                  {m.linked ? tx("Linked") : tx("Paused")}
-                </button>
-                <Button type="button" variant="ghost" size="sm" onClick={() => remove(m.id)}>
-                  {tx("Remove")}
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {adding && (
-        <section className={`${CARD} mt-4 space-y-4 p-5 sm:p-6`}>
-          <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">
-            {tx("Add family member")}
-          </h2>
-          <label className="block">
-            <span className={LABEL}>{tx("Full name")}</span>
-            <input
-              className={FIELD}
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              autoComplete="name"
-            />
-          </label>
-          <label className="block">
-            <span className={LABEL}>{tx("Relationship")}</span>
-            <select
-              className={FIELD}
-              value={form.relationship}
-              onChange={(e) => setForm((f) => ({ ...f, relationship: e.target.value }))}
+      <DetailSection
+        title={tx("Family")}
+        lede={tx(
+          "Add people you manage medications for. Each person gets their own profile once they accept an invite.",
+        )}
+        meta={
+          !adding ? (
+            <button
+              type="button"
+              onClick={startAdd}
+              className="text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
             >
-              {RELATIONS.map((r) => (
-                <option key={r} value={r}>
-                  {tx(r)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <DateOfBirthField
-            label={tx("Date of birth (optional)")}
-            value={form.dob}
-            onChange={(v) => setForm((f) => ({ ...f, dob: v }))}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" onClick={add} disabled={!form.name.trim()}>
-              {tx("Save member")}
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>
-              {tx("Cancel")}
-            </Button>
+              {members.length > 0 ? tx("Add another") : tx("Add family member")}
+            </button>
+          ) : undefined
+        }
+      >
+        {members.length === 0 && !adding ? (
+          <div className="px-1 py-8 text-center">
+            <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx("No family members yet")}</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-ink-secondary">
+              {tx("Add a spouse, child, or parent so refills and deliveries stay organized in one place.")}
+            </p>
           </div>
-        </section>
-      )}
+        ) : null}
 
-      {members.length > 0 && !adding && (
-        <Button type="button" variant="secondary" size="sm" className="mt-4" onClick={() => setAdding(true)}>
-          {tx("Add another")}
-        </Button>
-      )}
+        {members.length > 0 ? (
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {members.map((m) => (
+              <li key={m.id}>
+                <Link
+                  to={`/account/family/${encodeURIComponent(m.id)}`}
+                  className="flex items-start gap-3 rounded-xl border border-line bg-[color:var(--pp-primary-100)] p-4 outline-none transition-colors hover:bg-[color:var(--state-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--pp-violet)]"
+                >
+                  <span
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-sm font-semibold text-[color:var(--pp-primary-950)]"
+                    aria-hidden
+                  >
+                    {familyInitials(m.name)}
+                  </span>
+                  <div className="min-w-0 flex-1 pt-0.5">
+                    <p className="font-semibold text-[color:var(--pp-primary-950)]">{m.name}</p>
+                    <p className="mt-0.5 text-sm text-ink-tertiary">
+                      {tx(m.relationship)}
+                      {` · ${m.linked ? tx("Linked") : tx("Paused")}`}
+                    </p>
+                    {m.dob ? (
+                      <p className="mt-0.5 text-sm text-ink-tertiary">
+                        {tx("Born")} {isoToDobDisplay(m.dob) || m.dob}
+                      </p>
+                    ) : null}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {adding ? (
+          <div className={members.length > 0 ? "mt-4 border-t border-line pt-4" : undefined}>
+            <FamilyMemberFields
+              title={tx("Add family member")}
+              form={form}
+              onChange={setForm}
+              onSave={add}
+              onCancel={closeAdd}
+              saveLabel={tx("Save member")}
+            />
+          </div>
+        ) : null}
+      </DetailSection>
     </div>
   );
 }

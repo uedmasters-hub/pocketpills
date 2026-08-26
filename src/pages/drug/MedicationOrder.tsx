@@ -9,6 +9,7 @@ import type { CheckoutContext } from "@/lib/offers";
 import { drugs } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import { useUser } from "@/lib/user";
+import { useShellColumn } from "@/lib/columnHover";
 import { createMedicationOrder } from "@/lib/orders";
 import { loadSelectedPharmacy, saveSelectedPharmacy, type AreaPharmacy } from "@/lib/pharmacies";
 import { pharmaciesForMedication, type MedStock } from "@/lib/pharmacySearch";
@@ -36,6 +37,8 @@ export function MedicationOrder() {
   const { slug } = useParams();
   const [params] = useSearchParams();
   const { displayName } = useUser();
+  const mainCol = useShellColumn("main");
+  const railCol = useShellColumn("rail");
   const drug = drugs.find((d) => d.slug === slug);
 
   const doseParam = params.get("dose") ?? "";
@@ -746,9 +749,20 @@ export function MedicationOrder() {
       </header>
 
       <div className="grid w-full min-w-0 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] lg:gap-x-8 xl:gap-x-10">
-        <div className="min-w-0 space-y-10 lg:col-start-1">{left}</div>
+        <div
+          className={"min-w-0 space-y-10 lg:col-start-1 " + mainCol.className}
+          onMouseEnter={mainCol.onMouseEnter}
+        >
+          {left}
+        </div>
 
-        <aside className="w-full min-w-0 space-y-4 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
+        <aside
+          className={
+            "w-full min-w-0 space-y-4 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start " +
+            railCol.className
+          }
+          onMouseEnter={railCol.onMouseEnter}
+        >
           <div>
             <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">{tx("Review & confirm")}</h2>
           </div>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { DetailMeta, DetailSection } from "@/components/DetailSection";
 import { useI18n } from "@/lib/i18n";
 import { formatFee } from "@/lib/appointments";
+import { useShellColumn } from "@/lib/columnHover";
 import { isValidPhone } from "@/lib/phone";
 import { ListingPageEditor } from "@/components/ListingPageEditor";
 import { ListingSectionPreview } from "@/components/ListingSectionPreview";
@@ -100,6 +101,9 @@ export function BusinessProfile() {
     }, 900);
     return () => window.clearTimeout(t);
   }, [profile, dirty, provider, tx]);
+
+  const mainCol = useShellColumn("main");
+  const railCol = useShellColumn("rail");
 
   if (!provider || !profile) {
     return (
@@ -290,7 +294,10 @@ export function BusinessProfile() {
             : "grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]"
         }
       >
-        <div className="min-w-0">
+        <div
+          className={"min-w-0 " + mainCol.className}
+          onMouseEnter={mainCol.onMouseEnter}
+        >
           <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Listing setup")}</p>
 
           <div className="mt-5 flex items-end justify-between gap-4 border-b border-line">
@@ -700,7 +707,10 @@ export function BusinessProfile() {
         </div>
 
         {canvas ? null : (
-        <aside className="h-fit lg:sticky lg:top-28">
+        <aside
+          className={"h-fit lg:sticky lg:top-28 " + railCol.className}
+          onMouseEnter={railCol.onMouseEnter}
+        >
           <DetailSection
             title={`${tx("Patient view")}`}
             meta={<DetailMeta>{live ? tx("Live") : tx("Draft")}</DetailMeta>}

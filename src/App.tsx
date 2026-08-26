@@ -13,6 +13,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ScrollToTopFab } from "@/components/ScrollToTopFab";
 import { SiteAccessGate } from "@/components/SiteAccessGate";
 import { DesignSystemLiveProvider } from "@/lib/designSystemLive";
+import { ColumnHoverProvider } from "@/lib/columnHover";
 import { DesignSystemShell } from "@/pages/design/DesignSystemShell";
 import { DesignDocPage, DesignHomeRedirect } from "@/pages/design/DesignDocPage";
 import { SignUp, Login, RequireAuth } from "@/pages/auth/Auth";
@@ -40,6 +41,7 @@ import { ProviderPatients } from "@/pages/provider/ProviderPatients";
 import { ProviderTests } from "@/pages/provider/ProviderTests";
 import { ProviderCollections } from "@/pages/provider/ProviderCollections";
 import { ProviderAvailability } from "@/pages/provider/ProviderAvailability";
+import { ProviderImmediateConsultDraft } from "@/pages/provider/ProviderImmediateConsultDraft";
 import { ProviderOffers } from "@/pages/provider/ProviderOffers";
 import { BusinessProfile } from "@/pages/business/BusinessProfile";
 
@@ -58,6 +60,7 @@ import {
   PocketpillsBenefits,
   SwitchAccount,
 } from "@/pages/account/AccountPages";
+import { FamilyMemberProfile } from "@/pages/account/FamilyMemberProfile";
 import { Account } from "@/pages/Simple";
 import { Messages } from "@/pages/Messages";
 
@@ -70,7 +73,13 @@ import { FillPrescription } from "@/pages/entry/FillPrescription";
 import { TransferPrescription } from "@/pages/entry/TransferPrescription";
 import { DeliveryCheck } from "@/pages/entry/DeliveryCheck";
 import { MedicationsIndex } from "@/pages/drug/MedicationsIndex";
+import { MedicationsIndexDraft } from "@/pages/drug/MedicationsIndexDraft";
 import { DrugDetail } from "@/pages/drug/DrugDetail";
+import { DrugDetailDraft } from "@/pages/drug/DrugDetailDraft";
+import { MedicationConsultDraft } from "@/pages/drug/MedicationConsultDraft";
+import { MedicationConsultBookDraft } from "@/pages/drug/MedicationConsultBookDraft";
+import { MedicationOrderDraft } from "@/pages/drug/MedicationOrderDraft";
+import { MedicationBasketDraft } from "@/pages/drug/MedicationBasketDraft";
 import { MedicationOrder } from "@/pages/drug/MedicationOrder";
 import { Offers } from "@/pages/Offers";
 import { PharmaciesIndex, PharmaciesByRegion } from "@/pages/PharmaciesByRegion";
@@ -144,6 +153,13 @@ function TreatmentRedirect() {
   return <Navigate to={`/appointments/treatments/${slug ?? ""}`} replace />;
 }
 
+/** Draft appointments hub now serves the live page. */
+function AppointmentsDraftRedirect() {
+  const [params] = useSearchParams();
+  const qs = params.toString();
+  return <Navigate to={qs ? `/appointments?${qs}` : "/appointments"} replace />;
+}
+
 /** Draft book URL now serves the live booking page. */
 function BookDraftRedirect() {
   const [params] = useSearchParams();
@@ -162,6 +178,7 @@ export default function App() {
       <ProviderAuthProvider>
         <RightRailProvider>
         <JourneyProvider>
+        <ColumnHoverProvider>
           <ScrollToTop />
           <ListingsHydrate />
           <ScrollToTopFab />
@@ -200,6 +217,12 @@ export default function App() {
           {/* Treatment + Pharmacy — guests: marketing; signed-in: AppShell */}
           <Route element={<DualBrowseLayout />}>
             <Route path="/drug" element={<MedicationsIndex />} />
+            <Route path="/drug/draft" element={<MedicationsIndexDraft />} />
+            <Route path="/drug/draft/basket" element={<MedicationBasketDraft />} />
+            <Route path="/drug/draft/consult/:consultantId" element={<MedicationConsultBookDraft />} />
+            <Route path="/drug/draft/consult" element={<MedicationConsultDraft />} />
+            <Route path="/drug/draft/order" element={<MedicationOrderDraft />} />
+            <Route path="/drug/draft/:slug" element={<DrugDetailDraft />} />
             <Route path="/drug/:slug" element={<DrugDetail />} />
             <Route path="/find-care" element={<Navigate to="/appointments" replace />} />
             <Route path="/treatment/:slug" element={<TreatmentRedirect />} />
@@ -232,6 +255,7 @@ export default function App() {
             }
           >
             <Route path="/provider" element={<ProviderDashboard />} />
+            <Route path="/provider/requests/draft" element={<ProviderImmediateConsultDraft />} />
             <Route path="/provider/requests" element={<ProviderRequests />} />
             <Route path="/provider/customers" element={<ProviderCustomers />} />
             <Route path="/provider/patients" element={<ProviderPatients />} />
@@ -272,6 +296,7 @@ export default function App() {
             <Route path="/account/notifications" element={<NotificationSettings />} />
             <Route path="/account/language" element={<LanguagePreference />} />
             <Route path="/account/family" element={<ManageFamily />} />
+            <Route path="/account/family/:memberId" element={<FamilyMemberProfile />} />
             <Route path="/account/benefits" element={<PocketpillsBenefits />} />
             <Route path="/account/switch" element={<SwitchAccount />} />
             <Route path="/business" element={<Navigate to="/provider/listing" replace />} />
@@ -281,6 +306,7 @@ export default function App() {
             <Route path="/support" element={<HelpSupport />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/appointments" element={<Appointments />} />
+            <Route path="/appointments/draft" element={<AppointmentsDraftRedirect />} />
             <Route path="/appointments/visit/:id" element={<AppointmentDetail />} />
             <Route path="/appointments/provider/:id/services/:serviceId" element={<FacilityServiceDetail />} />
             <Route path="/appointments/provider/:id/services" element={<FacilityServicesPage />} />
@@ -312,6 +338,7 @@ export default function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </ColumnHoverProvider>
         </JourneyProvider>
         </RightRailProvider>
       </ProviderAuthProvider>

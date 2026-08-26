@@ -12,6 +12,7 @@ import {
 import { useRightRail } from "@/lib/rightRail";
 import { useDismiss } from "@/lib/useDismiss";
 import { ChromeVisibilityProvider, useChromeHidden } from "@/lib/chromeVisibility";
+import { useColumnHover, useShellColumn } from "@/lib/columnHover";
 import { StickyChrome } from "@/components/layout/StickyChrome";
 import { FRAME, SURFACE } from "@/components/layout/Grid";
 import { useI18n } from "@/lib/i18n";
@@ -103,10 +104,14 @@ function Sidebar() {
   const { t } = useI18n();
   const moreRef = useDismiss<HTMLDivElement>(openMore, () => setOpenMore(false));
   const moreActive = MORE.some(([, to]) => moreLinkActive(to, pathname)) && !navIsActive("orders", pathname);
+  const navCol = useShellColumn("nav");
 
   return (
-    <aside className="hidden w-64 shrink-0 lg:block">
-      <StickyChrome>
+    <aside
+      className="hidden w-64 shrink-0 lg:block"
+      onMouseEnter={navCol.onMouseEnter}
+    >
+      <StickyChrome className={navCol.className}>
         <nav aria-label={t("nav.main")} className="flex flex-col gap-1">
         {NAV.map((n) => {
           const active = navIsActive(n.id, pathname);
@@ -234,11 +239,22 @@ function AppShellBody({ children }: { children: ReactNode }) {
   const { tx } = useI18n();
   const chromeHidden = useChromeHidden();
   const { review } = useRightRail();
-  const isMedOrder = /^\/drug\/[^/]+\/order/.test(pathname);
+  const isMedOrder =
+    /^\/drug\/[^/]+\/order/.test(pathname) ||
+    pathname === "/drug/draft/order" ||
+    /^\/drug\/draft\/[^/]+\/order/.test(pathname);
   const splitJourney = isMedOrder;
   const focusedFlow = isFocusedPatientFlow(pathname) || splitJourney;
   /* PDP / focused browse pages own a sticky right column — Activity would collide. */
-  const isDrugDetail = /^\/drug\/[^/]+$/.test(pathname);
+  const isDrugDetail =
+    (/^\/drug\/[^/]+$/.test(pathname) && pathname !== "/drug/draft") ||
+    (/^\/drug\/draft\/[^/]+$/.test(pathname) &&
+      pathname !== "/drug/draft/basket" &&
+      pathname !== "/drug/draft/consult" &&
+      pathname !== "/drug/draft/order");
+  const isDrugConsult =
+    pathname.startsWith("/drug/draft/consult") || /^\/drug\/draft\/[^/]+\/consult/.test(pathname);
+  const isDrugBasket = pathname === "/drug/draft/basket";
   /* Order detail pages only — list keeps Activity rail. */
   const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname);
   const isPharmacies = pathname === "/pharmacies" || pathname.startsWith("/pharmacies/");
@@ -247,6 +263,8 @@ function AppShellBody({ children }: { children: ReactNode }) {
   const isAppointments = pathname.startsWith("/appointments");
   const hideActivityRail =
     isDrugDetail ||
+    isDrugConsult ||
+    isDrugBasket ||
     isOrderDetail ||
     isPharmacies ||
     isDoctors ||
@@ -255,6 +273,12 @@ function AppShellBody({ children }: { children: ReactNode }) {
     pathname === "/messages" ||
     pathname === "/support";
   const showActivity = !focusedFlow && !hideActivityRail;
+  const cols = useColumnHover();
+  const mainCol = useShellColumn("main");
+  /* Pages that own a sticky third column — keep this wrapper at full opacity
+     so sticky on that rail isn’t broken by ancestor fade. */
+  const ownsPageColumns = isAppointments || isDrugDetail || isDrugConsult || isDrugBasket || isOrderDetail;
+  const mainWrapClass = ownsPageColumns ? "" : mainCol.className;
 
   /**
    * One layout for every screen. Left nav + right rail are usually reserved on
@@ -271,16 +295,31 @@ function AppShellBody({ children }: { children: ReactNode }) {
       <AnnouncementBar />
       <SiteHeader />
       {splitJourney ? (
-        <div className={`${FRAME} pb-10 pt-8`}>
+        <div
+          className={`${FRAME} pb-10 pt-8`}
+          onMouseLeave={() => cols?.setHover(null)}
+          onMouseMove={cols?.onActivity}
+        >
           <main id="main" key={pathname} tabIndex={-1} className={`${SURFACE} min-w-0 animate-fade-up`}>
             {children}
           </main>
         </div>
       ) : (
-        <div className="mx-auto flex w-full max-w-[105rem] flex-col gap-8 px-5 pb-28 pt-8 md:px-8 lg:flex-row lg:items-stretch lg:pb-10 xl:px-20">
-          {focusedFlow ? <div className="hidden w-60 shrink-0 lg:block" aria-hidden /> : <Sidebar />}
+        <div
+          className="mx-auto flex w-full max-w-[105rem] flex-col gap-8 px-5 pb-28 pt-8 md:px-8 lg:flex-row lg:items-stretch lg:pb-10 xl:px-20"
+          onMouseLeave={() => cols?.setHover(null)}
+          onMouseMove={cols?.onActivity}
+        >
+          {focusedFlow ? (
+            <div className="hidden w-60 shrink-0 lg:block" aria-hidden />
+          ) : (
+            <Sidebar />
+          )}
 
-          <div className="flex min-w-0 w-full flex-1 flex-col gap-8">
+          <div
+            className={"flex min-w-0 w-full flex-1 flex-col gap-8 " + mainWrapClass}
+            onMouseEnter={mainCol.onMouseEnter}
+          >
             {showActivity && (review ? <MobileReview /> : <MobileActivity />)}
             <main id="main" key={pathname} tabIndex={-1} className="w-full min-w-0 animate-fade-up">
               {children}

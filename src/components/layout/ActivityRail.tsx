@@ -5,9 +5,11 @@ import { pendingRows, profileChecklist } from "@/lib/profile";
 import { useRightRail } from "@/lib/rightRail";
 import { useI18n } from "@/lib/i18n";
 import { StickyChrome } from "@/components/layout/StickyChrome";
+import { useShellColumn } from "@/lib/columnHover";
 import { Caret } from "@/components/ui";
 import { PageSearchField } from "@/components/PageSearchField";
 import { DetailMeta, DetailSection } from "@/components/DetailSection";
+import { useDraftShopBasket, YourMedicinesRail } from "@/components/pharmacy/YourMedicinesRail";
 import {
   statusMeta,
   transferStatusLabel,
@@ -372,10 +374,11 @@ function ActivityBody() {
 export function MobileActivity() {
   const { tx } = useI18n();
   const { user } = useUser();
+  const meds = useDraftShopBasket();
   const pending = pendingRows(user).length;
   const live = collectLiveRows().length;
   const total = pending + live;
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(meds));
 
   return (
     <div className="lg:hidden">
@@ -388,11 +391,15 @@ export function MobileActivity() {
         aria-controls="mobile-activity-panel"
       >
         <span>
-          <span className="block text-sm font-medium text-[color:var(--pp-primary-950)]">{tx("Activity")}</span>
+          <span className="block text-sm font-medium text-[color:var(--pp-primary-950)]">
+            {meds ? tx("Your medicines") : tx("Activity")}
+          </span>
           <span className="mt-0.5 block text-xs text-ink-tertiary">
-            {total === 0
-              ? tx("You’re all caught up")
-              : `${pending ? `${pending} ${tx("pending")}` : ""}${pending && live ? " · " : ""}${live ? `${live} ${tx("live")}` : ""}`}
+            {meds
+              ? `${meds.length} ${meds.length === 1 ? tx("medicine") : tx("medicines")}`
+              : total === 0
+                ? tx("You’re all caught up")
+                : `${pending ? `${pending} ${tx("pending")}` : ""}${pending && live ? " · " : ""}${live ? `${live} ${tx("live")}` : ""}`}
           </span>
         </span>
         <span className="text-ink-tertiary">
@@ -401,7 +408,7 @@ export function MobileActivity() {
       </button>
       {open && (
         <div id="mobile-activity-panel" className="mt-3">
-          <ActivityBody />
+          {meds ? <YourMedicinesRail /> : <ActivityBody />}
         </div>
       )}
     </div>
@@ -412,12 +419,20 @@ export function MobileActivity() {
 export function ActivityRail() {
   const { tx } = useI18n();
   const { pathname } = useLocation();
+  const railCol = useShellColumn("rail");
+  const meds = useDraftShopBasket();
   return (
-    <aside className="hidden w-72 shrink-0 lg:block xl:w-80" aria-label={tx("Activity")}>
-      <StickyChrome>
-        <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{tx("Activity")}</h2>
+    <aside
+      className="hidden w-72 shrink-0 lg:block xl:w-80"
+      aria-label={meds ? tx("Your medicines") : tx("Activity")}
+      onMouseEnter={railCol.onMouseEnter}
+    >
+      <StickyChrome className={railCol.className}>
+        <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
+          {meds ? tx("Your medicines") : tx("Activity")}
+        </h2>
         <div className="mt-5">
-          <ActivityBody key={pathname} />
+          {meds ? <YourMedicinesRail /> : <ActivityBody key={pathname} />}
         </div>
       </StickyChrome>
     </aside>
@@ -506,11 +521,16 @@ export function MobileReview() {
 export function ReviewRail() {
   const { tx } = useI18n();
   const { review } = useRightRail();
+  const railCol = useShellColumn("rail");
   if (!review) return null;
 
   return (
-    <aside className="hidden w-72 shrink-0 lg:block xl:w-80" aria-label={tx("Review")}>
-      <StickyChrome>
+    <aside
+      className="hidden w-72 shrink-0 lg:block xl:w-80"
+      aria-label={tx("Review")}
+      onMouseEnter={railCol.onMouseEnter}
+    >
+      <StickyChrome className={railCol.className}>
         <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">{tx("Review")}</h2>
         <div className="mt-5">
           <ReviewBody />

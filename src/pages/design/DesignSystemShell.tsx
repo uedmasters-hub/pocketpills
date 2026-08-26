@@ -12,6 +12,7 @@ import { useDesignSystemLive } from "@/lib/designSystemLive";
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { LogoMark } from "@/components/Logo";
+import { useColumnHoverRow, useShellColumn } from "@/lib/columnHover";
 
 export function DesignSystemShell() {
   const [nav, setNav] = useState<DesignNavGroup[]>([]);
@@ -21,6 +22,9 @@ export function DesignSystemShell() {
   const [error, setError] = useState("");
   const [confirmPublish, setConfirmPublish] = useState(false);
   const { live, refresh } = useDesignSystemLive();
+  const cols = useColumnHoverRow();
+  const navCol = useShellColumn("nav");
+  const mainCol = useShellColumn("main");
 
   const reloadVersions = async () => {
     const r = await fetchDesignVersions();
@@ -134,8 +138,15 @@ export function DesignSystemShell() {
         ) : null}
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <aside className="lg:sticky lg:top-20 lg:self-start">
+      <div
+        className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[15rem_minmax(0,1fr)]"
+        onMouseLeave={cols.onMouseLeave}
+        onMouseMove={cols.onMouseMove}
+      >
+        <aside
+          className={"lg:sticky lg:top-20 lg:self-start " + navCol.className}
+          onMouseEnter={navCol.onMouseEnter}
+        >
           <nav className="space-y-5" aria-label="Design system">
             {nav.map((group) => (
               <div key={group.section}>
@@ -164,7 +175,10 @@ export function DesignSystemShell() {
           </nav>
         </aside>
 
-        <main className="min-w-0">
+        <main
+          className={"min-w-0 " + mainCol.className}
+          onMouseEnter={mainCol.onMouseEnter}
+        >
           <Outlet context={{ version: activeVersion, versions }} />
         </main>
       </div>

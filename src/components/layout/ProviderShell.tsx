@@ -4,6 +4,7 @@ import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Button } from "@/components/ui/Button";
 import { Caret } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
+import { useColumnHoverRow, useShellColumn } from "@/lib/columnHover";
 import { useProvider, type ProviderAccount } from "@/lib/providerAuth";
 import {
   authenticateDelegate,
@@ -44,6 +45,9 @@ export function ProviderShell({ children }: { children?: ReactNode }) {
   const location = useLocation();
   const [featureTick, setFeatureTick] = useState(0);
   const [switchOpen, setSwitchOpen] = useState(false);
+  const cols = useColumnHoverRow();
+  const navCol = useShellColumn("nav");
+  const mainCol = useShellColumn("main");
 
   useEffect(() => {
     if (!isDelegate) return;
@@ -135,8 +139,16 @@ export function ProviderShell({ children }: { children?: ReactNode }) {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-[105rem] flex-col gap-8 px-5 py-8 md:px-8 lg:flex-row lg:items-start xl:px-20">
-        <aside className="w-full shrink-0 lg:w-48" aria-label={tx("Provider navigation")}>
+      <div
+        className="mx-auto flex w-full max-w-[105rem] flex-col gap-8 px-5 py-8 md:px-8 lg:flex-row lg:items-stretch xl:px-20"
+        onMouseLeave={cols.onMouseLeave}
+        onMouseMove={cols.onMouseMove}
+      >
+        <aside
+          className={"w-full shrink-0 lg:w-48 " + navCol.className}
+          aria-label={tx("Provider navigation")}
+          onMouseEnter={navCol.onMouseEnter}
+        >
           <ProviderNav entries={portal?.nav ?? []} />
           <p className="mt-8 text-2xs leading-relaxed text-ink-tertiary">
             {isDelegate
@@ -147,7 +159,12 @@ export function ProviderShell({ children }: { children?: ReactNode }) {
           </p>
         </aside>
 
-        <main className="min-w-0 flex-1 animate-fade-up">{children ?? <Outlet />}</main>
+        <main
+          className={"min-w-0 flex-1 animate-fade-up " + mainCol.className}
+          onMouseEnter={mainCol.onMouseEnter}
+        >
+          {children ?? <Outlet />}
+        </main>
       </div>
 
       {switchOpen && provider ? (

@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
 import { formatFee } from "@/lib/appointments";
+import { useShellColumn } from "@/lib/columnHover";
 import {
   DOCTOR_PHOTO_OPTIONS,
   emptyStaffDraft,
@@ -209,6 +210,8 @@ function DoctorEditor({
   setLicenseExtra: (v: string) => void;
 }) {
   const { tx } = useI18n();
+  const mainCol = useShellColumn("main");
+  const railCol = useShellColumn("rail");
   const score = staffTrustScore(draft);
 
   const addChip = (
@@ -241,7 +244,10 @@ function DoctorEditor({
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
-      <div className="min-w-0 space-y-6">
+      <div
+        className={"min-w-0 space-y-6 " + mainCol.className}
+        onMouseEnter={mainCol.onMouseEnter}
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-2xl font-medium text-[color:var(--pp-primary-950)]">
             {isNew ? tx("New doctor profile") : tx("Edit profile")}
@@ -514,7 +520,10 @@ function DoctorEditor({
         </div>
       </div>
 
-      <aside className="h-fit lg:sticky lg:top-28">
+      <aside
+        className={"h-fit lg:sticky lg:top-28 " + railCol.className}
+        onMouseEnter={railCol.onMouseEnter}
+      >
         <PatientTrustPreview doctor={draft} />
       </aside>
     </div>

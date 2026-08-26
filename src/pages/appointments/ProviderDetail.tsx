@@ -39,6 +39,7 @@ import { HOSPITAL_REVIEW_TOPICS, hospitalFromProvider, hospitalMapsQuery } from 
 import { resolveAvailabilityBranch } from "@/lib/availabilityLocations";
 import { FACILITY_HERO_USPS, facilityRegistrySubtitle } from "@/lib/facilityDirectory";
 import { useI18n } from "@/lib/i18n";
+import { useShellColumn } from "@/lib/columnHover";
 import { isPastDate, isSlotInPast } from "@/lib/timeSlots";
 import {
   defaultDoctorSpecialised,
@@ -435,6 +436,8 @@ export function DoctorProfilePage({
 function FacilityDetailPage({ provider }: { provider: CareProvider }) {
   const { tx } = useI18n();
   const nav = useNavigate();
+  const mainCol = useShellColumn("main");
+  const railCol = useShellColumn("rail");
   const specialtyId = useSpecialtyFromQuery();
   const specialty = specialtyId ? specialtyById(specialtyId) : undefined;
   const [reviewSummary, setReviewSummary] = useState<ReviewSummary | null>(null);
@@ -476,7 +479,10 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
       </Link>
 
       <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
-        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+        <div
+          className={"min-w-0 lg:col-start-1 lg:row-start-1 " + mainCol.className}
+          onMouseEnter={mainCol.onMouseEnter}
+        >
           <DirectoryHeroCard
             eyebrow={kindLabelText}
             name={provider.name}
@@ -497,7 +503,13 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
           />
         </div>
 
-        <aside className="space-y-3 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
+        <aside
+          className={
+            "space-y-3 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start " +
+            railCol.className
+          }
+          onMouseEnter={railCol.onMouseEnter}
+        >
           <div className={DIRECTORY_SIDEBAR_CARD}>
             {provider.hours ? (
               <>
@@ -550,7 +562,10 @@ function FacilityDetailPage({ provider }: { provider: CareProvider }) {
           />
         </aside>
 
-        <div className="min-w-0 space-y-10 lg:col-start-1 lg:row-start-2">
+        <div
+          className={"min-w-0 space-y-10 lg:col-start-1 lg:row-start-2 " + mainCol.className}
+          onMouseEnter={mainCol.onMouseEnter}
+        >
         <DetailSection title={tx("About")}>
           <p className="text-sm leading-relaxed text-ink-secondary">
             {tx(provider.about || provider.bio)}

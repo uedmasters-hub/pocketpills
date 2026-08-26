@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
+import { useShellColumn } from "@/lib/columnHover";
 
 export type FaqItem = {
   slug: string;
@@ -177,8 +178,10 @@ function findFaq(slug: string): { topicId: string; item: FaqItem } | null {
 }
 
 export function Questions() {
-  const { hash, key } = useLocation();
   const { t } = useI18n();
+  const { hash, key } = useLocation();
+  const navCol = useShellColumn("nav");
+  const mainCol = useShellColumn("main");
   const [topic, setTopic] = useState(FAQ_TOPICS[0].id);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<string | null>(null);
@@ -236,7 +239,11 @@ export function Questions() {
 
       <div className="grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10">
         {!searching && (
-          <nav aria-label={t("faq.topics")} className="lg:sticky lg:top-28 lg:self-start">
+          <nav
+            aria-label={t("faq.topics")}
+            className={"lg:sticky lg:top-28 lg:self-start " + navCol.className}
+            onMouseEnter={navCol.onMouseEnter}
+          >
             <p className="pp-caps text-ink-tertiary">{t("faq.topics")}</p>
             <ul className="mt-3 flex flex-wrap gap-2 lg:flex-col lg:gap-1">
               {FAQ_TOPICS.map((t) => (
@@ -262,7 +269,11 @@ export function Questions() {
           </nav>
         )}
 
-        <section aria-labelledby="faq-list-heading" className={searching ? "lg:col-span-2" : ""}>
+        <section
+          aria-labelledby="faq-list-heading"
+          className={(searching ? "lg:col-span-2 " : "") + mainCol.className}
+          onMouseEnter={mainCol.onMouseEnter}
+        >
           <h2 id="faq-list-heading" className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
             {searching ? `Results for “${q.trim()}”` : active.label}
           </h2>

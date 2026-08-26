@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
 import { useProvider } from "@/lib/providerAuth";
+import { useShellColumn } from "@/lib/columnHover";
 import {
   addInventorySku,
   formatCad,
@@ -87,6 +88,8 @@ export function ProviderInventoryAdd() {
   const { tx } = useI18n();
   const nav = useNavigate();
   const { workspaceId } = useProvider();
+  const mainCol = useShellColumn("main");
+  const railCol = useShellColumn("rail");
   const orgId = workspaceId;
   const items = useMemo(() => listInventory(orgId), [orgId]);
   const [mode, setMode] = useState<Mode>("new");
@@ -247,7 +250,10 @@ export function ProviderInventoryAdd() {
       ) : null}
 
       <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="min-w-0 space-y-4">
+        <div
+          className={"min-w-0 space-y-4 " + mainCol.className}
+          onMouseEnter={mainCol.onMouseEnter}
+        >
           <div className="flex gap-5 border-b border-line" role="tablist" aria-label={tx("How to add inventory")}>
             {(
               [
@@ -478,7 +484,10 @@ export function ProviderInventoryAdd() {
           </section>
         </div>
 
-        <aside className="h-fit lg:sticky lg:top-8">
+        <aside
+          className={"h-fit lg:sticky lg:top-8 " + railCol.className}
+          onMouseEnter={railCol.onMouseEnter}
+        >
           <section className="rounded-2xl border border-line bg-white p-5">
             <p className="text-sm font-medium text-[color:var(--pp-primary-950)]">{tx("Live preview")}</p>
             <div className="mt-4 border-t border-line pt-4">

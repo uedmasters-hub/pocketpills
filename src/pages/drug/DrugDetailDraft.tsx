@@ -1,18 +1,20 @@
-import { useMemo, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { DetailSection } from "@/components/DetailSection";
-import { TrustStrip } from "@/components/pharmacy/TrustStrip";
-import { drugs, drugMonograph } from "@/lib/data";
+import { NEPAL_TRUST_STATS, TrustStrip } from "@/components/pharmacy/TrustStrip";
+import { drugs, drugMonograph, drugImg } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import { useShellColumn } from "@/lib/columnHover";
+import { addToMedBasket, listMedBasket, subscribeMedBasket } from "@/lib/medBasketDraft";
+import { MedicationListPopover } from "@/pages/drug/MedicationListPopover";
 
 const DISPENSING_FEE = 11.99;
+const INDEX = "/drug/draft";
 
-export function DrugDetail() {
+export function DrugDetailDraft() {
   const { tx } = useI18n();
   const { slug } = useParams();
-  const nav = useNavigate();
   const mainCol = useShellColumn("main");
   const railCol = useShellColumn("rail");
   const drug = drugs.find((d) => d.slug === slug);
@@ -20,6 +22,17 @@ export function DrugDetail() {
   const [dosage, setDosage] = useState(drug?.dosages[0] ?? "");
   const [qty, setQty] = useState(30);
   const [tab, setTab] = useState(0);
+  const [packFailed, setPackFailed] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
+  const [justAdded, setJustAdded] = useState<string | undefined>();
+  const [basketTick, setBasketTick] = useState(0);
+
+  useEffect(() => subscribeMedBasket(() => setBasketTick((n) => n + 1)), []);
+  const basketCount = useMemo(() => listMedBasket().length, [basketTick, listOpen]);
+
+  useEffect(() => {
+    setPackFailed(false);
+  }, [slug]);
 
   const monograph = useMemo(() => (drug ? drugMonograph() : []), [drug]);
   const similar = useMemo(
@@ -31,7 +44,7 @@ export function DrugDetail() {
     return (
       <div className="rounded-2xl border border-line bg-white p-12 text-center">
         <p className="font-semibold text-[color:var(--pp-primary-950)]">{tx("Medication not found")}</p>
-        <Link to="/drug" className="mt-2 inline-block text-sm font-semibold text-[color:var(--pp-violet)] hover:underline">
+        <Link to={INDEX} className="mt-2 inline-block text-sm font-semibold text-[color:var(--pp-violet)] hover:underline">
           {tx("Back to Medications Index")}
         </Link>
       </div>
@@ -46,7 +59,7 @@ export function DrugDetail() {
   return (
     <div>
       <Link
-        to="/drug"
+        to={INDEX}
         className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-tertiary hover:text-[color:var(--pp-primary-950)]"
       >
         ← {tx("Medications Index")}
@@ -59,33 +72,39 @@ export function DrugDetail() {
       */}
       <div className="mt-5 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-10 lg:gap-y-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
         <header
-          className={"min-w-0 lg:col-start-1 lg:row-start-1 " + mainCol.className}
+          className={"flex min-w-0 items-start justify-between gap-4 lg:col-start-1 lg:row-start-1 sm:gap-6 " + mainCol.className}
           onMouseEnter={mainCol.onMouseEnter}
         >
-          <h1 className="font-display text-4xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-            {drug.name}
-          </h1>
-          {drug.generic && drug.generic !== drug.name && (
-            <p className="mt-1 text-base text-ink-tertiary">{drug.generic}</p>
-          )}
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-secondary">
-            {tx("Order your")} {drug.name}{" "}
-            {tx("prescription online through PocketPills with free delivery anywhere in Canada.")}{" "}
-            {drug.rx ? tx("Prescription required.") : tx("Available over the counter.")}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-wellness-subtle px-3 py-1 text-xs font-semibold text-wellness">
-              {tx("Free delivery")}
-            </span>
-            <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-              {tx(drug.cls)}
-            </span>
-            {drug.rx && (
-              <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
-                {tx("Rx")}
-              </span>
+          <div className="min-w-0">
+            <h1 className="font-display text-4xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
+              {drug.name}
+            </h1>
+            {drug.generic && drug.generic !== drug.name && (
+              <p className="mt-1 text-base text-ink-tertiary">{drug.generic}</p>
             )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
+                {tx("Free delivery")}
+              </span>
+              <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
+                {tx(drug.cls)}
+              </span>
+              {drug.rx && (
+                <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-[color:var(--pp-primary-950)]">
+                  {tx("Rx")}
+                </span>
+              )}
+            </div>
           </div>
+          {!packFailed && (
+            <img
+              key={drug.slug}
+              src={drugImg(drug.slug)}
+              alt=""
+              onError={() => setPackFailed(true)}
+              className="h-28 w-auto max-w-[10rem] shrink-0 object-contain sm:h-36 sm:max-w-[12rem]"
+            />
+          )}
         </header>
 
         <aside
@@ -101,7 +120,7 @@ export function DrugDetail() {
                 <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Price lookup")}</p>
                 <p className="mt-0.5 text-2xs text-ink-tertiary">{tx("Estimate with typical insurance")}</p>
               </div>
-              <span className="shrink-0 rounded-full bg-wellness-subtle px-2.5 py-1 text-2xs font-semibold text-wellness">
+              <span className="shrink-0 rounded-full border border-line bg-white px-2.5 py-1 text-2xs font-medium text-[color:var(--pp-primary-950)]">
                 {tx("Free delivery")}
               </span>
             </div>
@@ -152,18 +171,34 @@ export function DrugDetail() {
             </p>
 
             <div className="mt-5 space-y-2">
-              <Button fullWidth onClick={() => nav(`/appointments?drug=${drug.slug}`)}>
-                {tx("Request via consultation")}
-              </Button>
               <Button
                 fullWidth
-                variant="secondary"
-                onClick={() =>
-                  nav(`/drug/${drug.slug}/order?dose=${encodeURIComponent(dosage)}&qty=${qty}`)
-                }
+                onClick={() => {
+                  addToMedBasket({ slug: drug.slug, dose: dosage, qty });
+                  setJustAdded(drug.slug);
+                  setListOpen(true);
+                }}
               >
-                {tx("I have a prescription")}
+                {tx("Add to my list")}
               </Button>
+              {basketCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setJustAdded(undefined);
+                    setListOpen(true);
+                  }}
+                  className="w-full text-center text-2xs font-medium text-[color:var(--pp-violet)]"
+                >
+                  {basketCount} {basketCount === 1 ? tx("medicine") : tx("medicines")} · {tx("Review list")}
+                </button>
+              ) : (
+                <p className="text-center text-2xs leading-relaxed text-ink-tertiary">
+                  {drug.rx
+                    ? tx("Upload a prescription, add more, or continue to see a doctor.")
+                    : tx("Add more if you need to, then continue to pay.")}
+                </p>
+              )}
             </div>
           </div>
 
@@ -195,7 +230,7 @@ export function DrugDetail() {
           className={"lg:col-start-1 lg:row-start-3 " + mainCol.className}
           onMouseEnter={mainCol.onMouseEnter}
         >
-          <TrustStrip />
+          <TrustStrip stats={NEPAL_TRUST_STATS} />
         </div>
 
         <section
@@ -262,12 +297,12 @@ export function DrugDetail() {
       </div>
 
       {similar.length > 0 && (
-        <div className="mt-10">
+        <div id="similar-meds" className="mt-10">
         <DetailSection
           title={tx("Similar medications")}
           lede={`${tx("Others in")} ${tx(drug.cls)}.`}
           meta={
-            <Link to="/drug" className="text-sm font-medium text-[color:var(--pp-violet)] hover:underline">
+            <Link to={INDEX} className="text-sm font-medium text-[color:var(--pp-violet)] hover:underline">
               {tx("Browse all")}
             </Link>
           }
@@ -278,13 +313,15 @@ export function DrugDetail() {
               return (
                 <Link
                   key={d.slug}
-                  to={`/drug/${d.slug}`}
-                  className="group flex flex-col rounded-xl border border-line bg-[color:var(--pp-primary-100)] p-4 transition-colors hover:bg-[color:var(--state-hover)]"
+                  to={`${INDEX}/${d.slug}`}
+                  className="group flex h-full flex-col rounded-xl border border-line bg-[color:var(--pp-primary-100)] p-4 transition-colors hover:bg-[color:var(--state-hover)]"
                 >
-                  <span className="font-semibold text-[color:var(--pp-primary-950)]">{d.name}</span>
-                  {d.generic && d.generic !== d.name && (
-                    <span className="mt-0.5 truncate text-sm text-ink-tertiary">{d.generic}</span>
-                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold text-[color:var(--pp-primary-950)]">{d.name}</span>
+                    {d.generic && d.generic !== d.name && (
+                      <span className="mt-0.5 block truncate text-sm text-ink-tertiary">{d.generic}</span>
+                    )}
+                  </span>
                   <span className="mt-3 flex items-baseline justify-between gap-2 border-t border-line pt-3">
                     <span className="text-2xs text-ink-tertiary">{tx("From")}</span>
                     <span className="font-display text-lg font-medium text-[color:var(--pp-primary-950)] tnum">
@@ -298,6 +335,12 @@ export function DrugDetail() {
         </DetailSection>
         </div>
       )}
+
+      <MedicationListPopover
+        open={listOpen}
+        onClose={() => setListOpen(false)}
+        justAddedSlug={justAdded}
+      />
     </div>
   );
 }

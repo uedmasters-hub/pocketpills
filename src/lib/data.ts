@@ -30,6 +30,13 @@ function treatmentImg(slug: string): string {
   return treatmentRailSrc(slug);
 }
 
+/** Per-drug pack art — drop files in `public/img/drugs/{slug}.png`. */
+const DRUG_IMG_VER = "20260826a";
+
+export function drugImg(slug: string) {
+  return `/img/drugs/${slug}.png?v=${DRUG_IMG_VER}`;
+}
+
 function slugifyTreatment(name: string) {
   return name
     .toLowerCase()

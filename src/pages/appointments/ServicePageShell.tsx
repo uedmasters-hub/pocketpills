@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
+import { useShellColumn } from "@/lib/columnHover";
 
 /**
  * Shared transactional layout for hub service pages:
@@ -20,6 +21,8 @@ export function ServicePageShell({
 }) {
   const { tx } = useI18n();
   const nav = useNavigate();
+  const mainCol = useShellColumn("main");
+  const railCol = useShellColumn("rail");
 
   return (
     <div>
@@ -39,8 +42,17 @@ export function ServicePageShell({
             : "mt-4"
         }
       >
-        <div className="min-w-0">{children}</div>
-        {aside ? <aside className="h-fit lg:sticky lg:top-28">{aside}</aside> : null}
+        <div className={"min-w-0 " + mainCol.className} onMouseEnter={mainCol.onMouseEnter}>
+          {children}
+        </div>
+        {aside ? (
+          <aside
+            className={"h-fit lg:sticky lg:top-28 " + railCol.className}
+            onMouseEnter={railCol.onMouseEnter}
+          >
+            {aside}
+          </aside>
+        ) : null}
       </div>
     </div>
   );

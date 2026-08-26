@@ -5,12 +5,14 @@ import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { AppShell } from "@/components/layout/AppShell";
 import { FRAME, SURFACE } from "@/components/layout/Grid";
 import { useUser } from "@/lib/user";
+import { useColumnHoverRow } from "@/lib/columnHover";
 
 /** Shared marketing chrome (header + footer). Used for always-public pages. */
 function GuestMarketingChrome() {
   const nav = useNavigate();
   const { pathname } = useLocation();
   const { signedIn } = useUser();
+  const cols = useColumnHoverRow();
   const go = (to?: string) => nav(signedIn ? (to ?? "/dashboard") : "/get-started");
 
   return (
@@ -23,7 +25,13 @@ function GuestMarketingChrome() {
       </a>
       <AnnouncementBar onGo={() => go()} />
       <SiteHeader />
-      <main id="main" tabIndex={-1} className={`${FRAME} pb-4 pt-8 md:pt-10`}>
+      <main
+        id="main"
+        tabIndex={-1}
+        className={`${FRAME} pb-4 pt-8 md:pt-10`}
+        onMouseLeave={cols.onMouseLeave}
+        onMouseMove={cols.onMouseMove}
+      >
         <div key={pathname} data-page-column className={`${SURFACE} animate-fade-up`}>
           <Outlet />
         </div>

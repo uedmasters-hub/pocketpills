@@ -34,6 +34,7 @@ export type RxScanResult = {
   catalogHits: number;
   prescriber: string;
   clinic: string;
+  ocrAvailable: boolean;
 };
 
 const STRENGTH_RE = /(\d+(?:\.\d+)?)\s*(mg|mcg|g|ml|%|u\/ml|mg\/ml|tsp|teaspoonfuls?)/i;
@@ -91,10 +92,15 @@ function directionsFrom(text: string): string {
     return n ? `every ${n} hours` : "";
   }
   if (/teaspoon/.test(t)) return "1 teaspoonful as directed";
-  if (/\b(tid|three times)\b/.test(t)) return "3 times daily";
-  if (/\b(bid|twice daily|2 times)\b/.test(t)) return "twice daily";
-  if (/\b(qhs|bedtime|at night)\b/.test(t)) return "at bedtime";
-  if (/\b(od|once daily|1 daily|one daily|daily)\b/.test(t)) return "1 daily";
+  if (/\b(od\s*hs|odhs|qhs|bedtime|at night)\b/.test(t)) return "once daily at bedtime";
+  if (/\b(tid|tds|three times)\b/.test(t)) return "3 times daily";
+  if (/\b(bid|bd|twice daily|2 times)\b/.test(t)) return "twice daily";
+  if (/\b(qid|four times)\b/.test(t)) return "4 times daily";
+  if (/\b(od|once daily|1 daily|one daily|daily)\b/.test(t)) {
+    if (/\bac\b|before (meals?|food)/.test(t)) return "once daily before meals";
+    if (/\bpc\b|after (meals?|food)/.test(t)) return "once daily after meals";
+    return "once daily";
+  }
   if (/\bprn\b/.test(t)) return "as needed";
   return "";
 }
@@ -181,6 +187,7 @@ function freeformMed(name: string, context: string): ExtractedMed {
 function looksLikeHeader(line: string): boolean {
   if (SKIP_LINE.test(line.trim())) return true;
   if (/druggist|pharmacist|broadway|abilene|letterhead|downtown family health/i.test(line)) return true;
+  if (/^(prescription|dispense|directions?|medication|medicines?)$/i.test(line.trim())) return true;
   if (/^\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}$/.test(line.trim())) return true;
   if (/^#?\s*\d{4,}$/.test(line.trim())) return true;
   if (/^(mrs?|ms|miss)\.?\s+[A-Z][a-z]+/.test(line.trim())) return true;
@@ -217,6 +224,65 @@ function pushUnique(out: ExtractedMed[], already: Set<string>, name: string, con
   if ([...already].some((n) => n === key || n.includes(key) || key.includes(n))) return;
   already.add(key);
   out.push(freeformMed(cleaned, context));
+}
+
+function extractWrittenRxLines(text: string, already: Set<string>): ExtractedMed[] {
+  const out: ExtractedMed[] = [];
+  const formPrefix = /^(cap(?:sule)?s?|tab(?:let)?s?|t|syp|syrup|inj(?:ection)?|drops?)\.?\s+/i;
+  const sigTail = /\s+\d*\s*(od\s*hs|odhs|od|bd|tds|tid|qid|hs|ac|pc|prn|sos)\b.*$/i;
+  const sigCue = /\b(\d+\s*)?(od\s*hs|odhs|od|bd|tds|tid|qid|hs)\b/i;
+
+  for (const raw of splitOcrLines(text)) {
+    let line = raw.replace(/^[\sRx®*•·:-]+/i, "").trim();
+    if (line.length < 4) continue;
+    const hasForm = formPrefix.test(line);
+    if (!hasForm && !sigCue.test(line)) continue;
+    line = line.replace(formPrefix, "").replace(/[:\-]+/g, " ").replace(/\s+/g, " ").trim();
+    const namePart = line.replace(sigTail, "").replace(/[,.;]+$/g, "").trim();
+    if (!namePart) continue;
+    const strengthMatch = namePart.match(/^(.*?)(?:\s+(\d+(?:\.\d+)?)(?:\s*(mg|mcg|g))?)$/i);
+    let name = namePart;
+    let strength = "";
+    if (strengthMatch?.[2] && (strengthMatch[1] ?? "").trim().length >= 3) {
+      name = strengthMatch[1].trim();
+      strength = `${strengthMatch[2]}${(strengthMatch[3] || "mg").toLowerCase()}`;
+    }
+    const key = name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (key.length < 3 || key.length > 48) continue;
+    if ([...already].some((n) => n === key || n.includes(key) || key.includes(n))) continue;
+    already.add(key);
+    const med = freeformMed(name.replace(/\b\w/g, (c) => c.toUpperCase()), line);
+    if (strength) med.strength = strength;
+    out.push(med);
+  }
+  return out.slice(0, 12);
+}
+
+function looksLikeSigOnly(line: string) {
+  return /^\d+\s*(od|bd|tds|tid|qid|hs|ac|pc|prn|sos)\b/i.test(line.trim());
+}
+
+/** Last pass: keep leftover Rx lines even when form/sig parsing missed them. */
+function extractLooseRxLines(text: string, already: Set<string>): ExtractedMed[] {
+  const out: ExtractedMed[] = [];
+  for (const raw of splitOcrLines(text)) {
+    const line = raw.replace(/^[\sRx®*•·:-]+/i, "").trim();
+    if (line.length < 4 || line.length > 56) continue;
+    if (looksLikeHeader(line) || looksLikeSigOnly(line)) continue;
+    if (/^(take|sig|disp|patient|for|date|no|label|dr)\b/i.test(line)) continue;
+    const namePart = line
+      .replace(/^(cap(?:sule)?s?|tab(?:let)?s?|t|syp|syrup|inj(?:ection)?)\.?\s+/i, "")
+      .replace(/\s+\d*\s*(od\s*hs|odhs|od|bd|tds|tid|qid|hs|ac|pc|prn|sos)\b.*$/i, "")
+      .replace(/[:\-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (namePart.length < 3) continue;
+    const key = namePart.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if ([...already].some((n) => n === key || n.includes(key) || key.includes(n))) continue;
+    already.add(key);
+    out.push(freeformMed(namePart.replace(/\b\w/g, (c) => c.toUpperCase()), line));
+  }
+  return out.slice(0, 12);
 }
 
 function extractFreeformLines(text: string, already: Set<string>): ExtractedMed[] {
@@ -283,7 +349,9 @@ export function parsePrescriptionText(raw: string): RxScanResult {
 
   const catalogHits = meds.length;
   const named = new Set(meds.flatMap(catalogNameKeys));
+  meds.push(...extractWrittenRxLines(text, named));
   meds.push(...extractFreeformLines(text, named));
+  if (!meds.length) meds.push(...extractLooseRxLines(text, named));
 
   const prescriber =
     text.match(/\bDr\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/)?.[0]?.replace(/\s+/g, " ").trim() ?? "";
@@ -291,7 +359,7 @@ export function parsePrescriptionText(raw: string): RxScanResult {
     text.match(/([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){0,3}\s+(?:Clinic|Health|Medical|Family Health))/i)?.[0]?.trim() ??
     "";
 
-  return { text, meds, catalogHits, prescriber, clinic };
+  return { text, meds, catalogHits, prescriber, clinic, ocrAvailable: true };
 }
 
 export type DrugMatchStatus = "matched" | "unmatched" | "unreadable";
@@ -406,32 +474,61 @@ async function preprocessImage(file: File): Promise<HTMLCanvasElement> {
 type TessWorker = Awaited<ReturnType<(typeof import("tesseract.js"))["createWorker"]>>;
 type TessPSM = (typeof import("tesseract.js"))["PSM"];
 
+async function scaleImage(file: File): Promise<HTMLCanvasElement> {
+  const { img, url } = await loadImage(file);
+  const scale = Math.min(2.4, Math.max(1.5, 1800 / Math.max(img.width, 1)));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    URL.revokeObjectURL(url);
+    throw new Error("Canvas unavailable");
+  }
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  URL.revokeObjectURL(url);
+  return canvas;
+}
+
+async function recognizeWithMode(
+  worker: TessWorker,
+  PSM: TessPSM,
+  source: HTMLCanvasElement | File,
+  mode: TessPSM[keyof TessPSM],
+): Promise<string> {
+  await worker.setParameters({
+    tessedit_pageseg_mode: mode,
+    preserve_interword_spaces: "1",
+    user_defined_dpi: "300",
+  });
+  const result = await worker.recognize(source);
+  return (result.data.text ?? "").trim();
+}
+
 async function recognizeBest(
   worker: TessWorker,
   PSM: TessPSM,
   source: HTMLCanvasElement | File,
   onProgress?: (pct: number) => void,
 ): Promise<string> {
-  await worker.setParameters({
-    tessedit_pageseg_mode: PSM.AUTO,
-    preserve_interword_spaces: "1",
-    user_defined_dpi: "300",
-  });
-  const first = await worker.recognize(source);
-  const a = (first.data.text ?? "").trim();
-  if (textScore(a) >= 8) return a;
-  onProgress?.(70);
-  await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT });
-  const second = await worker.recognize(source);
-  const b = (second.data.text ?? "").trim();
-  return textScore(b) > textScore(a) ? b : a;
+  const auto = await recognizeWithMode(worker, PSM, source, PSM.AUTO);
+  if (textScore(auto) >= 12) return auto;
+  onProgress?.(55);
+  const block = await recognizeWithMode(worker, PSM, source, PSM.SINGLE_BLOCK);
+  let best = textScore(block) > textScore(auto) ? block : auto;
+  if (textScore(best) >= 8) return best;
+  onProgress?.(75);
+  const sparse = await recognizeWithMode(worker, PSM, source, PSM.SPARSE_TEXT);
+  return textScore(sparse) > textScore(best) ? sparse : best;
 }
 
 export async function ocrImageFile(
   file: File,
   onProgress?: (pct: number) => void,
 ): Promise<string> {
-  const canvas = await preprocessImage(file);
   const { createWorker, PSM } = await import("tesseract.js");
   const worker = await createWorker("eng", 1, {
     logger: (m) => {
@@ -441,13 +538,41 @@ export async function ocrImageFile(
     },
   });
   try {
-    const pre = await recognizeBest(worker, PSM, canvas, onProgress);
-    if (textScore(pre) >= 8) return pre;
-    const raw = await recognizeBest(worker, PSM, file, onProgress);
-    return textScore(raw) > textScore(pre) ? raw : pre;
+    return await recognizeFile(worker, PSM, file, onProgress);
   } finally {
     await worker.terminate();
   }
+}
+
+async function recognizeFile(
+  worker: TessWorker,
+  PSM: TessPSM,
+  file: File,
+  onProgress?: (pct: number) => void,
+): Promise<string> {
+  let best = "";
+  const trySource = async (source: HTMLCanvasElement | File) => {
+    const text = await recognizeBest(worker, PSM, source, onProgress);
+    if (textScore(text) > textScore(best)) best = text;
+  };
+  try {
+    await trySource(await scaleImage(file));
+  } catch {
+    /* fall through */
+  }
+  if (textScore(best) >= 12) return best;
+  try {
+    await trySource(file);
+  } catch {
+    /* fall through */
+  }
+  if (textScore(best) >= 8) return best;
+  try {
+    await trySource(await preprocessImage(file));
+  } catch {
+    /* fall through */
+  }
+  return best;
 }
 
 const SAMPLE_RX_TEXT = `PRESCRIPTION
@@ -471,39 +596,37 @@ export async function scanPrescriptions(
   const readable = uploads.filter((u) => isReadableImage(u.file));
   const chunks: string[] = [];
   let readErrors = 0;
+  let ocrAvailable = true;
   if (readable.length) {
-    const { createWorker, PSM } = await import("tesseract.js");
-    const worker = await createWorker("eng", 1, {
-      logger: (m) => {
-        if (m.status === "recognizing text" && typeof m.progress === "number") {
-          onProgress?.(readable.length > 1 ? "Reading photos" : "Reading your prescription", Math.round(m.progress * 100));
-        }
-      },
-    });
     try {
-      for (let i = 0; i < readable.length; i++) {
-        const label = readable.length > 1 ? `Photo ${i + 1} of ${readable.length}` : "Reading your prescription";
-        onProgress?.(label, 8);
-        try {
-          const canvas = await preprocessImage(readable[i].file);
-          const pre = await recognizeBest(worker, PSM, canvas, (pct) => onProgress?.(label, pct));
-          let text = pre;
-          if (textScore(pre) < 8) {
-            const rawPass = await recognizeBest(worker, PSM, readable[i].file, (pct) => onProgress?.(label, pct));
-            text = textScore(rawPass) > textScore(pre) ? rawPass : pre;
+      const { createWorker, PSM } = await import("tesseract.js");
+      const worker = await createWorker("eng", 1, {
+        logger: (m) => {
+          if (m.status === "recognizing text" && typeof m.progress === "number") {
+            onProgress?.(readable.length > 1 ? "Reading photos" : "Reading your prescription", Math.round(m.progress * 100));
           }
-          chunks.push(text);
-        } catch {
-          readErrors += 1;
+        },
+      });
+      try {
+        for (let i = 0; i < readable.length; i++) {
+          const label = readable.length > 1 ? `Photo ${i + 1} of ${readable.length}` : "Reading your prescription";
+          onProgress?.(label, 8);
+          try {
+            chunks.push(await recognizeFile(worker, PSM, readable[i].file, (pct) => onProgress?.(label, pct)));
+          } catch {
+            readErrors += 1;
+          }
         }
+      } finally {
+        await worker.terminate();
       }
-    } finally {
-      await worker.terminate();
+    } catch {
+      ocrAvailable = false;
     }
   }
   onProgress?.("Matching medications", 100);
   const raw = chunks.join("\n").trim();
-  if (readable.length && !raw && readErrors === readable.length) {
+  if (readable.length && ocrAvailable && !raw && readErrors === readable.length) {
     throw new Error("Could not read that photo. Try a JPEG or PNG.");
   }
   let merged = parsePrescriptionText(raw);
@@ -511,7 +634,7 @@ export async function scanPrescriptions(
     merged = parsePrescriptionText(SAMPLE_RX_TEXT);
   }
   if (!merged.text.trim() && raw) merged = { ...merged, text: raw };
-  return merged;
+  return { ...merged, ocrAvailable };
 }
 
 /** Printed sample Rx so OCR can be tried without a camera. */

@@ -4,6 +4,7 @@ import { DetailSection } from "@/components/DetailSection";
 import { ENABLE_FIELD, EnableLine } from "@/components/listingEnable";
 import { SkeletonImage } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
+import { useShellColumn } from "@/lib/columnHover";
 import verifiedBadge from "../../icons/verified badge.svg";
 
 export type DirectoryDetailBadge = {
@@ -234,6 +235,8 @@ export function DirectoryDetailLayout({
 }) {
   const { tx } = useI18n();
   const aboutCopy = about || bio;
+  const mainCol = useShellColumn("main");
+  const railCol = useShellColumn("rail");
 
   return (
     <div>
@@ -246,7 +249,10 @@ export function DirectoryDetailLayout({
       </Link>
 
       <div className="mt-5 grid items-start gap-5 lg:grid-cols-4 lg:gap-6">
-        <div className="min-w-0 space-y-5 lg:col-span-3 lg:col-start-1 lg:row-start-1">
+        <div
+          className={"min-w-0 space-y-5 lg:col-span-3 lg:col-start-1 lg:row-start-1 " + mainCol.className}
+          onMouseEnter={mainCol.onMouseEnter}
+        >
           <DirectoryHeroCard
             eyebrow={eyebrow}
             name={name}
@@ -260,11 +266,20 @@ export function DirectoryDetailLayout({
           {afterHero}
         </div>
 
-        <aside className="space-y-3 lg:col-span-1 lg:col-start-4 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
+        <aside
+          className={
+            "space-y-3 lg:col-span-1 lg:col-start-4 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start " +
+            railCol.className
+          }
+          onMouseEnter={railCol.onMouseEnter}
+        >
           {sidebar}
         </aside>
 
-        <div className="min-w-0 space-y-10 lg:col-span-3 lg:col-start-1 lg:row-start-2">
+        <div
+          className={"min-w-0 space-y-10 lg:col-span-3 lg:col-start-1 lg:row-start-2 " + mainCol.className}
+          onMouseEnter={mainCol.onMouseEnter}
+        >
           <DetailSection title={tx("About")}>
             <p className="text-sm leading-relaxed text-ink-secondary">{aboutCopy}</p>
             {extras.length > 0 && (

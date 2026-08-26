@@ -11,6 +11,7 @@ import { STRUCTURED_PREP_IDS, StructuredPrepBody } from "@/components/care/PrepE
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { RelatedHealthcareOptions } from "@/components/RelatedHealthcareOptions";
 import { useI18n } from "@/lib/i18n";
+import { useShellColumn } from "@/lib/columnHover";
 import { DEMO_REPORTS } from "@/lib/appointments";
 import {
   acceptCareSlot,
@@ -66,6 +67,8 @@ export function CareJourneyPage({ kind }: { kind: CareKind }) {
 function JourneyView({ event, onChanged }: { event: CareEvent; onChanged: () => void }) {
   const { tx } = useI18n();
   const nav = useNavigate();
+  const mainCol = useShellColumn("main");
+  const railCol = useShellColumn("rail");
   const [tab, setTab] = useState<CareTab>("overview");
   const [cancelOpen, setCancelOpen] = useState(false);
   const [doc, setDoc] = useState<AftercareItem | null>(null);
@@ -130,7 +133,10 @@ function JourneyView({ event, onChanged }: { event: CareEvent; onChanged: () => 
       <Hero event={event} />
 
       <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(16rem,20rem)]">
-        <div className="min-w-0 lg:col-span-1 xl:col-span-2">
+        <div
+          className={"min-w-0 lg:col-span-1 xl:col-span-2 " + mainCol.className}
+          onMouseEnter={mainCol.onMouseEnter}
+        >
           <TabBar tabs={tabs} tab={tab} onTab={setTab} />
 
           {tab === "overview" ? (
@@ -151,7 +157,10 @@ function JourneyView({ event, onChanged }: { event: CareEvent; onChanged: () => 
           ) : null}
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-28">
+        <aside
+          className={"space-y-4 lg:sticky lg:top-28 " + railCol.className}
+          onMouseEnter={railCol.onMouseEnter}
+        >
           <ProviderCard event={event} onCancel={() => setCancelOpen(true)} cancelCta={cancelCta} />
           {event.mapsQuery ? <DirectorySidebarMap query={event.mapsQuery} /> : null}
         </aside>

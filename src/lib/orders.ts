@@ -348,15 +348,23 @@ export function createMedicationOrder(input: {
   cardLast4?: string;
   due: number;
   pharmacyName?: string;
+  prescriber?: string;
+  extraItems?: { name: string; strength: string; qty: number; unitPrice: number }[];
 }): Order {
-  const existing = getOrders().find(
-    (o) =>
-      isActiveOrder(o) &&
-      (o.type === "fill" || o.type === "refill") &&
-      o.status === "verifying" &&
-      (o.items[0]?.name || "").toLowerCase() === input.name.trim().toLowerCase() &&
-      (o.items[0]?.strength || "") === input.strength,
-  );
+  const lines = [
+    { name: input.name, strength: input.strength, qty: input.qty, unitPrice: input.unitPrice },
+    ...(input.extraItems ?? []),
+  ];
+  const existing = !input.extraItems?.length
+    ? getOrders().find(
+        (o) =>
+          isActiveOrder(o) &&
+          (o.type === "fill" || o.type === "refill") &&
+          o.status === "verifying" &&
+          (o.items[0]?.name || "").toLowerCase() === input.name.trim().toLowerCase() &&
+          (o.items[0]?.strength || "") === input.strength,
+      )
+    : undefined;
   if (existing) return existing;
   const n = Math.floor(1000 + Math.random() * 9000);
   const today = new Date().toISOString().slice(0, 10);
@@ -368,7 +376,7 @@ export function createMedicationOrder(input: {
     status: "verifying",
     patient: input.patient ?? "Ramesh Mandal",
     address: input.address,
-    items: [{ name: input.name, strength: input.strength, qty: input.qty, unitPrice: input.unitPrice }],
+    items: lines,
     dispensingFee: input.dispensingFee,
     insuranceCovered: input.insuranceCovered,
     payment: {
@@ -377,6 +385,7 @@ export function createMedicationOrder(input: {
     },
     pharmacist: input.pharmacyName ? undefined : "Care team",
     pharmacyName: input.pharmacyName,
+    prescriber: input.prescriber,
   });
 }
 
