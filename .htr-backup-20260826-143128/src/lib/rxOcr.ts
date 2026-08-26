@@ -6,21 +6,6 @@
  */
 
 import { drugs, type Drug } from "./data";
-import { handwritingSupported, recognizeHandwriting } from "./localHtr/htrClient";
-
-/** Options for the OCR entry points. */
-export type RecognizeOpts = {
-  /**
-   * Run the on-device handwriting model (TrOCR) as a fallback when the printed-
-   * text engine returns almost nothing — the tell-tale of a handwritten Rx.
-   * Enabled by default; the model only actually downloads when the fallback
-   * fires, so printed scans stay fast and offline-cheap.
-   */
-  handwriting?: boolean;
-};
-
-/** Below this Tesseract text score we treat the image as "printed OCR failed". */
-const HANDWRITING_TRIGGER = 12;
 
 export type RxUpload = {
   id: string;
@@ -542,7 +527,6 @@ async function recognizeBest(
 export async function ocrImageFile(
   file: File,
   onProgress?: (pct: number) => void,
-  opts: RecognizeOpts = {},
 ): Promise<string> {
   const { createWorker, PSM } = await import("tesseract.js");
   const worker = await createWorker("eng", 1, {
@@ -553,31 +537,10 @@ export async function ocrImageFile(
     },
   });
   try {
-    return await recognizeFile(worker, PSM, file, onProgress, opts);
+    return await recognizeFile(worker, PSM, file, onProgress);
   } finally {
     await worker.terminate();
   }
-}
-
-/**
- * When Tesseract comes back nearly empty, take one more pass with the on-device
- * handwriting model and fold its text in. Returning the union is safe because
- * parsePrescriptionText de-duplicates meds across the combined text.
- */
-async function handwritingFallback(
-  file: File,
-  best: string,
-  onProgress?: (pct: number) => void,
-): Promise<string> {
-  if (!handwritingSupported() || textScore(best) >= HANDWRITING_TRIGGER) return best;
-  try {
-    const canvas = await preprocessImage(file);
-    const hw = await recognizeHandwriting(canvas, (_label, pct) => onProgress?.(pct));
-    if (hw && textScore(hw) > 0) return best ? `${best}\n${hw}` : hw;
-  } catch {
-    /* handwriting is best-effort; keep whatever Tesseract found */
-  }
-  return best;
 }
 
 async function recognizeFile(
@@ -585,9 +548,7 @@ async function recognizeFile(
   PSM: TessPSM,
   file: File,
   onProgress?: (pct: number) => void,
-  opts: RecognizeOpts = {},
 ): Promise<string> {
-  const wantHandwriting = opts.handwriting !== false;
   let best = "";
   const trySource = async (source: HTMLCanvasElement | File) => {
     const text = await recognizeBest(worker, PSM, source, onProgress);
@@ -610,7 +571,7 @@ async function recognizeFile(
   } catch {
     /* fall through */
   }
-  return wantHandwriting ? handwritingFallback(file, best, onProgress) : best;
+  return best;
 }
 
 const SAMPLE_RX_TEXT = `PRESCRIPTION
@@ -630,7 +591,6 @@ Take 1 tablet at bedtime`;
 export async function scanPrescriptions(
   uploads: RxUpload[],
   onProgress?: (label: string, pct: number) => void,
-  opts: RecognizeOpts = {},
 ): Promise<RxScanResult> {
   const readable = uploads.filter((u) => isReadableImage(u.file));
   const chunks: string[] = [];
@@ -651,9 +611,7 @@ export async function scanPrescriptions(
           const label = readable.length > 1 ? `Photo ${i + 1} of ${readable.length}` : "Reading your prescription";
           onProgress?.(label, 8);
           try {
-            chunks.push(
-              await recognizeFile(worker, PSM, readable[i].file, (pct) => onProgress?.(label, pct), opts),
-            );
+            chunks.push(await recognizeFile(worker, PSM, readable[i].file, (pct) => onProgress?.(label, pct)));
           } catch {
             readErrors += 1;
           }
