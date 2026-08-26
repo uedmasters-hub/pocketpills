@@ -38,124 +38,60 @@ const MAX_LINE_H = 160;
 type Range = { start: number; end: number };
 
 /** Dark-pixel count per row across the whole width. */
-function rowInkProfile(
-  data: Uint8ClampedArray,
-  width: number,
-  height: number,
-  win?: { x0: number; x1: number; y0: number; y1: number },
-): number[] {
-  const x0 = win?.x0 ?? 0;
-  const x1 = win?.x1 ?? width;
-  const y0 = win?.y0 ?? 0;
-  const y1 = win?.y1 ?? height;
-  const profile = new Array<number>(y1 - y0).fill(0);
-  for (let y = y0; y < y1; y++) {
+function rowInkProfile(data: Uint8ClampedArray, width: number, height: number): number[] {
+  const profile = new Array<number>(height).fill(0);
+  for (let y = 0; y < height; y++) {
     let ink = 0;
     const rowStart = y * width * 4;
-    for (let x = x0; x < x1; x++) {
+    for (let x = 0; x < width; x++) {
       const i = rowStart + x * 4;
       const luma = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
       if (luma < INK_LUMA) ink++;
     }
-    profile[y - y0] = ink;
+    profile[y] = ink;
   }
   return profile;
 }
 
-/** 90th-percentile of non-blank rows — the ink a typical text row carries. */
-function inkP90(profile: number[]): number {
-  const nz = profile.filter((v) => v > 0).sort((a, b) => a - b);
-  return nz.length ? nz[Math.min(nz.length - 1, Math.floor(nz.length * 0.9))] : 0;
-}
-
 /**
- * Split a band that is clearly taller than its neighbours at its deepest
- * interior valley.
+ * Rows are "ink" above a threshold derived from the page's own ink density.
  *
- * Handwritten lines touch: an ascender from one line meets a descender from the
- * one above, so no row is ever blank between them and pure thresholding fuses
- * them. On a real prescription this fused "Placida" and "Escitat" into a single
- * crop, and TrOCR reads only the first line of whatever it is given — so the
- * second medicine simply disappeared.
+ * A fixed fraction of page width fails badly on real prescriptions: a short
+ * right-column line ("T. Placida 1 OD") in thin pen strokes lands around 17
+ * dark pixels per row, just under a fixed 1.2%-of-width cut, so entire
+ * medicines vanish before recognition runs while longer lines survive. Scaling
+ * against the median ink of non-blank rows adapts to faint handwriting, while
+ * the fixed value stays an upper bound so dense printed pages behave as before.
  */
-function splitTallBands(bands: Range[], profile: number[], offset: number, depth = 0): Range[] {
-  if (depth > 3 || bands.length === 0) return bands;
-  const heights = bands.map((b) => b.end - b.start).sort((a, b) => a - b);
-  const median = heights[Math.floor(heights.length / 2)];
-  const out: Range[] = [];
-  for (const band of bands) {
-    const h = band.end - band.start;
-    if (h < median * 1.6 || h < 40) {
-      out.push(band);
-      continue;
-    }
-    const margin = Math.floor(h * 0.28);
-    let bestY = -1;
-    let bestV = Infinity;
-    for (let y = band.start + margin; y < band.end - margin; y++) {
-      const v = profile[y - offset];
-      if (v < bestV) {
-        bestV = v;
-        bestY = y;
-      }
-    }
-    let sum = 0;
-    for (let y = band.start; y < band.end; y++) sum += profile[y - offset] ?? 0;
-    const mean = sum / h;
-    if (bestY > 0 && bestV < mean * 0.55) {
-      out.push(
-        ...splitTallBands(
-          [{ start: band.start, end: bestY }, { start: bestY, end: band.end }],
-          profile,
-          offset,
-          depth + 1,
-        ),
-      );
-    } else {
-      out.push(band);
-    }
-  }
-  return out;
-}
-
-/**
- * Turn a row profile into contiguous ink ranges.
- *
- * `relative` picks the threshold from the region's own ink (used inside a
- * column cell, where a shallow valley still separates two lines); the coarse
- * page pass keeps the fixed width fraction, because lowering it there merges
- * neighbouring blocks rather than separating them.
- */
-function bandsFromProfile(
-  profile: number[],
-  width: number,
-  opts: { relative?: boolean; offset?: number; mergeGap?: number } = {},
-): Range[] {
-  const { relative = false, offset = 0, mergeGap = MERGE_GAP } = opts;
-  const threshold = relative
-    ? Math.max(3, Math.round(inkP90(profile) * 0.22))
-    : Math.max(2, Math.floor(width * INK_ROW_RATIO));
+function bandsFromProfile(profile: number[], width: number): Range[] {
+  const nonBlank = profile.filter((v) => v > 0).sort((a, b) => a - b);
+  const median = nonBlank.length ? nonBlank[Math.floor(nonBlank.length / 2)] : 0;
+  const ceiling = Math.floor(width * INK_ROW_RATIO);
+  const adaptive = Math.round(median * 0.35);
+  const threshold = Math.max(2, Math.min(ceiling, adaptive || ceiling));
 
   const raw: Range[] = [];
   let start = -1;
-  for (let i = 0; i < profile.length; i++) {
-    const inky = profile[i] >= threshold;
-    if (inky && start === -1) start = i + offset;
+  for (let y = 0; y < profile.length; y++) {
+    const inky = profile[y] >= threshold;
+    if (inky && start === -1) start = y;
     if (!inky && start !== -1) {
-      raw.push({ start, end: i + offset });
+      raw.push({ start, end: y });
       start = -1;
     }
   }
-  if (start !== -1) raw.push({ start, end: profile.length + offset });
+  if (start !== -1) raw.push({ start, end: profile.length });
 
   const merged: Range[] = [];
   for (const band of raw) {
     const prev = merged[merged.length - 1];
-    if (prev && band.start - prev.end <= mergeGap) prev.end = band.end;
-    else merged.push({ ...band });
+    if (prev && band.start - prev.end <= MERGE_GAP) {
+      prev.end = band.end;
+    } else {
+      merged.push({ ...band });
+    }
   }
-  const kept = merged.filter((b) => b.end - b.start >= MIN_BAND_H);
-  return relative ? splitTallBands(kept, profile, offset) : kept;
+  return merged.filter((b) => b.end - b.start >= MIN_BAND_H);
 }
 
 /** Crop one band, pad it, and upscale toward a legible line height. */
@@ -263,61 +199,38 @@ function cropCell(source: HTMLCanvasElement, band: Range, col: Range): HTMLCanva
 }
 
 /**
- * Segment a canvas into line-band crops.
- *
- * Order matters, and the obvious order is wrong. Splitting rows first and
- * columns second leaves a tall multi-line cell whenever the page is
- * two-column: the left column's ink bridges every gap in the right column, so
- * the whole Rx list fuses into one band. Measured on a real prescription that
- * produced a single 492px crop holding five medicines, and TrOCR read only the
- * first — which is exactly how three medicines went missing.
- *
- * So: coarse rows, then columns, then rows AGAIN inside each column cell where
- * the neighbouring column can no longer bridge the gaps.
+ * Segment a (preferably contrast-stretched) canvas into line-band crops,
+ * splitting each band into columns where the layout warrants it. Falls back to
+ * a single whole-image band when projection finds nothing, so the caller
+ * always gets at least one thing to recognise.
  */
 export function segmentLines(source: HTMLCanvasElement, maxLines = 40): LineBand[] {
   const ctx = source.getContext("2d");
   if (!ctx) return [];
   const { data } = ctx.getImageData(0, 0, source.width, source.height);
-  const coarse = bandsFromProfile(
-    rowInkProfile(data, source.width, source.height),
-    source.width,
-  );
+  const profile = rowInkProfile(data, source.width, source.height);
+  const ranges = bandsFromProfile(profile, source.width);
 
   const bands: LineBand[] = [];
-  const push = (band: Range, col: Range) => {
-    if (bands.length >= maxLines) return;
-    const canvas = cropCell(source, band, col);
-    if (canvas) bands.push({ canvas, top: band.start, height: band.end - band.start });
-  };
-
-  for (const band of coarse) {
+  for (const range of ranges) {
     if (bands.length >= maxLines) break;
-    const spans = columnSpans(data, source.width, band);
-    if (!spans.length) {
-      const canvas = cropBand(source, band);
-      if (canvas) bands.push({ canvas, top: band.start, height: band.end - band.start });
+    const spans = columnSpans(data, source.width, range);
+    if (spans.length <= 1) {
+      const canvas = spans.length === 1
+        ? cropCell(source, range, spans[0])
+        : cropBand(source, range);
+      if (canvas) bands.push({ canvas, top: range.start, height: range.end - range.start });
       continue;
     }
-    for (const col of spans) {
-      const inner = bandsFromProfile(
-        rowInkProfile(data, source.width, source.height, {
-          x0: col.start,
-          x1: col.end,
-          y0: band.start,
-          y1: band.end,
-        }),
-        col.end - col.start,
-        { relative: true, offset: band.start, mergeGap: 4 },
-      );
-      if (!inner.length) {
-        push(band, col);
-        continue;
-      }
-      for (const line of inner) push(line, col);
+    for (const span of spans) {
+      if (bands.length >= maxLines) break;
+      const canvas = cropCell(source, range, span);
+      if (canvas) bands.push({ canvas, top: range.start, height: range.end - range.start });
     }
   }
 
-  if (!bands.length) bands.push({ canvas: source, top: 0, height: source.height });
+  if (!bands.length) {
+    bands.push({ canvas: source, top: 0, height: source.height });
+  }
   return bands;
 }

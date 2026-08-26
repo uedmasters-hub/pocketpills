@@ -8,13 +8,26 @@
 import { drugs, type Drug } from "./data";
 import { handwritingSupported, recognizeHandwriting } from "./localHtr/htrClient";
 import {
-  canonicaliseName,
-  extractMedName,
   hasMedSignal,
   hasRxSignal,
   isNonMedLine,
+  parseRxLine,
   parseSig,
 } from "./rxLexicon";
+
+/**
+ * Set localStorage "pp:rx-debug" to "1" to log the raw OCR text and the
+ * accept/reject decision for every line. The single most useful question when
+ * a medicine goes missing is whether recognition never produced it or the
+ * parser discarded it, and that is invisible from the finished basket.
+ */
+function rxDebug(): boolean {
+  try {
+    return typeof localStorage !== "undefined" && localStorage.getItem("pp:rx-debug") === "1";
+  } catch {
+    return false;
+  }
+}
 
 /** Options for the OCR entry points. */
 export type RecognizeOpts = {
@@ -220,29 +233,34 @@ function catalogNameKeys(m: ExtractedMed): string[] {
  */
 function extractRxLines(text: string, already: Set<string>): ExtractedMed[] {
   const out: ExtractedMed[] = [];
+  const debug = rxDebug();
   for (const raw of splitOcrLines(text)) {
     const line = raw.replace(/^[\sRx®*•·:\-]+/i, "").trim();
     if (line.length < 3 || line.length > 80) continue;
-    if (isNonMedLine(line)) continue;
-    if (!hasRxSignal(line)) continue;
 
-    const rawName = extractMedName(line);
-    if (!rawName) continue;
+    const parsed = parseRxLine(line);
+    if (!parsed) {
+      if (debug) {
+        const why = isNonMedLine(line) ? "not-a-medicine" : !hasRxSignal(line) ? "no-rx-signal" : "no-name";
+        console.info(`[rx] skip (${why}): ${line}`);
+      }
+      continue;
+    }
 
-    const key = rawName.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const key = parsed.name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     if (key.length < 3) continue;
-    if ([...already].some((n) => n === key || n.includes(key) || key.includes(n))) continue;
+    if ([...already].some((n) => n === key || n.includes(key) || key.includes(n))) {
+      if (debug) console.info(`[rx] skip (duplicate): ${line}`);
+      continue;
+    }
     already.add(key);
 
-    const { name, known } = canonicaliseName(rawName);
-    const sig = parseSig(line);
-    const med = freeformMed(name, line);
-    if (sig.strength) med.strength = sig.strength;
-    med.directions = sig.directions;
-    med.asNeeded = sig.asNeeded;
-    // A recognised brand spelling is a meaningful confidence bump; an
-    // unrecognised name still goes through for the patient to confirm.
-    med.confidence = known ? "high" : "low";
+    const med = freeformMed(parsed.name, line);
+    med.strength = parsed.strength;
+    med.directions = parsed.directions;
+    med.asNeeded = parsed.asNeeded;
+    med.confidence = parsed.known ? "high" : "low";
+    if (debug) console.info(`[rx] keep: "${parsed.name}" <- ${line}`);
     out.push(med);
   }
   return out.slice(0, 16);
@@ -592,6 +610,7 @@ export async function scanPrescriptions(
   }
   onProgress?.("Matching medications", 100);
   const raw = chunks.join("\n").trim();
+  if (rxDebug()) console.info("[rx] raw OCR text:\n" + (raw || "(empty)"));
   if (readable.length && ocrAvailable && !raw && readErrors === readable.length) {
     throw new Error("Could not read that photo. Try a JPEG or PNG.");
   }

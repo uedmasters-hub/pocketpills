@@ -455,29 +455,3 @@ export function parseRxLine(line: string): RxLine | null {
     known: false,
   };
 }
-
-/**
- * Score a candidate reading of one line for how prescription-like it is.
- *
- * Handwriting models emit several plausible transcriptions per line and the
- * highest-probability one is not reliably the correct one for out-of-domain
- * words like drug names. Re-ranking the candidates against the formulary is the
- * browser-side equivalent of dictionary-constrained CTC decoding: the model
- * proposes, the lexicon disposes. Higher is better.
- */
-export function scoreRxCandidate(text: string): number {
-  const line = text.trim();
-  if (!line) return -Infinity;
-  let score = 0;
-  if (hasBrandToken(line)) score += 6;
-  if (RX_FORM_RE.test(line)) score += 3;
-  if (SIG_TOKEN_RE.test(line) || GRID_SIG_RE.test(line)) score += 3;
-  if (STRENGTH_TOKEN_RE.test(line)) score += 2;
-  if (isNonMedLine(line)) score -= 2;
-  // Prefer readable words over punctuation soup, but do not simply reward length.
-  const words = line.match(/[A-Za-z]{3,}/g) ?? [];
-  score += Math.min(4, words.length);
-  const junk = (line.match(/[^A-Za-z0-9\s.,:;/%()-]/g) ?? []).length;
-  score -= Math.min(4, junk);
-  return score;
-}

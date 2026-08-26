@@ -7,6 +7,27 @@
 
 import { drugs, type Drug } from "./data";
 import { handwritingSupported, recognizeHandwriting } from "./localHtr/htrClient";
+import {
+  hasMedSignal,
+  hasRxSignal,
+  isNonMedLine,
+  parseRxLine,
+  parseSig,
+} from "./rxLexicon";
+
+/**
+ * Set localStorage "pp:rx-debug" to "1" to log the raw OCR text and the
+ * accept/reject decision for every line. The single most useful question when
+ * a medicine goes missing is whether recognition never produced it or the
+ * parser discarded it, and that is invisible from the finished basket.
+ */
+function rxDebug(): boolean {
+  try {
+    return typeof localStorage !== "undefined" && localStorage.getItem("pp:rx-debug") === "1";
+  } catch {
+    return false;
+  }
+}
 
 /** Options for the OCR entry points. */
 export type RecognizeOpts = {
@@ -78,9 +99,6 @@ const ALIASES: Record<string, string> = {
   mounjaro: "tirzepatide",
 };
 
-const SKIP_LINE =
-  /^(no\.?|date|for|rx|m\.?\s*d\.?|druggist|pharmacist|broadway|kas\.?|kansas|patient|name|address|phone|sig\.?|label|refill)$/i;
-
 function escapeRe(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -97,27 +115,11 @@ function normalizeOcr(text: string): string {
 }
 
 function asNeeded(text: string): boolean {
-  return /\b(prn|as needed|when required)\b/i.test(text);
+  return parseSig(text).asNeeded;
 }
 
 function directionsFrom(text: string): string {
-  const t = text.toLowerCase();
-  if (/every\s+\d+\s+hours?/.test(t)) {
-    const n = t.match(/every\s+(\d+)\s+hours?/)?.[1];
-    return n ? `every ${n} hours` : "";
-  }
-  if (/teaspoon/.test(t)) return "1 teaspoonful as directed";
-  if (/\b(od\s*hs|odhs|qhs|bedtime|at night)\b/.test(t)) return "once daily at bedtime";
-  if (/\b(tid|tds|three times)\b/.test(t)) return "3 times daily";
-  if (/\b(bid|bd|twice daily|2 times)\b/.test(t)) return "twice daily";
-  if (/\b(qid|four times)\b/.test(t)) return "4 times daily";
-  if (/\b(od|once daily|1 daily|one daily|daily)\b/.test(t)) {
-    if (/\bac\b|before (meals?|food)/.test(t)) return "once daily before meals";
-    if (/\bpc\b|after (meals?|food)/.test(t)) return "once daily after meals";
-    return "once daily";
-  }
-  if (/\bprn\b/.test(t)) return "as needed";
-  return "";
+  return parseSig(text).directions;
 }
 
 function qtyFrom(text: string): number {
@@ -199,16 +201,6 @@ function freeformMed(name: string, context: string): ExtractedMed {
   };
 }
 
-function looksLikeHeader(line: string): boolean {
-  if (SKIP_LINE.test(line.trim())) return true;
-  if (/druggist|pharmacist|broadway|abilene|letterhead|downtown family health/i.test(line)) return true;
-  if (/^(prescription|dispense|directions?|medication|medicines?)$/i.test(line.trim())) return true;
-  if (/^\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}$/.test(line.trim())) return true;
-  if (/^#?\s*\d{4,}$/.test(line.trim())) return true;
-  if (/^(mrs?|ms|miss)\.?\s+[A-Z][a-z]+/.test(line.trim())) return true;
-  return false;
-}
-
 function splitOcrLines(text: string): string[] {
   const cleaned = text.replace(/\r/g, "");
   const parts = cleaned.split(/\n+/);
@@ -230,100 +222,48 @@ function catalogNameKeys(m: ExtractedMed): string[] {
   return keys;
 }
 
-function pushUnique(out: ExtractedMed[], already: Set<string>, name: string, context: string) {
-  const cleaned = name.replace(/\bsig\b.*/i, "").replace(/[,.;:]+$/g, "").trim();
-  const key = cleaned.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  if (key.length < 4 || key.length > 48) return;
-  const aliasSlug = ALIASES[key];
-  if (aliasSlug && [...already].some((n) => n === aliasSlug || n.includes(aliasSlug))) return;
-  if ([...already].some((n) => n === key || n.includes(key) || key.includes(n))) return;
-  already.add(key);
-  out.push(freeformMed(cleaned, context));
-}
-
-function extractWrittenRxLines(text: string, already: Set<string>): ExtractedMed[] {
+/**
+ * Pull medicine lines out of OCR text.
+ *
+ * A line is only accepted when it carries an actual prescription signal — a
+ * dosage form ("Cap.", "T."), a dosing sig (OD/BD/TDS/HS/1-0-1), a strength,
+ * or a recognised brand spelling. Being capitalised is NOT a signal; that
+ * heuristic is what previously turned letterhead lines like
+ * "SENIOR MEDICAL OFFICER" into medicines.
+ */
+function extractRxLines(text: string, already: Set<string>): ExtractedMed[] {
   const out: ExtractedMed[] = [];
-  const formPrefix = /^(cap(?:sule)?s?|tab(?:let)?s?|t|syp|syrup|inj(?:ection)?|drops?)\.?\s+/i;
-  const sigTail = /\s+\d*\s*(od\s*hs|odhs|od|bd|tds|tid|qid|hs|ac|pc|prn|sos)\b.*$/i;
-  const sigCue = /\b(\d+\s*)?(od\s*hs|odhs|od|bd|tds|tid|qid|hs)\b/i;
-
+  const debug = rxDebug();
   for (const raw of splitOcrLines(text)) {
-    let line = raw.replace(/^[\sRx®*•·:-]+/i, "").trim();
-    if (line.length < 4) continue;
-    const hasForm = formPrefix.test(line);
-    if (!hasForm && !sigCue.test(line)) continue;
-    line = line.replace(formPrefix, "").replace(/[:\-]+/g, " ").replace(/\s+/g, " ").trim();
-    const namePart = line.replace(sigTail, "").replace(/[,.;]+$/g, "").trim();
-    if (!namePart) continue;
-    const strengthMatch = namePart.match(/^(.*?)(?:\s+(\d+(?:\.\d+)?)(?:\s*(mg|mcg|g))?)$/i);
-    let name = namePart;
-    let strength = "";
-    if (strengthMatch?.[2] && (strengthMatch[1] ?? "").trim().length >= 3) {
-      name = strengthMatch[1].trim();
-      strength = `${strengthMatch[2]}${(strengthMatch[3] || "mg").toLowerCase()}`;
+    const line = raw.replace(/^[\sRx®*•·:\-]+/i, "").trim();
+    if (line.length < 3 || line.length > 80) continue;
+
+    const parsed = parseRxLine(line);
+    if (!parsed) {
+      if (debug) {
+        const why = isNonMedLine(line) ? "not-a-medicine" : !hasRxSignal(line) ? "no-rx-signal" : "no-name";
+        console.info(`[rx] skip (${why}): ${line}`);
+      }
+      continue;
     }
-    const key = name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-    if (key.length < 3 || key.length > 48) continue;
-    if ([...already].some((n) => n === key || n.includes(key) || key.includes(n))) continue;
+
+    const key = parsed.name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (key.length < 3) continue;
+    if ([...already].some((n) => n === key || n.includes(key) || key.includes(n))) {
+      if (debug) console.info(`[rx] skip (duplicate): ${line}`);
+      continue;
+    }
     already.add(key);
-    const med = freeformMed(name.replace(/\b\w/g, (c) => c.toUpperCase()), line);
-    if (strength) med.strength = strength;
+
+    const med = freeformMed(parsed.name, line);
+    med.strength = parsed.strength;
+    med.directions = parsed.directions;
+    med.asNeeded = parsed.asNeeded;
+    med.confidence = parsed.known ? "high" : "low";
+    if (debug) console.info(`[rx] keep: "${parsed.name}" <- ${line}`);
     out.push(med);
   }
-  return out.slice(0, 12);
-}
-
-function looksLikeSigOnly(line: string) {
-  return /^\d+\s*(od|bd|tds|tid|qid|hs|ac|pc|prn|sos)\b/i.test(line.trim());
-}
-
-/** Last pass: keep leftover Rx lines even when form/sig parsing missed them. */
-function extractLooseRxLines(text: string, already: Set<string>): ExtractedMed[] {
-  const out: ExtractedMed[] = [];
-  for (const raw of splitOcrLines(text)) {
-    const line = raw.replace(/^[\sRx®*•·:-]+/i, "").trim();
-    if (line.length < 4 || line.length > 56) continue;
-    if (looksLikeHeader(line) || looksLikeSigOnly(line)) continue;
-    if (/^(take|sig|disp|patient|for|date|no|label|dr)\b/i.test(line)) continue;
-    const namePart = line
-      .replace(/^(cap(?:sule)?s?|tab(?:let)?s?|t|syp|syrup|inj(?:ection)?)\.?\s+/i, "")
-      .replace(/\s+\d*\s*(od\s*hs|odhs|od|bd|tds|tid|qid|hs|ac|pc|prn|sos)\b.*$/i, "")
-      .replace(/[:\-]+/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (namePart.length < 3) continue;
-    const key = namePart.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-    if ([...already].some((n) => n === key || n.includes(key) || key.includes(n))) continue;
-    already.add(key);
-    out.push(freeformMed(namePart.replace(/\b\w/g, (c) => c.toUpperCase()), line));
-  }
-  return out.slice(0, 12);
-}
-
-function extractFreeformLines(text: string, already: Set<string>): ExtractedMed[] {
-  const out: ExtractedMed[] = [];
-  const compound =
-    text.match(
-      /\b((?:elix(?:ir)?|tinct(?:ure)?|syrup)\.?\s+[A-Za-z]+(?:\s+of\s+[A-Za-z]+)?(?:\s+[A-Za-z]+){0,2})/i,
-    )?.[1] ??
-    text.match(/\b([A-Z][a-z]{3,}\s+of\s+[A-Z][a-z]{3,}(?:\s+[A-Z][a-z]{3,})?)\b/)?.[1];
-  if (compound) pushUnique(out, already, compound.replace(/\s+/g, " ").trim(), text);
-
-  const lines = splitOcrLines(text).filter((l) => !looksLikeHeader(l));
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const next = `${line} ${lines[i + 1] ?? ""}`;
-    if (/^(take|sig|disp|patient|for|date|no|label)\b/i.test(line) && !STRENGTH_RE.test(line)) continue;
-    const hasDrugCue =
-      STRENGTH_RE.test(line) ||
-      /\b(tab(?:let)?s?|cap(?:sule)?s?|elix(?:ir)?|susp|cream|oint|inhale|drops?|syrup|tsp|mg|mcg)\b/i.test(line) ||
-      /^[A-Z][a-z]{3,}(?:\s+[A-Za-z]{3,}){0,4}$/.test(line) ||
-      /^[A-Z][A-Z]+(?:\s+[A-Z]+){1,4}$/.test(line);
-    if (!hasDrugCue) continue;
-    const name = line.replace(STRENGTH_RE, "").replace(/[,.;:]+$/g, "").trim();
-    pushUnique(out, already, name, next);
-  }
-  return out.slice(0, 8);
+  return out.slice(0, 16);
 }
 
 export function parsePrescriptionText(raw: string): RxScanResult {
@@ -364,9 +304,7 @@ export function parsePrescriptionText(raw: string): RxScanResult {
 
   const catalogHits = meds.length;
   const named = new Set(meds.flatMap(catalogNameKeys));
-  meds.push(...extractWrittenRxLines(text, named));
-  meds.push(...extractFreeformLines(text, named));
-  if (!meds.length) meds.push(...extractLooseRxLines(text, named));
+  meds.push(...extractRxLines(text, named));
 
   const prescriber =
     text.match(/\bDr\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/)?.[0]?.replace(/\s+/g, " ").trim() ?? "";
@@ -569,7 +507,11 @@ async function handwritingFallback(
   best: string,
   onProgress?: (pct: number) => void,
 ): Promise<string> {
-  if (!handwritingSupported() || textScore(best) >= HANDWRITING_TRIGGER) return best;
+  // A printed letterhead on a handwritten prescription produces plenty of
+  // text while containing no medicines at all, so text volume alone is the
+  // wrong test. Fire whenever nothing prescription-shaped was found.
+  if (!handwritingSupported()) return best;
+  if (textScore(best) >= HANDWRITING_TRIGGER && hasMedSignal(best)) return best;
   try {
     const canvas = await preprocessImage(file);
     const hw = await recognizeHandwriting(canvas, (_label, pct) => onProgress?.(pct));
@@ -598,13 +540,14 @@ async function recognizeFile(
   } catch {
     /* fall through */
   }
-  if (textScore(best) >= 12) return best;
+  const done = () => textScore(best) >= 12 && hasMedSignal(best);
+  if (done()) return best;
   try {
     await trySource(file);
   } catch {
     /* fall through */
   }
-  if (textScore(best) >= 8) return best;
+  if (done()) return best;
   try {
     await trySource(await preprocessImage(file));
   } catch {
@@ -667,6 +610,7 @@ export async function scanPrescriptions(
   }
   onProgress?.("Matching medications", 100);
   const raw = chunks.join("\n").trim();
+  if (rxDebug()) console.info("[rx] raw OCR text:\n" + (raw || "(empty)"));
   if (readable.length && ocrAvailable && !raw && readErrors === readable.length) {
     throw new Error("Could not read that photo. Try a JPEG or PNG.");
   }

@@ -19,7 +19,7 @@
  *   out { type: "progress", progress }                 (0..100, repeated)
  *   out { type: "ready" }
  *   in  { type: "recognize", data: Uint8ClampedArray, width, height }
- *   out { type: "result", texts }   (n-best candidate readings)
+ *   out { type: "result", text }
  *   out { type: "error", message }
  *
  * `self` is typed loosely here for the same reason as the Whisper worker: the
@@ -57,37 +57,6 @@ function loadModel(): Promise<ImageToTextPipeline> {
   return readerPromise;
 }
 
-function readTexts(output: unknown): string[] {
-  const rows = Array.isArray(output) ? output : [output];
-  return rows
-    .map((r) => String((r as { generated_text?: string })?.generated_text ?? "").trim())
-    .filter(Boolean);
-}
-
-/**
- * Ask for several candidate readings rather than one.
- *
- * Greedy decoding commits to the highest-probability character at every step,
- * which goes badly on words the model has never seen — and every drug name is
- * such a word for an IAM-trained model. Beam search with n-best output lets the
- * caller re-rank against the formulary instead of accepting the model's first
- * guess. Falls back to a plain call wherever the runtime declines the options.
- */
-async function recognize(reader: ImageToTextPipeline, image: RawImage): Promise<string[]> {
-  try {
-    const beams = await reader(image, {
-      num_beams: 4,
-      num_return_sequences: 4,
-      max_new_tokens: 48,
-    } as Record<string, unknown>);
-    const texts = readTexts(beams);
-    if (texts.length) return texts;
-  } catch {
-    /* runtime declined beam options — fall through to greedy */
-  }
-  return readTexts(await reader(image));
-}
-
 ctx.onmessage = async (event: MessageEvent) => {
   const data = event.data as
     | { type: "load" }
@@ -109,8 +78,11 @@ ctx.onmessage = async (event: MessageEvent) => {
       const reader = await loadModel();
       // RGBA line crop -> RawImage (4 channels); the processor resizes/normalises.
       const image = new RawImage(data.data, data.width, data.height, 4);
-      const texts = await recognize(reader, image);
-      ctx.postMessage({ type: "result", texts });
+      const output = await reader(image);
+      const text = Array.isArray(output)
+        ? output[0]?.generated_text ?? ""
+        : (output as { generated_text?: string }).generated_text ?? "";
+      ctx.postMessage({ type: "result", text: String(text).trim() });
     } catch (err) {
       ctx.postMessage({ type: "error", message: describeError(err) });
     }

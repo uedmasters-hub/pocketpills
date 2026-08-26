@@ -10,13 +10,12 @@
  * printed-text engine (Tesseract) comes back nearly empty — the signature of a
  * handwritten prescription.
  */
-import { scoreRxCandidate } from "../rxLexicon";
 import { segmentLines } from "./lineSegments";
 
 type WorkerOut =
   | { type: "progress"; progress: number }
   | { type: "ready" }
-  | { type: "result"; texts: string[] }
+  | { type: "result"; text: string }
   | { type: "error"; message: string };
 
 let worker: Worker | null = null;
@@ -71,16 +70,7 @@ function recognizeLine(canvas: HTMLCanvasElement): Promise<string> {
       const msg = event.data;
       if (msg.type === "result") {
         active.removeEventListener("message", onMessage);
-        // The model's own top candidate is not reliably the right one for drug
-        // names, so pick the reading the formulary likes best.
-        const best = msg.texts.reduce<{ text: string; score: number }>(
-          (acc, t) => {
-            const score = scoreRxCandidate(t);
-            return score > acc.score ? { text: t, score } : acc;
-          },
-          { text: "", score: -Infinity },
-        );
-        resolve(best.text);
+        resolve(msg.text);
       } else if (msg.type === "error") {
         active.removeEventListener("message", onMessage);
         reject(new Error(msg.message));
