@@ -495,7 +495,6 @@ async function scaleImage(file: File): Promise<HTMLCanvasElement> {
 
 async function recognizeWithMode(
   worker: TessWorker,
-  PSM: TessPSM,
   source: HTMLCanvasElement | File,
   mode: TessPSM[keyof TessPSM],
 ): Promise<string> {
@@ -514,14 +513,14 @@ async function recognizeBest(
   source: HTMLCanvasElement | File,
   onProgress?: (pct: number) => void,
 ): Promise<string> {
-  const auto = await recognizeWithMode(worker, PSM, source, PSM.AUTO);
+  const auto = await recognizeWithMode(worker, source, PSM.AUTO);
   if (textScore(auto) >= 12) return auto;
   onProgress?.(55);
-  const block = await recognizeWithMode(worker, PSM, source, PSM.SINGLE_BLOCK);
+  const block = await recognizeWithMode(worker, source, PSM.SINGLE_BLOCK);
   let best = textScore(block) > textScore(auto) ? block : auto;
   if (textScore(best) >= 8) return best;
   onProgress?.(75);
-  const sparse = await recognizeWithMode(worker, PSM, source, PSM.SPARSE_TEXT);
+  const sparse = await recognizeWithMode(worker, source, PSM.SPARSE_TEXT);
   return textScore(sparse) > textScore(best) ? sparse : best;
 }
 
