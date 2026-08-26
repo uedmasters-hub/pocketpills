@@ -114,83 +114,11 @@ function cropBand(source: HTMLCanvasElement, band: Range): HTMLCanvasElement | n
 }
 
 /**
- * Column ink spans inside one row band.
- *
- * South Asian prescriptions are routinely two-column — vitals ("BP: 130/90")
- * on the left, the Rx list on the right, sharing the same rows. A pure
- * horizontal projection glues those into one very wide, mostly-empty crop that
- * TrOCR reads badly. Splitting each band at wide vertical whitespace gaps
- * recovers the columns without needing layout analysis.
+ * Segment a (preferably contrast-stretched) canvas into line-band crops.
+ * Falls back to a single whole-image band when projection finds nothing,
+ * so the caller always gets at least one thing to recognise.
  */
-function columnSpans(
-  data: Uint8ClampedArray,
-  width: number,
-  band: Range,
-): Range[] {
-  const ink = new Array<number>(width).fill(0);
-  for (let y = band.start; y < band.end; y++) {
-    const rowStart = y * width * 4;
-    for (let x = 0; x < width; x++) {
-      const i = rowStart + x * 4;
-      const luma = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-      if (luma < INK_LUMA) ink[x]++;
-    }
-  }
-  // A gap must be a real column break, not inter-word spacing.
-  const gapLimit = Math.max(24, Math.round(width * 0.045));
-  const minSpan = Math.max(16, Math.round(width * 0.02));
-
-  const spans: Range[] = [];
-  let start = -1;
-  let gap = 0;
-  for (let x = 0; x < width; x++) {
-    if (ink[x] > 0) {
-      if (start === -1) start = x;
-      gap = 0;
-    } else if (start !== -1) {
-      gap++;
-      if (gap >= gapLimit) {
-        spans.push({ start, end: x - gap + 1 });
-        start = -1;
-        gap = 0;
-      }
-    }
-  }
-  if (start !== -1) spans.push({ start, end: width });
-  return spans.filter((s) => s.end - s.start >= minSpan);
-}
-
-/** Crop one band restricted to a column span, padded and upscaled. */
-function cropCell(source: HTMLCanvasElement, band: Range, col: Range): HTMLCanvasElement | null {
-  const rawH = band.end - band.start;
-  const scale = Math.min(MAX_LINE_H / rawH, Math.max(1, TARGET_LINE_H / rawH));
-  const top = Math.max(0, band.start - PAD_Y);
-  const bottom = Math.min(source.height, band.end + PAD_Y);
-  const bandH = bottom - top;
-  const left = Math.max(0, col.start - PAD_X);
-  const right = Math.min(source.width, col.end + PAD_X);
-  const cellW = right - left;
-  if (cellW <= 0 || bandH <= 0) return null;
-
-  const out = document.createElement("canvas");
-  out.width = Math.round(cellW * scale);
-  out.height = Math.round(bandH * scale);
-  const ctx = out.getContext("2d");
-  if (!ctx) return null;
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, out.width, out.height);
-  ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(source, left, top, cellW, bandH, 0, 0, out.width, out.height);
-  return out;
-}
-
-/**
- * Segment a (preferably contrast-stretched) canvas into line-band crops,
- * splitting each band into columns where the layout warrants it. Falls back to
- * a single whole-image band when projection finds nothing, so the caller
- * always gets at least one thing to recognise.
- */
-export function segmentLines(source: HTMLCanvasElement, maxLines = 40): LineBand[] {
+export function segmentLines(source: HTMLCanvasElement, maxLines = 24): LineBand[] {
   const ctx = source.getContext("2d");
   if (!ctx) return [];
   const { data } = ctx.getImageData(0, 0, source.width, source.height);
@@ -198,21 +126,9 @@ export function segmentLines(source: HTMLCanvasElement, maxLines = 40): LineBand
   const ranges = bandsFromProfile(profile, source.width);
 
   const bands: LineBand[] = [];
-  for (const range of ranges) {
-    if (bands.length >= maxLines) break;
-    const spans = columnSpans(data, source.width, range);
-    if (spans.length <= 1) {
-      const canvas = spans.length === 1
-        ? cropCell(source, range, spans[0])
-        : cropBand(source, range);
-      if (canvas) bands.push({ canvas, top: range.start, height: range.end - range.start });
-      continue;
-    }
-    for (const span of spans) {
-      if (bands.length >= maxLines) break;
-      const canvas = cropCell(source, range, span);
-      if (canvas) bands.push({ canvas, top: range.start, height: range.end - range.start });
-    }
+  for (const range of ranges.slice(0, maxLines)) {
+    const canvas = cropBand(source, range);
+    if (canvas) bands.push({ canvas, top: range.start, height: range.end - range.start });
   }
 
   if (!bands.length) {
