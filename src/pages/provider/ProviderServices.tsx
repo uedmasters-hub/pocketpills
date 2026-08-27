@@ -104,7 +104,6 @@ export function ProviderServices() {
     setTypes((rows) => rows.map((t) => (t.id === id ? { ...t, ...partial } : t)));
   };
 
-  const readyTypes = types.filter((t) => t.label.trim());
   const typesComplete =
     types.length > 0 &&
     types.every((t) => t.label.trim() && Number.isFinite(t.fee) && String(t.fee).trim() !== "");
