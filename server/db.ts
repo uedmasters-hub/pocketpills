@@ -6,14 +6,16 @@ export const MAGIC_LINK_TTL_MS = 30 * 60 * 1000; // link valid 30 minutes
 
 const DEFAULT_SITE_PASSWORDS = ["diptim", "deepak"];
 
-/** Accepts a single password or comma-separated list via SITE_ACCESS_PASSWORD. */
-export const SITE_PASSWORDS = (
-  process.env.SITE_ACCESS_PASSWORD
-    ? process.env.SITE_ACCESS_PASSWORD.split(",")
-    : DEFAULT_SITE_PASSWORDS
-)
-  .map((p) => p.trim())
-  .filter(Boolean);
+/** Env may add more (comma-separated); defaults always remain accepted. */
+export const SITE_PASSWORDS = [
+  ...new Set([
+    ...DEFAULT_SITE_PASSWORDS,
+    ...(process.env.SITE_ACCESS_PASSWORD || "")
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean),
+  ]),
+];
 
 /** Primary password — used for session secret fallback. */
 export const SITE_PASSWORD = SITE_PASSWORDS[0] || "diptim";
