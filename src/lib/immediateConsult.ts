@@ -36,6 +36,7 @@ export interface ConsultRequest {
   fee: number;
   status: ConsultRequestStatus;
   rxNote?: string;
+  reportId?: string;
   createdAt: string;
   issuedAt?: string;
 }
@@ -170,6 +171,7 @@ export function createConsultRequest(input: {
   qty: number;
   patientName: string;
   items?: ConsultMedLine[];
+  reportId?: string;
 }): ConsultRequest {
   const n = Math.floor(1000 + Math.random() * 9000);
   const req: ConsultRequest = {
@@ -185,6 +187,7 @@ export function createConsultRequest(input: {
     fee: input.consultant.fee,
     status: "in_consult",
     createdAt: new Date().toISOString(),
+    reportId: input.reportId,
   };
   writeJson(REQUESTS_KEY, [req, ...listConsultRequests()]);
   return req;

@@ -12,7 +12,7 @@ import {
 import { useRightRail } from "@/lib/rightRail";
 import { useDismiss } from "@/lib/useDismiss";
 import { ChromeVisibilityProvider, useChromeHidden } from "@/lib/chromeVisibility";
-import { useColumnHover, useShellColumn } from "@/lib/columnHover";
+import { useColumnHover, useShellColumn, isCheckoutPath } from "@/lib/columnHover";
 import { StickyChrome } from "@/components/layout/StickyChrome";
 import { FRAME, SURFACE } from "@/components/layout/Grid";
 import { useI18n } from "@/lib/i18n";
@@ -240,21 +240,15 @@ function AppShellBody({ children }: { children: ReactNode }) {
   const chromeHidden = useChromeHidden();
   const { review } = useRightRail();
   const isMedOrder =
-    /^\/drug\/[^/]+\/order/.test(pathname) ||
-    pathname === "/drug/draft/order" ||
-    /^\/drug\/draft\/[^/]+\/order/.test(pathname);
+    /^\/drug\/[^/]+\/order/.test(pathname) || pathname === "/drug/order";
   const splitJourney = isMedOrder;
   const focusedFlow = isFocusedPatientFlow(pathname) || splitJourney;
   /* PDP / focused browse pages own a sticky right column — Activity would collide. */
   const isDrugDetail =
-    (/^\/drug\/[^/]+$/.test(pathname) && pathname !== "/drug/draft") ||
-    (/^\/drug\/draft\/[^/]+$/.test(pathname) &&
-      pathname !== "/drug/draft/basket" &&
-      pathname !== "/drug/draft/consult" &&
-      pathname !== "/drug/draft/order");
-  const isDrugConsult =
-    pathname.startsWith("/drug/draft/consult") || /^\/drug\/draft\/[^/]+\/consult/.test(pathname);
-  const isDrugBasket = pathname === "/drug/draft/basket";
+    /^\/drug\/[^/]+$/.test(pathname) &&
+    pathname !== "/drug/consult" &&
+    pathname !== "/drug/order";
+  const isDrugConsult = pathname.startsWith("/drug/consult");
   /* Order detail pages only — list keeps Activity rail. */
   const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname);
   const isPharmacies = pathname === "/pharmacies" || pathname.startsWith("/pharmacies/");
@@ -264,7 +258,6 @@ function AppShellBody({ children }: { children: ReactNode }) {
   const hideActivityRail =
     isDrugDetail ||
     isDrugConsult ||
-    isDrugBasket ||
     isOrderDetail ||
     isPharmacies ||
     isDoctors ||
@@ -277,7 +270,8 @@ function AppShellBody({ children }: { children: ReactNode }) {
   const mainCol = useShellColumn("main");
   /* Pages that own a sticky third column — keep this wrapper at full opacity
      so sticky on that rail isn’t broken by ancestor fade. */
-  const ownsPageColumns = isAppointments || isDrugDetail || isDrugConsult || isDrugBasket || isOrderDetail;
+  const ownsPageColumns = isAppointments || isDrugDetail || isDrugConsult || isOrderDetail;
+  const checkout = isCheckoutPath(pathname);
   const mainWrapClass = ownsPageColumns ? "" : mainCol.className;
 
   /**
@@ -318,7 +312,7 @@ function AppShellBody({ children }: { children: ReactNode }) {
 
           <div
             className={"flex min-w-0 w-full flex-1 flex-col gap-8 " + mainWrapClass}
-            onMouseEnter={mainCol.onMouseEnter}
+            onMouseEnter={checkout ? undefined : mainCol.onMouseEnter}
           >
             {showActivity && (review ? <MobileReview /> : <MobileActivity />)}
             <main id="main" key={pathname} tabIndex={-1} className="w-full min-w-0 animate-fade-up">

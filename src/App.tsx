@@ -19,6 +19,7 @@ import { DesignDocPage, DesignHomeRedirect } from "@/pages/design/DesignDocPage"
 import { SignUp, Login, RequireAuth } from "@/pages/auth/Auth";
 import { ProviderLogin, ProviderSignUp, RequireProvider } from "@/pages/provider/ProviderAuth";
 import { ProviderDashboard } from "@/pages/provider/ProviderDashboard";
+import { ProviderHospitalDayDraft, ProviderDraftApptRedirect } from "@/pages/provider/ProviderHospitalDayDraft";
 import { ProviderRequests } from "@/pages/provider/ProviderRequests";
 import { ProviderCustomers } from "@/pages/provider/ProviderCustomers";
 import { ProviderRevenue } from "@/pages/provider/ProviderRevenue";
@@ -38,6 +39,7 @@ import { ProviderShifts } from "@/pages/provider/ProviderShifts";
 import { ProviderRuns } from "@/pages/provider/ProviderRuns";
 import { ProviderSchedule } from "@/pages/provider/ProviderSchedule";
 import { ProviderPatients } from "@/pages/provider/ProviderPatients";
+import { ProviderCancellationPage } from "@/pages/provider/ProviderCancellationPage";
 import { ProviderTests } from "@/pages/provider/ProviderTests";
 import { ProviderCollections } from "@/pages/provider/ProviderCollections";
 import { ProviderAvailability } from "@/pages/provider/ProviderAvailability";
@@ -73,13 +75,10 @@ import { FillPrescription } from "@/pages/entry/FillPrescription";
 import { TransferPrescription } from "@/pages/entry/TransferPrescription";
 import { DeliveryCheck } from "@/pages/entry/DeliveryCheck";
 import { MedicationsIndex } from "@/pages/drug/MedicationsIndex";
-import { MedicationsIndexDraft } from "@/pages/drug/MedicationsIndexDraft";
 import { DrugDetail } from "@/pages/drug/DrugDetail";
-import { DrugDetailDraft } from "@/pages/drug/DrugDetailDraft";
 import { MedicationConsultDraft } from "@/pages/drug/MedicationConsultDraft";
 import { MedicationConsultBookDraft } from "@/pages/drug/MedicationConsultBookDraft";
 import { MedicationOrderDraft } from "@/pages/drug/MedicationOrderDraft";
-import { MedicationBasketDraft } from "@/pages/drug/MedicationBasketDraft";
 import { MedicationOrder } from "@/pages/drug/MedicationOrder";
 import { Offers } from "@/pages/Offers";
 import { PharmaciesIndex, PharmaciesByRegion } from "@/pages/PharmaciesByRegion";
@@ -99,10 +98,12 @@ import { AssistantDetail } from "@/pages/appointments/AssistantDetail";
 import { BookAssistant } from "@/pages/appointments/BookAssistant";
 import { ServiceDetail } from "@/pages/appointments/ServiceDetail";
 import { TreatmentHubDetail } from "@/pages/appointments/TreatmentHubDetail";
+import { TreatmentBookPage } from "@/pages/appointments/TreatmentBookPage";
 import { CareJourneyPage } from "@/pages/care/CareJourneyPage";
 import { DoctorDirectory } from "@/pages/doctors/DoctorDirectory";
 import { ClaimDoctor } from "@/pages/doctors/ClaimDoctor";
 import { DoctorPublic } from "@/pages/doctors/DoctorPublic";
+import { DoctorPublicDraft } from "@/pages/doctors/DoctorPublicDraft";
 import { PharmacyDirectory } from "@/pages/pharmacies/PharmacyDirectory";
 import { ClaimPharmacy } from "@/pages/pharmacies/ClaimPharmacy";
 import { PharmacyPublic } from "@/pages/pharmacies/PharmacyPublic";
@@ -167,6 +168,14 @@ function BookDraftRedirect() {
   return <Navigate to={qs ? `/appointments/book?${qs}` : "/appointments/book"} replace />;
 }
 
+/** Old /drug/draft URLs now serve the live shop. */
+function DrugDraftRedirect() {
+  const { pathname, search, hash } = useLocation();
+  const rest = pathname.replace(/^\/drug\/draft\/?/, "");
+  const next = !rest || rest === "basket" ? "/drug" : `/drug/${rest}`;
+  return <Navigate to={`${next}${search}${hash}`} replace />;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -203,6 +212,7 @@ export default function App() {
             <Route path="/questions" element={<Questions />} />
             <Route path="/doctors" element={<DoctorDirectory />} />
             <Route path="/doctors/claim" element={<ClaimDoctor />} />
+            <Route path="/doctors/draft/:nmcNumber" element={<DoctorPublicDraft />} />
             <Route path="/doctors/:nmcNumber" element={<DoctorPublic />} />
             <Route path="/pharmacies" element={<PharmacyDirectory />} />
             <Route path="/pharmacies/claim" element={<ClaimPharmacy />} />
@@ -217,12 +227,11 @@ export default function App() {
           {/* Treatment + Pharmacy — guests: marketing; signed-in: AppShell */}
           <Route element={<DualBrowseLayout />}>
             <Route path="/drug" element={<MedicationsIndex />} />
-            <Route path="/drug/draft" element={<MedicationsIndexDraft />} />
-            <Route path="/drug/draft/basket" element={<MedicationBasketDraft />} />
-            <Route path="/drug/draft/consult/:consultantId" element={<MedicationConsultBookDraft />} />
-            <Route path="/drug/draft/consult" element={<MedicationConsultDraft />} />
-            <Route path="/drug/draft/order" element={<MedicationOrderDraft />} />
-            <Route path="/drug/draft/:slug" element={<DrugDetailDraft />} />
+            <Route path="/drug/consult/:consultantId" element={<MedicationConsultBookDraft />} />
+            <Route path="/drug/consult" element={<MedicationConsultDraft />} />
+            <Route path="/drug/order" element={<MedicationOrderDraft />} />
+            <Route path="/drug/draft" element={<DrugDraftRedirect />} />
+            <Route path="/drug/draft/*" element={<DrugDraftRedirect />} />
             <Route path="/drug/:slug" element={<DrugDetail />} />
             <Route path="/find-care" element={<Navigate to="/appointments" replace />} />
             <Route path="/treatment/:slug" element={<TreatmentRedirect />} />
@@ -255,10 +264,16 @@ export default function App() {
             }
           >
             <Route path="/provider" element={<ProviderDashboard />} />
+            <Route path="/provider/draft" element={<Navigate to="/provider" replace />} />
+            <Route path="/provider/draft/patients" element={<Navigate to="/provider/patients" replace />} />
+            <Route path="/provider/draft/appointments/:date" element={<ProviderDraftApptRedirect />} />
+            <Route path="/provider/draft/appointments" element={<Navigate to="/provider/schedule" replace />} />
             <Route path="/provider/requests/draft" element={<ProviderImmediateConsultDraft />} />
             <Route path="/provider/requests" element={<ProviderRequests />} />
             <Route path="/provider/customers" element={<ProviderCustomers />} />
             <Route path="/provider/patients" element={<ProviderPatients />} />
+            <Route path="/provider/cancellations/:patientId" element={<ProviderCancellationPage />} />
+            <Route path="/provider/cancellations" element={<ProviderCancellationPage />} />
             <Route path="/provider/finance" element={<ProviderFinance />} />
             <Route path="/provider/revenue" element={<ProviderRevenue />} />
             <Route path="/provider/chat" element={<ProviderChat />} />
@@ -270,6 +285,7 @@ export default function App() {
             <Route path="/provider/team" element={<ProviderDoctors />} />
             <Route path="/provider/services" element={<ProviderServices />} />
             <Route path="/provider/monitor" element={<ProviderMonitor />} />
+            <Route path="/provider/schedule/:date" element={<ProviderHospitalDayDraft />} />
             <Route path="/provider/schedule" element={<ProviderSchedule />} />
             <Route path="/provider/tests" element={<ProviderTests />} />
             <Route path="/provider/collections" element={<ProviderCollections />} />
@@ -313,6 +329,7 @@ export default function App() {
             <Route path="/appointments/provider/:id" element={<ProviderDetail />} />
             <Route path="/appointments/book" element={<BookAppointment />} />
             <Route path="/appointments/book/draft" element={<BookDraftRedirect />} />
+            <Route path="/appointments/treatments/:slug/book" element={<TreatmentBookPage />} />
             <Route path="/appointments/treatments/:slug" element={<TreatmentHubDetail />} />
             <Route path="/appointments/labs/:id" element={<LabDetail />} />
             <Route path="/appointments/labs/:id/book" element={<BookLab />} />

@@ -7,6 +7,7 @@ import { formatFee, type VisitType } from "@/lib/appointments";
 import type { CheckoutContext } from "@/lib/offers";
 import { addCalendarDays, isPastDate, isSlotInPast, monthDayShort, todayIso } from "@/lib/timeSlots";
 import verifiedBadge from "../../../icons/verified badge.svg";
+import { ReportThumb } from "@/components/records/ReportThumb";
 
 const NOTES_MAX = 400;
 const LIST_CAP = 8;
@@ -23,6 +24,7 @@ export type ReviewReport = {
   title: string;
   detail: string;
   source: "library" | "upload" | "lab";
+  previewSrc?: string;
 };
 
 export type ReviewFinding = {
@@ -59,6 +61,8 @@ export function BookingReviewSidebar({
   feeLabel,
   visitKindLabel,
   slotLabel: slotLabelProp,
+  confirmLabel,
+  lede,
 }: {
   doctorName: string;
   doctorImage: string;
@@ -88,6 +92,8 @@ export function BookingReviewSidebar({
   feeLabel?: string;
   visitKindLabel?: string;
   slotLabel?: string;
+  confirmLabel?: string;
+  lede?: string;
 }) {
   const { tx } = useI18n();
   const quote = quoteKind === "service" ? serviceQuote(fee) : consultQuote(fee);
@@ -118,7 +124,7 @@ export function BookingReviewSidebar({
             <h2 className="font-display text-xl font-medium text-[color:var(--pp-primary-950)]">
               {tx("Your visit")}
             </h2>
-            <p className="mt-1 text-sm text-ink-tertiary">{tx("Confirm, then send the request.")}</p>
+            <p className="mt-1 text-sm text-ink-tertiary">{lede ? tx(lede) : tx("Confirm, then send the request.")}</p>
           </div>
           {visitKind ? (
             <span className="shrink-0 rounded-full bg-[color:var(--pp-primary-100)] px-2.5 py-1 text-2xs font-semibold text-[color:var(--pp-primary-950)]">
@@ -183,7 +189,7 @@ export function BookingReviewSidebar({
         <div className="border-t border-line">
           <AttachAccordion title={tx("Reports")} count={reports.length}>
             {reports.slice(0, LIST_CAP).map((r, i) => (
-              <AttachRow key={r.id} index={i + 1} title={r.title} onRemove={() => onRemoveReport(r.id)} />
+              <AttachRow key={r.id} index={i + 1} title={r.title} previewSrc={r.previewSrc} onRemove={() => onRemoveReport(r.id)} />
             ))}
             {reports.length > LIST_CAP ? (
               <li className="px-5 py-1.5 text-2xs text-ink-tertiary">
@@ -229,7 +235,7 @@ export function BookingReviewSidebar({
             disabled={!canConfirm}
             title={canConfirm ? undefined : confirmHint || undefined}
           >
-            {tx("Pay & send request")}
+            {tx(confirmLabel || "Pay & send request")}
           </Button>
           {canConfirm ? null : <p className="mt-2 text-center text-xs text-ink-tertiary">{confirmHint}</p>}
         </div>
@@ -460,11 +466,12 @@ function AttachAccordion({
   );
 }
 
-function AttachRow({ index, title, onRemove }: { index: number; title: string; onRemove: () => void }) {
+function AttachRow({ index, title, previewSrc, onRemove }: { index: number; title: string; previewSrc?: string; onRemove: () => void }) {
   const { tx } = useI18n();
   return (
     <li className="flex items-center gap-2 px-5 py-1.5">
       <span className="w-4 shrink-0 text-xs text-ink-tertiary tnum">{index}.</span>
+      <ReportThumb src={previewSrc} className="h-8 w-10" />
       <span className="min-w-0 flex-1 truncate text-sm text-[color:var(--pp-primary-950)]">{title}</span>
       <button
         type="button"

@@ -4,6 +4,7 @@ import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Button } from "@/components/ui/Button";
 import { Caret } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
+import { useDismiss } from "@/lib/useDismiss";
 import { useColumnHoverRow, useShellColumn } from "@/lib/columnHover";
 import { useProvider, type ProviderAccount } from "@/lib/providerAuth";
 import {
@@ -93,9 +94,18 @@ export function ProviderShell({ children }: { children?: ReactNode }) {
   const enabledLabels =
     liveFeatures && portal ? flattenNav(portal.nav).map((n) => n.label).join(", ") : null;
 
-  const canSwitch =
+  const canSwitch = Boolean(
     provider &&
-    !(provider.vendorType === "ambulance" && provider.ambulanceRole === "driver");
+      (isDelegate ||
+        !(provider.vendorType === "ambulance" && provider.ambulanceRole === "driver")),
+  );
+  const roleHint = isDelegate
+    ? tx("Delegate")
+    : provider?.vendorType === "ambulance" && provider.ambulanceRole === "driver"
+      ? tx("Driver")
+      : provider?.vendorType === "ambulance"
+        ? tx("Owner")
+        : null;
 
   return (
     <div className="min-h-screen bg-surface-0">
@@ -111,31 +121,18 @@ export function ProviderShell({ children }: { children?: ReactNode }) {
               {headerName}
             </p>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
-            <span className="hidden max-w-[10rem] truncate text-sm text-ink-tertiary lg:inline">
-              {displayName}
-            </span>
-            {canSwitch ? (
-              <button
-                type="button"
-                onClick={() => setSwitchOpen(true)}
-                className="rounded-full border border-line bg-white px-3.5 py-2 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]"
-              >
-                {tx("Switch account")}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => {
-                clearStashedOwner();
-                logOut();
-                nav("/provider/login");
-              }}
-              className="rounded-full px-4 py-2 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]"
-            >
-              {tx("Log out")}
-            </button>
-          </div>
+          <ProviderProfileMenu
+            displayName={displayName}
+            portalLabel={portal ? tx(portal.label) : tx("Provider")}
+            roleHint={roleHint}
+            canSwitch={canSwitch}
+            onSwitch={() => setSwitchOpen(true)}
+            onLogOut={() => {
+              clearStashedOwner();
+              logOut();
+              nav("/provider/login");
+            }}
+          />
         </div>
       </header>
 
@@ -505,6 +502,104 @@ function SwitchAccountModal({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+const MENU_ITEM =
+  "flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-[color:var(--pp-primary-950)] transition-colors hover:bg-[color:var(--state-hover)]";
+
+function providerInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "P";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function ProviderProfileMenu({
+  displayName,
+  portalLabel,
+  roleHint,
+  canSwitch,
+  onSwitch,
+  onLogOut,
+}: {
+  displayName: string;
+  portalLabel: string;
+  roleHint: string | null;
+  canSwitch: boolean;
+  onSwitch: () => void;
+  onLogOut: () => void;
+}) {
+  const { tx } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useDismiss<HTMLDivElement>(open, () => setOpen(false));
+  const menuId = "provider-profile-menu";
+  const initials = providerInitials(displayName);
+  const subtitle = [portalLabel, roleHint].filter(Boolean).join(" · ");
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-full border border-line bg-white py-1.5 pl-1.5 pr-3.5 text-sm font-medium text-[color:var(--pp-primary-950)] hover:bg-[color:var(--state-hover)]"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-controls={open ? menuId : undefined}
+        aria-label={tx("Account menu for {name}").replace("{name}", displayName)}
+      >
+        <span
+          className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--pp-primary-950)] text-2xs font-semibold text-white"
+          aria-hidden
+        >
+          {initials}
+        </span>
+        <span className="hidden max-w-[10rem] truncate sm:inline">{displayName}</span>
+        <Caret size={16} className="opacity-70" />
+      </button>
+
+      {open ? (
+        <div
+          id={menuId}
+          className="absolute right-0 z-40 mt-2 w-[16rem]"
+          role="menu"
+          aria-label={tx("Account")}
+        >
+          <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-[0_12px_32px_rgba(24,7,48,0.12)]">
+            <div className="border-b border-line px-4 py-3">
+              <p className="truncate text-sm font-medium text-[color:var(--pp-primary-950)]">{displayName}</p>
+              <p className="mt-0.5 truncate text-2xs text-ink-tertiary">{subtitle}</p>
+            </div>
+            <div className="py-1.5">
+              {canSwitch ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={MENU_ITEM}
+                  onClick={() => {
+                    setOpen(false);
+                    onSwitch();
+                  }}
+                >
+                  {tx("Switch account")}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                role="menuitem"
+                className={MENU_ITEM}
+                onClick={() => {
+                  setOpen(false);
+                  onLogOut();
+                }}
+              >
+                {tx("Log out")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

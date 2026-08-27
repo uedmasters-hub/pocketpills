@@ -6,7 +6,7 @@ import type {
 } from "react";
 
 export { Modal, ConfirmModal } from "./Modal";
-export { Tooltip } from "./Tooltip";
+export { Tooltip, TooltipBubble } from "./Tooltip";
 export { PhoneField } from "@/components/PhoneField";
 export { DateOfBirthField } from "@/components/DateOfBirthField";
 export { TagSuggestField } from "@/components/TagSuggestField";

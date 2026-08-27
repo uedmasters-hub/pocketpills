@@ -4,13 +4,16 @@ import { DetailSection } from "@/components/DetailSection";
 import { Button } from "@/components/ui/Button";
 import { Badge, Card, Field, Switch } from "@/components/ui";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { Tooltip } from "@/components/ui/Tooltip";
+import { Tooltip, TooltipBubble } from "@/components/ui/Tooltip";
 import { RatingStars, ReviewCountChip } from "@/components/reviews/RatingChip";
 import { Skeleton, SkeletonText } from "@/components/ui/Skeleton";
 import { DateOfBirthField } from "@/components/DateOfBirthField";
 import { PhoneField } from "@/components/PhoneField";
 import { TagSuggestField } from "@/components/TagSuggestField";
 import { DistrictField } from "@/components/DistrictField";
+import { DoctorProfileIntro, doctorHeroUsps } from "@/components/doctor/DoctorProfileIntro";
+import { DoctorHighlightsSection } from "@/components/doctor/DoctorDetailExtras";
+import { PROVIDERS } from "@/lib/appointments";
 
 function Panel({ title, children }: { title?: string; children: ReactNode }) {
   return (
@@ -407,6 +410,23 @@ function CardPreview() {
   );
 }
 
+function DoctorProfileIntroPreview() {
+  const doctor = PROVIDERS.find((p) => p.kind === "doctor") ?? PROVIDERS[0];
+  return (
+    <Panel title="Doctor profile intro">
+      <DoctorProfileIntro
+        eyebrow="Doctor"
+        name={doctor.name}
+        subtitle={doctor.subtitle}
+        imageUrl={doctor.imageUrl}
+        usps={doctorHeroUsps((s) => s)}
+        extraBadges={<DoctorHighlightsSection provider={doctor} facilities={[]} embedded />}
+        about={doctor.about || doctor.bio}
+      />
+    </Panel>
+  );
+}
+
 function ModalPreview() {
   const [open, setOpen] = useState(false);
   return (
@@ -429,14 +449,23 @@ function ModalPreview() {
 function TooltipPreview() {
   return (
     <Panel title="Tooltip">
-      <Tooltip label="Apply this day’s hours to the rest of the month.">
-        <span className="inline-flex cursor-default items-center gap-2 rounded-full border border-line bg-white px-3 py-2 text-sm">
-          Select for month
-          <span className="grid h-4 w-4 place-items-center rounded-full bg-[color:var(--pp-primary-200)] text-[0.65rem] font-semibold">
-            i
-          </span>
-        </span>
-      </Tooltip>
+      <div className="flex flex-col items-start gap-8">
+        <div>
+          <p className="mb-3 text-2xs text-ink-tertiary">Chrome</p>
+          <TooltipBubble dot>Completed 75 of 87</TooltipBubble>
+        </div>
+        <div>
+          <p className="mb-3 text-2xs text-ink-tertiary">Hover / focus</p>
+          <Tooltip label="Apply this day’s hours to the rest of the month.">
+            <span className="inline-flex cursor-default items-center gap-2 rounded-full border border-line bg-white px-3 py-2 text-sm">
+              Select for month
+              <span className="grid h-4 w-4 place-items-center rounded-full bg-[color:var(--pp-primary-200)] text-[0.65rem] font-semibold">
+                i
+              </span>
+            </span>
+          </Tooltip>
+        </div>
+      </div>
     </Panel>
   );
 }
@@ -593,6 +622,7 @@ export function DesignPagePreview({
     if (slug === "phone") return <PhonePreview />;
     if (slug === "date-of-birth") return <DobPreview />;
     if (slug === "card") return <CardPreview />;
+    if (slug === "doctor-profile") return <DoctorProfileIntroPreview />;
     if (slug === "modal") return <ModalPreview />;
     if (slug === "tooltip") return <TooltipPreview />;
     if (slug === "availability") return <AvailabilityPreview />;

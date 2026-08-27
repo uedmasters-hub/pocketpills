@@ -199,7 +199,11 @@ export async function handleDesignSystem(req: DesignSystemRequest): Promise<{ st
       const preferSeedDocs =
         seed &&
         ((section === "components" &&
-          (slug === "phone" || slug === "date-of-birth" || slug === "field" || slug === "selection")) ||
+          (slug === "phone" ||
+            slug === "date-of-birth" ||
+            slug === "field" ||
+            slug === "selection" ||
+            slug === "doctor-profile")) ||
           (section === "patterns" && slug === "forms"));
       if (!page && seed) {
         page = {

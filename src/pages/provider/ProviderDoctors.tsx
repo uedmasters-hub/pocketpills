@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { formatFee } from "@/lib/appointments";
 import { useShellColumn } from "@/lib/columnHover";
@@ -15,6 +16,7 @@ import {
   type StaffMember,
 } from "@/lib/hospitalStaff";
 import { useProvider } from "@/lib/providerAuth";
+import { portalFor } from "@/lib/providerPortals";
 import { WeeklySlotEditor } from "@/components/WeeklySlotEditor";
 import { PhoneField } from "@/components/PhoneField";
 
@@ -39,9 +41,8 @@ export function ProviderDoctors() {
 
   const isClinic = provider?.vendorType === "clinic";
   const title = isClinic ? tx("Team") : tx("Doctors");
-  const blurb = isClinic
-    ? tx("Build complete clinician profiles so patients trust your clinic.")
-    : tx("Rich doctor profiles — licences, education, and availability patients can trust.");
+  const portal = provider ? portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole) : null;
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
 
   const openCreate = () => {
     setIsNew(true);
@@ -89,20 +90,16 @@ export function ProviderDoctors() {
 
   return (
     <div>
-      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="pp-caps text-[color:var(--pp-violet)]">{title}</p>
-          <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-            {title}
-          </h1>
-          <p className="mt-2 max-w-xl text-base text-ink-secondary">{blurb}</p>
-        </div>
-        {!draft ? (
-          <Button size="sm" onClick={openCreate}>
-            {tx("Add doctor")}
-          </Button>
-        ) : null}
-      </header>
+      <ProviderBreadcrumb
+        items={[home, { label: title }]}
+        end={
+          !draft ? (
+            <Button size="sm" onClick={openCreate}>
+              {tx("Add doctor")}
+            </Button>
+          ) : null
+        }
+      />
 
       {draft ? (
         <DoctorEditor

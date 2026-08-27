@@ -18,6 +18,9 @@ export type LineBand = {
   /** Top edge of the band in the source canvas (for debugging / ordering). */
   top: number;
   height: number;
+  /** Left edge and width in the source canvas, for highlighting that line. */
+  left: number;
+  width: number;
 };
 
 /** Row is "ink" if its dark-pixel share clears this fraction of the width. */
@@ -158,6 +161,18 @@ function bandsFromProfile(
   return relative ? splitTallBands(kept, profile, offset) : kept;
 }
 
+function sourceRect(
+  source: HTMLCanvasElement,
+  band: Range,
+  col?: Range,
+): { left: number; top: number; width: number; height: number } {
+  const top = Math.max(0, band.start - PAD_Y);
+  const bottom = Math.min(source.height, band.end + PAD_Y);
+  const left = col ? Math.max(0, col.start - PAD_X) : 0;
+  const right = col ? Math.min(source.width, col.end + PAD_X) : source.width;
+  return { left, top, width: Math.max(1, right - left), height: Math.max(1, bottom - top) };
+}
+
 /** Crop one band, pad it, and upscale toward a legible line height. */
 function cropBand(source: HTMLCanvasElement, band: Range): HTMLCanvasElement | null {
   const rawH = band.end - band.start;
@@ -165,13 +180,11 @@ function cropBand(source: HTMLCanvasElement, band: Range): HTMLCanvasElement | n
     MAX_LINE_H / rawH,
     Math.max(1, TARGET_LINE_H / rawH),
   );
-  const top = Math.max(0, band.start - PAD_Y);
-  const bottom = Math.min(source.height, band.end + PAD_Y);
-  const bandH = bottom - top;
+  const rect = sourceRect(source, band);
 
   const out = document.createElement("canvas");
   out.width = Math.round((source.width + PAD_X * 2) * scale);
-  out.height = Math.round(bandH * scale);
+  out.height = Math.round(rect.height * scale);
   const ctx = out.getContext("2d");
   if (!ctx) return null;
   ctx.fillStyle = "#fff";
@@ -180,13 +193,13 @@ function cropBand(source: HTMLCanvasElement, band: Range): HTMLCanvasElement | n
   ctx.drawImage(
     source,
     0,
-    top,
+    rect.top,
     source.width,
-    bandH,
+    rect.height,
     Math.round(PAD_X * scale),
     0,
     Math.round(source.width * scale),
-    Math.round(bandH * scale),
+    Math.round(rect.height * scale),
   );
   return out;
 }
@@ -242,24 +255,35 @@ function columnSpans(
 function cropCell(source: HTMLCanvasElement, band: Range, col: Range): HTMLCanvasElement | null {
   const rawH = band.end - band.start;
   const scale = Math.min(MAX_LINE_H / rawH, Math.max(1, TARGET_LINE_H / rawH));
-  const top = Math.max(0, band.start - PAD_Y);
-  const bottom = Math.min(source.height, band.end + PAD_Y);
-  const bandH = bottom - top;
-  const left = Math.max(0, col.start - PAD_X);
-  const right = Math.min(source.width, col.end + PAD_X);
-  const cellW = right - left;
-  if (cellW <= 0 || bandH <= 0) return null;
+  const rect = sourceRect(source, band, col);
+  if (rect.width <= 0 || rect.height <= 0) return null;
 
   const out = document.createElement("canvas");
-  out.width = Math.round(cellW * scale);
-  out.height = Math.round(bandH * scale);
+  out.width = Math.round(rect.width * scale);
+  out.height = Math.round(rect.height * scale);
   const ctx = out.getContext("2d");
   if (!ctx) return null;
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, out.width, out.height);
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(source, left, top, cellW, bandH, 0, 0, out.width, out.height);
+  ctx.drawImage(source, rect.left, rect.top, rect.width, rect.height, 0, 0, out.width, out.height);
   return out;
+}
+
+function asBand(
+  source: HTMLCanvasElement,
+  canvas: HTMLCanvasElement,
+  band: Range,
+  col?: Range,
+): LineBand {
+  const rect = sourceRect(source, band, col);
+  return {
+    canvas,
+    top: rect.top,
+    height: rect.height,
+    left: rect.left,
+    width: rect.width,
+  };
 }
 
 /**
@@ -288,7 +312,7 @@ export function segmentLines(source: HTMLCanvasElement, maxLines = 40): LineBand
   const push = (band: Range, col: Range) => {
     if (bands.length >= maxLines) return;
     const canvas = cropCell(source, band, col);
-    if (canvas) bands.push({ canvas, top: band.start, height: band.end - band.start });
+    if (canvas) bands.push(asBand(source, canvas, band, col));
   };
 
   for (const band of coarse) {
@@ -296,7 +320,7 @@ export function segmentLines(source: HTMLCanvasElement, maxLines = 40): LineBand
     const spans = columnSpans(data, source.width, band);
     if (!spans.length) {
       const canvas = cropBand(source, band);
-      if (canvas) bands.push({ canvas, top: band.start, height: band.end - band.start });
+      if (canvas) bands.push(asBand(source, canvas, band));
       continue;
     }
     for (const col of spans) {
@@ -318,6 +342,8 @@ export function segmentLines(source: HTMLCanvasElement, maxLines = 40): LineBand
     }
   }
 
-  if (!bands.length) bands.push({ canvas: source, top: 0, height: source.height });
+  if (!bands.length) {
+    bands.push({ canvas: source, top: 0, height: source.height, left: 0, width: source.width });
+  }
   return bands;
 }

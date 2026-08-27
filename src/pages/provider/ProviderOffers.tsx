@@ -2,9 +2,11 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Caret } from "@/components/ui";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { formatFee } from "@/lib/appointments";
 import { useProvider } from "@/lib/providerAuth";
+import { portalFor } from "@/lib/providerPortals";
 import { loadDraftForProvider } from "@/lib/businessProfile";
 import {
   clearInventoryOffer,
@@ -68,6 +70,8 @@ function mergeDeals(named: ProviderDeal[], skus: InventorySku[]): ListedDeal[] {
 export function ProviderOffers() {
   const { tx } = useI18n();
   const { provider, workspaceId } = useProvider();
+  const portal = provider ? portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole) : null;
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
   const orgId = workspaceId;
   const isPharmacy = provider?.vendorType === "pharmacy";
   const [tick, setTick] = useState(0);
@@ -100,15 +104,7 @@ export function ProviderOffers() {
 
   return (
     <div>
-      <header className="mb-8">
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Offers")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {tx("Bundles, deals & codes")}
-        </h1>
-        <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          {tx("Package services at one price, run time-bound deals, and issue promo codes with use limits.")}
-        </p>
-      </header>
+      <ProviderBreadcrumb items={[home, { label: tx("Offers") }]} />
 
       {error ? (
         <p className="mb-4 text-sm font-medium text-red-700" role="alert">

@@ -1,14 +1,7 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type MouseEvent,
-  type ReactNode,
-} from "react";
-import { createPortal } from "react-dom";
+import { type MouseEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
+import { Tooltip } from "@/components/ui/Tooltip";
 import {
   isActiveOrder,
   orderTotals,
@@ -190,43 +183,20 @@ function NoteIcon({ className = "" }: { className?: string }) {
   );
 }
 
-function NoteCue({ detail, tooltipId }: { detail: string; tooltipId: string }) {
+function NoteCue({ detail }: { detail: string }) {
   const { tx } = useI18n();
-  const triggerRef = useRef<HTMLSpanElement>(null);
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number; above: boolean } | null>(null);
-
-  useEffect(() => {
-    if (!open) {
-      setPos(null);
-      return;
-    }
-    const place = () => {
-      const el = triggerRef.current;
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      const above = r.top > 120;
-      setPos({
-        top: above ? r.top - 8 : r.bottom + 8,
-        left: Math.min(Math.max(r.left + r.width / 2, 140), window.innerWidth - 140),
-        above,
-      });
-    };
-    place();
-    window.addEventListener("scroll", place, true);
-    window.addEventListener("resize", place);
-    return () => {
-      window.removeEventListener("scroll", place, true);
-      window.removeEventListener("resize", place);
-    };
-  }, [open]);
-
   return (
-    <span
-      ref={triggerRef}
-      className="inline-flex"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+    <Tooltip
+      variant="panel"
+      label={
+        <span className="block">
+          <span className="flex items-center gap-1.5">
+            <NoteIcon />
+            {tx("Notes")}:
+          </span>
+          <span className="mt-1.5 block font-medium text-[color:var(--pp-primary-950)]/85">{tx(detail)}</span>
+        </span>
+      }
     >
       <span
         className={
@@ -237,29 +207,7 @@ function NoteCue({ detail, tooltipId }: { detail: string; tooltipId: string }) {
       >
         <NoteIcon />
       </span>
-      {open && pos && typeof document !== "undefined"
-        ? createPortal(
-            <div
-              role="tooltip"
-              id={tooltipId}
-              style={{ top: pos.top, left: pos.left }}
-              className={
-                "pointer-events-none fixed z-[90] w-[min(18rem,calc(100vw-1.5rem))] -translate-x-1/2 " +
-                "rounded-2xl border border-line bg-[color:var(--pp-primary-100)] px-3.5 py-3 " +
-                "shadow-[0_10px_28px_rgba(24,7,48,0.12)] " +
-                (pos.above ? "-translate-y-full" : "")
-              }
-            >
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-[color:var(--pp-primary-950)]">
-                <NoteIcon />
-                {tx("Notes")}:
-              </p>
-              <p className="mt-1.5 text-sm leading-snug text-[color:var(--pp-primary-950)]/85">{tx(detail)}</p>
-            </div>,
-            document.body,
-          )
-        : null}
-    </span>
+    </Tooltip>
   );
 }
 
@@ -300,7 +248,6 @@ export function OrderTile({ o }: { o: Order }) {
     o.type === "transfer" && active
       ? TRANSFER_HINTS[Math.min(transferStepIndex(o.status), TRANSFER_HINTS.length - 1)].detail
       : null;
-  const noteId = useId();
   const canReorder = o.status === "delivered" || o.status === "cancelled";
 
   const openOrder = () => nav(`/orders/${o.id}`);
@@ -366,7 +313,7 @@ export function OrderTile({ o }: { o: Order }) {
           <span className={`${PILL} min-w-0 truncate ${statusPillClass(o.status)}`}>
             {tx(statusLabel)}
           </span>
-          {cue ? <NoteCue detail={cue} tooltipId={noteId} /> : null}
+          {cue ? <NoteCue detail={cue} /> : null}
         </div>
         <span className="tnum shrink-0 text-sm text-ink-tertiary">{pct}%</span>
       </div>

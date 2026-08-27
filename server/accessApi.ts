@@ -1,5 +1,5 @@
 import {
-  SITE_PASSWORD,
+  SITE_PASSWORDS,
   ensureSchema,
 } from "./db.js";
 import { issueSession, verifySession } from "./statelessSession.js";
@@ -61,7 +61,7 @@ export async function handleAccess(
     try {
       const body = (req.body || {}) as { password?: string };
       const password = String(body.password ?? "");
-      if (password !== SITE_PASSWORD) {
+      if (!SITE_PASSWORDS.includes(password)) {
         return { status: 401, body: { error: "Incorrect password" } };
       }
       const { sessionToken, expiresAt } = issueSession("password");

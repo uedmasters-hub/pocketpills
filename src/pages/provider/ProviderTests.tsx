@@ -1,26 +1,22 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { loadDraftForProvider } from "@/lib/businessProfile";
 import { useProvider } from "@/lib/providerAuth";
+import { portalFor } from "@/lib/providerPortals";
 
 export function ProviderTests() {
   const { tx } = useI18n();
   const { provider } = useProvider();
+  const portal = provider ? portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole) : null;
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
   const draft = provider ? loadDraftForProvider(provider) : null;
   const caps = draft?.capabilities;
 
   return (
     <div>
-      <header className="mb-8">
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Tests")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {tx("Tests & packages")}
-        </h1>
-        <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          {tx("Controlled by your listing capabilities. Edit the listing to change what patients can book.")}
-        </p>
-      </header>
+      <ProviderBreadcrumb items={[home, { label: tx("Tests & packages") }]} />
 
       <ul className="space-y-3">
         <CapRow on={!!caps?.bloodwork} label={tx("Blood work")} />

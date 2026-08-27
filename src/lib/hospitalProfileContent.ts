@@ -7,6 +7,7 @@ import type { CareProvider } from "@/lib/appointments";
 import { treatments } from "@/lib/data";
 import { getFacilityClaim, hfCodeFromId } from "@/lib/facilityDirectory";
 import { formatVerifiedOn, nmcNumberOf, providerProfileHref } from "@/lib/doctorProfileContent";
+import type { ListingSurface } from "@/lib/listingSurface";
 import type { SpecialisedGroup } from "@/lib/specialisedIn";
 import type { ListingSection } from "@/lib/listingPage";
 import {
@@ -323,8 +324,12 @@ export function mapsEmbedUrl(query: string): string {
   return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&output=embed`;
 }
 
-export function doctorCardHref(doctor: CareProvider, facilityId: string): string {
-  const base = providerProfileHref(doctor);
+export function doctorCardHref(
+  doctor: CareProvider,
+  facilityId: string,
+  surface: ListingSurface = "public",
+): string {
+  const base = providerProfileHref(doctor, surface);
   const sep = base.includes("?") ? "&" : "?";
   return `${base}${sep}facility=${encodeURIComponent(facilityId)}`;
 }

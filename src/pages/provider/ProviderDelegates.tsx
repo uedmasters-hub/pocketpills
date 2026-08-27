@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { useProvider } from "@/lib/providerAuth";
+import { portalFor } from "@/lib/providerPortals";
 import {
   createDelegate,
   defaultDelegateFeatures,
@@ -49,6 +51,8 @@ export function ProviderDelegates() {
   }
 
   const orgId = workspaceId;
+  const portal = portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole);
+  const home = { label: tx(portal.homeTitle || "Home"), to: "/provider" };
   const delegates = listDelegates(orgId);
   const activity = listDelegateActivity(orgId, {
     delegateId: filterDelegateId === "all" ? undefined : filterDelegateId,
@@ -82,17 +86,7 @@ export function ProviderDelegates() {
 
   return (
     <div>
-      <header className="mb-8">
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Delegates")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {tx("Staff delegates")}
-        </h1>
-        <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          {tx(
-            "Create username/password logins and choose which modules they can use. Switch into a delegate from your header when you need to work as staff — password required.",
-          )}
-        </p>
-      </header>
+      <ProviderBreadcrumb items={[home, { label: tx("Delegates") }]} />
 
       <section className="mb-8 rounded-2xl border border-line bg-white p-5">
         <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">

@@ -70,8 +70,10 @@ export function DirectoryHeroCard({
   imageClassName = "object-cover object-[center_28%]",
   badges = [],
   leadingBadges,
+  extraBadges,
   usps = [],
   verified = true,
+  embedded = false,
   enable,
 }: {
   eyebrow: string;
@@ -81,8 +83,11 @@ export function DirectoryHeroCard({
   imageClassName?: string;
   badges?: DirectoryDetailBadge[];
   leadingBadges?: ReactNode;
+  extraBadges?: ReactNode;
   usps?: DirectoryHeroUsp[];
   verified?: boolean;
+  /** Drop the outer card chrome so this can sit inside a larger merged card. */
+  embedded?: boolean;
   enable?: DirectoryHeroEnable;
 }) {
   const { tx } = useI18n();
@@ -91,7 +96,13 @@ export function DirectoryHeroCard({
   const displaySub = enable ? enable.subtitle : subtitle;
   const displayImage = enable?.imageUrl ?? imageUrl;
   return (
-    <header className="min-w-0 overflow-hidden rounded-[1.5rem] border border-line bg-[color:var(--pp-primary-200)] sm:h-[16.5rem]">
+    <header
+      className={
+        embedded
+          ? "min-w-0 overflow-hidden bg-[color:var(--pp-primary-200)] sm:h-[16.5rem]"
+          : "min-w-0 overflow-hidden rounded-[1.5rem] border border-line bg-[color:var(--pp-primary-200)] sm:h-[16.5rem]"
+      }
+    >
       <div className="flex h-full flex-col sm:flex-row sm:items-stretch">
         <div className="flex min-w-0 flex-1 flex-col justify-center px-5 py-5 sm:px-6">
           <div className="min-w-0 text-left">
@@ -130,7 +141,7 @@ export function DirectoryHeroCard({
               <p className="mt-1.5 truncate text-sm text-ink-secondary">{displaySubtitle(displaySub)}</p>
             ) : null}
             {shownUsps.length ? (
-              <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-left">
+              <ul className={"flex flex-wrap items-center gap-x-4 gap-y-1.5 text-left " + (extraBadges ? "mt-2" : "mt-3")}>
                 {shownUsps.map((u) => (
                   <li key={u.label} className="inline-flex items-center gap-1.5 text-sm text-ink-tertiary">
                     <UspIcon />
@@ -139,8 +150,8 @@ export function DirectoryHeroCard({
                 ))}
               </ul>
             ) : null}
-            {(leadingBadges || badges.length > 0) && (
-              <div className="mt-4 flex flex-nowrap items-center gap-4 overflow-x-auto">
+            {(leadingBadges || badges.length > 0 || extraBadges) && (
+              <div className={"flex flex-nowrap items-center gap-2 overflow-x-auto " + (extraBadges ? "mt-2.5" : "mt-4")}>
                 {leadingBadges}
                 {badges.map((b) => (
                   <span
@@ -150,6 +161,7 @@ export function DirectoryHeroCard({
                     {b.label}
                   </span>
                 ))}
+                {extraBadges}
               </div>
             )}
           </div>
@@ -209,6 +221,7 @@ export function DirectoryDetailLayout({
   afterDetails,
   afterReviews,
   afterPage,
+  hero,
 }: {
   backTo: string;
   backLabel: string;
@@ -232,6 +245,8 @@ export function DirectoryDetailLayout({
   afterDetails?: ReactNode;
   afterReviews?: ReactNode;
   afterPage?: ReactNode;
+  /** Replaces the default hero + About. Doctors pass `DoctorProfileIntro` here. */
+  hero?: ReactNode;
 }) {
   const { tx } = useI18n();
   const aboutCopy = about || bio;
@@ -253,16 +268,18 @@ export function DirectoryDetailLayout({
           className={"min-w-0 space-y-5 lg:col-span-3 lg:col-start-1 lg:row-start-1 " + mainCol.className}
           onMouseEnter={mainCol.onMouseEnter}
         >
-          <DirectoryHeroCard
-            eyebrow={eyebrow}
-            name={name}
-            subtitle={subtitle}
-            imageUrl={imageUrl}
-            imageClassName={imageClassName}
-            badges={badges}
-            leadingBadges={leadingBadges}
-            usps={usps}
-          />
+          {hero ?? (
+            <DirectoryHeroCard
+              eyebrow={eyebrow}
+              name={name}
+              subtitle={subtitle}
+              imageUrl={imageUrl}
+              imageClassName={imageClassName}
+              badges={badges}
+              leadingBadges={leadingBadges}
+              usps={usps}
+            />
+          )}
           {afterHero}
         </div>
 
@@ -280,6 +297,7 @@ export function DirectoryDetailLayout({
           className={"min-w-0 space-y-10 lg:col-span-3 lg:col-start-1 lg:row-start-2 " + mainCol.className}
           onMouseEnter={mainCol.onMouseEnter}
         >
+          {hero ? null : (
           <DetailSection title={tx("About")}>
             <p className="text-sm leading-relaxed text-ink-secondary">{aboutCopy}</p>
             {extras.length > 0 && (
@@ -310,6 +328,7 @@ export function DirectoryDetailLayout({
             )}
             {afterAbout}
           </DetailSection>
+          )}
 
           {children ? <div className="space-y-10">{children}</div> : null}
 

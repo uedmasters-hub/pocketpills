@@ -6,6 +6,8 @@ import { DateOfBirthField } from "@/components/DateOfBirthField";
 import { Modal } from "@/components/ui/Modal";
 import { useI18n } from "@/lib/i18n";
 import type { PayMethod, PaymentFields } from "@/components/checkout/ChoosePaymentOption";
+import { ReportThumb } from "@/components/records/ReportThumb";
+import { getPatientFilePreview } from "@/lib/patientRecords";
 
 const UPI_HANDLES = ["@okhdfcbank", "@okicici", "@oksbi", "@paytm", "@ybl"] as const;
 const EMI_OFFERS = [
@@ -245,6 +247,7 @@ export function VisitWhoPanelDraft({
                 key={r.id}
                 title={tx(r.title)}
                 detail={`${tx(r.detail)} · ${r.date}`}
+                previewSrc={getPatientFilePreview(r.id)}
                 checked={attachedIds.includes(r.id)}
                 onToggle={() => onToggleLibrary(r.id)}
               />
@@ -254,6 +257,7 @@ export function VisitWhoPanelDraft({
                 key={a.id}
                 title={a.title}
                 detail={tx(a.detail)}
+                previewSrc={getPatientFilePreview(a.id)}
                 checked={attachedIds.includes(a.id)}
                 onToggle={() => onToggleUpload(a.id)}
                 onDelete={() => onDeleteUpload(a.id)}
@@ -787,12 +791,14 @@ function ShareList({
 function ShareRow({
   title,
   detail,
+  previewSrc,
   checked,
   onToggle,
   onDelete,
 }: {
   title: string;
   detail: string;
+  previewSrc?: string;
   checked: boolean;
   onToggle: () => void;
   onDelete?: () => void;
@@ -813,6 +819,7 @@ function ShareRow({
           >
             {checked ? "✓" : null}
           </span>
+          <ReportThumb src={previewSrc} />
           <span className="min-w-0">
             <span className="block truncate text-sm font-medium text-[color:var(--pp-primary-950)]">{title}</span>
             <span className="block truncate text-2xs text-ink-tertiary">{detail}</span>

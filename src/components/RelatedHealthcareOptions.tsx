@@ -9,7 +9,8 @@ import {
 } from "@/lib/appointments";
 import { DoctorRelatedCard } from "@/components/doctor/DoctorDetailExtras";
 import { listPublishedNmcProviders } from "@/lib/doctorDirectory";
-import { nmcNumberOf, providerProfileHref } from "@/lib/doctorProfileContent";
+import { nmcNumberOf, providerProfileHref, facilityProfileHref, hasPublicListingHref } from "@/lib/doctorProfileContent";
+import { useListingSurface, type ListingSurface } from "@/lib/listingSurface";
 import {
   displayFacilityLevel,
   displayFacilityName,
@@ -81,11 +82,11 @@ function isExcluded(id: string, excludeId?: string, excludeHfCode?: string) {
   return false;
 }
 
-function fromClaim(claim: FacilityClaim, kind: "hospital" | "clinic"): RelatedCardItem {
+function fromClaim(claim: FacilityClaim, kind: "hospital" | "clinic", surface: ListingSurface): RelatedCardItem {
   const level = displayFacilityLevel(claim.facilityLevel) || (kind === "hospital" ? "Hospital" : "Clinic");
   return {
     id: `hf-${claim.hfCode}`,
-    href: `/facilities/${claim.hfCode}`,
+    href: facilityProfileHref(claim.hfCode, surface),
     name: displayFacilityName(claim.name),
     meta: [level, claim.district].filter(Boolean).join(" • "),
     place: claim.district,
@@ -95,11 +96,12 @@ function fromClaim(claim: FacilityClaim, kind: "hospital" | "clinic"): RelatedCa
   };
 }
 
-function fromProvider(provider: CareProvider): RelatedCardItem {
+function fromProvider(provider: CareProvider, surface: ListingSurface): RelatedCardItem | null {
+  if (surface === "public" && !hasPublicListingHref(provider)) return null;
   const hf = provider.id.startsWith("hf-") ? provider.id.replace(/^hf-/, "") : "";
   return {
     id: provider.id,
-    href: providerProfileHref(provider),
+    href: providerProfileHref(provider, surface),
     name: provider.name,
     meta: [kindLabel(provider.kind), provider.city].filter(Boolean).join(" • "),
     place: provider.city,
@@ -112,17 +114,19 @@ function fromProvider(provider: CareProvider): RelatedCardItem {
 function collectFacilities(
   kind: "hospital" | "clinic",
   city: string | undefined,
-  excludeId?: string,
-  excludeHfCode?: string,
+  excludeId: string | undefined,
+  excludeHfCode: string | undefined,
+  surface: ListingSurface,
 ): RelatedCardItem[] {
   const claims = listPublishedFacilityClaims()
     .filter((c) => vendorFromFacilityLevel(c.facilityLevel) === kind)
     .filter((c) => !isExcluded(c.hfCode, excludeId, excludeHfCode))
-    .map((c) => fromClaim(c, kind));
+    .map((c) => fromClaim(c, kind, surface));
   const hub = listProviders()
     .filter((p) => p.kind === kind)
     .filter((p) => !isExcluded(p.id, excludeId, excludeHfCode))
-    .map(fromProvider);
+    .map((p) => fromProvider(p, surface))
+    .filter((row): row is RelatedCardItem => Boolean(row));
   const seen = new Set<string>();
   const merged: RelatedCardItem[] = [];
   for (const row of [...claims, ...hub]) {
@@ -134,9 +138,10 @@ function collectFacilities(
   return pickNearby(merged, city, (row) => row.place, 4);
 }
 
-function collectDoctors(city: string | undefined, excludeId?: string): CareProvider[] {
+function collectDoctors(city: string | undefined, excludeId: string | undefined, surface: ListingSurface): CareProvider[] {
   const rows = listPublishedNmcProviders().filter((d) => !isExcluded(d.id, excludeId));
-  return pickNearby(rows, city, (d) => d.city, 4);
+  const pool = surface === "public" ? rows.filter(hasPublicListingHref) : rows;
+  return pickNearby(pool, city, (d) => d.city, 4);
 }
 
 function RatingBadge({ summary }: { summary?: ReviewSummary }) {
@@ -198,15 +203,16 @@ export function RelatedHealthcareOptions({
   only?: TabId;
 }) {
   const { tx } = useI18n();
+  const surface = useListingSurface();
   const hospitals = useMemo(
-    () => collectFacilities("hospital", city, excludeId, excludeHfCode),
-    [city, excludeId, excludeHfCode],
+    () => collectFacilities("hospital", city, excludeId, excludeHfCode, surface),
+    [city, excludeId, excludeHfCode, surface],
   );
   const clinics = useMemo(
-    () => collectFacilities("clinic", city, excludeId, excludeHfCode),
-    [city, excludeId, excludeHfCode],
+    () => collectFacilities("clinic", city, excludeId, excludeHfCode, surface),
+    [city, excludeId, excludeHfCode, surface],
   );
-  const doctors = useMemo(() => collectDoctors(city, excludeId), [city, excludeId]);
+  const doctors = useMemo(() => collectDoctors(city, excludeId, surface), [city, excludeId, surface]);
 
   const facilityByTab: Record<"hospital" | "clinic", RelatedCardItem[]> = {
     hospital: hospitals,

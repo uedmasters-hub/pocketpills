@@ -1,5 +1,6 @@
 import { DetailSection } from "@/components/DetailSection";
 import { DirectoryHeroCard } from "@/components/DirectoryDetailLayout";
+import { DoctorProfileIntro, doctorHeroUsps } from "@/components/doctor/DoctorProfileIntro";
 import { AvailabilityHoursEditor } from "@/components/AvailabilityHoursEditor";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { ClinicAboutFacts } from "@/components/clinic/ClinicDetailExtras";
@@ -120,13 +121,7 @@ function heroUsps(profile: BusinessProfile, tx: (s: string) => string) {
   if (profile.type === "hospital" || profile.type === "clinic") {
     return FACILITY_HERO_USPS.map((label) => ({ label: tx(label) }));
   }
-  if (profile.type === "doctor") {
-    return [
-      { label: tx("NMC verified") },
-      { label: tx("Digital Prescription") },
-      { label: tx("Free Followup") },
-    ];
-  }
+  if (profile.type === "doctor") return doctorHeroUsps(tx);
   return [];
 }
 
@@ -154,27 +149,44 @@ export function ListingHeroPreview({
   enable?: ListingEnable;
 }) {
   const { tx } = useI18n();
+  const eyebrow = heroEyebrow(profile, tx);
+  const name = profile.name.trim() || tx("Your name");
+  const subtitle = profile.subtitle || profile.bio;
+  const heroEnable = enable
+    ? {
+        name: profile.name,
+        subtitle: profile.subtitle || profile.bio,
+        imageUrl: profile.imageUrl,
+        onChange: (partial: { name?: string; subtitle?: string; imageUrl?: string }) =>
+          enable.onProfile({
+            ...partial,
+            ...(partial.subtitle != null ? { bio: partial.subtitle } : {}),
+          }),
+      }
+    : undefined;
+
+  if (profile.type === "doctor") {
+    return (
+      <DoctorProfileIntro
+        eyebrow={eyebrow}
+        name={name}
+        subtitle={subtitle}
+        imageUrl={profile.imageUrl}
+        usps={heroUsps(profile, tx)}
+        about={profile.about.trim() || profile.bio.trim() || tx("Add a short about for this page.")}
+        enable={heroEnable}
+      />
+    );
+  }
+
   return (
     <DirectoryHeroCard
-      eyebrow={heroEyebrow(profile, tx)}
-      name={profile.name.trim() || tx("Your name")}
-      subtitle={profile.subtitle || profile.bio}
+      eyebrow={eyebrow}
+      name={name}
+      subtitle={subtitle}
       imageUrl={profile.imageUrl}
       usps={heroUsps(profile, tx)}
-      enable={
-        enable
-          ? {
-              name: profile.name,
-              subtitle: profile.subtitle || profile.bio,
-              imageUrl: profile.imageUrl,
-              onChange: (partial) =>
-                enable.onProfile({
-                  ...partial,
-                  ...(partial.subtitle != null ? { bio: partial.subtitle } : {}),
-                }),
-            }
-          : undefined
-      }
+      enable={heroEnable}
     />
   );
 }
@@ -209,7 +221,7 @@ export function ListingSectionPreview({
             placeholder={tx("About this practice")}
             className="text-sm leading-relaxed text-ink-secondary"
           />
-        ) : copy ? (
+        ) : profile.type === "doctor" ? null : copy ? (
           <p className="text-sm leading-relaxed text-ink-secondary">{copy}</p>
         ) : (
           <p className="text-sm text-ink-tertiary">{tx("Add a short about for this page.")}</p>

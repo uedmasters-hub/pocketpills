@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { useProvider } from "@/lib/providerAuth";
+import { portalFor } from "@/lib/providerPortals";
 import { listFleet, saveVehicle, type VehicleStatus } from "@/lib/ambulanceOps";
 
 const FIELD =
@@ -10,6 +12,8 @@ const FIELD =
 export function ProviderFleet() {
   const { tx } = useI18n();
   const { provider } = useProvider();
+  const portal = provider ? portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole) : null;
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
   const orgId = provider?.id ?? "anon";
   const [fleet, setFleet] = useState(() => listFleet(orgId));
   const [callSign, setCallSign] = useState("");
@@ -19,15 +23,7 @@ export function ProviderFleet() {
 
   return (
     <div>
-      <header className="mb-8">
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Fleet")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {tx("Vehicles")}
-        </h1>
-        <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          {tx("Track availability across your ambulance units.")}
-        </p>
-      </header>
+      <ProviderBreadcrumb items={[home, { label: tx("Fleet") }]} />
 
       <section className="mb-8 rounded-2xl border border-line bg-white p-5">
         <h2 className="font-display text-lg font-medium text-[color:var(--pp-primary-950)]">

@@ -7,8 +7,11 @@ import { loadFamily } from "@/lib/accountPrefs";
 import { todayIso } from "@/lib/timeSlots";
 
 const DB_KEY = "pp.patientRecords.v1";
+const IMG_KEY = "pp.patientRecordImages.v1";
+const EVENT = "pp-patient-records";
 
 export type PatientFileSource = "library" | "upload";
+export type PatientFileKind = "report" | "prescription";
 
 export type PatientFile = {
   id: string;
@@ -17,6 +20,8 @@ export type PatientFile = {
   detail: string;
   date: string;
   source: PatientFileSource;
+  kind?: PatientFileKind;
+  fileName?: string;
 };
 
 export type PatientConsult = {
@@ -62,6 +67,111 @@ function writeDb(db: PatientDb) {
   } catch {
     /* demo — ignore quota */
   }
+  window.dispatchEvent(new Event(EVENT));
+}
+
+export function subscribePatientRecords(cb: () => void) {
+  const on = () => cb();
+  window.addEventListener(EVENT, on);
+  window.addEventListener("storage", on);
+  return () => {
+    window.removeEventListener(EVENT, on);
+    window.removeEventListener("storage", on);
+  };
+}
+
+function readImages(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(IMG_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, string>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeImage(id: string, dataUrl: string | undefined, replace = false) {
+  if (!dataUrl) return;
+  const all = readImages();
+  if (all[id] && !replace) return;
+  all[id] = dataUrl;
+  try {
+    localStorage.setItem(IMG_KEY, JSON.stringify(all));
+  } catch {
+    try {
+      localStorage.setItem(IMG_KEY, JSON.stringify({ [id]: dataUrl }));
+    } catch {
+      /* quota */
+    }
+  }
+}
+
+function dropImage(id: string) {
+  const all = readImages();
+  if (!(id in all)) return;
+  delete all[id];
+  try {
+    localStorage.setItem(IMG_KEY, JSON.stringify(all));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function getPatientFilePreview(id: string): string | undefined {
+  return readImages()[id] || libraryPreviewSrc(id);
+}
+
+const LIBRARY_PREVIEWS: Record<string, string> = {
+  "rep-blood": "/img/reports/bloodwork.png",
+  "rep-rx": "/img/reports/medications.png",
+  "rep-img": "/img/reports/chest-xray.png",
+  "rep-allergy": "/img/reports/allergy.png",
+  blood: "/img/reports/bloodwork.png",
+  rx: "/img/reports/medications.png",
+  img: "/img/reports/chest-xray.png",
+  allergy: "/img/reports/allergy.png",
+  prenatal: "/img/reports/bloodwork.png",
+  pap: "/img/reports/bloodwork.png",
+  thyroid: "/img/reports/bloodwork.png",
+  iron: "/img/reports/bloodwork.png",
+  lipid: "/img/reports/bloodwork.png",
+  vaccines: "/img/reports/allergy.png",
+  growth: "/img/reports/allergy.png",
+  hearing: "/img/reports/chest-xray.png",
+  ecg: "/img/reports/chest-xray.png",
+  bone: "/img/reports/chest-xray.png",
+  summary: "/img/reports/allergy.png",
+};
+
+function libraryPreviewSrc(id: string): string | undefined {
+  if (LIBRARY_PREVIEWS[id]) return LIBRARY_PREVIEWS[id];
+  const slug = id.includes("::rep-") ? id.split("::rep-")[1] : id.replace(/^rep-/, "");
+  return slug ? LIBRARY_PREVIEWS[slug] : undefined;
+}
+
+export function downloadPatientFile(file: PatientFile): boolean {
+  const src = getPatientFilePreview(file.id);
+  if (!src || typeof document === "undefined") return false;
+  const fromData = src.startsWith("data:");
+  const mime = fromData ? src.slice(5, src.indexOf(";")) : "";
+  const ext =
+    mime === "image/png" || src.endsWith(".png")
+      ? "png"
+      : mime === "image/webp" || src.endsWith(".webp")
+        ? "webp"
+        : mime === "application/pdf" || src.endsWith(".pdf")
+          ? "pdf"
+          : "jpg";
+  const name = file.fileName || `${file.title.replace(/[^\w.-]+/g, "-") || "report"}.${ext}`;
+  const a = document.createElement("a");
+  a.href = src;
+  a.download = name;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  return true;
 }
 
 function relationKind(patientId: string, relation: string): "self" | "spouse" | "child" | "parent" | "other" {
@@ -264,6 +374,51 @@ export function addPatientUpload(
   return row;
 }
 
+/** Save a scanned prescription photo as a dated report on this patient's folder. */
+export function addPrescriptionReport(
+  patientId: string,
+  input: { fileName: string; previewDataUrl?: string; medicines: string[]; replacePreview?: boolean },
+): PatientFile {
+  const db = ensurePatientDb();
+  const folder = ensurePatientFolder(patientId);
+  const date = todayIso();
+  const slug = input.fileName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "rx";
+  const id = `rx-${patientId}-${date}-${slug}`;
+  const names = input.medicines.map((n) => n.trim()).filter(Boolean);
+  const detail = names.length ? names.slice(0, 6).join(" · ") : input.fileName;
+  const row: PatientFile = {
+    id,
+    patientId,
+    title: `Prescription — ${date}`,
+    detail,
+    date,
+    source: "upload",
+    kind: "prescription",
+    fileName: input.fileName,
+  };
+  const i = folder.reports.findIndex((r) => r.id === id);
+  if (i >= 0) folder.reports[i] = row;
+  else folder.reports.unshift(row);
+  db.folders[patientId] = folder;
+  writeImage(id, input.previewDataUrl, Boolean(input.replacePreview));
+  writeDb(db);
+  return row;
+}
+
+export function listPrescriptionReports(patientId: string): PatientFile[] {
+  return getPatientLibrary(patientId).uploads.filter((r) => r.kind === "prescription");
+}
+
+export function listProfileDocuments(patientId: string): PatientFile[] {
+  const lib = getPatientLibrary(patientId);
+  return [...lib.uploads, ...lib.reports].sort((a, b) => {
+    const ap = a.kind === "prescription" ? 0 : 1;
+    const bp = b.kind === "prescription" ? 0 : 1;
+    if (ap !== bp) return ap - bp;
+    return b.date.localeCompare(a.date);
+  });
+}
+
 export function deletePatientFile(patientId: string, id: string) {
   const db = ensurePatientDb();
   const folder = db.folders[patientId];
@@ -271,6 +426,7 @@ export function deletePatientFile(patientId: string, id: string) {
   folder.reports = folder.reports.filter((r) => r.id !== id);
   db.folders[patientId] = folder;
   writeDb(db);
+  dropImage(id);
 }
 
 export function findPatientReport(id: string): PatientFile | undefined {

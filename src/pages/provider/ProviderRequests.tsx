@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { formatFee } from "@/lib/appointments";
 import { useProvider } from "@/lib/providerAuth";
@@ -37,18 +38,11 @@ function GenericRequestsInbox() {
   };
 
   const title = portal?.requestsLabel ?? "Requests";
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
 
   return (
     <div>
-      <header className="mb-6">
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Inbox")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium text-[color:var(--pp-primary-950)]">
-          {tx(title)}
-        </h1>
-        <p className="mt-2 text-base text-ink-secondary">
-          {tx("Bookings and inquiries from the care hub and direct channels.")}
-        </p>
-      </header>
+      <ProviderBreadcrumb items={[home, { label: tx(title) }]} />
 
       <div className="flex flex-wrap gap-2">
         {(["all", "new", "accepted", "reschedule", "completed", "declined"] as const).map((f) => (

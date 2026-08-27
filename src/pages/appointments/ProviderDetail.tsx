@@ -7,6 +7,7 @@ import { useAvailabilityPicker } from "@/components/appointments/useAvailability
 import { DetailSection } from "@/components/DetailSection";
 import { DetailPageSkeleton, RatingChipSkeleton, useEnterSkeleton } from "@/components/ui";
 import { DirectoryDetailLayout, DirectoryHeroCard, DIRECTORY_SIDEBAR_CARD } from "@/components/DirectoryDetailLayout";
+import { DoctorProfileIntro, doctorHeroUsps } from "@/components/doctor/DoctorProfileIntro";
 import { RatingChip, ReviewCountChip } from "@/components/reviews/RatingChip";
 import { ReviewsPanel } from "@/components/reviews/ReviewsPanel";
 import { SpecialisedInSection } from "@/components/SpecialisedIn";
@@ -241,10 +242,7 @@ export function DoctorProfilePage({
         ? tx(specialty.label)
         : tx("Book an appointment");
 
-  const badges = [
-    { label: tx("NMC registry"), strong: true },
-    !hideAvailability ? { label: `${tx("Next")}: ${next}` } : null,
-  ].filter(Boolean) as { label: string; strong?: boolean }[];
+  const aboutCopy = tx(provider.about || provider.bio);
 
   const specialisedIn = (() => {
     const stored = sanitizeSpecialisedIn(provider.specialisedIn);
@@ -267,15 +265,18 @@ export function DoctorProfilePage({
             : tx("Select a date and time below")}
         </p>
 
-        <div className="mt-4 flex items-end justify-between gap-3 border-t border-line pt-4">
+        <div className="mt-4 flex items-start justify-between gap-3 border-t border-line pt-4">
           <span>
             <span className="block text-2xs text-ink-tertiary">{tx("Consultation")}</span>
             <span className="font-display text-2xl font-medium leading-none text-[color:var(--pp-primary-950)] tnum">
               {formatFee(fee)}
             </span>
           </span>
-          <span className="inline-flex h-7 items-center rounded-full bg-wellness-subtle px-3 text-xs font-semibold leading-none text-wellness">
-            {next}
+          <span className="text-right">
+            <span className="block text-2xs text-ink-tertiary">{tx("Available")}</span>
+            <span className="mt-1 inline-flex h-7 items-center rounded-full bg-wellness-subtle px-3 text-xs font-semibold leading-none text-wellness">
+              {next}
+            </span>
           </span>
         </div>
 
@@ -308,33 +309,30 @@ export function DoctorProfilePage({
       name={provider.name}
       subtitle={tx(provider.subtitle)}
       bio={tx(provider.bio)}
-      about={tx(provider.about || provider.bio)}
+      about={aboutCopy}
       imageUrl={provider.imageUrl}
-      usps={
-        host
-          ? [
-              { label: tx("Consultant") },
-              { label: tx("Digital Prescription") },
-              { label: tx("Free Followup") },
-            ]
-          : [
-              { label: tx("NMC verified") },
-              { label: tx("Digital Prescription") },
-              { label: tx("Free Followup") },
-            ]
+      hero={
+        <DoctorProfileIntro
+          eyebrow={host ? host.name : tx("Doctor")}
+          name={provider.name}
+          subtitle={tx(provider.subtitle)}
+          imageUrl={provider.imageUrl}
+          usps={doctorHeroUsps(tx, { consultant: Boolean(host) })}
+          leadingBadges={
+            inFacilityFlow ? (
+              provider.reviewCount ? (
+                <ReviewCountChip average={provider.rating} count={provider.reviewCount} />
+              ) : null
+            ) : reviewSummary == null ? (
+              <RatingChipSkeleton variant="badge" />
+            ) : reviewSummary.count ? (
+              <RatingChip summary={reviewSummary} variant="badge" />
+            ) : null
+          }
+          extraBadges={<DoctorHighlightsSection provider={provider} facilities={facilities} embedded />}
+          about={aboutCopy}
+        />
       }
-      leadingBadges={
-        inFacilityFlow ? (
-          provider.reviewCount ? (
-            <ReviewCountChip average={provider.rating} count={provider.reviewCount} />
-          ) : null
-        ) : reviewSummary == null ? (
-          <RatingChipSkeleton variant="badge" />
-        ) : reviewSummary.count ? (
-          <RatingChip summary={reviewSummary} variant="badge" />
-        ) : null
-      }
-      badges={badges}
       sidebar={
         <>
           {bookingSidebar}
@@ -362,7 +360,6 @@ export function DoctorProfilePage({
       }
       afterPage={inFacilityFlow ? null : <DoctorRelatedSection provider={provider} />}
     >
-        <DoctorHighlightsSection provider={provider} facilities={facilities} />
         {!hideAvailability && (
           <AvailabilityBoard
             visitOptions={visitOptions}

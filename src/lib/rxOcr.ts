@@ -6,13 +6,16 @@
  */
 
 import { drugs, type Drug } from "./data";
-import { handwritingSupported, recognizeHandwriting } from "./localHtr/htrClient";
+import { handwritingSupported, recognizeHandwriting, recognizeHandwritingLines } from "./localHtr/htrClient";
 import {
+  canonicaliseName,
+  extractMedName,
   hasMedSignal,
   hasRxSignal,
   isNonMedLine,
   parseRxLine,
   parseSig,
+  scoreRxCandidate,
 } from "./rxLexicon";
 
 /**
@@ -424,6 +427,127 @@ async function preprocessImage(file: File): Promise<HTMLCanvasElement> {
   return canvas;
 }
 
+function bandToThumb(canvas: HTMLCanvasElement): string {
+  const targetW = 200;
+  const targetH = 72;
+  const srcH = canvas.height;
+  const srcW = Math.min(canvas.width, Math.max(1, Math.round(srcH * (targetW / targetH) * 1.25)));
+  const out = document.createElement("canvas");
+  out.width = targetW;
+  out.height = targetH;
+  const ctx = out.getContext("2d");
+  if (!ctx) return canvas.toDataURL("image/jpeg", 0.6);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, targetW, targetH);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(canvas, 0, 0, srcW, srcH, 0, 0, targetW, targetH);
+  return out.toDataURL("image/jpeg", 0.72);
+}
+
+export type LineBoundMed = {
+  name: string;
+  strength: string;
+  directions: string;
+  known: boolean;
+  raw: string;
+  snippetDataUrl: string;
+  box: { x: number; y: number; w: number; h: number };
+};
+
+/** Turn n-best line readings into one medicine name, or null if it is not a drug line. */
+export function medFromReadings(texts: string[]): Omit<LineBoundMed, "snippetDataUrl" | "box"> | null {
+  const unique = [...new Set(texts.map((t) => t.replace(/\s+/g, " ").trim()).filter((t) => t.length >= 3))];
+  let best: { score: number; name: string; strength: string; directions: string; known: boolean; raw: string } | null =
+    null;
+  for (const raw of unique) {
+    if (isNonMedLine(raw)) continue;
+    const parsed = parseRxLine(raw);
+    if (parsed) {
+      const score = scoreRxCandidate(raw) + (parsed.known ? 10 : 2);
+      if (!best || score > best.score) {
+        best = {
+          score,
+          name: parsed.name,
+          strength: parsed.strength,
+          directions: parsed.directions,
+          known: parsed.known,
+          raw,
+        };
+      }
+      continue;
+    }
+    const recovered = extractMedName(raw);
+    if (!recovered) continue;
+    const canon = canonicaliseName(recovered);
+    const words = canon.name.split(/\s+/);
+    if (words[0]?.length < 4 || words.length > 3) continue;
+    const score = scoreRxCandidate(raw) + (canon.known ? 8 : 0);
+    if (!best || score > best.score) {
+      best = {
+        score,
+        name: canon.name,
+        strength: "",
+        directions: "",
+        known: canon.known,
+        raw,
+      };
+    }
+  }
+  if (!best) return null;
+  return {
+    name: best.name,
+    strength: best.strength,
+    directions: best.directions,
+    known: best.known,
+    raw: best.raw,
+  };
+}
+
+/**
+ * Read a handwritten prescription line by line so each medicine stays attached
+ * to the crop it was read from. Whole-page Tesseract cannot do that pairing.
+ */
+export async function readHandwrittenRxLines(
+  file: File,
+  onProgress?: (label: string, pct: number) => void,
+): Promise<LineBoundMed[]> {
+  if (!handwritingSupported()) return [];
+  const canvas = await preprocessImage(file);
+  const lines = await recognizeHandwritingLines(canvas, (label, pct) => onProgress?.(label, pct));
+  const out: LineBoundMed[] = [];
+  const seen = new Set<string>();
+  for (const line of lines) {
+    const med = medFromReadings(line.texts.length ? line.texts : [line.text]);
+    if (!med?.name.trim()) continue;
+    const key = med.name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (key.length < 3 || [...seen].some((n) => n === key || n.includes(key) || key.includes(n))) continue;
+    seen.add(key);
+    const aspect = 200 / 72;
+    const srcW = Math.min(line.band.width, Math.max(1, line.band.height * aspect * 1.25));
+    const padX = 0.008;
+    const padY = 0.006;
+    const x = Math.max(0, line.band.left / canvas.width - padX);
+    const y = Math.max(0, line.band.top / canvas.height - padY);
+    out.push({
+      ...med,
+      snippetDataUrl: bandToThumb(line.band.canvas),
+      box: {
+        x,
+        y,
+        w: Math.min(1 - x, srcW / canvas.width + padX * 2),
+        h: Math.min(1 - y, line.band.height / canvas.height + padY * 2),
+      },
+    });
+  }
+  if (rxDebug()) {
+    console.info(
+      "[rx] line reads:\n" +
+        out.map((row) => `  ${row.name} <- ${row.raw}`).join("\n"),
+    );
+  }
+  return out;
+}
+
 type TessWorker = Awaited<ReturnType<(typeof import("tesseract.js"))["createWorker"]>>;
 type TessPSM = (typeof import("tesseract.js"))["PSM"];
 
@@ -511,7 +635,12 @@ async function handwritingFallback(
   // text while containing no medicines at all, so text volume alone is the
   // wrong test. Fire whenever nothing prescription-shaped was found.
   if (!handwritingSupported()) return best;
-  if (textScore(best) >= HANDWRITING_TRIGGER && hasMedSignal(best)) return best;
+  const parsed = best
+    .split(/\n+/)
+    .map((l) => parseRxLine(l.trim()))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p && p.known));
+  if (parsed.length >= 3) return best;
+  if (textScore(best) >= HANDWRITING_TRIGGER && hasMedSignal(best) && parsed.length >= 2) return best;
   try {
     const canvas = await preprocessImage(file);
     const hw = await recognizeHandwriting(canvas, (_label, pct) => onProgress?.(pct));
@@ -540,7 +669,14 @@ async function recognizeFile(
   } catch {
     /* fall through */
   }
-  const done = () => textScore(best) >= 12 && hasMedSignal(best);
+  const done = () => {
+    if (textScore(best) < 12 || !hasMedSignal(best)) return false;
+    const known = best
+      .split(/\n+/)
+      .map((l) => parseRxLine(l.trim()))
+      .filter((p) => p?.known).length;
+    return known >= 2;
+  };
   if (done()) return best;
   try {
     await trySource(file);

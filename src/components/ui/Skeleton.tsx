@@ -338,7 +338,7 @@ export function RegionCardSkeleton() {
   );
 }
 
-export function RegionGridSkeleton({ count = 6, label = "Loading districts" }: { count?: number; label?: string }) {
+export function RegionGridSkeleton({ count = 9, label = "Loading districts" }: { count?: number; label?: string }) {
   return (
     <div aria-busy="true">
       <ScreenReaderStatus label={label} />
@@ -347,7 +347,7 @@ export function RegionGridSkeleton({ count = 6, label = "Loading districts" }: {
           <Skeleton key={i} className="h-8 w-[4.5rem]" rounded="full" />
         ))}
       </div>
-      <div className="mt-10 grid gap-4 sm:grid-cols-2">
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: count }, (_, i) => (
           <Stagger key={i} i={i}>
             <RegionCardSkeleton />

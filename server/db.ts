@@ -3,7 +3,20 @@ import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 
 export const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
 export const MAGIC_LINK_TTL_MS = 30 * 60 * 1000; // link valid 30 minutes
-export const SITE_PASSWORD = process.env.SITE_ACCESS_PASSWORD || "diptim";
+
+const DEFAULT_SITE_PASSWORDS = ["diptim", "deepak"];
+
+/** Accepts a single password or comma-separated list via SITE_ACCESS_PASSWORD. */
+export const SITE_PASSWORDS = (
+  process.env.SITE_ACCESS_PASSWORD
+    ? process.env.SITE_ACCESS_PASSWORD.split(",")
+    : DEFAULT_SITE_PASSWORDS
+)
+  .map((p) => p.trim())
+  .filter(Boolean);
+
+/** Primary password — used for session secret fallback. */
+export const SITE_PASSWORD = SITE_PASSWORDS[0] || "diptim";
 
 let migrated = false;
 let sqlClient: NeonQueryFunction<false, false> | null = null;

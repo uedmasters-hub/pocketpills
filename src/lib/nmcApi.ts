@@ -124,6 +124,15 @@ export async function listNmcDoctors(opts?: {
   }
 }
 
+/** Exact NMC match from the public directory search. Used by the draft profile only. */
+export async function fetchNmcDoctorByNumber(nmcNumber: string): Promise<NmcDoctor | null> {
+  const nmc = normalizeNmcNumber(nmcNumber);
+  if (!nmc) return null;
+  const res = await listNmcDoctors({ q: nmc, limit: 24 });
+  if (!res.ok) return null;
+  return res.data.find((row) => normalizeNmcNumber(row.nmcNumber) === nmc) ?? null;
+}
+
 export async function searchNmcDoctors(name: string, page = 1): Promise<
   { ok: true; data: NmcSearchRow[]; total: number } | { ok: false; error: string }
 > {

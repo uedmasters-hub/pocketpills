@@ -6,6 +6,7 @@
 import { specialtyById, type CareProvider, type SpecialtyId } from "@/lib/appointments";
 import { getDoctorClaim } from "@/lib/doctorDirectory";
 import { treatments } from "@/lib/data";
+import type { ListingSurface } from "@/lib/listingSurface";
 import type { SpecialisedGroup } from "@/lib/specialisedIn";
 
 export type VerifiedCheck = { label: string };
@@ -159,7 +160,19 @@ export function nmcNumberOf(provider: CareProvider): string | null {
   return provider.id.startsWith("nmc-") ? provider.id.replace(/^nmc-/, "") : null;
 }
 
-export function providerProfileHref(provider: CareProvider): string {
+export function hasPublicListingHref(provider: CareProvider): boolean {
+  if (provider.kind === "doctor") return Boolean(nmcNumberOf(provider));
+  return provider.id.startsWith("hf-");
+}
+
+export function facilityProfileHref(hfCode: string, surface: ListingSurface = "public"): string {
+  const code = hfCode.replace(/^hf-/, "");
+  if (surface === "app") return `/appointments/provider/hf-${code}`;
+  return `/facilities/${code}`;
+}
+
+export function providerProfileHref(provider: CareProvider, surface: ListingSurface = "public"): string {
+  if (surface === "app") return `/appointments/provider/${provider.id}`;
   if (provider.kind === "doctor") {
     const nmc = nmcNumberOf(provider);
     return nmc ? `/doctors/${nmc}` : `/appointments/provider/${provider.id}`;
@@ -263,6 +276,7 @@ export function doctorExperience(provider: CareProvider): {
 export function doctorPracticeCards(
   provider: CareProvider,
   facilities: CareProvider[],
+  surface: ListingSurface = "public",
 ): PracticeLocationCard[] {
   if (facilities.length) {
     return facilities.map((f) => ({
@@ -272,7 +286,7 @@ export function doctorPracticeCards(
       kind: f.subtitle || (f.kind === "hospital" ? "Hospital" : "Clinic"),
       visit: visitLabel(provider),
       hours: f.hours || provider.hours,
-      href: providerProfileHref(f),
+      href: providerProfileHref(f, surface),
     }));
   }
   if (!provider.address && !provider.city) return [];

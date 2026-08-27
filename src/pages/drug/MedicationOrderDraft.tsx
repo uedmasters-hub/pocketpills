@@ -15,7 +15,7 @@ import {
   listMedBasket,
 } from "@/lib/medBasketDraft";
 
-const INDEX = "/drug/draft";
+const INDEX = "/drug";
 
 export function MedicationOrderDraft() {
   const { tx } = useI18n();

@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
+import { useProvider } from "@/lib/providerAuth";
+import { portalFor } from "@/lib/providerPortals";
 import {
   getProviderRequests,
   updateProviderRequestStatus,
@@ -17,6 +20,9 @@ const COLUMNS: { status: ProviderRequestStatus; title: string }[] = [
 
 export function ProviderMonitor() {
   const { tx } = useI18n();
+  const { provider } = useProvider();
+  const portal = provider ? portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole) : null;
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
   const [tick, setTick] = useState(0);
   const requests = getProviderRequests();
   void tick;
@@ -28,15 +34,7 @@ export function ProviderMonitor() {
 
   return (
     <div>
-      <header className="mb-8">
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Monitor")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {tx("Operations board")}
-        </h1>
-        <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          {tx("Today’s requests by status — move cards as care progresses.")}
-        </p>
-      </header>
+      <ProviderBreadcrumb items={[home, { label: tx("Monitor") }]} />
 
       <div className="grid gap-4 lg:grid-cols-5">
         {COLUMNS.map((col) => {

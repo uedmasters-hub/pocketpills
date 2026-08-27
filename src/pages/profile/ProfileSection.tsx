@@ -12,6 +12,9 @@ import { DistrictField } from "@/components/DistrictField";
 import { useI18n } from "@/lib/i18n";
 import { isoToDobDisplay } from "@/lib/dob";
 import { coerceNepalDistrict } from "@/lib/nepalCities";
+import { listProfileDocuments, subscribePatientRecords } from "@/lib/patientRecords";
+import { syncDraftRxToRecords } from "@/lib/medBasketDraft";
+import { DocumentList } from "@/components/records/DocumentList";
 
 const FIELD = "h-11 w-full rounded-xl border border-line bg-white px-3.5 text-base text-ink outline-none focus:border-primary";
 const LABEL = "mb-1.5 block text-sm font-medium text-ink-secondary";
@@ -123,6 +126,7 @@ export function ProfileSection() {
      change the hook count between renders. */
   const [saved, setSaved] = useState(false);
   const [ready, setReady] = useState(false);
+  const [recordsTick, setRecordsTick] = useState(0);
   const primary = primaryInsurance(user);
   const [f, setF] = useState({
     firstName: user?.firstName ?? "", lastName: user?.lastName ?? "", dob: user?.dob ?? "",
@@ -133,6 +137,12 @@ export function ProfileSection() {
     group: primary?.group ?? "", member: primary?.member ?? "",
     address: user?.address ?? "", card: "", exp: "", cvc: "",
   });
+
+  useEffect(() => {
+    const unsub = subscribePatientRecords(() => setRecordsTick((n) => n + 1));
+    syncDraftRxToRecords();
+    return unsub;
+  }, []);
 
   /* Data is local, so this is a transition — it stops the route change from
      snapping in mid-paint rather than masking a real fetch. */
@@ -147,6 +157,7 @@ export function ProfileSection() {
   const valid = isChecklistId(section);
   const id = (valid ? section : "personal") as ChecklistId;
   const row = profileChecklist(user).find((r) => r.id === id)!;
+  const healthFiles = useMemo(() => listProfileDocuments("self"), [recordsTick]);
 
   const save = () => {
     if (id === "personal") update({ firstName: f.firstName, lastName: f.lastName, dob: f.dob, phone: f.phone, email: f.email, gender: f.gender });
@@ -304,6 +315,22 @@ export function ProfileSection() {
           {id === "payment" && <SummaryLine icon={Ico.card}>{user?.cardLast4 ? `Visa ····${user.cardLast4}` : tx("On file")}</SummaryLine>}
         </div>
       )}
+
+      {id === "health" ? (
+        <div className={`${CARD} mt-6`}>
+          <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx("Uploaded documents")}</p>
+          <p className="mt-1 text-sm text-ink-tertiary">
+            {tx("Preview a file, open the full prescription, download, or delete it from this profile.")}
+          </p>
+          <div className="mt-3">
+            <DocumentList
+              files={healthFiles}
+              patientId="self"
+              empty={tx("No documents on file yet. Uploaded prescriptions and reports will show here.")}
+            />
+          </div>
+        </div>
+      ) : null}
 
       {/* editor — same DetailSection header pattern as the Review rail */}
       <div className="mt-4">

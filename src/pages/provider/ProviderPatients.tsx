@@ -1,6 +1,6 @@
-import { ProviderCustomers } from "@/pages/provider/ProviderCustomers";
+import { ProviderPatientManagementDraft } from "@/pages/provider/ProviderPatientManagementDraft";
 
-/** Doctor portal patients view — same data as customers. */
+/** Patient board for every provider portal. */
 export function ProviderPatients() {
-  return <ProviderCustomers />;
+  return <ProviderPatientManagementDraft />;
 }

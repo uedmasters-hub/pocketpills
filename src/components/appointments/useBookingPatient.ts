@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { loadFamily, saveFamily } from "@/lib/accountPrefs";
 import { useI18n } from "@/lib/i18n";
 import { useUser } from "@/lib/user";
@@ -8,7 +8,9 @@ import {
   deletePatientFile,
   ensurePatientDb,
   ensurePatientFolder,
+  getPatientFilePreview,
   getPatientLibrary,
+  subscribePatientRecords,
 } from "@/lib/patientRecords";
 import type { VisitTab } from "@/components/appointments/BookingFieldsDraft";
 
@@ -25,6 +27,7 @@ export type BookingAttached = {
   title: string;
   detail: string;
   source: "library" | "upload" | "lab";
+  previewSrc?: string;
 };
 
 type PatientShare = {
@@ -52,6 +55,8 @@ export function useBookingPatient() {
   const [symptoms, setSymptoms] = useState("");
   const [notes, setNotes] = useState("");
 
+  useEffect(() => subscribePatientRecords(() => setRecordsRev((n) => n + 1)), []);
+
   const patients: BookingPatientOption[] = useMemo(
     () => [
       { id: "self", name: selfName, relation: "Myself", badge: "Self", contact },
@@ -69,6 +74,27 @@ export function useBookingPatient() {
   const attached = share.attached;
   const findingIds = share.findingIds;
   const uploads = library.uploads;
+
+  useEffect(() => {
+    const rx = library.uploads.filter((u) => u.kind === "prescription");
+    if (!rx.length) return;
+    setShareByPatient((cur) => {
+      if (cur[patientId]) return cur;
+      return {
+        ...cur,
+        [patientId]: {
+          attached: rx.map((r) => ({
+            id: r.id,
+            title: r.title,
+            detail: r.detail,
+            source: "upload" as const,
+            previewSrc: getPatientFilePreview(r.id),
+          })),
+          findingIds: [],
+        },
+      };
+    });
+  }, [patientId, library.uploads]);
 
   const patchShare = (id: string, patch: Partial<PatientShare>) => {
     setShareByPatient((cur) => {
@@ -106,7 +132,7 @@ export function useBookingPatient() {
       return;
     }
     const file = uploads.find((u) => u.id === id);
-    if (file) attachReport({ id: file.id, title: file.title, detail: file.detail, source: "upload" });
+    if (file) attachReport({ id: file.id, title: file.title, detail: file.detail, source: "upload", previewSrc: getPatientFilePreview(file.id) });
   };
 
   const toggleLibraryReport = (id: string) => {
@@ -117,7 +143,7 @@ export function useBookingPatient() {
     }
     const r = library.reports.find((x) => x.id === id);
     if (!r) return;
-    attachReport({ id: r.id, title: r.title, detail: r.detail, source: "library" });
+    attachReport({ id: r.id, title: r.title, detail: r.detail, source: "library", previewSrc: getPatientFilePreview(r.id) });
   };
 
   const toggleFinding = (id: string) => {
@@ -140,7 +166,7 @@ export function useBookingPatient() {
         title: file.name.trim() || tx("Untitled upload"),
         detail: tx("Uploaded from device"),
       });
-      next.push({ id: row.id, title: row.title, detail: row.detail, source: "upload" });
+      next.push({ id: row.id, title: row.title, detail: row.detail, source: "upload", previewSrc: getPatientFilePreview(row.id) });
     }
     setRecordsRev((n) => n + 1);
     setShareByPatient((cur) => {

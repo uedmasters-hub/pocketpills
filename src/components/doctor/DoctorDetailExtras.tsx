@@ -23,10 +23,12 @@ import {
   doctorPracticeCards,
   doctorServices,
   doctorSpecialisationTiles,
+  hasPublicListingHref,
   nmcNumberOf,
   providerProfileHref,
   type DoctorHighlightFact,
 } from "@/lib/doctorProfileContent";
+import { useListingSurface } from "@/lib/listingSurface";
 import { useReviewSummaries } from "@/lib/useReviewSummaries";
 import type { ReviewSummary } from "@/lib/reviewsApi";
 import { listingSectionEnabled } from "@/lib/listingPage";
@@ -159,7 +161,8 @@ export function DoctorPracticeSection({
   specialtyId?: SpecialtyId | null;
 }) {
   const { tx } = useI18n();
-  const cards = doctorPracticeCards(provider, facilities);
+  const surface = useListingSurface();
+  const cards = doctorPracticeCards(provider, facilities, surface);
   if (!cards.length) return null;
 
   return (
@@ -221,8 +224,10 @@ export function DoctorArticlesSection({ provider }: { provider: CareProvider }) 
   );
 }
 
-function HighlightIcon({ kind }: { kind: DoctorHighlightFact["key"] }) {
-  const common = "h-5 w-5 shrink-0 text-ink-tertiary";
+function HighlightIcon({ kind, accent = false }: { kind: DoctorHighlightFact["key"]; accent?: boolean }) {
+  const common = accent
+    ? "h-3.5 w-3.5 shrink-0 text-[color:var(--pp-violet)]"
+    : "h-5 w-5 shrink-0 text-ink-tertiary";
   if (kind === "college") {
     return (
       <svg viewBox="0 0 24 24" className={common} fill="none" aria-hidden>
@@ -269,29 +274,59 @@ function HighlightIcon({ kind }: { kind: DoctorHighlightFact["key"] }) {
 export function DoctorHighlightsSection({
   provider,
   facilities,
+  embedded = false,
 }: {
   provider: CareProvider;
   facilities: CareProvider[];
+  embedded?: boolean;
 }) {
   const { tx } = useI18n();
   const facts = doctorHighlightFacts(provider, facilities);
+  if (embedded) {
+    const degree = (provider.education ?? []).find((line) => /\b(mbbs|md|bds|ms)\b/i.test(line));
+    if (degree && !facts.some((f) => f.label.toLowerCase() === degree.toLowerCase())) {
+      facts.push({ key: "college", label: degree });
+    }
+    if (provider.city && !facts.some((f) => f.key === "hospital")) {
+      facts.push({ key: "hospital", label: provider.city });
+    }
+    if (!facts.some((f) => f.key === "since")) {
+      facts.push({ key: "since", label: `Available since ${new Date().getFullYear()}` });
+    }
+  }
   if (!facts.length) return null;
+
+  const pills = (
+    <div className={embedded ? "contents" : "flex flex-wrap items-center gap-4"}>
+      {facts.map((fact) => (
+        <div
+          key={fact.key + fact.label}
+          className={
+            embedded
+              ? "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-line bg-white px-3"
+              : "inline-flex min-h-[3.25rem] items-center gap-2.5 rounded-2xl bg-[color:var(--pp-primary-200)] px-4 py-3"
+          }
+        >
+          <HighlightIcon kind={fact.key} accent={embedded} />
+          <span
+            className={
+              embedded
+                ? "text-xs font-medium leading-none text-[color:var(--pp-primary-950)]"
+                : "text-[11px] font-semibold uppercase tracking-[0.04em] text-[color:var(--pp-primary-950)]"
+            }
+          >
+            {tx(fact.label)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+
+  if (embedded) return pills;
 
   return (
     <DetailSection title={tx("Specialised in")}>
-      <div className="flex flex-wrap items-center gap-4">
-        {facts.map((fact) => (
-          <div
-            key={fact.key}
-            className="inline-flex min-h-[3.25rem] items-center gap-2.5 rounded-2xl bg-[color:var(--pp-primary-200)] px-4 py-3"
-          >
-            <HighlightIcon kind={fact.key} />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[color:var(--pp-primary-950)]">
-              {tx(fact.label)}
-            </span>
-          </div>
-        ))}
-      </div>
+      {pills}
     </DetailSection>
   );
 }
@@ -361,6 +396,7 @@ export function DoctorSpecialisationsGrid({
 
 export function DoctorRelatedSection({ provider }: { provider: CareProvider }) {
   const { tx } = useI18n();
+  const surface = useListingSurface();
   const specialtyKey = provider.specialties.join(",");
   const doctors = useMemo(() => {
     return listProviders()
@@ -368,10 +404,11 @@ export function DoctorRelatedSection({ provider }: { provider: CareProvider }) {
         (p) =>
           p.kind === "doctor" &&
           p.id !== provider.id &&
-          p.specialties.some((s) => provider.specialties.includes(s)),
+          p.specialties.some((s) => provider.specialties.includes(s)) &&
+          (surface === "app" || hasPublicListingHref(p)),
       )
       .slice(0, 4);
-  }, [provider.id, specialtyKey]);
+  }, [provider.id, specialtyKey, surface]);
   const doctorIds = useMemo(
     () => doctors.map((d) => nmcNumberOf(d) || d.id.replace(/^nmc-/, "")),
     [doctors],
@@ -414,6 +451,7 @@ export function DoctorRelatedCard({
   to?: string;
 }) {
   const { tx } = useI18n();
+  const surface = useListingSurface();
   const nmc = item.kind === "doctor" ? nmcNumberOf(item) : null;
   const degree = item.kind === "doctor" ? item.subtitle.split("·")[0]?.trim() : "";
   const meta =
@@ -425,7 +463,7 @@ export function DoctorRelatedCard({
 
   return (
     <Link
-      to={to ?? providerProfileHref(item)}
+      to={to ?? providerProfileHref(item, surface)}
       className="relative flex h-[11.25rem] w-full overflow-hidden rounded-2xl border border-line bg-white"
     >
       <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between px-5 py-5 pr-6">

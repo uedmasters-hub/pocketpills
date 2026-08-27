@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { useProvider } from "@/lib/providerAuth";
 import { useShellColumn } from "@/lib/columnHover";
@@ -226,30 +227,20 @@ export function ProviderInventoryAdd() {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => nav("/provider/inventory")}
-        className="text-sm font-medium text-[color:var(--pp-violet)] hover:opacity-70"
-      >
-        ‹ {tx("Inventory")}
-      </button>
-
-      <header className="mt-4">
-        <h1 className="font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {tx("Add inventory")}
-        </h1>
-        <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          {tx("Add a new product and its stock details to your inventory.")}
-        </p>
-      </header>
+      <ProviderBreadcrumb
+        items={[
+          { label: tx("Inventory"), to: "/provider/inventory" },
+          { label: tx("Add inventory") },
+        ]}
+      />
 
       {error ? (
-        <p className="mt-4 text-sm font-medium text-danger" role="alert">
+        <p className="mb-4 text-sm font-medium text-danger" role="alert">
           {error}
         </p>
       ) : null}
 
-      <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div
           className={"min-w-0 space-y-4 " + mainCol.className}
           onMouseEnter={mainCol.onMouseEnter}

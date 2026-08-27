@@ -316,6 +316,33 @@ export function listAwaitingRefunds(orgId: string): RefundRequest[] {
   return listRefundRequests(orgId).filter((r) => r.status === "awaiting");
 }
 
+export function createVisitRefund(
+  orgId: string,
+  input: {
+    patientName: string;
+    service: string;
+    originalCharge: number;
+    reason: string;
+    serviceId?: string;
+  },
+): RefundRequest {
+  const list = listRefundRequests(orgId);
+  const req = normalizeRefundRequest({
+    id: `ref-visit-${Date.now().toString(36)}`,
+    serviceId: input.serviceId ?? `VISIT-${Date.now().toString(36).toUpperCase()}`,
+    patientName: input.patientName,
+    service: input.service,
+    originalCharge: input.originalCharge,
+    reason: input.reason,
+    requestedAt: new Date().toISOString(),
+    status: "awaiting",
+  });
+  const next = [req, ...list];
+  writeRefundRequests(orgId, next);
+  ensureRefundHolds(orgId, next);
+  return req;
+}
+
 function findHold(orgId: string, req: RefundRequest) {
   const holdAmt = refundHoldAmount(req);
   return listLedger(orgId).find(

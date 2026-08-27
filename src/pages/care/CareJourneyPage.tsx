@@ -13,6 +13,8 @@ import { RelatedHealthcareOptions } from "@/components/RelatedHealthcareOptions"
 import { useI18n } from "@/lib/i18n";
 import { useShellColumn } from "@/lib/columnHover";
 import { DEMO_REPORTS } from "@/lib/appointments";
+import { getPatientFilePreview, getPatientLibrary, findPatientReport } from "@/lib/patientRecords";
+import { ReportThumb } from "@/components/records/ReportThumb";
 import {
   acceptCareSlot,
   careTabsFor,
@@ -642,7 +644,10 @@ function PrepEditor({
       for (const line of lines) {
         if (line.startsWith("file:")) files.push(line.slice(5));
         else {
-          const hit = DEMO_REPORTS.find((r) => r.title === line);
+          const lib = getPatientLibrary("self");
+          const hit =
+            DEMO_REPORTS.find((r) => r.title === line) ??
+            [...lib.uploads, ...lib.reports].find((r) => r.title === line);
           if (hit) ids.push(hit.id);
           else files.push(line);
         }
@@ -662,11 +667,19 @@ function PrepEditor({
   const lines = prepLines(draft);
   const namedMeds = lines.filter((l) => !(MEDS_READY as readonly string[]).includes(l));
   const readyMeds = lines.filter((l) => (MEDS_READY as readonly string[]).includes(l));
+  const library = getPatientLibrary("self");
+  const savedFiles = [...library.uploads, ...library.reports];
+  const onFileReports = [
+    ...savedFiles,
+    ...DEMO_REPORTS.filter((d) => !savedFiles.some((r) => r.id === d.id)),
+  ];
 
   const commit = () => {
     if (isDocs) {
       const titles = picked.flatMap((id) => {
-        const t = DEMO_REPORTS.find((r) => r.id === id)?.title;
+        const t =
+          DEMO_REPORTS.find((r) => r.id === id)?.title ??
+          findPatientReport(id)?.title;
         return t ? [t] : [];
       });
       const files = uploads.map((name) => `file:${name}`);
@@ -772,7 +785,7 @@ function PrepEditor({
               {tx("Already on file")}
             </p>
             <ul className="overflow-hidden rounded-xl border border-line">
-              {DEMO_REPORTS.map((r) => {
+              {onFileReports.map((r) => {
                 const on = picked.includes(r.id);
                 return (
                   <li key={r.id} className="border-b border-line last:border-0">
@@ -785,6 +798,7 @@ function PrepEditor({
                         }
                         className="mt-0.5 h-4 w-4 rounded border-line text-[color:var(--pp-violet)]"
                       />
+                      <ReportThumb src={getPatientFilePreview(r.id)} className="h-8 w-10" />
                       <span className="min-w-0">
                         <span className="block text-sm font-medium text-[color:var(--pp-primary-950)]">
                           {tx(r.title)}
@@ -1104,9 +1118,12 @@ function ReportsPane({ event }: { event: CareEvent }) {
       ) : (
         <ul className="divide-y divide-line">
           {event.reports.map((r) => (
-            <li key={r.id} className="px-5 py-3.5">
-              <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx(r.title)}</p>
-              <p className="mt-0.5 text-sm text-ink-tertiary">{r.detail}</p>
+            <li key={r.id} className="flex items-center gap-3 px-5 py-3.5">
+              <ReportThumb src={getPatientFilePreview(r.id)} />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[color:var(--pp-primary-950)]">{tx(r.title)}</p>
+                <p className="mt-0.5 text-sm text-ink-tertiary">{r.detail}</p>
+              </div>
             </li>
           ))}
           {event.findings.map((f) => (

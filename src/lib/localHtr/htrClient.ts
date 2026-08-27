@@ -58,36 +58,26 @@ function spawnWorker(onModelProgress?: (pct: number) => void): Promise<void> {
   return readyPromise;
 }
 
-/** Send one line crop to the worker and resolve with its text. */
-function recognizeLine(canvas: HTMLCanvasElement): Promise<string> {
+/** Send one line crop to the worker and resolve with n-best readings. */
+function recognizeLineCandidates(canvas: HTMLCanvasElement): Promise<string[]> {
   const active = worker;
   if (!active) return Promise.reject(new Error("htr-worker-unavailable"));
   const cctx = canvas.getContext("2d");
-  if (!cctx) return Promise.resolve("");
+  if (!cctx) return Promise.resolve([]);
   const image = cctx.getImageData(0, 0, canvas.width, canvas.height);
 
-  return new Promise<string>((resolve, reject) => {
+  return new Promise<string[]>((resolve, reject) => {
     const onMessage = (event: MessageEvent<WorkerOut>) => {
       const msg = event.data;
       if (msg.type === "result") {
         active.removeEventListener("message", onMessage);
-        // The model's own top candidate is not reliably the right one for drug
-        // names, so pick the reading the formulary likes best.
-        const best = msg.texts.reduce<{ text: string; score: number }>(
-          (acc, t) => {
-            const score = scoreRxCandidate(t);
-            return score > acc.score ? { text: t, score } : acc;
-          },
-          { text: "", score: -Infinity },
-        );
-        resolve(best.text);
+        resolve(msg.texts.filter(Boolean));
       } else if (msg.type === "error") {
         active.removeEventListener("message", onMessage);
         reject(new Error(msg.message));
       }
     };
     active.addEventListener("message", onMessage);
-    // The pixel buffer is transferred, not copied — cheap handoff.
     active.postMessage(
       { type: "recognize", data: image.data, width: image.width, height: image.height },
       [image.data.buffer],
@@ -95,7 +85,53 @@ function recognizeLine(canvas: HTMLCanvasElement): Promise<string> {
   });
 }
 
+function bestLineText(texts: string[]): string {
+  return texts.reduce<{ text: string; score: number }>(
+    (acc, t) => {
+      const score = scoreRxCandidate(t);
+      return score > acc.score ? { text: t, score } : acc;
+    },
+    { text: "", score: -Infinity },
+  ).text;
+}
+
 export type HtrProgress = (label: string, pct: number) => void;
+
+export type HtrLine = {
+  texts: string[];
+  text: string;
+  band: import("./lineSegments").LineBand;
+};
+
+/**
+ * Recognise each segmented line and keep the line-to-crop pairing. That pairing
+ * is what lets the prescription list show the right snippet next to each name.
+ */
+export async function recognizeHandwritingLines(
+  source: HTMLCanvasElement,
+  onProgress?: HtrProgress,
+): Promise<HtrLine[]> {
+  if (!handwritingSupported()) return [];
+  try {
+    await spawnWorker((pct) => onProgress?.("Loading handwriting reader", pct));
+  } catch {
+    return [];
+  }
+
+  const bands = segmentLines(source);
+  const lines: HtrLine[] = [];
+  for (let i = 0; i < bands.length; i++) {
+    onProgress?.("Reading handwriting", Math.round(((i + 1) / Math.max(1, bands.length)) * 100));
+    try {
+      const texts = await recognizeLineCandidates(bands[i].canvas);
+      if (!texts.length) continue;
+      lines.push({ texts, text: bestLineText(texts), band: bands[i] });
+    } catch {
+      // One bad line shouldn't sink the whole page.
+    }
+  }
+  return lines;
+}
 
 /**
  * Recognise handwriting on a preprocessed canvas. Returns newline-joined line
@@ -106,25 +142,12 @@ export async function recognizeHandwriting(
   source: HTMLCanvasElement,
   onProgress?: HtrProgress,
 ): Promise<string> {
-  if (!handwritingSupported()) return "";
-  try {
-    await spawnWorker((pct) => onProgress?.("Loading handwriting reader", pct));
-  } catch {
-    return "";
-  }
-
-  const bands = segmentLines(source);
-  const lines: string[] = [];
-  for (let i = 0; i < bands.length; i++) {
-    onProgress?.("Reading handwriting", Math.round(((i + 1) / bands.length) * 100));
-    try {
-      const text = await recognizeLine(bands[i].canvas);
-      if (text) lines.push(text);
-    } catch {
-      // One bad line shouldn't sink the whole page.
-    }
-  }
-  return lines.join("\n").trim();
+  const lines = await recognizeHandwritingLines(source, onProgress);
+  return lines
+    .map((line) => line.text)
+    .filter(Boolean)
+    .join("\n")
+    .trim();
 }
 
 /** Free the worker + model memory. Safe to call when the flow closes. */

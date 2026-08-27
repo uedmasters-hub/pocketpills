@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Caret } from "@/components/ui";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { useProvider } from "@/lib/providerAuth";
+import { portalFor } from "@/lib/providerPortals";
 import {
   adjustInventory,
   effectiveSellPrice,
@@ -54,7 +56,9 @@ function matchesTab(s: InventorySku, tab: Tab) {
 export function ProviderInventory() {
   const { tx } = useI18n();
   const nav = useNavigate();
-  const { workspaceId } = useProvider();
+  const { workspaceId, provider } = useProvider();
+  const portal = provider ? portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole) : null;
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
   const orgId = workspaceId;
   const [items, setItems] = useState(() => listInventory(orgId));
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -164,20 +168,14 @@ export function ProviderInventory() {
 
   return (
     <div>
-      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Inventory")}</p>
-          <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-            {tx("Inventory")}
-          </h1>
-          <p className="mt-2 max-w-xl text-base text-ink-secondary">
-            {tx("Manage stock, expiry, pricing, and reorder levels.")}
-          </p>
-        </div>
-        <Button size="sm" className="!h-11 !px-5 !py-0" onClick={() => nav("/provider/inventory/new")}>
-          {tx("+ Add inventory")}
-        </Button>
-      </header>
+      <ProviderBreadcrumb
+        items={[home, { label: tx("Inventory") }]}
+        end={
+          <Button size="sm" className="!h-11 !px-5 !py-0" onClick={() => nav("/provider/inventory/new")}>
+            {tx("+ Add inventory")}
+          </Button>
+        }
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

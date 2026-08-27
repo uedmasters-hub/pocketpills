@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { formatFee } from "@/lib/appointments";
 import { useProvider } from "@/lib/providerAuth";
+import { portalFor } from "@/lib/providerPortals";
 import {
   listPharmacyOrders,
   updatePharmacyOrderStatus,
@@ -20,7 +22,9 @@ const LABELS: Record<RxStatus, string> = {
 
 export function ProviderPrescriptions() {
   const { tx } = useI18n();
-  const { workspaceId } = useProvider();
+  const { workspaceId, provider } = useProvider();
+  const portal = provider ? portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole) : null;
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
   const orgId = workspaceId;
   const [tick, setTick] = useState(0);
   const orders = listPharmacyOrders(orgId).filter((o) => o.status !== "declined");
@@ -35,15 +39,7 @@ export function ProviderPrescriptions() {
 
   return (
     <div>
-      <header className="mb-8">
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Prescriptions")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {tx("Fulfillment queue")}
-        </h1>
-        <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          {tx("Move each Rx from new → preparing → ready → completed.")}
-        </p>
-      </header>
+      <ProviderBreadcrumb items={[home, { label: tx("Prescriptions") }]} />
 
       <div className="grid gap-4 lg:grid-cols-4">
         {FLOW.map((status) => {

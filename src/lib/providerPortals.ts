@@ -51,6 +51,16 @@ export function flattenNav(nav: PortalNavEntry[]): PortalNavLeaf[] {
 }
 
 const HOME: PortalNavLeaf = { to: "/provider", label: "Home", end: true };
+const SCHEDULE_NAV: PortalNavLeaf = { to: "/provider/schedule", label: "Schedule" };
+const PATIENTS_NAV: PortalNavLeaf = { to: "/provider/patients", label: "Patients" };
+const CANCELLATIONS_NAV: PortalNavLeaf = { to: "/provider/cancellations", label: "Cancellations" };
+
+function careWithBoard(items: PortalNavLeaf[]): PortalNavLeaf[] {
+  const rest = items.filter(
+    (i) => i.to !== SCHEDULE_NAV.to && i.to !== PATIENTS_NAV.to && i.to !== CANCELLATIONS_NAV.to,
+  );
+  return [SCHEDULE_NAV, PATIENTS_NAV, CANCELLATIONS_NAV, ...rest];
+}
 
 const ORDERS_PATHS = new Set(["/provider/requests", "/provider/finance", "/provider/revenue"]);
 const CONNECT_PATHS = new Set(["/provider/chat", "/provider/support", "/provider/delegates"]);
@@ -121,11 +131,11 @@ const HOSPITAL: PortalDefinition = {
   showListing: true,
   nav: [
     HOME,
-    group("care", "Care", [
+    group("care", "Care", careWithBoard([
       { to: "/provider/doctors", label: "Doctors" },
       { to: "/provider/services", label: "Services" },
       { to: "/provider/monitor", label: "Monitor" },
-    ])!,
+    ]))!,
     ...sharedGroups({ requestsLabel: "Requests", showListing: true }),
   ],
 };
@@ -139,10 +149,10 @@ const CLINIC: PortalDefinition = {
   showListing: true,
   nav: [
     HOME,
-    group("care", "Care", [
+    group("care", "Care", careWithBoard([
       { to: "/provider/team", label: "Team" },
       { to: "/provider/services", label: "Services" },
-    ])!,
+    ]))!,
     ...sharedGroups({ requestsLabel: "Requests", showListing: true }),
   ],
 };
@@ -156,10 +166,10 @@ const DOCTOR: PortalDefinition = {
   showListing: true,
   nav: [
     HOME,
-    group("care", "Care", [
+    group("care", "Care", careWithBoard([
       { to: "/provider/schedule", label: "Schedule" },
       { to: "/provider/patients", label: "Patients" },
-    ])!,
+    ]))!,
     ...sharedGroups({ requestsLabel: "Requests", showListing: true }),
   ],
 };
@@ -173,10 +183,10 @@ const LAB: PortalDefinition = {
   showListing: true,
   nav: [
     HOME,
-    group("care", "Care", [
+    group("care", "Care", careWithBoard([
       { to: "/provider/tests", label: "Tests & packages" },
       { to: "/provider/collections", label: "Collections" },
-    ])!,
+    ]))!,
     ...sharedGroups({ requestsLabel: "Requests", showListing: true }),
   ],
 };
@@ -190,10 +200,10 @@ const PHARMACY: PortalDefinition = {
   showListing: true,
   nav: [
     HOME,
-    group("care", "Care", [
+    group("care", "Care", careWithBoard([
       { to: "/provider/prescriptions", label: "Prescriptions" },
       { to: "/provider/inventory", label: "Inventory" },
-    ])!,
+    ]))!,
     ...sharedGroups({ requestsLabel: "Orders", showListing: true }),
   ],
 };
@@ -207,10 +217,10 @@ const INDIVIDUAL: PortalDefinition = {
   showListing: true,
   nav: [
     HOME,
-    group("care", "Care", [
+    group("care", "Care", careWithBoard([
       { to: "/provider/services", label: "Services" },
       { to: "/provider/availability", label: "Availability" },
-    ])!,
+    ]))!,
     ...sharedGroups({ requestsLabel: "Requests", showListing: true }),
   ],
 };
@@ -224,10 +234,10 @@ const AMBULANCE_OWNER: PortalDefinition = {
   showListing: true,
   nav: [
     HOME,
-    group("care", "Care", [
+    group("care", "Care", careWithBoard([
       { to: "/provider/fleet", label: "Fleet" },
       { to: "/provider/dispatch", label: "Dispatch" },
-    ])!,
+    ]))!,
     ...sharedGroups({ requestsLabel: "Runs", showListing: true }),
   ],
 };
@@ -241,10 +251,10 @@ const AMBULANCE_DRIVER: PortalDefinition = {
   showListing: false,
   nav: [
     HOME,
-    group("care", "Care", [
+    group("care", "Care", careWithBoard([
       { to: "/provider/shifts", label: "My shifts" },
       { to: "/provider/runs", label: "Assigned runs" },
-    ])!,
+    ]))!,
     group("orders", "Orders", [{ to: "/provider/finance", label: "Finance" }])!,
     group("connect", "Connect", [
       { to: "/provider/chat", label: "Chat" },
@@ -325,5 +335,46 @@ export function portalAllowedPaths(
   const portal = portalFor(vendorType, ambulanceRole, accountOrPharmacyRole);
   const paths = new Set(flattenNav(portal.nav).map((n) => n.to));
   if (paths.has("/provider/finance")) paths.add("/provider/revenue");
+  if (paths.has("/provider/patients")) paths.add("/provider/cancellations");
   return paths;
+}
+
+export function clinicianNoun(vendorType: BusinessVendorType | undefined, plural = false): string {
+  switch (vendorType) {
+    case "pharmacy":
+      return plural ? "Pharmacists" : "Pharmacist";
+    case "ambulance":
+      return plural ? "Crew" : "Crew member";
+    case "lab":
+      return plural ? "Technicians" : "Technician";
+    case "clinic":
+      return plural ? "Clinicians" : "Clinician";
+    default:
+      return plural ? "Doctors" : "Doctor";
+  }
+}
+
+export function showDeptOverview(vendorType: BusinessVendorType | undefined): boolean {
+  return vendorType === "hospital" || vendorType === "clinic" || vendorType === "lab";
+}
+
+export function opsListingCta(vendorType: BusinessVendorType | undefined): { to: string; label: string } | null {
+  switch (vendorType) {
+    case "hospital":
+      return { to: "/provider/doctors", label: "Doctors" };
+    case "clinic":
+      return { to: "/provider/team", label: "Team" };
+    case "doctor":
+      return { to: "/provider/availability", label: "Availability" };
+    case "lab":
+      return { to: "/provider/tests", label: "Tests" };
+    case "pharmacy":
+      return { to: "/provider/inventory", label: "Inventory" };
+    case "ambulance":
+      return { to: "/provider/fleet", label: "Fleet" };
+    case "individual":
+      return { to: "/provider/services", label: "Services" };
+    default:
+      return null;
+  }
 }

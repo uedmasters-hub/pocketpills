@@ -6,7 +6,7 @@ import { formatFee } from "@/lib/appointments";
 import { listImmediateConsultants, subscribeImmediateConsult } from "@/lib/immediateConsult";
 import { basketIsConfirmed, consultLines, listMedBasket } from "@/lib/medBasketDraft";
 
-const INDEX = "/drug/draft";
+const INDEX = "/drug";
 
 const CARD =
   "group relative block w-full overflow-hidden rounded-[1.5rem] border border-[#E6E1EF] bg-white text-left " +

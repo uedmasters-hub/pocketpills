@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
+import { useProvider } from "@/lib/providerAuth";
+import { portalFor } from "@/lib/providerPortals";
 import {
   SUPPORT_CATEGORY_LABELS,
   SUPPORT_CHANNEL_LABELS,
@@ -21,6 +24,9 @@ const AREA =
 
 export function ProviderSupport() {
   const { tx } = useI18n();
+  const { provider } = useProvider();
+  const portal = provider ? portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole) : null;
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
   const [channel, setChannel] = useState<SupportChannel>("to_platform");
   const [tickets, setTickets] = useState(() => listTickets("to_platform"));
   const [activeId, setActiveId] = useState<string | null>(() => listTickets("to_platform")[0]?.id ?? null);
@@ -71,22 +77,16 @@ export function ProviderSupport() {
 
   return (
     <div>
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Support")}</p>
-          <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-            {tx("Help & support")}
-          </h1>
-          <p className="mt-2 max-w-xl text-base text-ink-secondary">
-            {tx("Open a ticket for billing, listing, or booking issues.")}
-          </p>
-        </div>
-        {channel === "to_platform" ? (
-          <Button size="sm" className="!h-9 !px-4 !py-0" onClick={() => setComposing(true)}>
-            {tx("New ticket")}
-          </Button>
-        ) : null}
-      </header>
+      <ProviderBreadcrumb
+        items={[home, { label: tx("Support") }]}
+        end={
+          channel === "to_platform" ? (
+            <Button size="sm" className="!h-9 !px-4 !py-0" onClick={() => setComposing(true)}>
+              {tx("New ticket")}
+            </Button>
+          ) : null
+        }
+      />
 
       <div
         className="mb-6 flex flex-wrap gap-2"

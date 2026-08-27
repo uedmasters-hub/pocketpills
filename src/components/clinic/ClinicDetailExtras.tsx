@@ -20,7 +20,8 @@ import { DetailSection } from "@/components/DetailSection";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { RecentArticlesSection } from "@/components/RecentArticles";
-import { nmcNumberOf, providerProfileHref } from "@/lib/doctorProfileContent";
+import { hasPublicListingHref, nmcNumberOf, providerProfileHref } from "@/lib/doctorProfileContent";
+import { useListingSurface } from "@/lib/listingSurface";
 import { getFacilityClaim } from "@/lib/facilityDirectory";
 import { ownerIdForListing } from "@/lib/businessProfile";
 import { RelatedHealthcareOptions } from "@/components/RelatedHealthcareOptions";
@@ -145,6 +146,7 @@ function ListedClinicDoctorCard({ doctor }: { doctor: CareProvider }) {
 
 function ClinicDoctorCard({ doctor, facilityId }: { doctor: CareProvider; facilityId: string }) {
   const { tx } = useI18n();
+  const surface = useListingSurface();
   const spec = doctor.specialties[0] ? specialtyById(doctor.specialties[0])?.label : doctor.subtitle;
   const visit = [
     doctor.visitTypes.includes("clinic") ? tx("In-clinic") : null,
@@ -178,9 +180,11 @@ function ClinicDoctorCard({ doctor, facilityId }: { doctor: CareProvider; facili
         {[visit, available].filter(Boolean).join(" · ")}
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Link to={providerProfileHref(doctor)} className="text-xs font-medium text-[color:var(--pp-violet)] hover:opacity-70">
-          {tx("View profile")}
-        </Link>
+        {surface === "app" || hasPublicListingHref(doctor) ? (
+          <Link to={providerProfileHref(doctor, surface)} className="text-xs font-medium text-[color:var(--pp-violet)] hover:opacity-70">
+            {tx("View profile")}
+          </Link>
+        ) : null}
         <Link
           to={`/appointments/provider/${doctor.id}?facility=${encodeURIComponent(facilityId)}`}
           className="text-xs font-medium text-[color:var(--pp-violet)] hover:opacity-70"

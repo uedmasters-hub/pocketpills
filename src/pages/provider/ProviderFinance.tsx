@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Caret } from "@/components/ui";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { useProvider } from "@/lib/providerAuth";
 import { portalFor } from "@/lib/providerPortals";
@@ -41,6 +42,7 @@ export function ProviderFinance() {
   const { provider } = useProvider();
   const orgId = provider?.id ?? "anon";
   const portal = provider ? portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole) : null;
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
   const [tab, setTab] = useState<Tab>("wallet");
   const [tick, setTick] = useState(0);
   void tick;
@@ -61,18 +63,7 @@ export function ProviderFinance() {
 
   return (
     <div>
-      <header className="mb-6">
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Finance")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {tx("Money & payouts")}
-        </h1>
-        <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          {portal
-            ? tx("Manage balance, bank details, withdrawals, and refunds for your {portal}.")
-                .replace("{portal}", tx(portal.label))
-            : tx("Manage balance, bank details, withdrawals, and refunds.")}
-        </p>
-      </header>
+      <ProviderBreadcrumb items={[home, { label: tx("Finance") }]} />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat label={tx("Available")} value={formatCad(wallet.available)} />

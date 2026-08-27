@@ -2,9 +2,11 @@ import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { formatFee } from "@/lib/appointments";
 import { useProvider } from "@/lib/providerAuth";
+import { portalFor } from "@/lib/providerPortals";
 import { delegateDisplayName, logDelegateActivity } from "@/lib/pharmacyDelegates";
 import {
   adjustPharmacyOrderLine,
@@ -111,7 +113,10 @@ function hasAdjustment(order: PharmacyOrder) {
 
 export function PharmacyOrdersInbox() {
   const { tx } = useI18n();
-  const { orgId, pharmacyName, log, isDelegate } = useOrderActor();
+  const { provider } = useProvider();
+  const portal = provider ? portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole) : null;
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
+  const { orgId, pharmacyName, log } = useOrderActor();
   const [tick, setTick] = useState(0);
   const [filter, setFilter] = useState<"all" | RxStatus>("all");
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -157,17 +162,7 @@ export function PharmacyOrdersInbox() {
 
   return (
     <div>
-      <header className="mb-6">
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Inbox")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium text-[color:var(--pp-primary-950)]">
-          {tx("Orders")}
-        </h1>
-        <p className="mt-2 text-base text-ink-secondary">
-          {isDelegate
-            ? tx("Scan the queue, open an order to accept, adjust stock, or fulfill.")
-            : tx("Browse fills in a grid — open any card to manage lines, address, and status.")}
-        </p>
-      </header>
+      <ProviderBreadcrumb items={[home, { label: tx("Orders") }]} />
 
       <div className="flex flex-wrap gap-2" role="tablist" aria-label={tx("Order status")}>
         {TABS.map((f) => (

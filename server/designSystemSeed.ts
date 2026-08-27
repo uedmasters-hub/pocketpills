@@ -83,6 +83,7 @@ export const SEED_NAV: { section: string; label: string; items: { slug: string; 
       { slug: "logo", title: "Logo" },
       { slug: "availability", title: "Availability & time chips" },
       { slug: "rating", title: "Rating" },
+      { slug: "doctor-profile", title: "Doctor profile intro" },
     ],
   },
   {
@@ -382,7 +383,9 @@ Import \`DateOfBirthField\` from \`@/components/DateOfBirthField\` (also re-expo
       "Short clarifying copy on hover/focus.",
       `## Usage
 
-\`Tooltip\` for info icons (e.g. Select for month).`,
+White pill, violet ring, caret toward the trigger. Optional glowing status pip via \`dot\`.
+
+\`Tooltip\` wraps a trigger. \`TooltipBubble\` is the chrome for custom anchors (charts).`,
     ],
     switch: [
       "Accessible boolean toggles.",
@@ -417,6 +420,21 @@ Import \`DateOfBirthField\` from \`@/components/DateOfBirthField\` (also re-expo
       `## Usage
 
 \`RatingStars\` / \`ReviewCountChip\`. Providers cannot delete public reviews.`,
+    ],
+    "doctor-profile": [
+      "Master doctor public intro — hero, About, and fact chips in one card.",
+      `## Usage
+
+Import \`DoctorProfileIntro\` and \`doctorHeroUsps\` from \`@/components/doctor/DoctorProfileIntro\`.
+
+This is the **only** doctor header. Do not assemble a separate hero + About + Specialised-in block.
+
+- **Routes** — \`/doctors/:nmcNumber\` and \`/appointments/provider/:id\` (when \`kind === "doctor"\`)
+- **USPs** — Digital Prescription, Free Followup, Accepting visits (or Consultant inside a facility)
+- **Chips** — rating, then \`DoctorHighlightsSection\` embedded (NMC, degree, city, available since)
+- **About** — sits in the same card under a hairline, not a standalone \`DetailSection\`
+
+Pharmacies and hospitals keep the unmerged \`DirectoryHeroCard\` + About layout.`,
     ],
   };
 

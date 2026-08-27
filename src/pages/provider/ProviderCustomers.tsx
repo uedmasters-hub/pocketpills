@@ -1,24 +1,22 @@
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { useProvider } from "@/lib/providerAuth";
+import { portalFor } from "@/lib/providerPortals";
 import { getProviderCustomers } from "@/lib/providerOps";
 
 export function ProviderCustomers() {
   const { tx } = useI18n();
   const { provider } = useProvider();
+  const portal = provider ? portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole) : null;
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
   const customers = getProviderCustomers();
   const isPatients = provider?.vendorType === "doctor";
 
   return (
     <div>
-      <header className="mb-6">
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Relationships")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium text-[color:var(--pp-primary-950)]">
-          {isPatients ? tx("Patients") : tx("Customers")}
-        </h1>
-        <p className="mt-2 text-base text-ink-secondary">
-          {tx("People you’ve accepted or completed care for.")}
-        </p>
-      </header>
+      <ProviderBreadcrumb
+        items={[home, { label: isPatients ? tx("Patients") : tx("Customers") }]}
+      />
 
       {customers.length === 0 ? (
         <div className="rounded-2xl border border-line bg-white px-5 py-10 text-center text-sm text-ink-tertiary">

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/Modal";
@@ -9,7 +9,8 @@ import { getAppointments } from "@/lib/appointments";
 import { careEventHref } from "@/lib/careJourney";
 import { isoToDobDisplay } from "@/lib/dob";
 import { fmtDate, getOrders, typeMeta } from "@/lib/orders";
-import { ensurePatientFolder, getPatientLibrary } from "@/lib/patientRecords";
+import { ensurePatientFolder, getPatientLibrary, subscribePatientRecords } from "@/lib/patientRecords";
+import { DocumentList } from "@/components/records/DocumentList";
 import { useI18n } from "@/lib/i18n";
 
 const RELATIONS = ["Spouse / partner", "Child", "Parent", "Sibling", "Other"];
@@ -100,6 +101,8 @@ export function FamilyMemberProfile() {
   const [editing, setEditing] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [form, setForm] = useState({ name: "", relationship: RELATIONS[0], dob: "" });
+
+  useEffect(() => subscribePatientRecords(() => setTick((n) => n + 1)), []);
 
   const member = useMemo(() => loadFamily().find((m) => m.id === id), [id, tick]);
 
@@ -319,15 +322,14 @@ export function FamilyMemberProfile() {
           </DetailSection>
         ) : (
           <>
-            <DetailSection title={tx("Health history")}>
-              <RecordList
-                empty={tx("No health records on file yet.")}
-                rows={[...library.reports, ...library.uploads].map((r) => ({
-                  key: r.id,
-                  title: tx(r.title),
-                  detail: `${tx(r.detail)} · ${fmtDate(r.date)}`,
-                }))}
-              />
+            <DetailSection title={tx("Health history")} flush>
+              <div className="px-5">
+                <DocumentList
+                  files={[...library.uploads, ...library.reports]}
+                  patientId={member.id}
+                  empty={tx("No health records on file yet.")}
+                />
+              </div>
             </DetailSection>
 
             <DetailSection title={tx("Consultations")}>

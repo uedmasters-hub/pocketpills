@@ -167,7 +167,7 @@ export function PharmaciesIndex() {
             <DistrictPills items={pills} />
           </div>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {cards.map((d) => (
               <Link
                 key={d.district}

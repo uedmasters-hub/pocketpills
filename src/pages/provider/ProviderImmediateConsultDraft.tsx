@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { ProviderBreadcrumb } from "@/components/provider/ProviderBreadcrumb";
 import { useI18n } from "@/lib/i18n";
 import { Switch } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui";
 import { useProvider } from "@/lib/providerAuth";
+import { portalFor } from "@/lib/providerPortals";
 import {
   declineConsultRequest,
   getImmediateOptIn,
@@ -13,10 +15,14 @@ import {
   saveImmediateOptIn,
   subscribeImmediateConsult,
 } from "@/lib/immediateConsult";
+import { findPatientReport, getPatientFilePreview } from "@/lib/patientRecords";
+import { ReportThumb } from "@/components/records/ReportThumb";
 
 export function ProviderImmediateConsultDraft() {
   const { tx } = useI18n();
   const { provider, workspaceId, displayName } = useProvider();
+  const portal = provider ? portalFor(provider.vendorType, provider.ambulanceRole, provider.accountRole) : null;
+  const home = { label: tx(portal?.homeTitle || "Home"), to: "/provider" };
   const [tick, setTick] = useState(0);
   void tick;
 
@@ -52,15 +58,7 @@ export function ProviderImmediateConsultDraft() {
 
   return (
     <div>
-      <header className="mb-8">
-        <p className="pp-caps text-[color:var(--pp-violet)]">{tx("Draft")}</p>
-        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)]">
-          {tx("Immediate prescription consults")}
-        </h1>
-        <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          {tx("Register to appear when a patient needs a prescription for a medication and doesn’t have one yet. You set the consult fee. After you issue the Rx, they pay and order the medicine.")}
-        </p>
-      </header>
+      <ProviderBreadcrumb items={[home, { label: tx("Immediate consults") }]} />
 
       <div className="rounded-2xl border border-line bg-white p-5">
         <Switch
@@ -114,6 +112,21 @@ export function ProviderImmediateConsultDraft() {
                 <p className="mt-1 text-2xs text-ink-tertiary">
                   {r.id} · ${r.fee} {tx("consult")}
                 </p>
+                {r.reportId ? (
+                  <div className="mt-3 flex items-center gap-3 rounded-xl border border-line px-3 py-2">
+                    <ReportThumb src={getPatientFilePreview(r.reportId)} className="h-12 w-16" />
+                    <div className="min-w-0">
+                      <p className="text-2xs font-medium text-[color:var(--pp-primary-950)]">
+                        {tx(findPatientReport(r.reportId)?.title ?? "Prescription photo")}
+                      </p>
+                      {findPatientReport(r.reportId)?.detail ? (
+                        <p className="mt-0.5 truncate text-2xs text-ink-tertiary">
+                          {findPatientReport(r.reportId)!.detail}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
                     size="sm"

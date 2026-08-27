@@ -63,8 +63,10 @@ export const BRAND_TOKENS: string[] = [
   // Steroid
   "wysolone", "omnacortil", "betnesol", "medrol",
   // CNS / psych
-  "escitat", "nexito", "cipralex", "petril", "clonotril", "alprax", "restyl",
+  "escitat", "nexito", "cipralex", "petril", "pertile", "pertile-plus", "clonotril", "alprax", "restyl",
   "etizola", "zolfresh", "placida", "lonazep", "frisium", "encorate",
+  // PPI / cholesterol brands that show up on the same handwritten pads
+  "esojet", "exojet", "nexpro", "rozavel", "rozas",
   // Supplement
   "shelcal", "calcimax", "neurobion", "becosules", "limcee", "zincovit",
   "orofer", "livogen", "folvite", "rocaltrol", "uprise",

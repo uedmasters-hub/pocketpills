@@ -88,10 +88,32 @@ export function featuresForVendor(vendorType: BusinessVendorType): FeatureDef[] 
     blurb: "Bundles, deals, and promo codes",
   };
 
+  const schedule: FeatureDef = {
+    id: "schedule",
+    label: "Schedule",
+    path: "/provider/schedule",
+    blurb: "Day board and visits",
+  };
+  const patients: FeatureDef = {
+    id: "patients",
+    label: "Patients",
+    path: "/provider/patients",
+    blurb: "Patient board",
+  };
+  const cancellations: FeatureDef = {
+    id: "cancellations",
+    label: "Cancellations",
+    path: "/provider/cancellations",
+    blurb: "Resolve denied and cancelled visits",
+  };
+
   switch (vendorType) {
     case "pharmacy":
       return [
         { ...inbox, id: "orders", label: "Orders", blurb: "Receive, adjust, and fulfill prescription orders" },
+        schedule,
+        patients,
+        cancellations,
         {
           id: "prescriptions",
           label: "Prescriptions",
@@ -112,6 +134,9 @@ export function featuresForVendor(vendorType: BusinessVendorType): FeatureDef[] 
     case "hospital":
       return [
         inbox,
+        schedule,
+        patients,
+        cancellations,
         { id: "doctors", label: "Doctors", path: "/provider/doctors", blurb: "Staff directory and slots" },
         { id: "services", label: "Services", path: "/provider/services", blurb: "Facility services" },
         { id: "monitor", label: "Monitor", path: "/provider/monitor", blurb: "Care board" },
@@ -123,6 +148,9 @@ export function featuresForVendor(vendorType: BusinessVendorType): FeatureDef[] 
     case "clinic":
       return [
         inbox,
+        schedule,
+        patients,
+        cancellations,
         { id: "team", label: "Team", path: "/provider/team", blurb: "Clinic team profiles" },
         { id: "services", label: "Services", path: "/provider/services", blurb: "Clinic services" },
         finance,
@@ -133,8 +161,9 @@ export function featuresForVendor(vendorType: BusinessVendorType): FeatureDef[] 
     case "doctor":
       return [
         inbox,
-        { id: "schedule", label: "Schedule", path: "/provider/schedule", blurb: "Upcoming visits" },
-        { id: "patients", label: "Patients", path: "/provider/patients", blurb: "Patient list" },
+        schedule,
+        patients,
+        cancellations,
         finance,
         offers,
         chat,
@@ -143,6 +172,9 @@ export function featuresForVendor(vendorType: BusinessVendorType): FeatureDef[] 
     case "lab":
       return [
         inbox,
+        schedule,
+        patients,
+        cancellations,
         { id: "tests", label: "Tests", path: "/provider/tests", blurb: "Tests and packages" },
         {
           id: "collections",
@@ -158,6 +190,9 @@ export function featuresForVendor(vendorType: BusinessVendorType): FeatureDef[] 
     case "ambulance":
       return [
         inbox,
+        schedule,
+        patients,
+        cancellations,
         { id: "fleet", label: "Fleet", path: "/provider/fleet", blurb: "Vehicles" },
         { id: "dispatch", label: "Dispatch", path: "/provider/dispatch", blurb: "Assign runs" },
         finance,
@@ -169,6 +204,9 @@ export function featuresForVendor(vendorType: BusinessVendorType): FeatureDef[] 
     default:
       return [
         inbox,
+        schedule,
+        patients,
+        cancellations,
         { id: "services", label: "Services", path: "/provider/services", blurb: "Your offerings" },
         {
           id: "availability",

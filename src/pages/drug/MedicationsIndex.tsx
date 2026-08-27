@@ -1,10 +1,12 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { MedicationListPopover } from "@/pages/drug/MedicationListPopover";
 import { PageSearchField } from "@/components/PageSearchField";
-import { TrustStrip } from "@/components/pharmacy/TrustStrip";
+import { NEPAL_TRUST_STATS, TrustStrip } from "@/components/pharmacy/TrustStrip";
 import { drugs, therapeuticClasses } from "@/lib/data";
 import { searchDrugs } from "@/lib/drugSearch";
 import { useI18n } from "@/lib/i18n";
+import { listMedBasket, OPEN_LIST_EVENT, subscribeMedBasket } from "@/lib/medBasketDraft";
 
 /** Compact class label — the full ATC names are too long for chips. */
 const SHORT: Record<string, string> = {
@@ -33,6 +35,15 @@ export function MedicationsIndex() {
   const [q, setQ] = useState("");
   const [cls, setCls] = useState("All");
   const listRef = useRef<HTMLDivElement>(null);
+  const [basketTick, setBasketTick] = useState(0);
+  const [listOpen, setListOpen] = useState(false);
+  useEffect(() => subscribeMedBasket(() => setBasketTick((n) => n + 1)), []);
+  useEffect(() => {
+    const on = () => setListOpen(true);
+    window.addEventListener(OPEN_LIST_EVENT, on);
+    return () => window.removeEventListener(OPEN_LIST_EVENT, on);
+  }, []);
+  const basketCount = useMemo(() => listMedBasket().length, [basketTick]);
 
   const filtered = useMemo(
     () =>
@@ -70,14 +81,18 @@ export function MedicationsIndex() {
         <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-[color:var(--pp-primary-950)] md:text-4xl">
           {tx("Shop medications")}
         </h1>
-        <p className="mt-2 max-w-xl text-base text-ink-secondary">
-          {tx(
-            "Compare prices, coverage, and forms across 5,000+ medications. Every Rx is reviewed by a licensed Canadian pharmacist before it ships — free delivery included.",
-          )}
-        </p>
+        {basketCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => setListOpen(true)}
+            className="mt-3 inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-[color:var(--pp-primary-950)]"
+          >
+            {basketCount} {basketCount === 1 ? tx("medicine") : tx("medicines")} · {tx("Review list")}
+          </button>
+        ) : null}
       </header>
 
-      <TrustStrip className="mb-8" />
+      <TrustStrip className="mb-8" stats={NEPAL_TRUST_STATS} />
 
       <PageSearchField
         scope="medications"
@@ -150,23 +165,12 @@ export function MedicationsIndex() {
                       <Link
                         key={d.slug}
                         to={`/drug/${d.slug}`}
-                        className="group flex flex-col rounded-2xl border border-line bg-white p-4 transition-colors hover:bg-[color:var(--state-hover)]"
+                        className="group flex h-full flex-col rounded-2xl border border-line bg-white p-4 transition-colors hover:bg-[color:var(--state-hover)]"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <span className="min-w-0">
-                            <span className="flex flex-wrap items-center gap-2">
-                              <span className="truncate font-semibold text-[color:var(--pp-primary-950)]">
-                                {d.name}
-                              </span>
-                              {!d.rx ? (
-                                <span className="shrink-0 rounded-full bg-[color:var(--pp-primary-100)] px-2 py-0.5 text-2xs font-semibold text-[color:var(--pp-primary-950)]">
-                                  {tx("OTC")}
-                                </span>
-                              ) : (
-                                <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-2xs font-medium text-ink-tertiary">
-                                  {tx("Rx")}
-                                </span>
-                              )}
+                            <span className="block truncate font-semibold text-[color:var(--pp-primary-950)]">
+                              {d.name}
                             </span>
                             {d.generic && d.generic !== d.name && (
                               <span className="mt-0.5 block truncate text-sm text-ink-tertiary">
@@ -174,9 +178,18 @@ export function MedicationsIndex() {
                               </span>
                             )}
                           </span>
+                          {!d.rx ? (
+                            <span className="shrink-0 rounded-full bg-[color:var(--pp-primary-100)] px-2 py-0.5 text-2xs font-semibold text-[color:var(--pp-primary-950)]">
+                              {tx("OTC")}
+                            </span>
+                          ) : (
+                            <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-2xs font-medium text-ink-tertiary">
+                              {tx("Rx")}
+                            </span>
+                          )}
                         </div>
 
-                        <p className="mt-2 text-2xs text-ink-tertiary">
+                        <p className="mt-2 flex-1 text-2xs text-ink-tertiary">
                           {d.forms.map((f) => tx(f)).join(" · ")}
                           {d.coverage > 0 ? ` · ${d.coverage}% ${tx("typical coverage")}` : ""}
                         </p>
@@ -201,6 +214,8 @@ export function MedicationsIndex() {
           </div>
         )}
       </div>
+
+      <MedicationListPopover open={listOpen} onClose={() => setListOpen(false)} />
     </div>
   );
 }
