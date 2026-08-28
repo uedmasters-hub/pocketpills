@@ -4,7 +4,7 @@ import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 export const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
 export const MAGIC_LINK_TTL_MS = 30 * 60 * 1000; // link valid 30 minutes
 
-const DEFAULT_SITE_PASSWORDS = ["diptim", "deepak"];
+const DEFAULT_SITE_PASSWORDS = ["diptim", "deepak", "ramesh"];
 
 /** Env may add more (comma-separated); defaults always remain accepted. */
 export const SITE_PASSWORDS = [
